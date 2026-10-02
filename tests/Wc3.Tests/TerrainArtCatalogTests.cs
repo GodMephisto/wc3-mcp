@@ -6,6 +6,7 @@ using Xunit;
 namespace Wc3.Tests;
 
 // Depends on the local WC3 CASC install (same assumption as the object-data / model-render tests).
+[Trait("Category", "GameData")]
 public class TerrainArtCatalogTests
 {
     [Fact]
