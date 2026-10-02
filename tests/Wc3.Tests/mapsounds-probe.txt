@@ -1,0 +1,57 @@
+assembly: War3Net.Build.Core 6.0.3.0
+ReadMapSounds -> War3Net.Build.Audio.MapSounds
+=== War3Net.Build.Audio.MapSounds ===
+  .ctor(MapSoundsFormatVersion formatVersion)
+  prop MapSoundsFormatVersion FormatVersion get/set
+  prop List`1 Sounds get/set
+=== War3Net.Build.Audio.MapSoundsFormatVersion ===
+  field Int32 value__
+=== War3Net.Build.Audio.Sound ===
+  .ctor()
+  prop String Name get/set
+  prop String FilePath get/set
+  prop String EaxSetting get/set
+  prop SoundFlags Flags get/set
+  prop Int32 FadeInRate get/set
+  prop Int32 FadeOutRate get/set
+  prop Int32 Volume get/set
+  prop Single Pitch get/set
+  prop Single PitchVariance get/set
+  prop Int32 Priority get/set
+  prop SoundChannel Channel get/set
+  prop Single MinDistance get/set
+  prop Single MaxDistance get/set
+  prop Single DistanceCutoff get/set
+  prop Single ConeAngleInside get/set
+  prop Single ConeAngleOutside get/set
+  prop Int32 ConeOutsideVolume get/set
+  prop Vector3 ConeOrientation get/set
+  prop String SoundName get/set
+  prop Int32 DialogueTextKey get/set
+  prop String Unk2 get/set
+  prop Int32 DialogueSpeakerNameKey get/set
+  prop Int32 Unk4 get/set
+  prop String Unk5 get/set
+  prop String Unk6 get/set
+  prop String Unk7 get/set
+  prop String FacialAnimationLabel get/set
+  prop String FacialAnimationGroupLabel get/set
+  prop String FacialAnimationSetFilepath get/set
+  prop Int32 Unk11 get/set
+=== War3Net.Build.Audio.SoundChannel ===
+  field Int32 value__
+=== War3Net.Build.Audio.SoundEnvironment ===
+  field Int32 value__
+=== War3Net.Build.Audio.SoundFlags ===
+  field Int32 value__
+=== all types in War3Net.Build.Audio ===
+  MapSounds (enum=False)
+  MapSoundsFormatVersion (enum=True)
+  Sound (enum=False)
+  SoundChannel (enum=True)
+  SoundEnvironment (enum=True)
+  SoundFlags (enum=True)
+=== BinaryWriterExtensions writers taking a MapSounds/Sound ===
+  Write(BinaryWriter, MapSounds) -> Void
+  Write(BinaryWriter, Sound, MapSoundsFormatVersion) -> Void
+=== MapSounds/Sound instance methods (WriteTo etc.) ===

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wc3.MapDocument\Wc3.MapDocument.csproj" />
+    <ProjectReference Include="..\Wc3.GameData\Wc3.GameData.csproj" />
+    <ProjectReference Include="..\Wc3.Render\Wc3.Render.csproj" />
+    <ProjectReference Include="..\Wc3.Modeling\Wc3.Modeling.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Wc3.Tests" />
+  </ItemGroup>
+
+</Project>

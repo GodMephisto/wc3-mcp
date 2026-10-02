@@ -1,0 +1,11 @@
+bin/
+obj/
+*.user
+.vs/
+dist*/
+artifacts/
+TestResults/
+*.w3x
+*.w3m
+*.w3g
+*.zip

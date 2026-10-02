@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish
+        run: >
+          dotnet publish src/Wc3.Mcp/Wc3.Mcp.csproj -c Release
+          --self-contained -r win-x64 -o dist-mcp
+
+      - name: Copy license files
+        run: >
+          Copy-Item LICENSE -Destination dist-mcp/ -ErrorAction SilentlyContinue;
+          Copy-Item THIRD-PARTY-NOTICES.md -Destination dist-mcp/;
+          Copy-Item CREDITS.md -Destination dist-mcp/
+
+      - name: Check CascLib.dll
+        run: >
+          if (!(Test-Path dist-mcp/CascLib.dll)) {
+            Write-Error "CascLib.dll missing from dist-mcp"
+            exit 1
+          }
+
+      - name: Create zip
+        run: >
+          Compress-Archive -Path dist-mcp/*
+          -DestinationPath wc3-mcp-${{ github.ref_name }}-win-x64.zip
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create ${{ github.ref_name }}
+          wc3-mcp-${{ github.ref_name }}-win-x64.zip
+          --generate-notes

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Wc3.MapDocument\Wc3.MapDocument.csproj" />
+    <ProjectReference Include="..\..\src\Wc3.Commands\Wc3.Commands.csproj" />
+    <ProjectReference Include="..\..\src\Wc3.GameData\Wc3.GameData.csproj" />
+    <ProjectReference Include="..\..\src\Wc3.Modeling\Wc3.Modeling.csproj" />
+    <ProjectReference Include="..\..\src\Wc3.Mcp\Wc3.Mcp.csproj" />
+  </ItemGroup>
+
+</Project>
