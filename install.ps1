@@ -95,7 +95,8 @@ $env:Path = "$env:Path;$InstallDir"
 if ($NoRegister) {
     Write-Host 'Skipped app setup. Run  wc3-mcp install --all  when ready.'
 } else {
-    & $exe install --all
+    # PATH was handled above (or skipped with -NoPath), so the exe leaves it alone.
+    & $exe install --all --no-path
 }
 Write-Host ''
 & $exe doctor

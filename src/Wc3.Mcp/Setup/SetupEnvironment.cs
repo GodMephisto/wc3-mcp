@@ -13,24 +13,38 @@ public sealed record SetupEnvironment(
     string LocalAppData,
     string CodexHome,
     Func<string, string?> FindOnPath,
-    Func<string, IReadOnlyList<string>, (int ExitCode, string Output)> Run)
+    Func<string, IReadOnlyList<string>, (int ExitCode, string Output)> Run,
+    Func<string?> GetUserPath,
+    Action<string> SetUserPath)
 {
-    /// <summary>The real user profile, PATH and process runner.</summary>
+    /// <summary>
+    /// The real user profile, PATH and process runner. USERPROFILE, APPDATA and LOCALAPPDATA are
+    /// honoured when set, as most tools do, which also lets the exe be run against a scratch profile.
+    /// </summary>
     public static SetupEnvironment Current
     {
         get
         {
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            static string Folder(string variable, Environment.SpecialFolder fallback) =>
+                Environment.GetEnvironmentVariable(variable) is { Length: > 0 } v ? v : Environment.GetFolderPath(fallback);
+            var home = Folder("USERPROFILE", Environment.SpecialFolder.UserProfile);
             var codex = Environment.GetEnvironmentVariable("CODEX_HOME");
             return new SetupEnvironment(
                 home,
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                Folder("APPDATA", Environment.SpecialFolder.ApplicationData),
+                Folder("LOCALAPPDATA", Environment.SpecialFolder.LocalApplicationData),
                 string.IsNullOrWhiteSpace(codex) ? Path.Combine(home, ".codex") : codex,
                 SearchPath,
-                RunProcess);
+                RunProcess,
+                () => Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User),
+                value => Environment.SetEnvironmentVariable("Path", value, EnvironmentVariableTarget.User));
         }
     }
+
+    /// <summary>Whether a folder is already one of the user PATH entries, ignoring case and a trailing slash.</summary>
+    public static bool PathContains(string? path, string folder) =>
+        (path ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Any(p => string.Equals(p.Trim().TrimEnd('\\', '/'), folder.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Finds a program on PATH the way a shell would, trying each PATHEXT extension.</summary>
     public static string? SearchPath(string name)

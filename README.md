@@ -36,9 +36,16 @@ any folder you like, then from that folder run
 .\wc3-mcp.exe install --all
 ```
 
-The setup always records wherever the exe actually is, so any folder works.
+The setup records wherever the exe actually is, so any folder works. It also adds
+that folder to your user PATH once, so from then on plain `wc3-mcp` works in any
+new terminal. Pass `--no-path` to skip that, and use `.\wc3-mcp.exe` from its
+folder instead.
 
 ## Set up your AI app
+
+These need `wc3-mcp` on your PATH, which the one-line install and the first
+`wc3-mcp.exe install` both arrange. Until then, run them as `.\wc3-mcp.exe ...`
+from the folder the exe is in.
 
 ```
 wc3-mcp install --all            set up every supported app found on this PC
@@ -88,13 +95,19 @@ search. `wc3-mcp doctor` shows which folder it is using.
 
 ## Build from source
 
-```
+In PowerShell, with the .NET 8 SDK installed,
+
+```powershell
 git clone https://github.com/GodMephisto/wc3-mcp
 cd wc3-mcp
 dotnet test --filter "Category!=Corpus&Category!=GameData"
 dotnet publish src/Wc3.Mcp/Wc3.Mcp.csproj -c Release --self-contained -r win-x64 -o dist-mcp
-dist-mcp\wc3-mcp.exe install --all
+.\dist-mcp\wc3-mcp.exe install --all
 ```
+
+The apps then start the exe inside your clone's `dist-mcp` folder, and that
+folder is what goes on your PATH, so keep the clone where it is or rerun the last
+line after moving it.
 
 Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 `CascLib.dll` must stay beside `wc3-mcp.exe`.

@@ -24,6 +24,7 @@ public static class SetupCli
         string name = TakeOption(rest, "--name") ?? DefaultName;
         string? gameDir = TakeOption(rest, "--game-dir");
         bool all = rest.Remove("--all");
+        bool noPath = rest.Remove("--no-path");
         if (gameDir is not null) gameDir = Path.GetFullPath(gameDir);
 
         switch (verb)
@@ -46,12 +47,18 @@ public static class SetupCli
             return 2;
         }
 
+        var entry = entryOverride is null
+            ? ServerEntry.ForThisProcess(name, gameDir)
+            : entryOverride with { Name = name, GameDir = gameDir ?? entryOverride.GameDir };
+
         List<ClientTarget> targets;
         if (all)
         {
             targets = ClientTargets.All.Where(t => t.IsDetected(env)).ToList();
             if (targets.Count == 0)
             {
+                if (verb == "install" && !noPath) AddToPath(entry, env, output);
+                if (verb == "uninstall") RemoveFromPath(entry, env, output);
                 output.WriteLine("No supported MCP client was found on this PC. Run wc3-mcp clients to see the list.");
                 return 1;
             }
@@ -77,9 +84,10 @@ public static class SetupCli
             }
         }
 
-        var entry = entryOverride is null
-            ? ServerEntry.ForThisProcess(name, gameDir)
-            : entryOverride with { Name = name, GameDir = gameDir ?? entryOverride.GameDir };
+        // So that plain "wc3-mcp" works in a new terminal however the exe got here, unzipped,
+        // built from source or installed by install.ps1.
+        if (verb == "install" && !noPath) AddToPath(entry, env, output);
+        if (verb == "uninstall" && all) RemoveFromPath(entry, env, output);
 
         int failures = 0;
         foreach (var t in targets)
@@ -95,6 +103,30 @@ public static class SetupCli
         if (verb == "install" && failures < targets.Count)
             output.WriteLine("Restart each client so it starts the server.");
         return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>The folder to put on PATH, or null when this runs under dotnet rather than as the exe.</summary>
+    private static string? ExeFolder(ServerEntry entry) =>
+        entry.Args.Count == 0 ? Path.GetDirectoryName(entry.Command) : null;
+
+    private static void AddToPath(ServerEntry entry, SetupEnvironment env, TextWriter output)
+    {
+        if (ExeFolder(entry) is not { } folder) return;
+        var path = env.GetUserPath();
+        if (SetupEnvironment.PathContains(path, folder)) return;
+        env.SetUserPath(string.IsNullOrEmpty(path) ? folder : path.TrimEnd(';') + ";" + folder);
+        output.WriteLine($"Added {folder} to your user PATH, so wc3-mcp works in any new terminal. (--no-path skips this.)");
+    }
+
+    private static void RemoveFromPath(ServerEntry entry, SetupEnvironment env, TextWriter output)
+    {
+        if (ExeFolder(entry) is not { } folder) return;
+        var path = env.GetUserPath();
+        if (!SetupEnvironment.PathContains(path, folder)) return;
+        var kept = (path ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Where(p => !string.Equals(p.Trim().TrimEnd('\\', '/'), folder.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
+        env.SetUserPath(string.Join(";", kept));
+        output.WriteLine($"Removed {folder} from your user PATH.");
     }
 
     private static int Install(ClientTarget t, ServerEntry entry, SetupEnvironment env, TextWriter output)
@@ -260,7 +292,7 @@ public static class SetupCli
         Setting up an AI app
           wc3-mcp install --all            set up every supported app found on this PC
           wc3-mcp install cursor vscode    set up the apps named
-          wc3-mcp uninstall --all          remove it from every app
+          wc3-mcp uninstall --all          remove it from every app and from PATH
           wc3-mcp config <app>             print the settings to paste by hand
           wc3-mcp clients                  list supported apps and whether each is set up
           wc3-mcp doctor                   check the install, the game folder and the apps
@@ -268,6 +300,8 @@ public static class SetupCli
         Options
           --game-dir <folder>   the Warcraft III folder, when it is not found automatically
           --name <name>         the server name in the app (default wc3)
+          --no-path             install leaves your user PATH alone (by default it adds
+                                this folder once, so plain wc3-mcp works in new terminals)
 
         Apps
           claude-code, claude-desktop, cursor, vscode, windsurf, gemini, codex, cline, lmstudio, zed

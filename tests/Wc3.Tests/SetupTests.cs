@@ -26,7 +26,11 @@ public sealed class SetupTests : IDisposable
     private SetupEnvironment Env => new(
         Home, AppData, Path.Combine(_root, "local"), Path.Combine(Home, ".codex"),
         name => _onPath.TryGetValue(name, out var p) ? p : null,
-        (program, args) => { _runs.Add((program, args.ToArray())); return (0, ""); });
+        (program, args) => { _runs.Add((program, args.ToArray())); return (0, ""); },
+        () => _userPath,
+        value => _userPath = value);
+
+    private string? _userPath = @"C:\Existing;C:\Other";
 
     private (int Code, string Output) Cli(params string[] args)
     {
@@ -227,5 +231,30 @@ public sealed class SetupTests : IDisposable
         foreach (var id in new[] { "claude-code", "claude-desktop", "cursor", "vscode", "windsurf", "gemini", "codex", "cline", "lmstudio", "zed" })
             Assert.NotNull(ClientTargets.Find(id));
         Assert.Equal(10, ClientTargets.All.Count);
+    }
+
+    [Fact]
+    public void Install_puts_the_exe_folder_on_the_user_path_once_and_uninstall_all_takes_it_off()
+    {
+        Directory.CreateDirectory(Path.Combine(Home, ".cursor"));
+        var folder = Path.GetDirectoryName(Entry.Command)!;
+
+        var (_, output) = Cli("install", "cursor");
+        Assert.Contains("PATH", output);
+        Assert.Equal(@"C:\Existing;C:\Other;" + folder, _userPath);
+
+        Cli("install", "cursor");
+        Assert.Equal(1, _userPath!.Split(';').Count(p => p == folder));
+
+        Cli("uninstall", "--all");
+        Assert.Equal(@"C:\Existing;C:\Other", _userPath);
+    }
+
+    [Fact]
+    public void No_path_leaves_the_user_path_alone()
+    {
+        Directory.CreateDirectory(Path.Combine(Home, ".cursor"));
+        Cli("install", "cursor", "--no-path");
+        Assert.Equal(@"C:\Existing;C:\Other", _userPath);
     }
 }
