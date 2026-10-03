@@ -123,8 +123,9 @@ public static class SetupCli
         if (ExeFolder(entry) is not { } folder) return;
         var path = env.GetUserPath();
         if (!SetupEnvironment.PathContains(path, folder)) return;
+        // Every other entry is kept exactly as written, %VARIABLES% included.
         var kept = (path ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)
-            .Where(p => !string.Equals(p.Trim().TrimEnd('\\', '/'), folder.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
+            .Where(p => !SetupEnvironment.SameFolder(p, folder));
         env.SetUserPath(string.Join(";", kept));
         output.WriteLine($"Removed {folder} from your user PATH.");
     }

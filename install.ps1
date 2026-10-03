@@ -82,12 +82,22 @@ $exe = Join-Path $InstallDir 'wc3-mcp.exe'
 Write-Host "installed to $InstallDir"
 
 # Put the folder on the user PATH once, so wc3-mcp works in any new terminal.
-$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+# PATH is read and written raw, keeping its registry type, so entries such as
+# %USERPROFILE%\go\bin stay as written instead of being expanded into fixed paths.
+$envKey = Get-Item -Path 'HKCU:\Environment'
+$userPath = $envKey.GetValue('Path', '', 'DoNotExpandEnvironmentNames')
+$kind = if ($envKey.GetValueNames() -contains 'Path') { $envKey.GetValueKind('Path') } else { 'ExpandString' }
+if ($kind -ne 'String') { $kind = 'ExpandString' }
 $parts = @($userPath -split ';' | Where-Object { $_ })
+$present = $parts | Where-Object { [Environment]::ExpandEnvironmentVariables($_).TrimEnd('\') -ieq $InstallDir.TrimEnd('\') }
 if ($NoPath) {
     Write-Host 'left your PATH unchanged (-NoPath)'
-} elseif ($parts -notcontains $InstallDir) {
-    [Environment]::SetEnvironmentVariable('Path', (($parts + $InstallDir) -join ';'), 'User')
+} elseif (-not $present) {
+    Set-ItemProperty -Path 'HKCU:\Environment' -Name Path -Value (($parts + $InstallDir) -join ';') -Type $kind
+    # Tell Explorer the environment changed, so new terminals see it.
+    Add-Type -Namespace Wc3Mcp -Name Native -MemberDefinition '[DllImport("user32.dll", CharSet = CharSet.Unicode)] public static extern IntPtr SendMessageTimeout(IntPtr h, uint m, UIntPtr w, string l, uint f, uint t, out UIntPtr r);'
+    $r = [UIntPtr]::Zero
+    [void][Wc3Mcp.Native]::SendMessageTimeout([IntPtr]0xFFFF, 0x1A, [UIntPtr]::Zero, 'Environment', 2, 5000, [ref]$r)
     Write-Host 'added to your PATH (open a new terminal to use it)'
 }
 $env:Path = "$env:Path;$InstallDir"

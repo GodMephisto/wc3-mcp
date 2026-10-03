@@ -36,15 +36,55 @@ public sealed record SetupEnvironment(
                 string.IsNullOrWhiteSpace(codex) ? Path.Combine(home, ".codex") : codex,
                 SearchPath,
                 RunProcess,
-                () => Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User),
-                value => Environment.SetEnvironmentVariable("Path", value, EnvironmentVariableTarget.User));
+                ReadUserPath,
+                WriteUserPath);
         }
     }
 
-    /// <summary>Whether a folder is already one of the user PATH entries, ignoring case and a trailing slash.</summary>
+    // The user PATH is read and written raw. Environment.GetEnvironmentVariable(.., User) expands
+    // %USERPROFILE% and friends, and writing that back turned every such entry into a fixed path
+    // and the value from REG_EXPAND_SZ into REG_SZ. Measured on this machine on 2026-10-03.
+    private const string EnvironmentKey = "Environment";
+
+    private static string? ReadUserPath()
+    {
+        if (!OperatingSystem.IsWindows()) return Environment.GetEnvironmentVariable("PATH");
+        using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(EnvironmentKey);
+        return key?.GetValue("Path", null, Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames) as string;
+    }
+
+    private static void WriteUserPath(string value)
+    {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("the user PATH is only edited on Windows");
+        using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(EnvironmentKey))
+        {
+            var kind = key.GetValueNames().Contains("Path", StringComparer.OrdinalIgnoreCase)
+                ? key.GetValueKind("Path")
+                : Microsoft.Win32.RegistryValueKind.ExpandString;
+            if (kind != Microsoft.Win32.RegistryValueKind.String) kind = Microsoft.Win32.RegistryValueKind.ExpandString;
+            key.SetValue("Path", value, kind);
+        }
+        // Tell Explorer the environment changed, so terminals opened from now on see the new PATH.
+        SendMessageTimeout(new IntPtr(0xFFFF), 0x001A, UIntPtr.Zero, EnvironmentKey, 0x0002, 5000, out _);
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern IntPtr SendMessageTimeout(
+        IntPtr hWnd, uint msg, UIntPtr wParam, string lParam, uint flags, uint timeout, out UIntPtr result);
+
+    /// <summary>
+    /// Whether a folder is already one of the PATH entries. Entries are compared after expanding
+    /// %VARIABLES%, ignoring case and a trailing slash, so %USERPROFILE%\x matches C:\Users\me\x.
+    /// </summary>
     public static bool PathContains(string? path, string folder) =>
-        (path ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries)
-            .Any(p => string.Equals(p.Trim().TrimEnd('\\', '/'), folder.TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase));
+        (path ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries).Any(p => SameFolder(p, folder));
+
+    /// <summary>Two PATH entries naming the same folder.</summary>
+    public static bool SameFolder(string entry, string folder) =>
+        string.Equals(
+            Environment.ExpandEnvironmentVariables(entry.Trim()).TrimEnd('\\', '/'),
+            Environment.ExpandEnvironmentVariables(folder.Trim()).TrimEnd('\\', '/'),
+            StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Finds a program on PATH the way a shell would, trying each PATHEXT extension.</summary>
     public static string? SearchPath(string name)

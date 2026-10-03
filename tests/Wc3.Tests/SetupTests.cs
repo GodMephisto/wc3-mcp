@@ -251,6 +251,27 @@ public sealed class SetupTests : IDisposable
     }
 
     [Fact]
+    public void Path_entries_written_with_variables_stay_unexpanded()
+    {
+        _userPath = @"%USERPROFILE%\go\bin;%SystemRoot%\system32";
+        Directory.CreateDirectory(Path.Combine(Home, ".cursor"));
+        var folder = Path.GetDirectoryName(Entry.Command)!;
+
+        Cli("install", "cursor");
+        Assert.Equal(@"%USERPROFILE%\go\bin;%SystemRoot%\system32;" + folder, _userPath);
+        Cli("uninstall", "--all");
+        Assert.Equal(@"%USERPROFILE%\go\bin;%SystemRoot%\system32", _userPath);
+    }
+
+    [Fact]
+    public void A_folder_already_on_path_through_a_variable_is_not_added_twice()
+    {
+        var profile = Environment.GetEnvironmentVariable("USERPROFILE")!;
+        Assert.True(SetupEnvironment.PathContains(@"C:\x;%USERPROFILE%\Tools\", Path.Combine(profile, "Tools")));
+        Assert.False(SetupEnvironment.PathContains(@"C:\x", Path.Combine(profile, "Tools")));
+    }
+
+    [Fact]
     public void No_path_leaves_the_user_path_alone()
     {
         Directory.CreateDirectory(Path.Combine(Home, ".cursor"));
