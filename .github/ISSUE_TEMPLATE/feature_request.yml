@@ -1,0 +1,16 @@
+name: Feature request
+description: A tool, option or app you would like wc3-mcp to support
+labels: [enhancement]
+body:
+  - type: textarea
+    id: want
+    attributes:
+      label: What would you like to do
+      description: Describe the task, for example "list every trigger that creates a unit"
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What it would help with, and how you do it today

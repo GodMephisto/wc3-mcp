@@ -1,0 +1,40 @@
+name: Bug report
+description: Something in wc3-mcp does not work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Security problems go through the Security tab instead, see SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: wc3-mcp version
+      description: The output of `wc3-mcp version`
+      placeholder: wc3-mcp 0.1.2
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: AI app
+      description: Which app runs the server, for example Claude Desktop, Cursor or VS Code
+  - type: input
+    id: tool
+    attributes:
+      label: Tool or command
+      description: The MCP tool you called (for example unit_abilities), or the setup command you ran
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+      description: Paste the tool's output or error if you can
+    validations:
+      required: true
+  - type: textarea
+    id: map
+    attributes:
+      label: Map or file
+      description: Attach the map, replay or model that shows the problem (zip it if GitHub refuses the extension), or say where to get it
