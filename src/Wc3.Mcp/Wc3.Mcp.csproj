@@ -6,7 +6,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <!-- The command people type and every AI app starts. The namespace stays Wc3.Mcp. -->
+    <AssemblyName>wc3-mcp</AssemblyName>
+    <RootNamespace>Wc3.Mcp</RootNamespace>
+    <Version>0.1.0</Version>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Wc3.Tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Official MCP C# SDK (stable). Its Microsoft.Extensions.* transitives stay

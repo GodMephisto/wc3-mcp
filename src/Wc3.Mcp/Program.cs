@@ -5,11 +5,15 @@ using Microsoft.Extensions.Logging;
 
 namespace Wc3.Mcp;
 
-/// <summary>MCP server over stdio: newline-delimited JSON-RPC on stdin/stdout.</summary>
+/// <summary>The MCP server over stdio (newline-delimited JSON-RPC), or a setup command when one is named.</summary>
 public static class Program
 {
-    public static async Task Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
+        // wc3-mcp install, doctor and the rest set up AI apps. With no such verb this is the server.
+        if (args.Length > 0 && Setup.SetupCli.Verbs.Contains(args[0]))
+            return Setup.SetupCli.Run(args, Setup.SetupEnvironment.Current, Console.Out);
+
         var builder = Host.CreateApplicationBuilder(args);
 
         // stdout carries the MCP protocol - every log line must go to stderr.
@@ -25,5 +29,6 @@ public static class Program
             .WithStdioServerTransport();
 
         await builder.Build().RunAsync();
+        return 0;
     }
 }

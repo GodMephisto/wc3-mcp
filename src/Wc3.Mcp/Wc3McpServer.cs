@@ -25,6 +25,9 @@ public static class Wc3McpServer
         return options;
     }
 
+    /// <summary>The release version, reported to clients and by wc3-mcp version.</summary>
+    public const string Version = "0.1.0";
+
     /// <summary>Server options with every tool registered.</summary>
     public static McpServerOptions CreateOptions()
     {
@@ -33,7 +36,7 @@ public static class Wc3McpServer
             tools.Add(tool);
         return new McpServerOptions
         {
-            ServerInfo = new Implementation { Name = "wc3-mcp", Version = "0.1.0" },
+            ServerInfo = new Implementation { Name = "wc3-mcp", Version = Version },
             ToolCollection = tools,
         };
     }

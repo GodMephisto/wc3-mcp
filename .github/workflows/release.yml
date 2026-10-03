@@ -27,21 +27,26 @@ jobs:
 
       - name: Copy license files
         run: >
-          Copy-Item LICENSE -Destination dist-mcp/ -ErrorAction SilentlyContinue;
+          Copy-Item LICENSE -Destination dist-mcp/;
           Copy-Item THIRD-PARTY-NOTICES.md -Destination dist-mcp/;
           Copy-Item CREDITS.md -Destination dist-mcp/
 
-      - name: Check CascLib.dll
+      - name: Check the exe and CascLib.dll
         run: >
-          if (!(Test-Path dist-mcp/CascLib.dll)) {
-            Write-Error "CascLib.dll missing from dist-mcp"
-            exit 1
-          }
+          if (!(Test-Path dist-mcp/wc3-mcp.exe)) { Write-Error "wc3-mcp.exe missing from dist-mcp"; exit 1 }
+          if (!(Test-Path dist-mcp/CascLib.dll)) { Write-Error "CascLib.dll missing from dist-mcp"; exit 1 }
 
-      - name: Create zip
+      - name: Smoke test the published exe
         run: >
-          Compress-Archive -Path dist-mcp/*
-          -DestinationPath wc3-mcp-${{ github.ref_name }}-win-x64.zip
+          dist-mcp/wc3-mcp.exe version;
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Create zip and checksum
+        run: |
+          $zip = "wc3-mcp-${{ github.ref_name }}-win-x64.zip"
+          Compress-Archive -Path dist-mcp/* -DestinationPath $zip
+          $hash = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -Path "$zip.sha256" -Value "$hash  $zip" -NoNewline -Encoding ascii
 
       - name: Create release
         env:
@@ -49,4 +54,5 @@ jobs:
         run: >
           gh release create ${{ github.ref_name }}
           wc3-mcp-${{ github.ref_name }}-win-x64.zip
+          wc3-mcp-${{ github.ref_name }}-win-x64.zip.sha256
           --generate-notes

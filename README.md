@@ -8,73 +8,100 @@ An MCP server that lets AI assistants such as Claude read, audit and edit
 Warcraft III `.w3x` and `.w3m` maps byte-faithfully (files you do not touch
 keep their bytes).
 
-## Requirements
+## What you need
 
-See [REQUIREMENTS.md](REQUIREMENTS.md).
+- 64-bit Windows. The game data reader (CascLib) is a Windows library.
+- Warcraft III Reforged, only for the tools that read base game data. Map tools
+  work without it.
+- Any AI app that speaks MCP. Nothing else, the release carries its own .NET.
 
 ## Install
 
-### From zip (no .NET needed)
+Open PowerShell and run
 
-Download the latest release zip from the Releases page, unzip it anywhere.
-
-### Build from source
-
-```
-dotnet publish src/Wc3.Mcp/Wc3.Mcp.csproj -c Release \
-  --self-contained -r win-x64 -o dist-mcp
+```powershell
+irm https://raw.githubusercontent.com/GodMephisto/wc3-mcp/main/install.ps1 | iex
 ```
 
-CascLib.dll must stay beside Wc3.Mcp.exe.
+That downloads the latest release, checks its SHA-256, unpacks it into
+`%LOCALAPPDATA%\Programs\wc3-mcp`, adds that folder to your PATH and sets up
+every supported AI app it finds. No admin rights. Run the same line again to
+update. Restart your AI app afterwards.
 
-## Register
+Prefer to do it by hand? Download the zip from the
+[Releases page](https://github.com/GodMephisto/wc3-mcp/releases), unzip it into
+any folder you like, then from that folder run
 
-### Claude Code
-
-```
-claude mcp add wc3 -- C:\tools\wc3-mcp\Wc3.Mcp.exe
-```
-
-Add a game_dir override when needed.
-
-.mcp.json form (project scoped):
-
-```json
-{
-  "mcpServers": {
-    "wc3": {
-      "command": "C:\\tools\\wc3-mcp\\Wc3.Mcp.exe"
-    }
-  }
-}
+```powershell
+.\wc3-mcp.exe install --all
 ```
 
-Add an env block with a `WC3_GAME_DIR` key pointing to your Warcraft III
-folder when a path override is needed.
+The setup always records wherever the exe actually is, so any folder works.
 
-### Claude Desktop
+## Set up your AI app
 
-Put the same snippet under `mcpServers` in `%APPDATA%\\Claude\\claude_desktop_config.json`.
+```
+wc3-mcp install --all            set up every supported app found on this PC
+wc3-mcp install cursor vscode    set up only the apps named
+wc3-mcp uninstall --all          remove it again
+wc3-mcp config <app>             print the settings to paste by hand
+wc3-mcp clients                  list supported apps and whether each is set up
+wc3-mcp doctor                   check the install, the game folder and the apps
+```
 
-### Any other stdio MCP client
+| App | Name to use | Where it is written |
+|---|---|---|
+| Claude Code | `claude-code` | through `claude mcp add --scope user` |
+| Claude Desktop | `claude-desktop` | `%APPDATA%\Claude\claude_desktop_config.json` (Store build too) |
+| Cursor | `cursor` | `%USERPROFILE%\.cursor\mcp.json` |
+| VS Code (GitHub Copilot) | `vscode` | `%APPDATA%\Code\User\mcp.json` |
+| Windsurf | `windsurf` | `%USERPROFILE%\.codeium\windsurf\mcp_config.json` or `%APPDATA%\devin\mcp_config.json` |
+| Gemini CLI | `gemini` | `%USERPROFILE%\.gemini\settings.json` |
+| Codex CLI | `codex` | `%CODEX_HOME%` or `%USERPROFILE%\.codex\config.toml` |
+| Cline | `cline` | `cline_mcp_settings.json` in VS Code's storage for Cline |
+| LM Studio | `lmstudio` | `%USERPROFILE%\.lmstudio\mcp.json` |
+| Zed | `zed` | `%APPDATA%\Zed\settings.json` |
 
-This is a standard MCP server over stdio. Point your client at the executable.
+Setup only changes the one `wc3` entry. Every other server and setting in the
+file stays as it was, and the file is copied to `NAME.wc3-mcp.bak` first. A file
+with comments in it (common in Zed and VS Code) is never rewritten, because that
+would delete the comments. The settings to paste are printed instead.
+
+### Any other MCP app
+
+It is a standard stdio MCP server. Point your app at `wc3-mcp.exe` with no
+arguments. `wc3-mcp config cursor` prints a ready-made JSON entry with the real
+path filled in, which most apps accept as is.
 
 ## Configuration
 
-- The `WC3_GAME_DIR` environment variable sets the Warcraft III install used
-  to resolve base-game data.
-- Per-call, most tools accept an optional `game_dir` parameter.
-- Per-call precedence picks the `game_dir` argument first, the `WC3_GAME_DIR`
-  env var second, then auto-detection from the Windows registry and common paths.
+The Warcraft III folder is found automatically from the Windows registry, then
+`C:\Warcraft III`, `C:\Program Files (x86)\Warcraft III` and
+`C:\Program Files\Warcraft III`. When yours is somewhere else, either
 
-The auto-detection order (read from `src/Wc3.GameData/GameInstall.cs`) hits
-current user registry, local machine registry, then `C:\Warcraft III`,
-`C:\Program Files (x86)\Warcraft III`, `C:\Program Files\Warcraft III`.
+- install with `wc3-mcp install --all --game-dir "D:\Games\Warcraft III"`, which
+  sets `WC3_GAME_DIR` in each app's entry, or
+- pass `game_dir` to a single tool call.
+
+A `game_dir` argument wins over `WC3_GAME_DIR`, which wins over the automatic
+search. `wc3-mcp doctor` shows which folder it is using.
+
+## Build from source
+
+```
+git clone https://github.com/GodMephisto/wc3-mcp
+cd wc3-mcp
+dotnet test --filter "Category!=Corpus&Category!=GameData"
+dotnet publish src/Wc3.Mcp/Wc3.Mcp.csproj -c Release --self-contained -r win-x64 -o dist-mcp
+dist-mcp\wc3-mcp.exe install --all
+```
+
+Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
+`CascLib.dll` must stay beside `wc3-mcp.exe`.
 
 ## Tools
 
-48 tools across these categories:
+49 tools across these categories:
 
 | Name | Read/Write | Description |
 |---|---|---|
@@ -85,6 +112,7 @@ current user registry, local machine registry, then `C:\Warcraft III`,
 | replay_summary | read-only | Read `.w3g` replay files with map, length, players and disconnect events. |
 | object_list | read-only | List custom or modified objects with rawcode, base rawcode and resolved name. |
 | object_get | read-only | Merged object fields (base overlaid by map deltas) with names resolved. |
+| unit_abilities | read-only | Every ability a unit has and where it comes from. Unit data, spellbook contents, a placed unit's own abilities and levels, morph forms, and abilities the script hands out (inferred, with the war3map.j line). |
 | object_set | writes | Set a field on an object and save to out_path. |
 | object_new | writes | Create a new custom object derived from a base rawcode, save to out_path. |
 | bundle_unit | read-only | Unit dependency closure including objects, asset files, strings, edges and JASS. |
@@ -139,11 +167,15 @@ Warcraft III Reforged install.
 
 ## Troubleshooting
 
-- **Game not found**: set `WC3_GAME_DIR` or pass `game_dir` to the tool.
-- **CascLib.dll missing**: when building from source, ensure the published
-  folder contains CascLib.dll beside the exe.
-- **Protected maps**: pass `listfiles` arguments to `deprotect_map` to supply
-  community name dictionaries.
+- **Start with `wc3-mcp doctor`.** It shows where the exe is, whether CascLib.dll is beside
+  it, which Warcraft III folder it uses and which apps are set up.
+- **Game not found.** Run `wc3-mcp install --all --game-dir "<your Warcraft III folder>"`,
+  or pass `game_dir` to the tool.
+- **An app does not list the tools.** Restart it fully. Claude Desktop needs a quit from the
+  tray, not just closing the window.
+- **A settings file was not changed.** It has comments or is not valid JSON, so the settings
+  to paste were printed instead. `wc3-mcp config <app>` prints them again.
+- **Protected maps.** Pass `listfiles` to `deprotect_map` to supply community name lists.
 
 ## Credits
 

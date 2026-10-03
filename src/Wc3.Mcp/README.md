@@ -15,15 +15,16 @@ dotnet publish src/Wc3.Mcp/Wc3.Mcp.csproj -c Release \
   --self-contained -r win-x64 -o dist-mcp
 ```
 
-The published server is `dist-mcp/Wc3.Mcp.exe`, with `CascLib.dll` beside it.
-Registration with a client and the full tool list are in the root README.md.
+The published server is `dist-mcp/wc3-mcp.exe`, with `CascLib.dll` beside it.
+Setting up an AI app (`wc3-mcp install`) and the full tool list are in the root README.md. The
+setup commands live in `Setup/`, and `Program.cs` runs them when the first argument names one.
 
 ## Verified how
 
 `tests/Wc3.Tests/McpServerTests.cs` drives the exact server wiring through the
 SDK's own `McpClient` over in-memory pipes (hermetic, no processes, no WC3
 install). It checks the initialize handshake and the server name `wc3-mcp`,
-`tools/list` returning all 48 tools, a real `list_files` call against a
+`tools/list` returning all 49 tools, a real `list_files` call against a
 synthetic map, and the clean-error path. The published exe was also checked by
 piping raw JSON-RPC (`initialize`, `notifications/initialized`, `tools/list`)
 into stdin.
