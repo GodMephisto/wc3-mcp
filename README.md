@@ -8,6 +8,10 @@ An MCP server that lets AI assistants such as Claude read, audit and edit
 Warcraft III `.w3x` and `.w3m` maps byte-faithfully (files you do not touch
 keep their bytes).
 
+It is the MCP server of [wc3ctl](https://github.com/GodMephisto/wc3ctl), which
+also has a command line tool and a desktop editor. Install wc3ctl if you want
+those as well. It carries the same server as `wc3ctl mcp serve`.
+
 ## What you need
 
 - 64-bit Windows. The game data reader (CascLib) is a Windows library.

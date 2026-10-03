@@ -26,11 +26,12 @@ your change touches game data or map parsing.
 
 ## Pull requests
 
-The code under `src/` and `tests/` is developed in the maintainer's wc3ctl
-toolkit, which this server is part of, and copied here for each release. A pull
-request that changes it is still welcome. It gets applied there by hand and
-arrives here with the next release, so it is closed rather than merged, with a
-note saying where it landed. Changes to everything else (the README, the
+The code under `src/` and `tests/` is developed in
+[wc3ctl](https://github.com/GodMephisto/wc3ctl), the toolkit this server is part
+of, and copied here for each release. Send code changes there. A pull request
+here that changes it is still welcome. It gets applied in wc3ctl and arrives
+here with the next release, so it is closed rather than merged, with a note
+saying where it landed. Changes to everything else (the README, the
 installer, the workflows, the bundle and registry files) are merged here as
 usual. `Directory.Build.props` holds what makes the shared source this product,
 its exe name, its version and the name it registers under.
