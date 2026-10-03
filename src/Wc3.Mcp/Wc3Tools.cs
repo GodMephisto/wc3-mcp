@@ -855,15 +855,21 @@ public static class Wc3Tools
         catch (ArgumentException ex) { throw new McpException(ex.Message); }
     }
 
-    /// <summary>Explicit argument wins; else the WC3_GAME_DIR env var; else auto-detect.</summary>
     /// <summary>The variable that names the Warcraft III folder for every tool call.</summary>
     internal const string GameDirVariable = "WC3_GAME_DIR";
 
-    /// <summary>A tool's game_dir argument, else WC3_GAME_DIR, else null (auto-detect).</summary>
+    /// <summary>
+    /// A tool's game_dir argument, else WC3_GAME_DIR, else null (auto-detect). A value still holding
+    /// an unfilled placeholder such as ${user_config.game_dir}, which an MCPB host may pass through
+    /// when the optional setting was left empty, counts as unset.
+    /// </summary>
     internal static string? ResolveGameDir(string? game_dir) =>
-        !string.IsNullOrWhiteSpace(game_dir) ? game_dir
-        : Environment.GetEnvironmentVariable(GameDirVariable) is { Length: > 0 } env ? env
+        IsSet(game_dir) ? game_dir
+        : Environment.GetEnvironmentVariable(GameDirVariable) is var env && IsSet(env) ? env
         : null;
+
+    private static bool IsSet(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && !value.Contains("${", StringComparison.Ordinal);
 }
 
 /// <summary>render_model outcome: where the PNG landed and whether it was also inlined.</summary>

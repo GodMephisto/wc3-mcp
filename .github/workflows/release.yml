@@ -11,6 +11,8 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
+    outputs:
+      mcpb_sha256: ${{ steps.mcpb.outputs.sha256 }}
 
     steps:
       - uses: actions/checkout@v4
@@ -37,10 +39,14 @@ jobs:
           if (!(Test-Path dist-mcp/wc3-mcp.exe)) { Write-Error "wc3-mcp.exe missing from dist-mcp"; exit 1 }
           if (!(Test-Path dist-mcp/CascLib.dll)) { Write-Error "CascLib.dll missing from dist-mcp"; exit 1 }
 
-      - name: Smoke test the published exe
-        run: >
-          dist-mcp/wc3-mcp.exe version;
+      # The tag, the exe and the bundle must all carry one version, or the registry
+      # entry would point at a release that reports a different one.
+      - name: Smoke test the published exe and match its version to the tag
+        run: |
+          $out = (dist-mcp/wc3-mcp.exe version) | Out-String
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          $want = "${{ github.ref_name }}".TrimStart('v')
+          if ($out.Trim() -ne "wc3-mcp $want") { Write-Error "exe says '$($out.Trim())', tag is $want"; exit 1 }
 
       - name: Create zip and checksum
         run: |
@@ -49,6 +55,25 @@ jobs:
           $hash = (Get-FileHash -Path $zip -Algorithm SHA256).Hash.ToLowerInvariant()
           Set-Content -Path "$zip.sha256" -Value "$hash  $zip" -NoNewline -Encoding ascii
 
+      # An MCP Bundle, the one-file install format the MCP Registry lists and Claude Desktop
+      # opens on double-click. Spec at github.com/modelcontextprotocol/mcpb (MANIFEST.md).
+      - name: Create MCP bundle and checksum
+        id: mcpb
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          New-Item -ItemType Directory -Path mcpb-stage/server | Out-Null
+          Copy-Item -Path dist-mcp/* -Destination mcpb-stage/server -Recurse
+          Copy-Item LICENSE, NOTICE -Destination mcpb-stage/
+          node -e "const f=require('fs');const m=JSON.parse(f.readFileSync('mcpb/manifest.json','utf8'));m.version=process.argv[1];f.writeFileSync('mcpb-stage/manifest.json',JSON.stringify(m,null,2))" $version
+          npx -y @anthropic-ai/mcpb@2.1.2 validate mcpb-stage/manifest.json
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $bundle = "wc3-mcp-${{ github.ref_name }}-win-x64.mcpb"
+          npx -y @anthropic-ai/mcpb@2.1.2 pack mcpb-stage $bundle
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $hash = (Get-FileHash -Path $bundle -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -Path "$bundle.sha256" -Value "$hash  $bundle" -NoNewline -Encoding ascii
+          "sha256=$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -56,4 +81,50 @@ jobs:
           gh release create ${{ github.ref_name }}
           wc3-mcp-${{ github.ref_name }}-win-x64.zip
           wc3-mcp-${{ github.ref_name }}-win-x64.zip.sha256
+          wc3-mcp-${{ github.ref_name }}-win-x64.mcpb
+          wc3-mcp-${{ github.ref_name }}-win-x64.mcpb.sha256
           --generate-notes
+
+  # Lists the release in the official MCP Registry as io.github.GodMephisto/wc3-mcp. GitHub's
+  # OIDC token proves the repository owner, so no secret is stored. A registry version can be
+  # published once only, so a rerun of the same tag fails here without touching the release.
+  registry:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fill in server.json for this release
+        env:
+          TAG: ${{ github.ref_name }}
+          SHA: ${{ needs.release.outputs.mcpb_sha256 }}
+        run: |
+          VERSION="${TAG#v}"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/wc3-mcp-${TAG}-win-x64.mcpb"
+          jq --arg v "$VERSION" --arg u "$URL" --arg s "$SHA" \
+            '.version = $v | .packages[0].identifier = $u | .packages[0].fileSha256 = $s' \
+            server.json > server.tmp && mv server.tmp server.json
+          test "${#SHA}" -eq 64
+          cat server.json
+
+      - name: Check the bundle on the release matches its hash
+        env:
+          TAG: ${{ github.ref_name }}
+          SHA: ${{ needs.release.outputs.mcpb_sha256 }}
+        run: |
+          curl -fsSL -o bundle.mcpb "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/wc3-mcp-${TAG}-win-x64.mcpb"
+          echo "$SHA  bundle.mcpb" | sha256sum -c -
+
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
+      - name: Publish to the MCP Registry
+        run: |
+          ./mcp-publisher validate
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

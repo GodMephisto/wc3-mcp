@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.GodMephisto/wc3-mcp",
+  "title": "Warcraft III Map Tools",
+  "description": "Read, audit and edit Warcraft III maps byte-faithfully",
+  "repository": {
+    "url": "https://github.com/GodMephisto/wc3-mcp",
+    "source": "github"
+  },
+  "version": "0.1.3",
+  "packages": [
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/GodMephisto/wc3-mcp/releases/download/v0.1.3/wc3-mcp-v0.1.3-win-x64.mcpb",
+      "fileSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

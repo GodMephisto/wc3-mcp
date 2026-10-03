@@ -41,6 +41,13 @@ that folder to your user PATH once, so from then on plain `wc3-mcp` works in any
 new terminal. Pass `--no-path` to skip that, and use `.\wc3-mcp.exe` from its
 folder instead.
 
+Using Claude Desktop only? Download `wc3-mcp-<version>-win-x64.mcpb` from the
+Releases page and double-click it. Claude Desktop installs it as an extension.
+Its one setting, the Warcraft III folder, can stay empty to have the install
+detected. The server is also listed in the
+[MCP Registry](https://registry.modelcontextprotocol.io) as
+`io.github.GodMephisto/wc3-mcp`, for apps that install from there.
+
 ## Set up your AI app
 
 These need `wc3-mcp` on your PATH, which the one-line install and the first
