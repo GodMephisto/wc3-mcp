@@ -1,6 +1,7 @@
 // src/Wc3.MapDocument/Parsers.cs
 using System.Text;
 using War3Net.Build.Extensions;
+using War3Net.Build.Script;
 
 namespace Wc3.Model;
 
@@ -31,7 +32,7 @@ public static class DefaultParsers
         Wire("war3map.w3r", r => r.ReadMapRegions());
         Wire("war3map.w3c", r => r.ReadMapCameras());
         Wire("war3map.w3s", r => r.ReadMapSounds());
-        Wire("war3map.wtg", r => r.ReadMapTriggers());
+        MapFormatRegistry.Register("war3map.wtg", ReadTriggers);
         Wire("war3map.wct", r => r.ReadMapCustomTextTriggers());
         Wire("war3map.imp", r => r.ReadImportedFiles());
         Wire("war3map.w3u", r => r.ReadUnitObjectData());
@@ -60,8 +61,44 @@ public static class DefaultParsers
         });
 
         // Scripts stay as plain text.
-        MapFormatRegistry.Register("war3map.j", raw => Encoding.UTF8.GetString(raw));
-        MapFormatRegistry.Register("war3map.lua", raw => Encoding.UTF8.GetString(raw));
+        // Latin-1, not UTF-8. A map script is a byte stream with no declared encoding, and real
+        // maps carry bytes that are not valid UTF-8 (Anime_WOS2_0.28a2 has about 52,000 of them,
+        // author names and localised strings). Decoding those as UTF-8 yields U+FFFD replacement
+        // characters, so any later text scan is looking at content the map does not contain.
+        // Latin-1 maps every byte 0..255 to the same code point and back, which is lossless.
+        MapFormatRegistry.Register("war3map.j", raw => ScriptText.GetString(raw));
+        MapFormatRegistry.Register("war3map.lua", raw => ScriptText.GetString(raw));
+    }
+
+    /// <summary>
+    /// Reads war3map.wtg, preferring the overload that knows the World-Editor function table.
+    ///
+    /// The wtg format stores a trigger function's parameters but NOT how many there are, so the
+    /// count comes from the table on read. Without it, a GUI trigger carrying any function at all
+    /// cannot be parsed: the reader runs off the end of the stream looking for the terminator of a
+    /// string that was never there. Measured, writing one action and reading it back with the
+    /// plain overload fails with exactly that.
+    ///
+    /// Every map in the library parsed fine with the plain overload only because they are
+    /// optimizer-stripped and their GUI triggers genuinely hold no functions. The moment wc3ctl
+    /// writes one, or someone opens a map the World Editor actually saved, the plain overload is
+    /// not enough.
+    ///
+    /// War3Net ships the stock table as TriggerData.Default, so this needs no game install and no
+    /// reference from this project to Wc3.GameData. A map built against a CUSTOM TriggerData can
+    /// still defeat it, which is why the plain overload remains as a fallback: this is never worse
+    /// than what it replaced, and is better wherever functions exist.
+    /// </summary>
+    private static object ReadTriggers(byte[] raw)
+    {
+        try
+        {
+            return MapFormatRegistry.ReadWith(raw, r => r.ReadMapTriggers(TriggerData.Default));
+        }
+        catch (Exception)
+        {
+            return MapFormatRegistry.ReadWith(raw, r => r.ReadMapTriggers());
+        }
     }
 
     private static void Wire<T>(string file, Func<BinaryReader, T> read) =>

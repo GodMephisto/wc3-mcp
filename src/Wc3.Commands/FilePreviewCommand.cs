@@ -37,7 +37,7 @@ public static class FilePreviewCommand
     {
         var entry = doc.GetFile(name)
             ?? throw new FileNotFoundException($"'{name}' is not in the map", name);
-        return Of(entry.RawBytes, name);
+        return Of(entry.CurrentBytes, name);
     }
 
     /// <summary>Preview from raw bytes (used for unnamed entries too, with name = null).</summary>

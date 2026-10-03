@@ -46,4 +46,40 @@ public static class SyntheticMap
         mpq.CopyTo(outStream);
         return outStream.ToArray();
     }
+
+    /// <summary>
+    /// Builds a map whose (listfile) advertises only <paramref name="visibleFiles"/>, while
+    /// <paramref name="hiddenFiles"/> are added to the archive under their real, standard
+    /// names but left out of the listfile entirely. This is the shape a real protected map
+    /// presents, the hidden files are present in the hash table and openable by that real
+    /// name, but load with FileName == null until something probes for that name, unlike
+    /// <see cref="Build(IReadOnlyDictionary{string, byte[]}, IReadOnlyList{byte[]})"/>'s
+    /// unnamedFiles, whose real archive name is a synthetic placeholder, not a name worth
+    /// probing for.
+    /// </summary>
+    public static byte[] BuildProtected(
+        IReadOnlyDictionary<string, byte[]> visibleFiles,
+        IReadOnlyDictionary<string, byte[]> hiddenFiles)
+    {
+        var builder = new MpqArchiveBuilder();
+        foreach (var (name, data) in visibleFiles)
+            builder.AddFile(MpqFile.New(new MemoryStream(data), name));
+        foreach (var (name, data) in hiddenFiles)
+            builder.AddFile(MpqFile.New(new MemoryStream(data), name));
+
+        var listfile = string.Join("\r\n", visibleFiles.Keys) + "\r\n";
+        builder.AddFile(MpqFile.New(new MemoryStream(Encoding.ASCII.GetBytes(listfile)), "(listfile)"));
+
+        using var mpq = new MemoryStream();
+        var options = new MpqArchiveCreateOptions { ListFileCreateMode = MpqFileCreateMode.None };
+        builder.SaveTo(mpq, options, leaveOpen: true);
+
+        using var outStream = new MemoryStream();
+        var header = new byte[0x200];
+        header[0] = (byte)'H'; header[1] = (byte)'M'; header[2] = (byte)'3'; header[3] = (byte)'W';
+        outStream.Write(header, 0, header.Length);
+        mpq.Position = 0;
+        mpq.CopyTo(outStream);
+        return outStream.ToArray();
+    }
 }

@@ -62,4 +62,64 @@ public class JassFunctionIndexTests
         Assert.Empty(JassFunctionIndex.Parse(""));
         Assert.Empty(JassFunctionIndex.Parse("call Foo()\n// nothing here\nendfunction"));
     }
+
+    [Fact]
+    public void Constant_function_is_indexed()
+    {
+        var jass = string.Join("\n",
+            "constant function Foo takes nothing returns integer",
+            "    return 42",
+            "endfunction");
+        var f = Assert.Single(JassFunctionIndex.Parse(jass));
+        Assert.Equal("Foo", f.Name);
+        Assert.Equal(1, f.StartLine);
+        Assert.Equal(3, f.EndLine);
+        Assert.Equal("constant function Foo takes nothing returns integer", f.Signature);
+    }
+
+    [Fact]
+    public void Endfunction_with_trailing_comment_closes_and_next_function_is_separate()
+    {
+        var jass = string.Join("\n",
+            "function First takes nothing returns nothing",
+            "    call DoNothing()",
+            "endfunction // trailing comment",
+            "function Second takes nothing returns nothing",
+            "endfunction   ");
+        var fns = JassFunctionIndex.Parse(jass);
+        Assert.Equal(2, fns.Count);
+        Assert.Equal("First", fns[0].Name);
+        Assert.Equal(1, fns[0].StartLine);
+        Assert.Equal(3, fns[0].EndLine);
+        Assert.Equal("Second", fns[1].Name);
+        Assert.Equal(4, fns[1].StartLine);
+        Assert.Equal(5, fns[1].EndLine);
+    }
+
+    [Fact]
+    public void Longer_identifier_starting_with_endfunction_does_not_close()
+    {
+        var jass = string.Join("\n",
+            "function Outer takes nothing returns nothing",
+            "    call endfunctionFoo()",
+            "    endfunctionFoo",
+            "endfunction");
+        var f = Assert.Single(JassFunctionIndex.Parse(jass));
+        Assert.Equal("Outer", f.Name);
+        Assert.Equal(4, f.EndLine);
+    }
+
+    [Fact]
+    public void Plain_function_still_works_and_interface_still_excluded()
+    {
+        var jass = string.Join("\n",
+            "function interface X takes nothing returns nothing",
+            "function Bar takes integer x returns integer",
+            "    return x",
+            "endfunction");
+        var f = Assert.Single(JassFunctionIndex.Parse(jass));
+        Assert.Equal("Bar", f.Name);
+        Assert.Equal(2, f.StartLine);
+        Assert.Equal(4, f.EndLine);
+    }
 }

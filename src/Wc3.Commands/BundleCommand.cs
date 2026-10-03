@@ -127,18 +127,16 @@ public static class BundleCommand
             var key = NormalizePath(path);
             if (!files.TryGetValue(key, out var file))
             {
-                var category = Categorize(path);
-                // Extensionless refs (the game appends .mdx/.mdl at load) categorize as
-                // "other". If a stored model file actually backs the ref, treat it as a
-                // model so the file itself AND its textures are captured, not dropped.
-                var modelEntry = category is "model" or "other"
-                    ? RenderModelCommand.FindModelEntry(doc, path)
-                    : null;
-                if (category == "other" && modelEntry is not null)
-                    category = "model";
-                bool present = category == "model"
-                    ? modelEntry is not null
-                    : FindFileEntry(doc, path) is not null;
+                // One universal resolver for every asset kind. It matches the file the map really
+                // stores whatever the reference spelling, a model, texture, icon or sound, with or
+                // without an extension, either slash, any case. The category comes from the RESOLVED
+                // file (so an extensionless "...\BTNFoo" that lands on ...BTNFoo.blp reads as an
+                // icon, and "...\Hero_Foo_Q" that lands on ....mp3 reads as a sound), and falls back
+                // to the reference spelling only when nothing in the map backs it (a base-game asset).
+                var entry = RenderModelCommand.FindAssetEntry(doc, path)
+                    ?? FindFileEntry(doc, path);
+                bool present = entry is not null;
+                var category = Categorize(entry?.FileName ?? path);
                 file = new BundleFile(path, category, present);
                 files[key] = file;
                 if (category == "model" && present) AddModelTextures(path);
@@ -152,7 +150,7 @@ public static class BundleCommand
             if (entry?.FileName is null) return;
             try
             {
-                var model = ModelParser.Parse(entry.RawBytes, entry.FileName);
+                var model = ModelParser.Parse(entry.CurrentBytes, entry.FileName);
                 foreach (var texture in model.Textures)
                 {
                     if (string.IsNullOrWhiteSpace(texture)
@@ -176,7 +174,13 @@ public static class BundleCommand
             {
                 var resolved = strings.Resolve(value.Trim());
                 if (resolved.Length > 0 && !resolved.StartsWith("TRIGSTR_", StringComparison.Ordinal))
+                {
                     stringSet.Add(resolved);
+                    // Record WHICH object wants this string. The list itself stays flat (the porter
+                    // inlines all of it), but a front end needs the owner to tell the root's own
+                    // tooltips apart from the closure's, exactly as it does for files.
+                    AddEdge(from, resolved, BundleStructure.StringVia);
+                }
             }
 
             // Cross-references are 4-char rawcodes or comma-separated lists of them —
@@ -210,13 +214,17 @@ public static class BundleCommand
         if (rootCustom) queue.Enqueue((rootRawcode, root));
         else diagnostics.Add($"root {kindWord} '{rootRawcode}' is a base-game {kindWord} — nothing custom to port");
 
-        while (queue.Count > 0)
+        void Drain()
         {
-            var (rawcode, merged) = queue.Dequeue();
-            var kind = nodes[rawcode].Kind; // enqueue always records the node first
-            foreach (var field in merged.Fields)
-                ScanField(kind, rawcode, field);
+            while (queue.Count > 0)
+            {
+                var (rawcode, merged) = queue.Dequeue();
+                var kind = nodes[rawcode].Kind; // enqueue always records the node first
+                foreach (var field in merged.Fields)
+                    ScanField(kind, rawcode, field);
+            }
         }
+        Drain();
 
         if (capped) diagnostics.Add($"node cap ({MaxNodes}) reached — dependency closure truncated");
 
@@ -228,7 +236,16 @@ public static class BundleCommand
             .OrderBy(rc => rc, StringComparer.Ordinal)
             .Prepend(rootRawcode)
             .ToList();
-        var functions = ResolveScriptClosure(doc, seedRawcodes, diagnostics, AddFileRef);
+        // Every custom object id in the map (any kind), so the script closure can tell a
+        // dispatcher branch guarded by ANOTHER hero (a foreign custom object) from one guarded
+        // by the object being ported, and refuse to follow the foreign branches.
+        var allCustomIds = mapIds.Values.SelectMany(s => s).ToHashSet();
+        var functions = ResolveScriptClosure(doc, seedRawcodes, allCustomIds, diagnostics, AddFileRef,
+            rc => AddObjectRef(rootRawcode, rc, "script closure"));
+        // The script pass may have carried objects referenced only in JASS (an ability added by
+        // UnitAddAbility, never on the hero). They are new nodes but not yet crawled for their own
+        // field references, so drain the queue once more to complete their closure.
+        Drain();
 
         return new UnitBundle(
             rootRawcode,
@@ -247,12 +264,52 @@ public static class BundleCommand
     /// a few thousand — beyond that the seed heuristic has almost certainly run away).</summary>
     private const int MaxFunctions = 4000;
 
+    /// <summary>Safety cap on objects carried because a handler spawns or grants them. A hero's kit
+    /// spawns on the order of tens of dummy types, so a far larger count means a shared dispatcher's
+    /// spawns leaked in, and the cap truncates loudly (a diagnostic) rather than running away.</summary>
+    private const int MaxScriptSpawnedObjects = 512;
+
+    /// <summary>Above this many DISTINCT objects granted or spawned by one function, that function is
+    /// a roster registry rather than a hero's handler, and its references say nothing about which
+    /// hero we are porting. Measured on Anime_WOS2, MyHeroIdInit grants 183 abilities onto pick
+    /// screen dummies while a real handler grants a handful, so the gap either side of this is
+    /// enormous. The existing branch-guard scoping already excludes a shared if/elseif dispatcher's
+    /// other-hero spawns, this catches the other shape, a flat loop over the whole roster.</summary>
+    private const int RosterRegistryGrantCount = 24;
+
+    /// <summary>Above this many DISTINCT asset paths named in one function, that function is a
+    /// shared asset bank (a pick screen, a hero guide, a random-pick roller) rather than one hero's
+    /// spell handler, so its models, textures and sounds belong to the whole roster. Measured on
+    /// Anime_WOS2, OnClick names 155 assets and RandomPick 30, while Asta's busiest own handler
+    /// names 12. Same shape and same justification as RosterRegistryGrantCount, and both are why a
+    /// port of one hero stops importing every hero's art.</summary>
+    internal const int SharedAssetBankCount = 24;
+
     private static readonly Regex Identifier = new(@"[A-Za-z_][A-Za-z0-9_]*", RegexOptions.Compiled);
 
     /// <summary>A double-quoted JASS string literal (captures the inner text). Used to pull
     /// asset paths out of spell handlers - AddSpecialEffect("war3mapImported\\x.mdx") and the
     /// like - so trigger-driven skill models get carried by the port.</summary>
     private static readonly Regex StringLiteral = new("\"([^\"]*)\"", RegexOptions.Compiled);
+
+    /// <summary>A single-quoted four-character rawcode literal, e.g. 'H001'. Used to read the
+    /// hero/ability id a dispatcher branch is guarded by ("if GetUnitTypeId(c) == 'H001'").</summary>
+    private static readonly Regex RawcodeLiteral = new("'([^']{4})'", RegexOptions.Compiled);
+
+    /// <summary>An ExecuteFunc("Name") native call, which runs the function named by the string.
+    /// The name sits inside a string literal, so it is never a normal call token and would be
+    /// missed by the call detector, dropping the function from the closure.</summary>
+    private static readonly Regex ExecuteFuncCall =
+        new("ExecuteFunc\\s*\\(\\s*\"([^\"]+)\"", RegexOptions.Compiled);
+
+    /// <summary>A runtime spawn or grant whose argument names an object by rawcode, the unit type of
+    /// a CreateUnit family call or the ability of a UnitAddAbility. Only the type or ability argument
+    /// of one of these is read, so a bare rawcode elsewhere on a line is never mistaken for a spawn.
+    /// The match ends at the opening paren, the argument list is read from there.</summary>
+    private static readonly Regex SpawnGrantCall = new(
+        @"\b(?:CreateUnit|CreateUnitAtLoc|CreateUnitAtLocSaveLast|CreateNUnitsAtLoc"
+        + @"|CreateNUnitsAtLocFacingLocBJ|UnitAddAbility|UnitAddAbilityBJ)\s*\(",
+        RegexOptions.Compiled);
 
     /// <summary>A global declaration with an initializer: "[constant] type Name = ...".</summary>
     private static readonly Regex GlobalInitializer =
@@ -273,10 +330,18 @@ public static class BundleCommand
     /// comments and string literals are not understood, so a rawcode or function name
     /// inside either still matches (over-inclusion, never under-inclusion). Lua maps
     /// are not analyzed.
+    ///
+    /// Dispatch scoping: these maps route every hero's spellcast through one shared function
+    /// shaped as "if GetUnitTypeId(c) == Raiden_ID then ...Raiden calls... endif; if ... ==
+    /// Natsu_ID then ...Natsu calls... endif; ...". A call that appears ONLY inside a branch
+    /// guarded by another object's rawcode (<paramref name="allCustomObjectIds"/> minus the
+    /// ported set) is that other hero's, not ours, so it is not followed. Branches guarded by
+    /// our own rawcodes, and unguarded calls, are followed normally. Without this, one shared
+    /// dispatcher pulls every hero's spell code (and assets) into every hero's bundle.
     /// </summary>
     private static IReadOnlyList<BundleFunction> ResolveScriptClosure(
-        MapDocument doc, IReadOnlyList<string> seedRawcodes, List<string> diagnostics,
-        Action<string, string, string> addFileRef)
+        MapDocument doc, IReadOnlyList<string> seedRawcodes, HashSet<int> allCustomObjectIds,
+        List<string> diagnostics, Action<string, string, string> addFileRef, Action<string> carryObject)
     {
         var entry = doc.GetFile("war3map.j") ?? doc.GetFile("scripts\\war3map.j");
         if (entry is null)
@@ -287,7 +352,7 @@ public static class BundleCommand
             return Array.Empty<BundleFunction>();
         }
 
-        var source = Encoding.UTF8.GetString(entry.RawBytes);
+        var source = ScriptText.GetString(entry.CurrentBytes);
         var index = JassFunctionIndex.Parse(source);
         if (index.Count == 0) return Array.Empty<BundleFunction>();
 
@@ -308,17 +373,41 @@ public static class BundleCommand
             for (int i = f.StartLine - 1; i < f.EndLine && i < lines.Length; i++)
                 inFunction[i] = true;
 
-        var aliases = new Dictionary<string, string>(StringComparer.Ordinal); // name → 'XXXX'
+        // ourIds = the rawcodes being ported (root + custom closure objects). A dispatch
+        // branch guarded by one of these is ours to follow; one guarded by any OTHER custom
+        // object (allCustomObjectIds minus these) belongs to a different hero.
+        var ourIds = seedRawcodes.Where(rc => rc.Length == 4)
+            .Select(rc => rc.FromRawcode()).ToHashSet();
+
+        var aliases = new Dictionary<string, string>(StringComparer.Ordinal);  // name → 'XXXX' (seed only)
+        var allAliases = new Dictionary<string, int>(StringComparer.Ordinal);  // name → rawcode id (every id global)
         for (int i = 0; i < lines.Length; i++)
         {
             if (inFunction[i]) continue;
             var line = StripLineComment(lines[i]);
+            var g = GlobalInitializer.Match(line);
+            if (g.Success && RawcodeLiteral.Match(line) is { Success: true } rl)
+                allAliases.TryAdd(g.Groups[1].Value, rl.Groups[1].Value.FromRawcode());
             foreach (var lit in literals)
             {
                 if (!line.Contains(lit, StringComparison.Ordinal)) continue;
                 var m = GlobalInitializer.Match(line);
                 if (m.Success) aliases.TryAdd(m.Groups[1].Value, lit);
             }
+        }
+
+        // True when an if/elseif condition dispatches on a foreign hero: it names a custom
+        // object rawcode (literal or *_ID alias) that is NOT one of ours. A condition that
+        // also names one of ours, or names no object at all, is not foreign.
+        bool IsForeignGuard(string condition)
+        {
+            var refs = new List<int>();
+            foreach (Match m in RawcodeLiteral.Matches(condition))
+                refs.Add(m.Groups[1].Value.FromRawcode());
+            foreach (Match m in Identifier.Matches(condition))
+                if (allAliases.TryGetValue(m.Value, out var rc)) refs.Add(rc);
+            if (refs.Count == 0 || refs.Any(ourIds.Contains)) return false;
+            return refs.Any(allCustomObjectIds.Contains);
         }
 
         // Body text (signature line included) with // line comments stripped.
@@ -331,30 +420,131 @@ public static class BundleCommand
             bodies[f.Name] = sb.ToString();
         }
 
-        // One token pass per body fills both the call graph and the alias mentions.
-        // Callees in body order: an identifier counts as a call when it names another
-        // indexed function and is either invoked ("Foo(") or passed by reference
-        // ("function Foo" — TriggerAddAction/TimerStart/Condition and friends).
+        // One line-by-line pass per function fills both the call graph and the alias mentions.
+        // A call counts when the identifier names another indexed function and is either invoked
+        // ("Foo(") or passed by reference ("function Foo" — TriggerAddAction/TimerStart/Condition
+        // and friends). Calls that appear ONLY inside a foreign-hero dispatch branch are dropped
+        // (guardStack tracks the open if/elseif branches; a call is followed only when no active
+        // branch is foreign). Alias mentions, which drive SEEDING, are collected regardless of
+        // guard so the dispatcher itself is still recognised as referencing our hero.
+        // Carry a hero's script-added abilities (e.g. a Q dash-back added by UnitAddAbility, never on
+        // the unit's ability list) by the arena's naming convention: each ability id sits in a global
+        // named after the hero (DarkShiki_ID, DarkShikiQ_ID, DarkShikiQ2_ID, ...). From the root's own
+        // id-global take the hero stem, then carry every custom sibling id-global's object. Scoped to
+        // the hero's own naming group, so it never pulls another hero's abilities (a closure-wide
+        // rawcode scan does — shared dispatchers name every hero, and each carried unit cascades).
+        if (seedRawcodes.Count > 0)
+        {
+            int rootId = seedRawcodes[0].FromRawcode();
+            var rootGlobal = allAliases.FirstOrDefault(kv => kv.Value == rootId).Key;
+            if (rootGlobal is not null)
+            {
+                string stem = rootGlobal.EndsWith("_ID", StringComparison.OrdinalIgnoreCase)
+                    ? rootGlobal[..^3] : rootGlobal;
+                var seedIdSet = seedRawcodes.Where(rc => rc.Length == 4)
+                    .Select(rc => rc.FromRawcode()).ToHashSet();
+                if (stem.Length >= 4)
+                    foreach (var kv in allAliases)
+                        if (kv.Key.StartsWith(stem, StringComparison.Ordinal)
+                            && allCustomObjectIds.Contains(kv.Value)
+                            && !seedIdSet.Contains(kv.Value))
+                            carryObject(kv.Value.ToRawcode());
+            }
+        }
+
         var callees = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var aliasHits = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        foreach (var (name, body) in bodies)
+        var assetRefs = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var spawnRefs = new Dictionary<string, List<string>>(StringComparer.Ordinal); // custom ids spawned/granted
+        foreach (var f in byName.Values)
         {
             var calls = new List<string>();
             var mentions = new List<string>();
+            var assetLits = new List<string>();  // asset paths named on our (non-foreign) lines
+            var spawns = new List<string>();     // custom object rawcodes spawned/granted on our lines
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            Match? prev = null;
-            foreach (Match m in Identifier.Matches(body))
+            var guardStack = new List<bool>(); // one entry per open 'if', true = foreign branch
+
+            for (int i = f.StartLine - 1; i < f.EndLine && i < lines.Length; i++)
             {
-                if (m.Value != name && byName.ContainsKey(m.Value)
-                    && (FollowedByOpenParen(body, m) || IsFunctionReference(body, prev, m))
-                    && seen.Add(m.Value))
-                    calls.Add(m.Value);
-                else if (aliases.ContainsKey(m.Value) && seen.Add("'" + m.Value))
-                    mentions.Add(m.Value);
-                prev = m;
+                var line = StripLineComment(lines[i]);
+                var head = line.TrimStart();
+
+                // Adjust the branch-guard stack from the leading control keyword BEFORE scanning
+                // this line's calls (so an inline "then call Foo()" is judged under its guard).
+                if (StartsWithWord(head, "elseif"))
+                {
+                    if (guardStack.Count > 0) guardStack[^1] = IsForeignGuard(line);
+                }
+                else if (StartsWithWord(head, "else"))
+                {
+                    if (guardStack.Count > 0) guardStack[^1] = false; // else branch is not a foreign hero
+                }
+                else if (StartsWithWord(head, "endif"))
+                {
+                    if (guardStack.Count > 0) guardStack.RemoveAt(guardStack.Count - 1);
+                }
+                else if (StartsWithWord(head, "if"))
+                {
+                    guardStack.Add(IsForeignGuard(line));
+                }
+
+                bool foreign = guardStack.Contains(true);
+
+                Match? prev = null;
+                foreach (Match m in Identifier.Matches(line))
+                {
+                    if (m.Value != f.Name && byName.ContainsKey(m.Value)
+                        && (FollowedByOpenParen(line, m) || IsFunctionReference(line, prev, m)))
+                    {
+                        if (!foreign && seen.Add(m.Value)) calls.Add(m.Value);
+                    }
+                    else if (aliases.ContainsKey(m.Value) && seen.Add("'" + m.Value))
+                    {
+                        mentions.Add(m.Value);
+                    }
+                    prev = m;
+                }
+
+                // ExecuteFunc("Name") dispatches to a function by name, so the target sits in a
+                // string literal and is not a normal call token. Feed it into the same call set,
+                // under the same branch-guard scoping (a foreign branch's dispatch is not ours).
+                if (!foreign)
+                    foreach (Match ef in ExecuteFuncCall.Matches(line))
+                    {
+                        var target = ef.Groups[1].Value;
+                        if (target != f.Name && byName.ContainsKey(target) && seen.Add(target))
+                            calls.Add(target);
+                    }
+
+                // Asset paths (AddSpecialEffect/MakeSound literals) are only ours when the line is
+                // not inside a foreign hero's dispatch branch. A shared death or effect dispatcher
+                // lists every hero's models/sounds in elseif branches, so without this scoping the
+                // bundle drags all of them in.
+                if (!foreign)
+                    foreach (Match sl in StringLiteral.Matches(line))
+                    {
+                        var path = AssetPathCandidates.Unescape(sl.Groups[1].Value);
+                        if (LooksLikeAssetPath(path) && seen.Add("$" + path)) assetLits.Add(path);
+                    }
+
+                // Objects the handler SPAWNS (CreateUnit and kin) or GRANTS (UnitAddAbility) at
+                // runtime, named by rawcode in the call's argument, not in the hero's object data.
+                // Read only the type/ability argument of the spawn/grant call, and only on our
+                // (non-foreign) branches, so a shared dispatcher's other-hero spawns stay out.
+                if (!foreign)
+                    foreach (Match sg in SpawnGrantCall.Matches(line))
+                    {
+                        var args = CallArgs(line, sg.Index + sg.Length - 1);
+                        foreach (int rc in ArgRawcodeIds(args, allAliases))
+                            if (allCustomObjectIds.Contains(rc) && seen.Add("@" + rc))
+                                spawns.Add(rc.ToRawcode());
+                    }
             }
-            callees[name] = calls;
-            aliasHits[name] = mentions;
+            callees[f.Name] = calls;
+            aliasHits[f.Name] = mentions;
+            assetRefs[f.Name] = assetLits;
+            spawnRefs[f.Name] = spawns;
         }
 
         // Seeds: functions referencing any ported rawcode — as a literal or via an alias.
@@ -386,18 +576,128 @@ public static class BundleCommand
         }
         if (capped) diagnostics.Add($"function cap ({MaxFunctions}) reached — script closure truncated");
 
+        // Doer-dummy recovery. A carried handler often READS a per-player unit array (unit array
+        // udg_X, indexed by a player slot) whose units are created in a SETUP function the closure
+        // never reached, so those dummy types are invisible to the spawn harvest above. Find the one
+        // setup function that assigns the array by creating units and carry it, so the harvest then
+        // picks up the dummies it makes. Strictly gated and it DECLINES rather than guesses, because
+        // this rule is inferred from a single map and a wrong guess on another of the user's maps is
+        // worse than admitting it does not know.
+        var unitArrays = Regex.Matches(source, @"^[ \t]*unit[ \t]+array[ \t]+([A-Za-z_][A-Za-z0-9_]*)",
+                RegexOptions.Multiline)
+            .Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+        if (unitArrays.Count > 0)
+        {
+            bool Reads(string body, string arr) => Regex.IsMatch(body, @"\b" + Regex.Escape(arr) + @"\s*\[");
+            bool Assigns(string body, string arr) =>
+                Regex.IsMatch(body, @"\bset\s+" + Regex.Escape(arr) + @"\s*\[");
+            string? Body(string n) => bodies.TryGetValue(n, out var b) ? b : null;
+
+            // An acceptable setup function, takes a player, populates the array by creating units,
+            // calls only natives, BJs or already-carried helpers, and does not branch on a rawcode
+            // (which would mark it a per-hero dispatcher rather than a shared per-player setup).
+            bool Qualifies(JassFunction f, string body) =>
+                Regex.IsMatch(f.Signature, @"\btakes\b.*\bplayer\b")
+                && (SpawnGrantCall.IsMatch(body) || body.Contains("bj_lastCreatedUnit", StringComparison.Ordinal))
+                && !callees[f.Name].Any(c => byName.ContainsKey(c) && !reasons.ContainsKey(c))
+                && !body.Split('\n').Any(l =>
+                    (StartsWithWord(l.TrimStart(), "if") || StartsWithWord(l.TrimStart(), "elseif"))
+                    && RawcodeLiteral.IsMatch(l));
+
+            var readByCarried = unitArrays.Where(a =>
+                reasons.Keys.Any(n => Body(n) is { } b && Reads(b, a))).ToList();
+            int declined = 0;
+            foreach (var arr in readByCarried)
+            {
+                if (reasons.Keys.Any(n => Body(n) is { } b && Assigns(b, arr))) continue; // already populated
+                var assigners = byName.Values
+                    .Where(f => !reasons.ContainsKey(f.Name) && Body(f.Name) is { } b
+                                && Assigns(b, arr) && Qualifies(f, b))
+                    .Select(f => f.Name).ToList();
+                if (assigners.Count == 1)
+                    reasons[assigners[0]] = $"populates {arr}, read by a carried handler";
+                else
+                    declined++; // zero or several qualify, decline rather than guess
+            }
+            if (declined > 0)
+                diagnostics.Add($"{declined} per-player unit array(s) read by the closure are populated by a "
+                    + "setup function that could not be carried safely (none qualified, or several did), so a "
+                    + "few of their spawned units may be absent (prune noise, or add them by hand)");
+        }
+
         // Custom skills are usually trigger-driven: the visual effect models live as string
         // literals inside the spell handlers (AddSpecialEffect("war3mapImported\\x.mdx"), dummy
         // unit model swaps, ...), NOT in the ability object fields. Scan every closure function
         // body for asset-path literals so those models/textures/sounds port along with the skill.
+        int assetBanks = 0, bankAssets = 0;
         foreach (var name in reasons.Keys)
-            foreach (Match sl in StringLiteral.Matches(bodies[name]))
+        {
+            // A shared asset bank names every hero's art in one body (a pick screen, a guide), so
+            // its paths attribute to nobody. Skipping it is what stops a port of one hero from
+            // importing the whole roster's models and sounds. An asset a real handler also names is
+            // still carried by that handler.
+            if (assetRefs[name].Count > SharedAssetBankCount)
             {
-                // Unescape JASS string escapes: a path in source is "war3mapImported\\x.mdx"
-                // (doubled backslashes) but the map stores it single-slashed, so match that.
-                var path = sl.Groups[1].Value.Replace(@"\\", @"\");
-                if (LooksLikeAssetPath(path)) addFileRef(name, path, "script");
+                assetBanks++;
+                bankAssets += assetRefs[name].Count;
+                continue;
             }
+            foreach (var path in assetRefs[name])
+                addFileRef(name, path, "script");
+        }
+        if (assetBanks > 0)
+            diagnostics.Add($"skipped {bankAssets} asset path(s) in {assetBanks} shared asset bank "
+                + $"function(s) (over {SharedAssetBankCount} distinct assets named in one body, so "
+                + "they belong to the whole roster rather than this unit)");
+
+        // Objects a carried handler spawns (CreateUnit and kin) or grants (UnitAddAbility) at runtime.
+        // The data-driven closure never reaches these (only the SCRIPT names them, by rawcode), so
+        // without this a ported spell's spawned dummies and granted sub-abilities are simply absent
+        // and it does nothing. This carries generously and reports the cost, rather than guessing.
+        //
+        // On a tightly-coupled arena the carried FUNCTION set contains other heroes' handlers too (a
+        // shared flat death or kill dispatcher calls every hero's), so some carried objects may belong
+        // to another hero's kit. Every static rule tried to separate them either dropped one of THIS
+        // hero's own handlers (breaking an ability, the worse failure) or still leaked, because shared
+        // objects mean no rawcode test tells the heroes apart. So the deliberate choice is to over-carry
+        // (bloat, which the map size budget tolerates) and report it loudly, leaving deliberate pruning
+        // to the user. The count below is that report.
+        var spawned = new SortedSet<string>(StringComparer.Ordinal);
+        int registries = 0, registryGrants = 0;
+        foreach (var name in reasons.Keys)
+        {
+            // A roster registry grants every hero's abilities onto pick screen dummies in one flat
+            // loop, so its grants attribute to nobody. Skipping it is what stops a port of one hero
+            // from carrying the whole roster. Anything a real handler grants still comes through,
+            // and a rawcode this registry shares with a real handler is still carried by that
+            // handler, so the exclusion cannot cost the hero an ability it actually uses.
+            if (spawnRefs[name].Count > RosterRegistryGrantCount)
+            {
+                registries++;
+                registryGrants += spawnRefs[name].Count;
+                continue;
+            }
+            foreach (var rc in spawnRefs[name])
+                spawned.Add(rc);
+        }
+        if (registries > 0)
+            diagnostics.Add($"skipped {registryGrants} grant(s) in {registries} roster registry "
+                + $"function(s) (over {RosterRegistryGrantCount} distinct objects granted in one body, "
+                + "so they belong to the whole roster rather than this unit)");
+
+        int carried = 0;
+        foreach (var rc in spawned)
+        {
+            if (carried >= MaxScriptSpawnedObjects) break;
+            carryObject(rc);
+            carried++;
+        }
+        if (carried > 0)
+            diagnostics.Add($"carried {carried} object(s) a handler spawns or grants at runtime; "
+                + "on a tightly-coupled map some may belong to another hero's kit (over-carry, safe to prune)");
+        if (spawned.Count > carried)
+            diagnostics.Add($"script-spawned object cap ({MaxScriptSpawnedObjects}) reached, "
+                + $"{spawned.Count - carried} more spawned/granted object(s) not carried");
 
         return reasons
             .Select(kv => new BundleFunction(kv.Key, byName[kv.Key].StartLine, byName[kv.Key].EndLine, kv.Value))
@@ -405,11 +705,50 @@ public static class BundleCommand
             .ToList();
     }
 
+    /// <summary>True when <paramref name="s"/> begins with the JASS keyword <paramref name="word"/>
+    /// as a whole word (the next character is not part of an identifier), so "if" matches "if (x)"
+    /// but not "iffy" and "else" does not swallow "elseif".</summary>
+    private static bool StartsWithWord(string s, string word)
+    {
+        if (!s.StartsWith(word, StringComparison.Ordinal)) return false;
+        if (s.Length == word.Length) return true;
+        char c = s[word.Length];
+        return !(char.IsLetterOrDigit(c) || c == '_');
+    }
+
     private static bool FollowedByOpenParen(string body, Match m)
     {
         int i = m.Index + m.Length;
         while (i < body.Length && (body[i] == ' ' || body[i] == '\t')) i++;
         return i < body.Length && body[i] == '(';
+    }
+
+    /// <summary>The text of a call's argument list, from the opening paren at <paramref name="openParen"/>
+    /// to its matching close (nested parens balanced, e.g. the Player(0) inside CreateUnit). Truncates
+    /// at end of line when the call spans lines, which is fine, the type or ability argument comes first.</summary>
+    private static string CallArgs(string line, int openParen)
+    {
+        int depth = 0;
+        var sb = new StringBuilder();
+        for (int i = openParen; i < line.Length; i++)
+        {
+            char c = line[i];
+            if (c == '(') { depth++; if (depth == 1) continue; }
+            else if (c == ')') { depth--; if (depth == 0) break; }
+            sb.Append(c);
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>The object ids named in a call's argument text, as rawcode literals ('XXXX') or as an
+    /// id global initialized with one. For a spawn or grant call only the type or ability argument is a
+    /// rawcode, so this returns exactly the spawned or granted object(s), never a coordinate or player.</summary>
+    private static IEnumerable<int> ArgRawcodeIds(string args, Dictionary<string, int> allAliases)
+    {
+        foreach (Match rl in RawcodeLiteral.Matches(args))
+            yield return rl.Groups[1].Value.FromRawcode();
+        foreach (Match id in Identifier.Matches(args))
+            if (allAliases.TryGetValue(id.Value, out var rc)) yield return rc;
     }
 
     /// <summary>True when the matched identifier is a "function Foo" code reference —
@@ -467,6 +806,13 @@ public static class BundleCommand
 
     private static string NormalizePath(string path) => path.Replace('/', '\\').ToLowerInvariant();
 
-    private static MapFileEntry? FindFileEntry(MapDocument doc, string path) =>
-        doc.GetFile(path) ?? doc.GetFile(path.Replace('/', '\\')) ?? doc.GetFile(path.Replace('\\', '/'));
+    // Requires non-empty bytes so discovery agrees with FindAssetEntry and with the port copy,
+    // which skips a zero-length source file. Otherwise a zero-byte import reads present here but
+    // is skipped at copy time, a false "present".
+    private static MapFileEntry? FindFileEntry(MapDocument doc, string path)
+    {
+        foreach (var p in new[] { path, path.Replace('/', '\\'), path.Replace('\\', '/') }.Distinct())
+            if (doc.GetFile(p) is { CurrentBytes.Length: > 0 } entry) return entry;
+        return null;
+    }
 }

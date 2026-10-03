@@ -87,17 +87,34 @@ public class TriggerReadCommandTests
 
     private const string CustomBody = "function Foo takes nothing returns nothing\nendfunction";
 
-    /// <summary>One wct body per TriggerDefinition in wtg order: empty for the GUI
-    /// trigger (ordinal 0), real code for the custom-text one (ordinal 1).</summary>
-    private static byte[] CustomTextBytes()
+    /// <summary>
+    /// The wct slots for <see cref="NewTriggers"/>, which is a SUB-VERSION tree.
+    ///
+    /// This used to lay out one slot per definition, empty for the GUI trigger and code for the
+    /// custom-text one. That is the layout of a map with NO sub-version. It matched the reader at
+    /// the time and matched no real map. Measured across the whole library, a sub-version map gives
+    /// a slot only to custom-text definitions and has zero empty slots (six versions of Anime_WOS2
+    /// and three of GGGA agree), while a map without one gives every definition a slot and leaves
+    /// the GUI ones empty (RATankD_516.2, 606 slots, 42 empty for 42 GUI triggers). See
+    /// WctPairing and WctPairingRuleSweep.
+    ///
+    /// So this now builds the sub-version layout, one slot holding the custom-text body.
+    /// <see cref="ClassicCustomTextBytes"/> covers the other branch.
+    /// </summary>
+    private static byte[] CustomTextBytes() => WctBytes(CustomBody + "\0");
+
+    /// <summary>The no-sub-version layout: a slot for every definition, empty for the GUI one.</summary>
+    private static byte[] ClassicCustomTextBytes() => WctBytes(string.Empty, CustomBody + "\0");
+
+    private static byte[] WctBytes(params string[] bodies)
     {
         var wct = new MapCustomTextTriggers(MapCustomTextTriggersFormatVersion.v1, null)
         {
             GlobalCustomScriptComment = string.Empty,
             GlobalCustomScriptCode = new CustomTextTrigger { Code = string.Empty },
         };
-        wct.CustomTextTriggers.Add(new CustomTextTrigger { Code = string.Empty });
-        wct.CustomTextTriggers.Add(new CustomTextTrigger { Code = CustomBody + "\0" });
+        foreach (var b in bodies)
+            wct.CustomTextTriggers.Add(new CustomTextTrigger { Code = b });
 
         using var ms = new MemoryStream();
         using (var w = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
@@ -149,6 +166,31 @@ public class TriggerReadCommandTests
         var cust = model.Triggers.Single(t => t.Id == 3);
         Assert.True(cust.IsCustomText);
         Assert.Equal(CustomBody, cust.CustomText); // trailing NUL trimmed
+
+        // And the GUI trigger ahead of it reports no body, rather than swallowing slot 0.
+        Assert.Null(model.Triggers.Single(t => t.Id == 2).CustomText);
+    }
+
+    [Fact]
+    public void A_map_with_no_sub_version_pairs_bodies_one_per_definition()
+    {
+        // The other branch of the pairing rule, where the GUI trigger ahead of the custom-text one
+        // owns an empty slot of its own, so the code sits at slot 1 rather than slot 0. Reading
+        // this map with the sub-version rule would report no script at all.
+        var classic = (MapTriggers)Activator.CreateInstance(typeof(MapTriggers), Fmt, null)!;
+        foreach (var item in NewTriggers().TriggerItems)
+            classic.TriggerItems.Add(item);
+
+        var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            [TriggerReadCommand.TriggersFileName] = TriggerCommand.Serialize(classic),
+            [TriggerReadCommand.CustomTextFileName] = ClassicCustomTextBytes(),
+        }));
+
+        var model = TriggerReadCommand.GetTriggers(doc);
+        var cust = model.Triggers.Single(t => t.IsCustomText);
+        Assert.Equal(CustomBody, cust.CustomText);
+        Assert.Null(model.Triggers.Single(t => !t.IsCustomText).CustomText);
     }
 
     [Fact]

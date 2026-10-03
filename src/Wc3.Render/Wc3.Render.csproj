@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Wc3.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Wc3.MapDocument\Wc3.MapDocument.csproj" />
     <ProjectReference Include="..\Wc3.Modeling\Wc3.Modeling.csproj" />
     <ProjectReference Include="..\Wc3.GameData\Wc3.GameData.csproj" />

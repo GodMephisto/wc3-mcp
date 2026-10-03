@@ -171,6 +171,54 @@ public static class ObjectKinds
         return display.Length > 0;
     }
 
+    /// <summary>
+    /// The legal values for a field, with their display names, preferring the enumeration the game
+    /// ships over anything inferred.
+    /// </summary>
+    /// <remarks>
+    /// Two sources, and the order matters. UnitEditorData.txt states the closed set for an
+    /// enumerated type together with the names the World Editor shows. Only when the field's type
+    /// names no such section does this fall back to collecting the distinct values the base data
+    /// happens to use, which is a guess at a closed set and is wrong in two directions: it misses
+    /// legal values no stock object uses, and it yields raw tokens, so a team colour field reads
+    /// "-1, 0, 1, 2" instead of "None, Red, Blue, Teal".
+    /// Empty means the field is genuinely free text or a number.
+    /// </remarks>
+    internal static IReadOnlyList<EnumOption> FieldOptions(
+        GameDataContext? ctx, ObjectKind kind, string fieldCode, out string type, out bool isList)
+    {
+        type = "";
+        isList = false;
+        if (ctx is null) return Array.Empty<EnumOption>();
+
+        int colon = fieldCode.IndexOf(':');
+        var code = colon < 0 ? fieldCode : fieldCode[..colon];
+
+        if (FieldMeta(ctx, kind) is { } meta && meta.TryGet(code, out var fm)) type = fm.Type;
+        isList = type.EndsWith("List", StringComparison.OrdinalIgnoreCase);
+
+        // The authoritative closed set, when the type names one.
+        if (ctx.EditorEnums.TryGet(type, out var shipped) && shipped.Count > 0)
+            return shipped;
+
+        // Otherwise fall back to observation, and label each value with itself.
+        TryGetFieldOptions(ctx, kind, fieldCode, out _, out _, out var observed);
+        return observed.Select(v => new EnumOption(v, v)).ToList();
+    }
+
+    /// <summary>The kind's field metadata (the *MetaData.slk view), or null with no game data.
+    /// One accessor so the form builder and the option lookup cannot read different tables.</summary>
+    internal static ObjectMetadata? FieldMeta(GameDataContext? ctx, ObjectKind kind) => ctx switch
+    {
+        null => null,
+        _ => kind switch
+        {
+            ObjectKind.Unit => ctx.Units.FieldMetadata,
+            ObjectKind.Ability => ctx.Abilities.FieldMetadata,
+            _ => SimpleStore(ctx, kind).Metadata,
+        },
+    };
+
     private static ObjectDataStore SimpleStore(GameDataContext ctx, ObjectKind kind) => kind switch
     {
         ObjectKind.Item => ctx.Items,

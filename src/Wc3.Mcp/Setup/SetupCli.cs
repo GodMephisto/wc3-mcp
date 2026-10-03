@@ -14,14 +14,13 @@ public static class SetupCli
         "install", "uninstall", "config", "doctor", "clients", "help", "--help", "-h", "/?", "version", "--version",
     };
 
-    private const string DefaultName = "wc3";
-
     /// <summary>Runs a setup command. Exit 0 succeeded, 1 something was refused or failed, 2 bad usage.</summary>
-    public static int Run(string[] args, SetupEnvironment env, TextWriter output, ServerEntry? entryOverride = null)
+    public static int Run(string[] args, SetupEnvironment env, TextWriter output, SetupProduct product, ServerEntry? entryOverride = null)
     {
+        if (args.Length == 0) args = new[] { "help" };
         var verb = args[0].ToLowerInvariant();
         var rest = args.Skip(1).ToList();
-        string name = TakeOption(rest, "--name") ?? DefaultName;
+        string name = TakeOption(rest, "--name") ?? product.DefaultServerName;
         string? gameDir = TakeOption(rest, "--game-dir");
         bool all = rest.Remove("--all");
         bool noPath = rest.Remove("--no-path");
@@ -30,25 +29,25 @@ public static class SetupCli
         switch (verb)
         {
             case "help" or "--help" or "-h" or "/?":
-                output.Write(Help);
+                output.Write(Help(product));
                 return 0;
             case "version" or "--version":
-                output.WriteLine($"wc3-mcp {Wc3McpServer.Version}");
+                output.WriteLine($"{product.Command} {product.Version}");
                 return 0;
             case "clients":
                 return Clients(env, output, name);
             case "doctor":
-                return Doctor(env, output, name);
+                return Doctor(env, output, name, product);
         }
 
         if (rest.Any(r => r.StartsWith('-')))
         {
-            output.WriteLine($"unknown option {rest.First(r => r.StartsWith('-'))}. Run wc3-mcp help.");
+            output.WriteLine($"unknown option {rest.First(r => r.StartsWith('-'))}. Run {product.Command} help.");
             return 2;
         }
 
         var entry = entryOverride is null
-            ? ServerEntry.ForThisProcess(name, gameDir)
+            ? ServerEntry.ForThisProcess(name, gameDir, product.ServeArgs)
             : entryOverride with { Name = name, GameDir = gameDir ?? entryOverride.GameDir };
 
         List<ClientTarget> targets;
@@ -57,15 +56,15 @@ public static class SetupCli
             targets = ClientTargets.All.Where(t => t.IsDetected(env)).ToList();
             if (targets.Count == 0)
             {
-                if (verb == "install" && !noPath) AddToPath(entry, env, output);
+                if (verb == "install" && !noPath) AddToPath(entry, env, output, product);
                 if (verb == "uninstall") RemoveFromPath(entry, env, output);
-                output.WriteLine("No supported MCP client was found on this PC. Run wc3-mcp clients to see the list.");
+                output.WriteLine("No supported MCP client was found on this PC. Run {product.Command} clients to see the list.");
                 return 1;
             }
         }
         else if (rest.Count == 0)
         {
-            output.WriteLine($"Name a client or pass --all. For example, wc3-mcp {verb} cursor");
+            output.WriteLine($"Name a client or pass --all. For example, {product.Command} {verb} cursor");
             output.WriteLine();
             Clients(env, output, name);
             return 2;
@@ -84,9 +83,8 @@ public static class SetupCli
             }
         }
 
-        // So that plain "wc3-mcp" works in a new terminal however the exe got here, unzipped,
-        // built from source or installed by install.ps1.
-        if (verb == "install" && !noPath) AddToPath(entry, env, output);
+        // So that the program works by name in a new terminal however the exe got here.
+        if (verb == "install" && !noPath) AddToPath(entry, env, output, product);
         if (verb == "uninstall" && all) RemoveFromPath(entry, env, output);
 
         int failures = 0;
@@ -107,15 +105,17 @@ public static class SetupCli
 
     /// <summary>The folder to put on PATH, or null when this runs under dotnet rather than as the exe.</summary>
     private static string? ExeFolder(ServerEntry entry) =>
-        entry.Args.Count == 0 ? Path.GetDirectoryName(entry.Command) : null;
+        Path.GetFileNameWithoutExtension(entry.Command).Equals("dotnet", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : Path.GetDirectoryName(entry.Command);
 
-    private static void AddToPath(ServerEntry entry, SetupEnvironment env, TextWriter output)
+    private static void AddToPath(ServerEntry entry, SetupEnvironment env, TextWriter output, SetupProduct product)
     {
         if (ExeFolder(entry) is not { } folder) return;
         var path = env.GetUserPath();
         if (SetupEnvironment.PathContains(path, folder)) return;
         env.SetUserPath(string.IsNullOrEmpty(path) ? folder : path.TrimEnd(';') + ";" + folder);
-        output.WriteLine($"Added {folder} to your user PATH, so wc3-mcp works in any new terminal. (--no-path skips this.)");
+        output.WriteLine($"Added {folder} to your user PATH, so {product.Command} works in any new terminal. (--no-path skips this.)");
     }
 
     private static void RemoveFromPath(ServerEntry entry, SetupEnvironment env, TextWriter output)
@@ -224,11 +224,11 @@ public static class SetupCli
         return 0;
     }
 
-    private static int Doctor(SetupEnvironment env, TextWriter output, string name)
+    private static int Doctor(SetupEnvironment env, TextWriter output, string name, SetupProduct product)
     {
         int problems = 0;
         var exe = Environment.ProcessPath ?? "(unknown)";
-        output.WriteLine($"wc3-mcp {Wc3McpServer.Version}");
+        output.WriteLine($"{product.Command} {product.Version}");
         output.WriteLine($"  program      {exe}");
 
         var casc = Path.Combine(AppContext.BaseDirectory, "CascLib.dll");
@@ -285,30 +285,30 @@ public static class SetupCli
     private static string Indent(string text) =>
         string.Join(Environment.NewLine, text.Replace("\r\n", "\n").Split('\n').Select(l => "    " + l));
 
-    private const string Help = """
-        wc3-mcp, an MCP server for Warcraft III maps.
+    private static string Help(SetupProduct p) => $"""
+        {p.Command}, setup for the Warcraft III map MCP server.
 
-        Run with no arguments, it is the MCP server (stdio). Your AI app starts it this way.
+        {(p.ServeArgs.Count == 0 ? "Run with no arguments, it is the MCP server (stdio)." : $"'{p.Command} serve' is the MCP server (stdio).")} Your AI app starts it this way.
 
         Setting up an AI app
-          wc3-mcp install --all            set up every supported app found on this PC
-          wc3-mcp install cursor vscode    set up the apps named
-          wc3-mcp uninstall --all          remove it from every app and from PATH
-          wc3-mcp config <app>             print the settings to paste by hand
-          wc3-mcp clients                  list supported apps and whether each is set up
-          wc3-mcp doctor                   check the install, the game folder and the apps
+          {p.Command} install --all            set up every supported app found on this PC
+          {p.Command} install cursor vscode    set up the apps named
+          {p.Command} uninstall --all          remove it from every app and from PATH
+          {p.Command} config <app>             print the settings to paste by hand
+          {p.Command} clients                  list supported apps and whether each is set up
+          {p.Command} doctor                   check the install, the game folder and the apps
 
         Options
           --game-dir <folder>   the Warcraft III folder, when it is not found automatically
-          --name <name>         the server name in the app (default wc3)
+          --name <name>         the server name in the app (default {p.DefaultServerName})
           --no-path             install leaves your user PATH alone (by default it adds
-                                this folder once, so plain wc3-mcp works in new terminals)
+                                this folder once, so the program works in new terminals)
 
         Apps
           claude-code, claude-desktop, cursor, vscode, windsurf, gemini, codex, cline, lmstudio, zed
 
-        Every edited settings file is first copied to NAME.wc3-mcp.bak beside it. A file with comments
-        is never rewritten. The settings to paste are printed instead.
+        Every edited settings file is first copied to NAME{ConfigFile.BackupSuffix} beside it. A file with
+        comments is never rewritten. The settings to paste are printed instead.
 
         """;
 }

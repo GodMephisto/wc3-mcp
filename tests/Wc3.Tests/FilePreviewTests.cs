@@ -61,7 +61,7 @@ public class FilePreviewTests
     [Trait("Category", "Corpus")]
     public void Real_blp_icon_decodes_to_a_png()
     {
-        string path = TestCorpus.Map(@"Anime_WOS2_0.25c1.w3x");
+        string path = CorpusMap.PathOrEmpty;
         if (!File.Exists(path)) return;
         var doc = MapDocument.Load(path);
         var blp = doc.Files.FirstOrDefault(f => f.FileName?.EndsWith(".blp", StringComparison.OrdinalIgnoreCase) == true);

@@ -18,7 +18,7 @@ public sealed record FileState(string? Name, int SizeBytes, bool IsDirty, bool H
 /// Raw and text file editing on a <see cref="MapDocument"/>, byte-faithful by construction:
 /// writes go through <see cref="MapDocument.AddOrReplaceRawFile"/> (which stages the payload
 /// as <c>OverrideBytes</c> and marks the entry dirty; <c>RawBytes</c> stays the immutable
-/// original), and every read helper resolves <c>OverrideBytes ?? RawBytes</c> so a read
+/// original), and every read helper resolves <see cref="MapFileEntry.CurrentBytes"/> so a read
 /// always reflects a prior write in the same session.
 ///
 /// Contracts:
@@ -122,7 +122,10 @@ public static class FileEditCommand
 
     /// <summary>The one rule that keeps reads honest: a pending replacement
     /// (OverrideBytes) wins over the immutable original (RawBytes).</summary>
-    private static byte[] CurrentBytes(MapFileEntry entry) => entry.OverrideBytes ?? entry.RawBytes;
+    /// <remarks>Kept as a one-line forwarder so this file's many call sites read the same
+    /// as they always did. The decision itself now lives on the entry, where it is made
+    /// once instead of at each of the 67 places that used to make it by hand.</remarks>
+    private static byte[] CurrentBytes(MapFileEntry entry) => entry.CurrentBytes;
 
     private static FileState ToState(MapFileEntry f) =>
         new(f.FileName, CurrentBytes(f).Length, f.IsDirty, f.OverrideBytes is not null);

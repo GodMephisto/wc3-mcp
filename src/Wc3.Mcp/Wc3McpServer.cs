@@ -22,13 +22,12 @@ public static class Wc3McpServer
     {
         var options = new JsonSerializerOptions(McpJsonUtilities.DefaultOptions);
         options.Converters.Add(new JsonStringEnumConverter());
+        // A placed unit's or doodad's scale is a tuple, which printed as {} (see the converter).
+        options.Converters.Add(new Wc3.Commands.ScaleJsonConverter());
         return options;
     }
 
-    /// <summary>The release version, reported to clients and by wc3-mcp version.</summary>
-    public const string Version = "0.1.3";
-
-    /// <summary>Server options with every tool registered.</summary>
+    /// <summary>Server options with every wc3ctl tool registered.</summary>
     public static McpServerOptions CreateOptions()
     {
         var tools = new McpServerPrimitiveCollection<McpServerTool>();
@@ -36,7 +35,7 @@ public static class Wc3McpServer
             tools.Add(tool);
         return new McpServerOptions
         {
-            ServerInfo = new Implementation { Name = "wc3-mcp", Version = Version },
+            ServerInfo = new Implementation { Name = ServerIdentity.ProductId, Version = ServerIdentity.Version },
             ToolCollection = tools,
         };
     }

@@ -27,8 +27,9 @@ public static class PortCommand
         "If you open and SAVE this map in the World Editor, it will regenerate war3map.j and DELETE the ported logic. " +
         "Keep edits in this tool, or port the trigger tree manually, until wtg/wct porting exists.";
 
-    /// <summary>Neutral form of one object-data modification (Level = 0 for non-leveled).</summary>
-    private sealed record PortMod(int Level, int Id, ObjectDataType Type, object? Value);
+    /// <summary>Neutral form of one object-data modification (Level and Pointer are 0 for
+    /// non-leveled kinds, Pointer is the data column of a leveled or variation field).</summary>
+    private sealed record PortMod(int Level, int Id, ObjectDataType Type, object? Value, int Pointer);
 
     /// <summary>Neutral form of one object entry across the three War3Net shapes.</summary>
     private sealed class PortGroup
@@ -44,9 +45,10 @@ public static class PortCommand
     /// (they already exist in any target). Returns a full report of what was done.
     /// </summary>
     public static PortResult PortUnit(
-        MapDocument source, UnitBundle bundle, MapDocument target, bool includeScript = true)
+        MapDocument source, UnitBundle bundle, MapDocument target, bool includeScript = true,
+        bool synthDispatch = false, bool bootstrapState = false)
         => PortCore(source, bundle, target, RawcodeAllocator.UsedRawcodes(target),
-            alreadyPorted: null, pendingCopies: null, includeScript, apply: true);
+            alreadyPorted: null, pendingCopies: null, includeScript, apply: true, synthDispatch, bootstrapState);
 
     /// <summary>
     /// Computes exactly the report <see cref="PortUnit"/> would produce — the rawcode
@@ -56,11 +58,12 @@ public static class PortCommand
     /// so preview and port cannot drift.
     /// </summary>
     public static PortResult PreviewPort(
-        MapDocument source, UnitBundle bundle, MapDocument target, bool includeScript = true)
+        MapDocument source, UnitBundle bundle, MapDocument target, bool includeScript = true,
+        bool synthDispatch = false, bool bootstrapState = false)
         => PortCore(source, bundle, target, RawcodeAllocator.UsedRawcodes(target),
             alreadyPorted: null,
             pendingCopies: new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase),
-            includeScript, apply: false);
+            includeScript, apply: false, synthDispatch, bootstrapState);
 
     /// <summary>
     /// Ports several units into the SAME target in one operation. The used-rawcode set
@@ -71,17 +74,19 @@ public static class PortCommand
     /// the target once at the end.
     /// </summary>
     public static BatchPortResult PortUnits(
-        MapDocument source, IReadOnlyList<UnitBundle> bundles, MapDocument target, bool includeScript = true)
-        => BatchCore(source, bundles, target, includeScript, apply: true);
+        MapDocument source, IReadOnlyList<UnitBundle> bundles, MapDocument target, bool includeScript = true,
+        bool bootstrapState = false)
+        => BatchCore(source, bundles, target, includeScript, apply: true, bootstrapState);
 
     /// <summary>The combined report <see cref="PortUnits"/> would produce, writing nothing.</summary>
     public static BatchPortResult PreviewPorts(
-        MapDocument source, IReadOnlyList<UnitBundle> bundles, MapDocument target, bool includeScript = true)
-        => BatchCore(source, bundles, target, includeScript, apply: false);
+        MapDocument source, IReadOnlyList<UnitBundle> bundles, MapDocument target, bool includeScript = true,
+        bool bootstrapState = false)
+        => BatchCore(source, bundles, target, includeScript, apply: false, bootstrapState);
 
     private static BatchPortResult BatchCore(
         MapDocument source, IReadOnlyList<UnitBundle> bundles, MapDocument target,
-        bool includeScript, bool apply)
+        bool includeScript, bool apply, bool bootstrapState = false)
     {
         var used = RawcodeAllocator.UsedRawcodes(target);
         var alreadyPorted = new Dictionary<int, int>();
@@ -111,7 +116,8 @@ public static class PortCommand
                     foreach (var m in r.Remaps)
                         codeRemap.TryAdd(m.From, m.To);
                 var label = string.Join(" + ", results.Select(r => $"{r.RootName ?? r.RootRawcode} ({r.RootRawcode})"));
-                script = ScriptPorter.PortScript(source, target, functions, label, codeRemap, apply);
+                script = ScriptPorter.PortScript(source, target, functions, label, codeRemap, apply,
+                    synthDispatchHero: null, bootstrapState: bootstrapState);
             }
             catch (Exception ex)
             {
@@ -136,13 +142,17 @@ public static class PortCommand
         MapDocument source, UnitBundle bundle, MapDocument target,
         HashSet<int> used, Dictionary<int, int>? alreadyPorted,
         Dictionary<string, byte[]>? pendingCopies,
-        bool includeScript, bool apply)
+        bool includeScript, bool apply, bool synthDispatch = false, bool bootstrapState = false)
     {
         var warnings = new List<string>();
         var diagnostics = new List<string>(bundle.Diagnostics);
 
         var customs = bundle.Objects.Where(o => o.CustomToMap).ToList();
         var srcStrings = MapStrings.From(source);
+
+        // Which of these are the root's own and which the script closure dragged in. Recorded per
+        // ported object so the report can group them, the port itself carries both alike.
+        var carriedByClosure = BundleStructure.CarriedByScriptClosure(bundle);
 
         // 1) Rawcode remap: reassign any custom rawcode already defined in the target.
         //    A collision whose target content is exactly what this port would inject is
@@ -164,6 +174,23 @@ public static class PortCommand
                 diagnostics.Add($"{o.Kind} {o.Rawcode} already ported by an earlier unit in this batch — reusing {prior.ToRawcode()}.");
                 continue;
             }
+            // A modification of a standard object (NewId==0) addresses a fixed base id and can
+            // never be relocated. Remapping it would inject a Base* entry keyed to a nonexistent
+            // standard object AND rewrite every in-bundle reference to a unit type that does not
+            // exist. Keep its id. If the target already modifies the same base, skip it rather
+            // than stack a second, conflicting Base* entry.
+            if (MergedGroup(source, o.Kind, id) is { NewId: 0 })
+            {
+                remap[id] = id;
+                if (used.Contains(id))
+                {
+                    sharedIds.Add(id);
+                    warnings.Add($"{o.Kind} {o.Rawcode} modifies standard object {o.Rawcode}, which the "
+                        + "target already modifies — kept the target's version, the source's changes were not applied.");
+                }
+                continue;
+            }
+
             if (used.Contains(id))
             {
                 // Idempotency: a colliding target object that is content-identical to
@@ -202,6 +229,17 @@ public static class PortCommand
             var kind = byKind.Key;
             var wantIds = byKind.Select(o => o.Rawcode.FromRawcode()).ToHashSet();
 
+            // Data-loss guard: if the target's object file for this kind is present but failed to
+            // parse (Model null), injecting would build a fresh empty store and Save would drop
+            // every object the target already had. Refuse and warn rather than wipe it.
+            var kindFile = ObjectKinds.Info(kind).MapFile;
+            if (target.GetFile(kindFile) is { Model: null })
+            {
+                warnings.Add($"target {kindFile} is present but could not be parsed — skipped injecting "
+                    + $"{kind} objects so its existing objects are not overwritten.");
+                continue;
+            }
+
             // Merge the map layer with the Reforged skin layer (skin wins per field).
             var groups = new Dictionary<int, PortGroup>();
             foreach (var file in new[] { ObjectKinds.Info(kind).MapFile, ObjectKinds.Info(kind).SkinFile })
@@ -217,7 +255,8 @@ public static class PortCommand
                     InjectGroup(target, kind, remapped);
                 var node = byKind.First(o => o.Rawcode.FromRawcode() == (g.NewId != 0 ? g.NewId : g.OldId));
                 string ownId = (remapped.NewId != 0 ? remapped.NewId : remapped.OldId).ToRawcode();
-                portedObjects.Add(new PortedObject(kind, ownId, node.Name, remapped.NewId == 0));
+                portedObjects.Add(new PortedObject(kind, ownId, node.Name, remapped.NewId == 0,
+                    carriedByClosure.Contains(node.Rawcode)));
                 if (remapped.NewId == 0)
                     warnings.Add($"{kind} {ownId} modifies a standard object — it will change that object in the target too.");
             }
@@ -225,9 +264,17 @@ public static class PortCommand
 
         // 3) Copy imported assets (present-in-source only) + register in war3map.imp.
         var copied = new List<string>();
+        // Recorded here rather than matched afterwards, because copied entries are the STORED name
+        // (the .mdx backing a .mdl reference) while the bundle keys files by reference spelling.
+        var realFilePaths = BundleStructure.RealFiles(bundle);
+        var carriedFiles = new List<string>();
         var skipped = new List<string>();
         var srcImports = (source.GetFile("war3map.imp")?.Model as ImportedFiles);
-        var tgtImports = (target.GetFile("war3map.imp")?.Model as ImportedFiles)
+        // If the target's import registry is present but unparsed, do NOT rebuild it from scratch
+        // (that would drop every existing import). Copy the asset bytes, but leave imp untouched.
+        var impEntry = target.GetFile("war3map.imp");
+        bool impUnparsed = impEntry is not null && impEntry.Model is not ImportedFiles;
+        var tgtImports = (impEntry?.Model as ImportedFiles)
                          ?? new ImportedFiles(ImportedFilesFormatVersion.v1);
         bool importsChanged = false;
 
@@ -239,7 +286,7 @@ public static class PortCommand
             // so the copy step locates the SAME bytes discovery marked present. Using plain
             // FindFile here silently dropped every custom model from the port.
             var srcEntry = ResolveEntry(source, f.Path, f.Category);
-            if (srcEntry is null || srcEntry.RawBytes.Length == 0) { skipped.Add($"{f.Path} (unreadable in source)"); continue; }
+            if (srcEntry is null || srcEntry.CurrentBytes.Length == 0) { skipped.Add($"{f.Path} (unreadable in source)"); continue; }
 
             // The real stored name (e.g. the ".mdx" backing a ".mdl" reference) — copied
             // and registered under this, not the reference spelling.
@@ -247,19 +294,19 @@ public static class PortCommand
 
             // What the target holds for that asset — including files "copied" by an earlier
             // bundle of a preview batch (pendingCopies simulates the real port's mutation).
-            var tgtBytes = ResolveEntry(target, f.Path, f.Category)?.RawBytes;
+            var tgtBytes = ResolveEntry(target, f.Path, f.Category)?.CurrentBytes;
             if (tgtBytes is null && pendingCopies is not null
                 && pendingCopies.TryGetValue(NormalizePath(storedName), out var pending))
                 tgtBytes = pending;
 
-            if (tgtBytes is not null && tgtBytes.SequenceEqual(srcEntry.RawBytes))
+            if (tgtBytes is not null && tgtBytes.SequenceEqual(srcEntry.CurrentBytes))
             { skipped.Add($"{f.Path} (already in target)"); continue; }
             if (tgtBytes is not null)
                 warnings.Add($"{f.Path} already exists in target with different bytes — overwritten.");
 
             if (apply)
             {
-                target.AddOrReplaceRawFile(storedName, srcEntry.RawBytes);
+                target.AddOrReplaceRawFile(storedName, srcEntry.CurrentBytes);
 
                 if (!tgtImports.Files.Any(i => PathEq(i.FullPath, storedName)))
                 {
@@ -271,12 +318,23 @@ public static class PortCommand
             }
             else
             {
-                pendingCopies![NormalizePath(storedName)] = srcEntry.RawBytes;
+                pendingCopies![NormalizePath(storedName)] = srcEntry.CurrentBytes;
             }
             copied.Add(storedName);
+            if (!realFilePaths.Contains(f.Path)) carriedFiles.Add(storedName);
         }
-        if (apply && importsChanged)
+        if (apply && importsChanged && !impUnparsed)
             target.AddOrReplaceModelFile("war3map.imp", tgtImports);
+        else if (importsChanged && impUnparsed)
+            warnings.Add("target war3map.imp is present but could not be parsed — copied the asset "
+                + "files but left the import list untouched, so they may need registering manually.");
+
+        // 3b) Carry the source map's hero/unit level caps (war3mapMisc.txt). A ported hero whose
+        //     abilities unlock past level 10 clamps to the WC3 default cap otherwise. It is a
+        //     NonImportFile, so the imports copy skipped it, done explicitly here. Idempotent, so
+        //     running it once per bundle in a batch makes at most one real change.
+        if (apply && GameplayConstants.CarryLevelCaps(source, target) is { } capSummary)
+            diagnostics.Add($"gameplay constants: {capSummary}");
 
         // 4) Best-effort JASS script closure append (defensive — never breaks the port).
         ScriptPortInfo? scriptInfo = null;
@@ -287,7 +345,8 @@ public static class PortCommand
                 var codeRemap = remap.Where(kv => kv.Key != kv.Value)
                     .ToDictionary(kv => kv.Key.ToRawcode(), kv => kv.Value.ToRawcode(), StringComparer.Ordinal);
                 scriptInfo = ScriptPorter.PortScript(source, target, bundle.Functions,
-                    $"{bundle.RootName ?? bundle.RootRawcode} ({bundle.RootRawcode})", codeRemap, apply);
+                    $"{bundle.RootName ?? bundle.RootRawcode} ({bundle.RootRawcode})", codeRemap, apply,
+                    synthDispatch ? bundle.RootRawcode : null, bootstrapState);
             }
             catch (Exception ex)
             {
@@ -308,7 +367,8 @@ public static class PortCommand
 
         return new PortResult(
             bundle.RootRawcode, rootPortedTo, bundle.RootName,
-            remapReport, portedObjects, copied, skipped, inlinedStrings, warnings, diagnostics, scriptInfo);
+            remapReport, portedObjects, copied, skipped, inlinedStrings, warnings, diagnostics, scriptInfo,
+            carriedFiles);
     }
 
     // ---- prior-port detection (idempotent re-port) --------------------------
@@ -329,7 +389,14 @@ public static class PortCommand
         if (MergedGroup(source, kind, id) is not { } src || MergedGroup(target, kind, id) is not { } tgt)
             return false;
         int inlined = 0; // normalization only — not part of the port's inline count
-        return GroupsEqual(RemapGroup(src, IdentityRemap, srcStrings, ref inlined), tgt);
+        // Inline BOTH sides' TRIGSTR references against their OWN string table before comparing.
+        // The target commonly stores a name/tooltip as a TRIGSTR into its own war3map.wts, so
+        // comparing the source's inlined literal against the target's raw TRIGSTR would never
+        // match, and a content-identical prior port (e.g. between two versions of a map) would be
+        // duplicated on every re-port instead of reused.
+        return GroupsEqual(
+            RemapGroup(src, IdentityRemap, srcStrings, ref inlined),
+            RemapGroup(tgt, IdentityRemap, MapStrings.From(target), ref inlined));
     }
 
     /// <summary>The document's merged (map ⊕ skin, skin wins per field) group for one
@@ -379,21 +446,21 @@ public static class PortCommand
             gs.Where(g => wantIds.Contains(g.NewId != 0 ? g.NewId : g.OldId)).Select(g =>
             {
                 var pg = new PortGroup { OldId = g.OldId, NewId = g.NewId };
-                foreach (var m in g.Modifications) pg.Mods.Add(new PortMod(0, m.Id, m.Type, m.Value));
+                foreach (var m in g.Modifications) pg.Mods.Add(new PortMod(0, m.Id, m.Type, m.Value, 0));
                 return pg;
             });
         IEnumerable<PortGroup> FromLevel(IEnumerable<LevelObjectModification> gs) =>
             gs.Where(g => wantIds.Contains(g.NewId != 0 ? g.NewId : g.OldId)).Select(g =>
             {
                 var pg = new PortGroup { OldId = g.OldId, NewId = g.NewId };
-                foreach (var m in g.Modifications) pg.Mods.Add(new PortMod(m.Level, m.Id, m.Type, m.Value));
+                foreach (var m in g.Modifications) pg.Mods.Add(new PortMod(m.Level, m.Id, m.Type, m.Value, m.Pointer));
                 return pg;
             });
         IEnumerable<PortGroup> FromVar(IEnumerable<VariationObjectModification> gs) =>
             gs.Where(g => wantIds.Contains(g.NewId != 0 ? g.NewId : g.OldId)).Select(g =>
             {
                 var pg = new PortGroup { OldId = g.OldId, NewId = g.NewId };
-                foreach (var m in g.Modifications) pg.Mods.Add(new PortMod(m.Variation, m.Id, m.Type, m.Value));
+                foreach (var m in g.Modifications) pg.Mods.Add(new PortMod(m.Variation, m.Id, m.Type, m.Value, m.Pointer));
                 return pg;
             });
 
@@ -478,7 +545,7 @@ public static class PortCommand
             {
                 var mod = new LevelObjectModification { OldId = g.OldId, NewId = g.NewId };
                 foreach (var m in g.Mods)
-                    mod.Modifications.Add(new LevelObjectDataModification { Level = m.Level, Pointer = 0, Id = m.Id, Type = m.Type, Value = m.Value! });
+                    mod.Modifications.Add(new LevelObjectDataModification { Level = m.Level, Pointer = m.Pointer, Id = m.Id, Type = m.Type, Value = m.Value! });
                 AddLevel(target, kind, info.MapFile, version, mod, g.NewId != 0);
                 break;
             }
@@ -486,7 +553,7 @@ public static class PortCommand
             {
                 var mod = new VariationObjectModification { OldId = g.OldId, NewId = g.NewId };
                 foreach (var m in g.Mods)
-                    mod.Modifications.Add(new VariationObjectDataModification { Variation = m.Level, Pointer = 0, Id = m.Id, Type = m.Type, Value = m.Value! });
+                    mod.Modifications.Add(new VariationObjectDataModification { Variation = m.Level, Pointer = m.Pointer, Id = m.Id, Type = m.Type, Value = m.Value! });
                 var model = (DoodadObjectData?)target.GetFile(info.MapFile)?.Model ?? new DoodadObjectData(version);
                 (g.NewId != 0 ? model.NewDoodads : model.BaseDoodads).Add(mod);
                 target.AddOrReplaceModelFile(info.MapFile, model);
@@ -559,12 +626,12 @@ public static class PortCommand
         return null;
     }
 
-    /// <summary>Resolve a bundle file to its stored entry. Model refs go through the
-    /// shared model-aware finder (handles the .mdl↔.mdx swap and extensionless refs);
-    /// everything else is a straight path lookup. Keeps port copy consistent with the
-    /// discovery step, which uses the same resolver to decide PresentInMap.</summary>
+    /// <summary>Resolve a bundle file to its stored entry through the one universal asset
+    /// resolver (model, texture, icon or sound, any spelling), so the port copies exactly what
+    /// discovery marked present. <paramref name="category"/> is no longer needed to choose a
+    /// resolver but is kept for call-site clarity.</summary>
     private static MapFileEntry? ResolveEntry(MapDocument doc, string path, string category) =>
-        category == "model" ? RenderModelCommand.FindModelEntry(doc, path) : FindFile(doc, path);
+        RenderModelCommand.FindAssetEntry(doc, path) ?? FindFile(doc, path);
 
     private static bool PathEq(string a, string b) =>
         string.Equals(a.Replace('/', '\\'), b.Replace('/', '\\'), StringComparison.OrdinalIgnoreCase);

@@ -134,6 +134,50 @@ public sealed class TerrainArtCatalog
         return data;
     }
 
+    /// <summary>
+    /// One representative RGB per terrain type, taken from that type's REAL tile texture.
+    /// Returns null when the base game is unavailable, so a caller keeps its own fallback.
+    /// </summary>
+    /// <remarks>
+    /// The PNG renderer draws a whole tile into a handful of pixels, so blitting the 128x128
+    /// texture and letting it downsample would arrive at this average anyway. Computing it
+    /// directly keeps that path cheap and, more to the point, makes the colours the tileset's
+    /// own rather than a hardcoded guess. An entry is null where the texture did not resolve,
+    /// which a caller must read as "keep the old colour" rather than as black.
+    /// </remarks>
+    public static (byte R, byte G, byte B)?[]? AverageColorsForMap(Wc3.Model.MapDocument doc)
+    {
+        var env = doc.GetFile("war3map.w3e")?.Model as MapEnvironment;
+        var types = env?.TerrainTypes;
+        if (types is null || types.Count == 0) return null;
+
+        if (!Wc3.GameData.GameData.TryOpen(null, out var ctx, out _) || ctx is null) return null;
+        var cat = Open(ctx);
+        if (!cat.HasCatalog) return null;
+
+        var result = new (byte, byte, byte)?[types.Count];
+        for (int i = 0; i < types.Count; i++)
+        {
+            var img = cat.Resolve(types[i]);
+            if (img is not null) result[i] = Average(img);
+        }
+        return result;
+    }
+
+    /// <summary>Mean RGB over the opaque pixels of a decoded texture.</summary>
+    private static (byte R, byte G, byte B)? Average(TextureImage img)
+    {
+        long r = 0, g = 0, b = 0, n = 0;
+        var px = img.Rgba;
+        for (int p = 0; p + 3 < px.Length; p += 4)
+        {
+            if (px[p + 3] == 0) continue;   // a fully transparent pixel contributes nothing
+            r += px[p]; g += px[p + 1]; b += px[p + 2]; n++;
+        }
+        if (n == 0) return null;
+        return ((byte)(r / n), (byte)(g / n), (byte)(b / n));
+    }
+
     private static byte[] FlatColor(TerrainType type, int cell)
     {
         var c = TerrainRenderer.ColorForTerrainType(type);

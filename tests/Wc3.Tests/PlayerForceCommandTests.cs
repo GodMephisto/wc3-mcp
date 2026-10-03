@@ -12,9 +12,9 @@ public class PlayerForceCommandTests
     private static readonly string CorpusMapPath =
         TestCorpus.Map(@"GGGA_V0.02a.w3x");
 
-    /// <summary>Blank map whose parsed MapInfo is seeded with three players and two
-    /// forces (players 0+1 in force 0, player 2 in force 1). BlankMap's own single
-    /// player and force are cleared first, so the fixture controls every slot.</summary>
+    /// <summary>Blank map whose parsed MapInfo is seeded with exactly three players and two
+    /// forces (players 0 and 1 in force 0, player 2 in force 1). BlankMap now ships one default
+    /// player and force, so the fixture clears those first to control the exact set.</summary>
     private static MapDocument Fixture()
     {
         var doc = BlankMap.Create();
@@ -97,7 +97,8 @@ public class PlayerForceCommandTests
     [Fact]
     public void GetPlayersAndForces_AreEmptyWhenInfoHasNone()
     {
-        // A map whose info lists no players or forces must read as empty, not throw.
+        // The read APIs must not throw when a map defines no players or forces. BlankMap now
+        // ships one default player and force, so clear them to exercise the empty path.
         var doc = BlankMap.Create();
         var info = (MapInfo)doc.GetFile(MapInfoCommand.FileName)!.Model!;
         info.Players.Clear();
@@ -107,21 +108,24 @@ public class PlayerForceCommandTests
     }
 
     [Fact]
-    public void BlankMap_has_the_one_player_and_force_its_script_sets_up()
+    public void BlankMap_lists_the_players_and_force_its_script_sets_up()
     {
-        // The blank script runs SetPlayerController(Player(0), MAP_CONTROL_USER) and puts
-        // player 0 in team 0, so the info file must say the same or the editors have nothing.
+        // The blank script runs SetPlayers(n) and puts every user slot in team 0, so the info
+        // file must list the same players and the one force, or the editors disagree with the
+        // game about who is on the map.
+        int n = new BlankMapOptions().PlayerCount;
         var doc = BlankMap.Create();
 
-        var player = Assert.Single(PlayerForceCommand.GetPlayers(doc));
-        Assert.Equal(0, player.Id);
-        Assert.Equal("User", player.Controller);
+        var players = PlayerForceCommand.GetPlayers(doc);
+        Assert.Equal(Enumerable.Range(0, n), players.Select(p => p.Id));
+        Assert.All(players, p => Assert.Equal("User", p.Controller));
         var force = Assert.Single(PlayerForceCommand.GetForces(doc));
-        Assert.Equal(new[] { 0 }, force.PlayerIds);
+        Assert.Equal(Enumerable.Range(0, n), force.PlayerIds);
+        Assert.Contains($"call SetPlayers( {n} )", System.Text.Encoding.UTF8.GetString(doc.GetFile("war3map.j")!.CurrentBytes));
 
         // And it survives a save and reload.
         var reloaded = MapDocument.Load(doc.SaveToBytes());
-        Assert.Single(PlayerForceCommand.GetPlayers(reloaded));
+        Assert.Equal(n, PlayerForceCommand.GetPlayers(reloaded).Count);
         Assert.Single(PlayerForceCommand.GetForces(reloaded));
     }
 

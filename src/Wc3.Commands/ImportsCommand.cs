@@ -56,11 +56,42 @@ public static class ImportsCommand
         {
             if (f.FileName is null || IsEngineFile(f.FileName))
                 continue;
-            // Pending in-memory replacement wins over the original bytes for the size.
-            archiveFiles[f.FileName] = (f.OverrideBytes ?? f.RawBytes).Length;
+            // Pending in-memory replacement wins over the original for the size. An override is
+            // already in memory so its length is free, but the original's must come from RawSize,
+            // since reading CurrentBytes here would decompress every imported asset in the map.
+            archiveFiles[f.FileName] = f.CurrentSize;
         }
 
         return new ImportsListResult(manifest is not null, BuildEntries(manifestPaths, archiveFiles));
+    }
+
+
+    /// <summary>
+    /// The spellings an archive may store a manifest path under, most literal first. An MPQ name
+    /// uses a backslash, and a manifest routinely does not.
+    /// </summary>
+    /// <remarks>
+    /// Measured on GGGA_V0.04b.w3x, whose war3map.imp writes 2,113 paths with forward slashes,
+    /// "Archer/Archer_R_effect1.mp3", where the archive stores them with backslashes. Matching
+    /// only the literal spelling and the prefixed literal reported all 2,113 as missing from the
+    /// archive AND the same 2,113 as missing from the manifest, which is the tell for a spelling
+    /// problem, the same files counted from both directions.
+    ///
+    /// Worth recording that the check this replaced in LintCommand had the opposite pair of
+    /// strengths. It expanded separators, so it got this map nearly right, and it hand-rolled the
+    /// .imp parse and read the format's leading flag byte into every path, so it reported 1,124
+    /// phantom problems on FgoRD_1.11 where the truth is one. Each implementation was correct
+    /// exactly where the other was wrong, which is the argument for there being one.
+    /// </remarks>
+    public static IEnumerable<string> ArchiveSpellings(string manifestPath)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var spelling in new[] { manifestPath, manifestPath.Replace('/', '\\') })
+        {
+            if (seen.Add(spelling)) yield return spelling;
+            var prefixed = DefaultImportPrefix + spelling;
+            if (seen.Add(prefixed)) yield return prefixed;
+        }
     }
 
     /// <summary>

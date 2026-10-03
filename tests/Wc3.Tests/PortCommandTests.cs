@@ -100,6 +100,38 @@ public class PortCommandTests
     }
 
     [Fact]
+    public void Ports_an_extensionless_icon_by_resolving_the_stored_blp()
+    {
+        // Source hero references its icon WITHOUT an extension; it is imported as ...BTN.blp.
+        // The port must resolve and copy the .blp, else the ported hero shows the missing-icon
+        // box. This is the "does not ruin the map" guarantee for extensionless icon refs.
+        var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
+        var hero = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = "H000".FromRawcode() };
+        hero.Modifications.Add(Str("uico", @"ReplaceableTextures\CommandButtons\BTNRaiden"));
+        w3u.NewUnits.Add(hero);
+        var source = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = Ser(w => w.Write(w3u)),
+            [@"ReplaceableTextures\CommandButtons\BTNRaiden.blp"] = new byte[] { 9, 9, 9, 9 },
+        }));
+        var target = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.j"] = Encoding.UTF8.GetBytes("function main takes nothing returns nothing\nendfunction\n"),
+        }));
+
+        var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
+        Assert.Contains(bundle.Files,
+            f => f.Path.EndsWith("BTNRaiden", StringComparison.OrdinalIgnoreCase) && f.PresentInMap);
+
+        var result = PortCommand.PortUnit(source, bundle, target);
+
+        Assert.Contains(result.CopiedFiles, f => f.EndsWith("BTNRaiden.blp", StringComparison.OrdinalIgnoreCase));
+        var reloaded = MapDocument.Load(target.SaveToBytes());
+        Assert.True(reloaded.GetFile(@"ReplaceableTextures\CommandButtons\BTNRaiden.blp")!
+            .RawBytes.SequenceEqual(new byte[] { 9, 9, 9, 9 }));
+    }
+
+    [Fact]
     public void Remaps_an_in_bundle_reference_when_the_referenced_object_collides()
     {
         // Target already has A000 too → the ability must be remapped AND the unit's
@@ -143,36 +175,48 @@ public class PortCommandTests
     /// </summary>
     [Fact]
     [Trait("Category", "Corpus")]
-    public void Real_map_self_port_remaps_the_whole_hero_and_rewrites_references()
+    public void Real_map_self_port_of_an_identical_map_reuses_rather_than_duplicates()
     {
-        string path = TestCorpus.Map(@"Anime_WOS2_0.25c1.w3x");
+        string path = CorpusMap.PathOrEmpty;
         if (!File.Exists(path)) return;
 
         var source = MapDocument.Load(path);
-        var target = MapDocument.Load(path); // identical → every rawcode collides
-        var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
+        var target = MapDocument.Load(path); // identical, so every object collides with itself
+
+        // Pick a hero out of the map rather than naming one. This test used to name a rawcode that
+        // existed only in the map it was pinned to, and once that file was gone it skipped in
+        // silence for long enough that the behaviour below changed underneath it without anyone
+        // finding out.
+        var hero = FindHeroWithAbilities(source);
+        if (hero is null) return;
+
+        var bundle = BundleCommand.ResolveUnit(source, hero, gameDirOverride: null);
+        int unitsBefore = ((UnitObjectData)target.GetFile("war3map.w3u")!.Model!).NewUnits.Count;
 
         var result = PortCommand.PortUnit(source, bundle, target);
 
-        // The hero and its five custom abilities all collided and were remapped.
-        Assert.NotEqual("H000", result.RootPortedTo);
-        Assert.Contains(result.Remaps, r => r.From == "H000" && r.Kind == ObjectKind.Unit);
-        Assert.True(result.Remaps.Count(r => r.Kind == ObjectKind.Ability) >= 5);
+        // A collision with a CONTENT-IDENTICAL target object reuses that object's code instead of
+        // allocating a new one, which is what makes re-porting the same unit a no-op. A self-port
+        // is the extreme case of that, so the hero must come back under its own code.
+        Assert.Equal(hero, result.RootPortedTo);
+        Assert.DoesNotContain(result.Remaps, r => r.From == hero && r.Kind == ObjectKind.Unit);
 
-        // The ported unit exists in the target under its new code with a valid ability list.
+        // And nothing was duplicated into the target, which is the property that actually matters.
+        int unitsAfter = ((UnitObjectData)target.GetFile("war3map.w3u")!.Model!).NewUnits.Count;
+        Assert.Equal(unitsBefore, unitsAfter);
+
+        // The hero's ability list still names abilities the target defines, whether they were
+        // reused or remapped. A code pointing at nothing is the failure this guards.
         var tw3u = (UnitObjectData)target.GetFile("war3map.w3u")!.Model!;
         var ported = tw3u.NewUnits.Single(u => u.NewId == result.RootPortedTo!.FromRawcode());
-        var abilityRemaps = result.Remaps.Where(r => r.Kind == ObjectKind.Ability)
-            .ToDictionary(r => r.From, r => r.To);
-        var uhab = (string)ported.Modifications.First(m => m.Id == "uhab".FromRawcode()).Value!;
-        foreach (var code in uhab.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            if (abilityRemaps.ContainsKey(code)) // an original ability code must NOT survive
-                Assert.Fail($"unit still references un-remapped ability {code}");
-
-        // Every remapped ability was injected into the target's w3a.
-        var tw3a = (AbilityObjectData)target.GetFile("war3map.w3a")!.Model!;
-        foreach (var to in abilityRemaps.Values)
-            Assert.Contains(tw3a.NewAbilities, a => a.NewId == to.FromRawcode());
+        var uhabMod = ported.Modifications.FirstOrDefault(m => m.Id == "uhab".FromRawcode());
+        if (uhabMod?.Value is string uhab)
+        {
+            var defined = ObjectKinds.MergedEntries(target, ObjectKinds.Info(ObjectKind.Ability))
+                .Select(e => e.Id).ToHashSet();
+            foreach (var code in uhab.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                Assert.Contains(code.Trim().FromRawcode(), defined);
+        }
     }
 
     /// <summary>
@@ -217,6 +261,113 @@ public class PortCommandTests
         Assert.True(copied!.RawBytes.SequenceEqual(modelBytes));
     }
 
+    [Fact]
+    public void Modified_standard_object_is_not_remapped_on_collision()
+    {
+        // Source hero H000 references a MODIFIED STANDARD unit hfoo (the source tweaks the stock
+        // Footman via a Base* entry). The target ALSO modifies hfoo differently. A standard-object
+        // modification addresses a fixed base id and must never be remapped, else it and every
+        // reference to it point at a unit type that does not exist.
+        var sw3u = new UnitObjectData(ObjectDataFormatVersion.v2);
+        var hero = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = "H000".FromRawcode() };
+        hero.Modifications.Add(Str("uabi", "hfoo"));
+        sw3u.NewUnits.Add(hero);
+        var srcFootman = new SimpleObjectModification { OldId = "hfoo".FromRawcode(), NewId = 0 };
+        srcFootman.Modifications.Add(Str("unam", "Source Footman"));
+        sw3u.BaseUnits.Add(srcFootman);
+        var source = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = Ser(w => w.Write(sw3u)),
+        }));
+
+        var tw3u = new UnitObjectData(ObjectDataFormatVersion.v2);
+        var tgtFootman = new SimpleObjectModification { OldId = "hfoo".FromRawcode(), NewId = 0 };
+        tgtFootman.Modifications.Add(Str("unam", "Target Footman")); // different content, a real collision
+        tw3u.BaseUnits.Add(tgtFootman);
+        var target = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = Ser(w => w.Write(tw3u)),
+        }));
+
+        var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
+        Assert.Contains(bundle.Objects, o => o.Rawcode == "hfoo"); // the modified standard unit is a dependency
+
+        var result = PortCommand.PortUnit(source, bundle, target, includeScript: false);
+
+        Assert.DoesNotContain(result.Remaps, r => r.From == "hfoo");                       // never relocated
+        Assert.Contains(result.Warnings, w => w.Contains("hfoo") && w.Contains("standard")); // conflict reported
+
+        var reloaded = MapDocument.Load(target.SaveToBytes());
+        var tu = (UnitObjectData)reloaded.GetFile("war3map.w3u")!.Model!;
+        var portedHero = tu.NewUnits.Single(u => u.NewId == result.RootPortedTo!.FromRawcode());
+        Assert.Equal("hfoo", (string)portedHero.Modifications.Single(m => m.Id == "uabi".FromRawcode()).Value!);
+    }
+
+    [Fact]
+    public void Unparsed_target_object_file_is_not_overwritten()
+    {
+        var source = SourceMap(); // H000 + A000
+        // A war3map.w3u that is present but cannot be parsed (version 2 header claiming a
+        // 2-billion-entry table): MapDocument keeps the raw bytes and leaves Model null.
+        byte[] garbage = { 0x02, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x7F };
+        var target = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = garbage,
+            ["war3map.j"] = Encoding.UTF8.GetBytes("function main takes nothing returns nothing\nendfunction\n"),
+        }));
+        Assert.NotNull(target.GetFile("war3map.w3u"));
+        Assert.Null(target.GetFile("war3map.w3u")!.Model); // present but failed to parse
+
+        var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
+        var result = PortCommand.PortUnit(source, bundle, target, includeScript: false);
+
+        Assert.Contains(result.Warnings, w => w.Contains("war3map.w3u") && w.Contains("could not be parsed"));
+        var reloaded = MapDocument.Load(target.SaveToBytes());
+        Assert.Equal(garbage, reloaded.GetFile("war3map.w3u")!.RawBytes); // original bytes preserved, not wiped
+    }
+
+    /// <summary>
+    /// Regression, the Pointer of a leveled modification (the data column, the A/B/C slot
+    /// of a leveled ability field) was dropped on port and every injected leveled field
+    /// came back with Pointer 0, so the injected bytes diverged from what the World Editor
+    /// writes. The pointer must survive the port unchanged.
+    /// </summary>
+    [Fact]
+    public void Preserves_the_data_pointer_of_leveled_modifications()
+    {
+        var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
+        var hero = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = "H000".FromRawcode() };
+        hero.Modifications.Add(Str("uhab", "A000"));
+        w3u.NewUnits.Add(hero);
+
+        var w3a = new AbilityObjectData(ObjectDataFormatVersion.v2);
+        var abil = new LevelObjectModification { OldId = "ANcl".FromRawcode(), NewId = "A000".FromRawcode() };
+        abil.Modifications.Add(new LevelObjectDataModification
+        { Level = 2, Pointer = 3, Id = "Ncl1".FromRawcode(), Type = ObjectDataType.Real, Value = 1.5f });
+        w3a.NewAbilities.Add(abil);
+
+        var source = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = Ser(w => w.Write(w3u)),
+            ["war3map.w3a"] = Ser(w => w.Write(w3a)),
+        }));
+        var target = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.j"] = Encoding.UTF8.GetBytes("function main takes nothing returns nothing\nendfunction\n"),
+        }));
+
+        var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
+        PortCommand.PortUnit(source, bundle, target, includeScript: false);
+
+        var reloaded = MapDocument.Load(target.SaveToBytes());
+        var tw3a = (AbilityObjectData)reloaded.GetFile("war3map.w3a")!.Model!;
+        var ported = tw3a.NewAbilities.Single(a => a.NewId == "A000".FromRawcode());
+        var mod = ported.Modifications.Single(m => m.Id == "Ncl1".FromRawcode());
+        Assert.Equal(2, mod.Level);
+        Assert.Equal(3, mod.Pointer); // was reset to 0 before the fix
+        Assert.Equal(1.5f, mod.Value);
+    }
+
     private static SimpleObjectDataModification Str(string code, string value) =>
         new() { Id = code.FromRawcode(), Type = ObjectDataType.String, Value = value };
 
@@ -225,5 +376,30 @@ public class PortCommandTests
         using var ms = new MemoryStream();
         using (var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true)) write(bw);
         return ms.ToArray();
+    }
+
+    /// <summary>
+    /// A CUSTOM hero unit in this map that lists at least five hero abilities, which is what the
+    /// self-port assertions need. Returns null when the map has none, so the test skips rather
+    /// than failing on a map that simply cannot exercise it.
+    /// </summary>
+    private static string? FindHeroWithAbilities(MapDocument doc)
+    {
+        foreach (var o in ObjectListCommand.Execute(doc, ObjectKind.Unit, gameDirOverride: null).Items)
+        {
+            // Custom only. A modified standard is keyed by its own rawcode and represents an edit
+            // to a base-game unit, so a self-port correctly leaves it alone and this test would
+            // then be asserting the wrong thing about a working port.
+            if (o.BaseRawcode is null || o.BaseRawcode == o.Rawcode) continue;
+
+            var fields = ObjectGetCommand.Execute(doc, ObjectKind.Unit, o.Rawcode, null);
+            if (!fields.Found) continue;
+            var hab = fields.Fields.FirstOrDefault(f =>
+                string.Equals(f.Code, "uhab", StringComparison.OrdinalIgnoreCase));
+            if (hab is null) continue;
+            var count = hab.Value.Split(',', StringSplitOptions.RemoveEmptyEntries).Length;
+            if (count >= 5) return o.Rawcode;
+        }
+        return null;
     }
 }

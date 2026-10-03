@@ -1,0 +1,13 @@
+<Project>
+  <!-- The source under src/ is exported from wc3ctl (scripts/export-wc3-mcp.py there) and is never
+       edited here. This file is what makes that same source this product: the exe is wc3-mcp, it
+       registers in AI apps as "wc3" and backs up their configs as NAME.wc3-mcp.bak. The version
+       is the one the release tag must match. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Wc3.Mcp'">
+    <AssemblyName>wc3-mcp</AssemblyName>
+    <RootNamespace>Wc3.Mcp</RootNamespace>
+    <Version>0.2.0</Version>
+    <McpProductId>wc3-mcp</McpProductId>
+    <McpServerName>wc3</McpServerName>
+  </PropertyGroup>
+</Project>

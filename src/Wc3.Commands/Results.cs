@@ -2,12 +2,17 @@ using Wc3.Model;
 
 namespace Wc3.Commands;
 
-public sealed record FileEntryInfo(string? Name, int SizeBytes, bool Known, bool Parsed);
+// ContentType is the sniffed kind of a NAMELESS entry ("BLP texture", "empty", ...),
+// null for named entries whose name already answers the question. NameFromHarvest marks
+// a name recovered from the map's own script or object data rather than stored.
+public sealed record FileEntryInfo(
+    string? Name, int SizeBytes, bool Known, bool Parsed,
+    string? ContentType = null, bool NameFromHarvest = false);
 public sealed record FileListResult(IReadOnlyList<FileEntryInfo> Files);
 public sealed record MapInfoResult(
     string Name, string Author, int Players, int? Width, int? Height, IReadOnlyList<string> Diagnostics);
 public sealed record SearchHit(string FileName, string Context);
-public sealed record SearchResult(IReadOnlyList<SearchHit> Hits);
+public sealed record SearchResult(IReadOnlyList<SearchHit> Hits, bool Truncated = false);
 public sealed record DiffEntry(string Name, string Change);
 public sealed record DiffResult(IReadOnlyList<DiffEntry> Entries);
 public sealed record RoundtripResult(
@@ -53,10 +58,17 @@ public sealed record ExtractResult(IReadOnlyList<ExtractedItem> Items);
 
 // A rawcode that had to be reassigned because it collided with the target map.
 public sealed record RawcodeRemap(ObjectKind Kind, string From, string To);
-public sealed record PortedObject(ObjectKind Kind, string Rawcode, string? Name, bool ModifiesStandard);
+// CarriedByScriptClosure marks an object the trigger script dragged in rather than one the root's
+// own data references (another hero's ability on a shared arena script). It ports either way, the
+// flag exists so a report can stop presenting 190 strangers as if they were this unit's.
+public sealed record PortedObject(ObjectKind Kind, string Rawcode, string? Name, bool ModifiesStandard,
+    bool CarriedByScriptClosure = false);
 // Outcome of the best-effort JASS script closure append (null when no script was ported).
+// Written is false when the merged script failed the compile gate and was deliberately not
+// applied, so the target keeps its original working script (see ScriptPorter.PortScript).
 public sealed record ScriptPortInfo(
-    int Functions, int Globals, int Renamed, bool InitHooked, IReadOnlyList<string> Notes);
+    int Functions, int Globals, int Renamed, bool InitHooked, IReadOnlyList<string> Notes,
+    bool Written = true);
 public sealed record PortResult(
     string RootRawcode,
     string? RootPortedTo,          // the root's rawcode in the target (== RootRawcode if no collision)
@@ -68,7 +80,11 @@ public sealed record PortResult(
     int InlinedStrings,
     IReadOnlyList<string> Warnings,
     IReadOnlyList<string> Diagnostics,
-    ScriptPortInfo? Script = null);
+    ScriptPortInfo? Script = null,
+    // The subset of CopiedFiles the script closure pulled in (another hero's icons and models).
+    // CopiedFiles stays complete and truthful about what was written, this only says which of
+    // them are not the root's own, so a report can count them instead of listing them.
+    IReadOnlyList<string>? CarriedFiles = null);
 // Combined outcome of porting several units into one target: per-unit results in input
 // order (their Script is always null — the batch splices the merged closure once), the
 // single merged script summary, and batch-level warnings.

@@ -26,7 +26,7 @@ public static class ConvertCommand
         ArgumentNullException.ThrowIfNull(doc);
         var entry = FindFile(doc, internalName)
             ?? throw new FileNotFoundException($"'{internalName}' not found in map", internalName);
-        return TextureConvert.Convert(entry.RawBytes, Path.GetExtension(internalName), toExt);
+        return TextureConvert.Convert(entry.CurrentBytes, Path.GetExtension(internalName), toExt);
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public static class ConvertCommand
         var entry = RenderModelCommand.FindModelEntry(doc, modelInternalPath)
             ?? throw new InvalidDataException(
                 $"model '{modelInternalPath}' is not in the map — only map-imported models export");
-        var model = ModelParser.Parse(entry.RawBytes, entry.FileName!);
+        var model = ModelParser.Parse(entry.CurrentBytes, entry.FileName!);
         return Export(model, Path.GetFileNameWithoutExtension(entry.FileName!), doc);
     }
 
@@ -78,12 +78,12 @@ public static class ConvertCommand
             }
 
             var entry = FindFile(doc, path);
-            if (entry is null || entry.RawBytes.Length == 0)
+            if (entry is null || entry.CurrentBytes.Length == 0)
                 continue; // base-game/CASC texture — material stays plain
             try
             {
                 textures[pngName] = TextureConvert.Convert(
-                    entry.RawBytes, Path.GetExtension(path), ".png");
+                    entry.CurrentBytes, Path.GetExtension(path), ".png");
                 fileByTexId[id] = pngName;
             }
             catch (Exception)

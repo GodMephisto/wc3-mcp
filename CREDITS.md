@@ -4,7 +4,7 @@ Built on
 
 | Library | Author | License | Link |
 |---|---|---|---|
-| War3Net (War3Net.Build, War3Net.IO.Mpq, War3Net.Drawing.Blp) | Drake53 and contributors | MIT | https://github.com/Drake53/War3Net |
+| War3Net (War3Net.Build, War3Net.IO.Mpq, War3Net.Drawing.Blp, War3Net.CodeAnalysis.Decompilers) | Drake53 and contributors | MIT | https://github.com/Drake53/War3Net |
 | CascLib | Ladislav Zezula | MIT | https://github.com/ladislav-zezula/CascLib |
 | CascLib.NET | Kizari | MIT | https://www.nuget.org/packages/CascLib.NET |
 | ImageSharp | Six Labors and contributors | Six Labors Split License | https://github.com/SixLabors/ImageSharp |

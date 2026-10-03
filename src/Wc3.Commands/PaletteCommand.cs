@@ -239,7 +239,7 @@ public static class PaletteCommand
             var entry = doc.GetFile(iconPath)
                 ?? doc.GetFile(iconPath.Replace('/', '\\'))
                 ?? doc.GetFile(iconPath.Replace('\\', '/'));
-            byte[]? bytes = entry is { RawBytes.Length: > 0 } ? entry.RawBytes : null;
+            byte[]? bytes = entry is { CurrentBytes.Length: > 0 } ? entry.CurrentBytes : null;
             if (bytes is null && ctx is not null)
                 foreach (var candidate in IconCandidates(iconPath))
                     if (ctx.TryReadFile(candidate, out var cascBytes)) { bytes = cascBytes; break; }

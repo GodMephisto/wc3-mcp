@@ -9,6 +9,9 @@ namespace Wc3.GameData;
 /// </summary>
 public static class GameData
 {
+    private const string UnitEditorDataPath = @"war3.w3mod:ui\uniteditordata.txt";
+    private const string WorldEditDataPath = @"war3.w3mod:ui\worldeditdata.txt";
+
     private const string WorldEditStringsPath = @"war3.w3mod:_locales\enus.w3mod:ui\worldeditstrings.txt";
     // Object names for destructables/doodads (WESTRING_DEST_* / WESTRING_DOODAD_*) live in
     // this parallel file, not worldeditstrings.txt, so both are merged into one Strings table.
@@ -47,6 +50,23 @@ public static class GameData
             var strings = WorldEditStrings.FromByteSources(
                 src!.ReadFile(WorldEditStringsPath),
                 src!.ReadFile(WorldEditGameStringsPath));
+
+            // The editor's enumerated types. Read after the strings because every
+            // display name in it is a WESTRING key resolved through them.
+            // UnitEditorData only. This used to ingest WorldEditData.txt as well, and that was
+            // both redundant and wrong. Redundant because EditorCatalogs below serves that file
+            // properly, and wrong because the enum lens misparsed 39 of its 41 sections, swapping
+            // columns, deduplicating away keys and folding multi-field rows. The misparses were
+            // harmless only because no object metadata field type across the seven kinds names a
+            // WorldEditData section, so nothing ever looked one up. That is measured, and
+            // EditorEnumDataTests pins it, so a patch that introduces such a type fails loudly
+            // rather than silently reading a mangled option set.
+            var editorEnums = EditorEnumData.FromByteSources(strings,
+                src!.ReadFile(UnitEditorDataPath));
+            // The same file read through the catalog lens, key and every payload field
+            // kept. Only WorldEditData.txt, the unit editor file is pure enum sections.
+            var editorCatalogs = EditorCatalogData.FromByteSources(strings,
+                src!.ReadFile(WorldEditDataPath));
             // Profile TXT stores fill the fields the metadata SLKs mark "Profile"
             // (names, tooltips, art refs). Buff sections live inside the ability
             // profile files, so those two kinds share one store.
@@ -63,6 +83,8 @@ public static class GameData
                 Buffs = BuildSafe("buff", s => ObjectDataStore.BuildBuffs(s, abilityProfile)),
                 Upgrades = BuildSafe("upgrade", s => ObjectDataStore.BuildUpgrades(s, upgradeProfile)),
                 Strings = strings,
+                EditorEnums = editorEnums,
+                EditorCatalogs = editorCatalogs,
                 UnitNames = UnitNameTable.FromSources(src!),
                 Diagnostics = diags,
                 InstallDir = dir, // lets TryReadFile lazily re-open CASC for raw assets

@@ -45,6 +45,48 @@ public class ModelResolveTests
         Assert.Null(RenderModelCommand.FindModelEntry(doc, "war3mapImported\\missing.mdl"));
     }
 
+    [Theory]
+    // Icon Art fields store the path with no extension; the game appends .blp at load.
+    [InlineData("ReplaceableTextures\\CommandButtons\\BTNFoo.blp", "ReplaceableTextures\\CommandButtons\\BTNFoo")]
+    [InlineData("war3mapImported\\fx.blp", "war3mapImported\\fx")]                 // extensionless import
+    [InlineData("war3mapImported\\fx.blp", "war3mapImported/fx")]                  // slash variant
+    [InlineData("war3mapImported\\fx.tga", "war3mapImported\\fx.blp")]             // wrong extension, sibling
+    [InlineData("war3mapImported\\fx.blp", "war3mapImported\\fx.tga")]             // wrong extension, sibling
+    public void FindTextureEntry_resolves_extensionless_and_sibling_texture_refs(string stored, string referenced)
+    {
+        var doc = MapWith(stored);
+        var entry = RenderModelCommand.FindTextureEntry(doc, referenced);
+        Assert.NotNull(entry);
+        Assert.Equal(stored, entry!.FileName);
+    }
+
+    [Fact]
+    public void FindTextureEntry_returns_null_for_a_texture_not_in_the_map()
+    {
+        var doc = MapWith("war3mapImported\\fx.blp");
+        Assert.Null(RenderModelCommand.FindTextureEntry(doc, "ReplaceableTextures\\CommandButtons\\BTNMissing"));
+    }
+
+    [Theory]
+    // Trigger sound calls store the path with no extension; the game appends .mp3 at load.
+    [InlineData("war3mapImported\\Hero_Foo_Q.mp3", "war3mapImported\\Hero_Foo_Q")]
+    [InlineData("war3mapImported\\snd.wav", "war3mapImported\\snd")]
+    [InlineData("war3mapImported\\snd.mp3", "war3mapImported/snd")] // slash variant
+    public void FindSoundEntry_resolves_extensionless_sound_refs(string stored, string referenced)
+    {
+        var doc = MapWith(stored);
+        var entry = RenderModelCommand.FindSoundEntry(doc, referenced);
+        Assert.NotNull(entry);
+        Assert.Equal(stored, entry!.FileName);
+    }
+
+    [Fact]
+    public void FindSoundEntry_returns_null_for_a_sound_not_in_the_map()
+    {
+        var doc = MapWith("war3mapImported\\a.mp3");
+        Assert.Null(RenderModelCommand.FindSoundEntry(doc, "war3mapImported\\missing"));
+    }
+
     [Fact]
     public void An_exact_file_beats_the_variation0_fallback()
     {

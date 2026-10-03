@@ -170,8 +170,42 @@ public class BlankMapTests
         Assert.Contains("function config takes nothing returns nothing", text);
         Assert.Contains("call InitBlizzard(", text);
         Assert.Contains("call SetMapName( \"Blank Map\" )", text);
-        Assert.Contains("call SetPlayers( 1 )", text);
-        Assert.Contains("call DefineStartLocation( 0, 0.0, 0.0 )", text);
+        // Default is a hostable two-player map (a one-player map cannot open a multiplayer lobby).
+        Assert.Contains("call SetPlayers( 2 )", text);
+        Assert.Contains("call SetPlayerController( Player(0), MAP_CONTROL_USER )", text);
+        Assert.Contains("call SetPlayerController( Player(1), MAP_CONTROL_USER )", text);
+        Assert.Contains("call DefineStartLocation( 0,", text);
+        Assert.Contains("call DefineStartLocation( 1,", text);
+    }
+
+    [Fact]
+    public void Create_WithPlayerCount_EmitsThatManyHostableSlots()
+    {
+        var doc = BlankMap.Create(new BlankMapOptions { PlayerCount = 4 });
+
+        var info = (MapInfo)doc.GetFile("war3map.w3i")!.Model!;
+        Assert.Equal(4, info.Players.Count);
+        Assert.All(info.Players, p => Assert.Equal(War3Net.Build.Info.PlayerController.User, p.Controller));
+
+        var text = Encoding.UTF8.GetString(doc.GetFile("war3map.j")!.RawBytes);
+        Assert.Contains("call SetPlayers( 4 )", text);
+        Assert.Contains("call SetPlayerController( Player(3), MAP_CONTROL_USER )", text);
+        Assert.Contains("call DefineStartLocation( 3,", text);
+    }
+
+    [Fact]
+    public void Create_WithStartLocations_WritesOneSlocMarkerPerPlayer()
+    {
+        var doc = BlankMap.Create(new BlankMapOptions { PlayerCount = 3, IncludeStartLocations = true });
+
+        var units = (War3Net.Build.Widget.MapUnits)doc.GetFile("war3mapUnits.doo")!.Model!;
+        int slocId = "sloc".FromRawcode();
+        var slocs = units.Units.Where(u => u.TypeId == slocId).ToList();
+        Assert.Equal(3, slocs.Count);                                   // one marker per player
+        Assert.Equal(new[] { 0, 1, 2 }, slocs.Select(u => u.OwnerId).OrderBy(x => x));
+
+        // Off by default the map carries no placement file, so the raw primitive stays empty.
+        Assert.Null(BlankMap.Create().GetFile("war3mapUnits.doo"));
     }
 
     [Fact]

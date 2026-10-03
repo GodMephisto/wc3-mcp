@@ -41,13 +41,15 @@ public class ObjectFieldOptionsTests
         Assert.Null(result.Diagnostic);
         Assert.False(result.IsList, "itemClass is a scalar enum, not a *List type");
         Assert.NotEmpty(result.Options);
-        Assert.DoesNotContain(result.Options, o => o.Contains(','));
+        Assert.DoesNotContain(result.Options, o => o.Value.Contains(','));
+        // Deliberately NOT asserting alphabetical order any more. Options now come from
+        // UnitEditorData.txt, which lists them in the order the World Editor shows, and that order
+        // carries meaning a sort would destroy. What must hold is that they are distinct.
         Assert.Equal(
-            result.Options.OrderBy(o => o, StringComparer.OrdinalIgnoreCase).ToList(),
-            result.Options);
-        Assert.Equal(
-            result.Options.Distinct(StringComparer.OrdinalIgnoreCase).Count(),
+            result.Options.Select(o => o.Value).Distinct(StringComparer.OrdinalIgnoreCase).Count(),
             result.Options.Count);
+        // And every one should carry a label, even if it falls back to its own value.
+        Assert.All(result.Options, o => Assert.False(string.IsNullOrEmpty(o.Label)));
     }
 
     // btar (destructable "Targeted As") is a targetList: IsList must be reported true, and
@@ -60,7 +62,7 @@ public class ObjectFieldOptionsTests
         var result = ObjectFieldOptionsCommand.Execute(ObjectKind.Destructable, "btar", gameDirOverride: Install);
 
         Assert.True(result.IsList, "targetList fields must report IsList");
-        Assert.DoesNotContain(result.Options, o => o.Contains(','));
+        Assert.DoesNotContain(result.Options, o => o.Value.Contains(','));
     }
 
     // A bogus field code has no metadata and no base values: the open still succeeds, so

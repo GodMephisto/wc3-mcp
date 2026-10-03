@@ -164,11 +164,14 @@ public class ConvertCommandTests
     [Trait("Category", "Corpus")]
     public void Corpus_model_exports_valid_obj_with_bounded_indices()
     {
-        string map = TestCorpus.Map(@"Anime_WOS2_0.25c1.w3x");
+        string map = CorpusMap.PathOrEmpty;
         if (!File.Exists(map)) return; // corpus-optional
 
         var doc = MapDocument.Load(map);
-        var export = ConvertCommand.ExportModelToObj(doc, @"war3mapImported\wos_RaidenShogun.mdl");
+        var model = CorpusSubject.LargestModelAsMdl(doc);
+        if (model is null) return;   // no imported models in this map to export
+
+        var export = ConvertCommand.ExportModelToObj(doc, model);
         var lines = export.Obj.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
         int vertices = lines.Count(l => l.StartsWith("v "));

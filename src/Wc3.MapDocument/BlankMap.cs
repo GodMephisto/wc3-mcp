@@ -1,5 +1,6 @@
 // src/Wc3.MapDocument/BlankMap.cs
 using System.Globalization;
+using System.Numerics;
 using System.Reflection;
 using System.Text;
 using War3Net.Build;
@@ -7,6 +8,7 @@ using War3Net.Build.Common;
 using War3Net.Build.Environment;
 using War3Net.Build.Extensions;
 using War3Net.Build.Info;
+using War3Net.Build.Widget;
 using War3Net.Common.Extensions;
 using War3Net.IO.Mpq;
 
@@ -21,7 +23,23 @@ public sealed record BlankMapOptions
     public string MapName { get; init; } = "Blank Map";
     public string MapAuthor { get; init; } = "wc3ctl";
     public string MapDescription { get; init; } = "Created with wc3ctl.";
-    public string RecommendedPlayers { get; init; } = "1";
+    public string RecommendedPlayers { get; init; } = "2";
+
+    /// <summary>
+    /// Number of playable (user) slots the map defines. Two by default, because Warcraft III will not
+    /// build a multiplayer lobby for a one-player map (hosting it shows an empty "0/1" slot list with
+    /// nothing to join). Each slot is a human-controllable player in one shared force, so the map hosts
+    /// as a real custom game.
+    /// </summary>
+    public int PlayerCount { get; init; } = 2;
+
+    /// <summary>
+    /// Write a 'sloc' start-location marker per player into war3mapUnits.doo. Warcraft III builds the
+    /// host lobby's slots from these markers, without them the lobby shows an empty "0/N" slot list.
+    /// Off by default so the raw synthesis primitive stays an empty map, the user-facing entry points
+    /// (wc3ctl new, the Studio's New Map) turn it on so the maps people actually make are hostable.
+    /// </summary>
+    public bool IncludeStartLocations { get; init; } = false;
 
     /// <summary>Playable area is TileEdge x TileEdge tiles (TileEdge+1 vertices per side).</summary>
     public int TileEdge { get; init; } = 32;
@@ -45,8 +63,9 @@ public sealed record BlankMapOptions
 /// <para>The recipe — a war3map.w3i (info) file plus a war3map.w3e (terrain) file packed
 /// into an MPQ with a generated listfile — was verified empirically against the pinned
 /// War3Net build by tests/Wc3.Tests/War3NetApiProbe.cs. A war3map.j carrying the
-/// standard GUI-map skeleton (globals / InitCustomTriggers / main / config) rides along
-/// so ScriptPorter can splice + hook ported trigger code into a blank map.</para>
+/// standard GUI-map skeleton (globals / InitCustomTriggers / RunInitializationTriggers /
+/// main / config) rides along so ScriptPorter can splice + hook ported trigger code into
+/// a blank map.</para>
 ///
 /// <para>For external World Editor openability the synthesized bytes carry the full
 /// on-disk .w3x shape: a 512-byte HM3W pre-archive header, a war3map.wpm pathing map
@@ -72,38 +91,54 @@ public static class BlankMap
         // which never emits a preamble, so this only affects the script file.
         var enc = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
+        // World-Z half-extent of the map (each tile is 128 world units, centred on origin).
+        float half = o.TileEdge * 64f;
         var info = new MapInfo(o.InfoVersion)
         {
             MapName = o.MapName,
             MapAuthor = o.MapAuthor,
             MapDescription = o.MapDescription,
             RecommendedPlayers = o.RecommendedPlayers,
-            // Explicit (it is also the enum default): GetScriptFile names the script
-            // file off this — Jass → "war3map.j".
+            // Explicit (it is also the enum default). GetScriptFile names the script file off
+            // this, Jass gives "war3map.j".
             ScriptLanguage = ScriptLanguage.Jass,
-            // The terrain is TileEdge tiles a side with no unplayable border, so all of it is playable.
-            // Left at 0, map_info reported a 0 x 0 map for every map this created.
+            // Warcraft III will not list or load a map that has no playable area, no camera
+            // bounds, or no players, so a blank map must carry real ones. Without these a
+            // freshly created map never shows up in the game's map picker.
             PlayableMapAreaWidth = o.TileEdge,
             PlayableMapAreaHeight = o.TileEdge,
-            // The same one player and one force the script's InitCustomPlayerSlots and
-            // InitCustomTeams set up, so the info file and the script agree and the
-            // player and force editors have something to edit.
-            Players = new List<PlayerData>
-            {
-                new()
-                {
-                    Id = 0,
-                    Name = "Player 1",
-                    Controller = PlayerController.User,
-                    Race = PlayerRace.Human,
-                    Flags = PlayerFlags.RaceSelectable,
-                },
-            },
-            Forces = new List<ForceData>
-            {
-                new() { Name = "Force 1", Players = new Bitmask32(1) },
-            },
+            CameraBounds = new Quadrilateral(-half, half, half, -half),
+            CameraBoundsComplements = new RectangleMargins(0, 0, 0, 0),
+            // A custom (use-map-settings) map, NOT melee. The script sets game placement to
+            // USE_MAP_SETTINGS, so flagging the map melee is a contradiction that leaves the host
+            // lobby unable to build slots (a one-player melee map is degenerate). Use-custom-forces
+            // plus fixed player settings makes the lobby honour the map's own force/player layout,
+            // so the map hosts as the custom map its script actually is.
+            MapFlags = MapFlags.UseCustomForces | MapFlags.FixedPlayerSettingsForCustomForces,
+            Tileset = (Tileset)(byte)o.TilesetCode,
         };
+        // N playable (human/user) slots in one shared force, spread across the centre. Matches the
+        // JASS skeleton's SetPlayers(n) / per-player InitCustomPlayerSlots / DefineStartLocation.
+        int players = Math.Max(o.PlayerCount, 1);
+        int forceMask = players >= 32 ? -1 : (1 << players) - 1; // bits 0..players-1
+        for (int i = 0; i < players; i++)
+        {
+            float sx = (i - (players - 1) / 2f) * 256f;
+            info.Players.Add(new PlayerData
+            {
+                Id = i,
+                Controller = PlayerController.User,
+                Race = PlayerRace.Human,
+                Flags = 0,
+                Name = $"Player {i + 1}",
+                StartPosition = new Vector2(sx, 0f),
+                AllyLowPriorityFlags = new Bitmask32(0),
+                AllyHighPriorityFlags = new Bitmask32(0),
+                EnemyLowPriorityFlags = new Bitmask32(0),
+                EnemyHighPriorityFlags = new Bitmask32(0),
+            });
+        }
+        info.Forces.Add(new ForceData { Flags = 0, Players = new Bitmask32(forceMask), Name = "Force 1" });
         EnsureSerializable(info);
 
         var env = BuildEnvironment(o.EnvironmentVersion, o.TileEdge, o.TilesetCode);
@@ -123,6 +158,13 @@ public static class BlankMap
             map.GetScriptFile(enc)!,
             MpqFile.New(new MemoryStream(BuildMinimapTga()), MinimapFileName),
         };
+        // Start-location markers make the map hostable (see IncludeStartLocations). Opt-in so the raw
+        // primitive stays empty for callers that build placements themselves.
+        if (o.IncludeStartLocations)
+        {
+            map.Units = BuildStartLocations(players);
+            files.Add(map.GetUnitsFile(enc)!);
+        }
 
         // Generate/overwrite the (listfile) so the named entries (war3map.w3i / .w3e)
         // are discoverable when the archive is re-opened by MapDocument.Load.
@@ -202,6 +244,50 @@ public static class BlankMap
     private const string MinimapFileName = "war3mapMap.tga";
 
     /// <summary>
+    /// Start-location markers ('sloc' units), one per player, written to war3mapUnits.doo.
+    /// Warcraft III builds the host lobby's player slots from these markers, a map that defines
+    /// start locations only in the script (DefineStartLocation) but carries no markers shows an
+    /// empty "0/N" slot list with nothing to join. Positions mirror each player's start position.
+    /// </summary>
+    private static MapUnits BuildStartLocations(int players)
+    {
+        var units = new MapUnits(MapWidgetsFormatVersion.v8, MapWidgetsSubVersion.v11, useNewFormat: true);
+        int slocId = "sloc".FromRawcode();
+        for (int i = 0; i < players; i++)
+        {
+            float sx = (i - (players - 1) / 2f) * 256f;
+            units.Units.Add(new UnitData
+            {
+                TypeId = slocId,
+                OwnerId = i,
+                Flags = 2,
+                Position = new Vector3(sx, 0f, 0f),
+                Rotation = 0f,
+                Scale = new Vector3(1f, 1f, 1f),
+                HP = -1,
+                MP = -1,
+                GoldAmount = 0,
+                TargetAcquisition = -1f,
+                HeroLevel = 1,
+                HeroStrength = 0,
+                HeroAgility = 0,
+                HeroIntelligence = 0,
+                CustomPlayerColorId = -1,
+                WaygateDestinationRegionId = -1,
+                SkinId = slocId,
+                Variation = 0,
+                MapItemTableId = -1,
+                CreationNumber = i,
+                // War3Net's widget writer dereferences these lists unconditionally.
+                InventoryData = new List<InventoryItemData>(),
+                AbilityData = new List<ModifiedAbilityData>(),
+                ItemTableSets = new List<RandomItemSet>(),
+            });
+        }
+        return units;
+    }
+
+    /// <summary>
     /// Builds a small valid war3mapMap.tga minimap: an 18-byte uncompressed truecolor
     /// TGA header followed by solid grass-green 32-bit BGRA pixels. The World Editor
     /// regenerates the real minimap from terrain when it saves, so a plain placeholder
@@ -234,11 +320,15 @@ public static class BlankMap
     /// <summary>
     /// Emits the minimal standard GUI-map JASS skeleton the World Editor generates for
     /// a fresh one-player map: empty globals, an empty <c>InitCustomTriggers</c> (the
-    /// exact function ScriptPorter's init hook targets — keep the name), player/team
-    /// setup, <c>main</c> (camera bounds / day-night models / sound environment /
-    /// InitBlizzard / InitCustomTriggers) and <c>config</c> (lobby identity, one player,
-    /// one team, one start location). Deliberately conservative — just enough structure
-    /// for splice + hook and for WC3 to treat the map as a sane starting point.
+    /// exact function ScriptPorter's init hook targets, keep the name), an empty
+    /// <c>RunInitializationTriggers</c> (the other fixed World Editor name, the only
+    /// thing that ever executes a trigger whose sole event is Map Initialization, since
+    /// such a trigger registers no event of its own), player/team setup, <c>main</c>
+    /// (camera bounds / day-night models / sound environment / InitBlizzard /
+    /// InitCustomTriggers / RunInitializationTriggers) and <c>config</c> (lobby identity,
+    /// one player, one team, one start location). Both empty stubs stay conventionally
+    /// named and called so a later port has somewhere to splice real content in, exactly
+    /// how InitCustomTriggers itself already sits empty here.
     /// </summary>
     private static string BuildScript(BlankMapOptions o)
     {
@@ -247,6 +337,27 @@ public static class BlankMap
         string b = Math.Max(o.TileEdge * 64f - 512f, 0f).ToString("0.0", CultureInfo.InvariantCulture);
         string name = JassString(o.MapName);
         string desc = JassString(o.MapDescription);
+
+        // Per-player lobby setup for the N user slots (see PlayerCount). One shared force (team 0).
+        int players = Math.Max(o.PlayerCount, 1);
+        var inv = CultureInfo.InvariantCulture;
+        var slotsSb = new StringBuilder();
+        var teamsSb = new StringBuilder();
+        var startsSb = new StringBuilder();
+        for (int i = 0; i < players; i++)
+        {
+            slotsSb.Append($"    call SetPlayerStartLocation( Player({i}), {i} )\n");
+            slotsSb.Append($"    call SetPlayerColor( Player({i}), ConvertPlayerColor({i}) )\n");
+            slotsSb.Append($"    call SetPlayerRacePreference( Player({i}), RACE_PREF_HUMAN )\n");
+            slotsSb.Append($"    call SetPlayerRaceSelectable( Player({i}), true )\n");
+            slotsSb.Append($"    call SetPlayerController( Player({i}), MAP_CONTROL_USER )\n");
+            teamsSb.Append($"    call SetPlayerTeam( Player({i}), 0 )\n");
+            float sx = (i - (players - 1) / 2f) * 256f;
+            startsSb.Append($"    call DefineStartLocation( {i}, {sx.ToString("0.0", inv)}, 0.0 )\n");
+        }
+        string slots = slotsSb.ToString().TrimEnd('\n');
+        string teams = teamsSb.ToString().TrimEnd('\n');
+        string starts = startsSb.ToString().TrimEnd('\n');
 
         return $$"""
             //===========================================================================
@@ -271,6 +382,10 @@ public static class BlankMap
             function InitCustomTriggers takes nothing returns nothing
             endfunction
 
+            //===========================================================================
+            function RunInitializationTriggers takes nothing returns nothing
+            endfunction
+
             //***************************************************************************
             //*
             //*  Players
@@ -278,17 +393,12 @@ public static class BlankMap
             //***************************************************************************
 
             function InitCustomPlayerSlots takes nothing returns nothing
-                // Player 0
-                call SetPlayerStartLocation( Player(0), 0 )
-                call SetPlayerColor( Player(0), ConvertPlayerColor(0) )
-                call SetPlayerRacePreference( Player(0), RACE_PREF_HUMAN )
-                call SetPlayerRaceSelectable( Player(0), true )
-                call SetPlayerController( Player(0), MAP_CONTROL_USER )
+            {{slots}}
             endfunction
 
             function InitCustomTeams takes nothing returns nothing
                 // Force: Force 1
-                call SetPlayerTeam( Player(0), 0 )
+            {{teams}}
             endfunction
 
             //***************************************************************************
@@ -303,7 +413,13 @@ public static class BlankMap
                 call SetDayNightModels( "Environment\\DNC\\DNCLordaeron\\DNCLordaeronTerrain\\DNCLordaeronTerrain.mdl", "Environment\\DNC\\DNCLordaeron\\DNCLordaeronUnit\\DNCLordaeronUnit.mdl" )
                 call NewSoundEnvironment( "Default" )
                 call InitBlizzard(  )
+                // A use-map-settings map starts fully fogged, and with no units giving vision the
+                // whole map sits under the black mask (the screen is all black). Reveal it so a
+                // freshly created blank map is visible in-game, the author re-enables fog if wanted.
+                call FogEnable( false )
+                call FogMaskEnable( false )
                 call InitCustomTriggers(  )
+                call RunInitializationTriggers(  )
             endfunction
 
             //***************************************************************************
@@ -315,11 +431,11 @@ public static class BlankMap
             function config takes nothing returns nothing
                 call SetMapName( "{{name}}" )
                 call SetMapDescription( "{{desc}}" )
-                call SetPlayers( 1 )
+                call SetPlayers( {{players}} )
                 call SetTeams( 1 )
                 call SetGamePlacement( MAP_PLACEMENT_USE_MAP_SETTINGS )
 
-                call DefineStartLocation( 0, 0.0, 0.0 )
+            {{starts}}
 
                 // Player setup
                 call InitCustomPlayerSlots(  )

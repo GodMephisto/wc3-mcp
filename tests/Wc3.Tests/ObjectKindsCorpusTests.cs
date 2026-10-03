@@ -11,8 +11,7 @@ namespace Wc3.Tests;
 /// </summary>
 public class ObjectKindsCorpusTests
 {
-    private static readonly string MapPath =
-        TestCorpus.Map(@"Anime_WOS2_0.25c1.w3x");
+    private static string MapPath => CorpusMap.PathOrEmpty;
 
     [Fact]
     [Trait("Category", "Corpus")]

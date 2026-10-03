@@ -56,7 +56,7 @@ public sealed partial class McpToolSmokeTests
         Assert.Equal("Smoke Fixture", Prop(info, "name").GetString());
         Assert.Equal(32, Prop(info, "width").GetInt32());
         Assert.Equal(32, Prop(info, "height").GetInt32());
-        Assert.Equal(1, Prop(info, "players").GetInt32());
+        Assert.Equal(BlankPlayers, Prop(info, "players").GetInt32());
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public sealed partial class McpToolSmokeTests
     {
         var fields = await Call("map_info_get", Args(("map", Fixture)));
         Assert.Equal("Smoke Fixture", Prop(fields, "mapName").GetString());
-        Assert.Equal(1, Prop(fields, "players").GetInt32());
+        Assert.Equal(BlankPlayers, Prop(fields, "players").GetInt32());
         Assert.Equal(32, Prop(fields, "playableWidth").GetInt32());
         Assert.Equal(32, Prop(fields, "playableHeight").GetInt32());
     }

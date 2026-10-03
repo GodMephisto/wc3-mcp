@@ -52,6 +52,9 @@ public sealed partial class McpToolSmokeTests : IClassFixture<SmokeFixture>
     /// <summary>The shared blank map. Never written to, every write test checks that.</summary>
     private string Fixture => _f.Map;
 
+    /// <summary>The user slots a blank map gets, which its script's SetPlayers sets up too.</summary>
+    private static readonly int BlankPlayers = new Wc3.Model.BlankMapOptions().PlayerCount;
+
     /// <summary>A fresh output path in the test folder.</summary>
     private string NewOut(string label, string ext = ".w3x") =>
         Path.Combine(_f.Dir, $"{label}-{Guid.NewGuid():N}{ext}");

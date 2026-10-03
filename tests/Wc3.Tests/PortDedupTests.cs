@@ -130,6 +130,45 @@ public class PortDedupTests
         Assert.Equal(1, w3u.NewUnits.Count(u => u.NewId == "H000".FromRawcode()));
     }
 
+    [Fact]
+    public void A_prior_port_stored_behind_the_targets_own_trigstr_is_reused_not_duplicated()
+    {
+        var source = SourceMap();
+
+        // The target already holds the SAME hero (a prior port between two versions of a map),
+        // but its name is a TRIGSTR into the TARGET's OWN wts, resolving to the same literal the
+        // source inlines to. Both sides must be inlined against their own string table to match.
+        var tw3u = new UnitObjectData(ObjectDataFormatVersion.v2);
+        var hero = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = "H000".FromRawcode() };
+        hero.Modifications.Add(Str("uhab", "A000"));
+        hero.Modifications.Add(Str("uico", "war3mapImported\\raidenicon.blp"));
+        hero.Modifications.Add(Str("unam", "TRIGSTR_500"));
+        tw3u.NewUnits.Add(hero);
+        var tw3a = new AbilityObjectData(ObjectDataFormatVersion.v2);
+        var abil = new LevelObjectModification { OldId = "ANcl".FromRawcode(), NewId = "A000".FromRawcode() };
+        abil.Modifications.Add(new LevelObjectDataModification
+        { Level = 0, Pointer = 0, Id = "anam".FromRawcode(), Type = ObjectDataType.String, Value = "Naginata Combo" });
+        tw3a.NewAbilities.Add(abil);
+        var target = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = Ser(w => w.Write(tw3u)),
+            ["war3map.w3a"] = Ser(w => w.Write(tw3a)),
+            ["war3map.wts"] = Encoding.UTF8.GetBytes("STRING 500\n{\nRaiden Ei\n}\n"),
+            ["war3mapImported\\raidenicon.blp"] = new byte[] { 10, 20, 30, 40 },
+            ["war3map.j"] = Encoding.UTF8.GetBytes("function main takes nothing returns nothing\nendfunction\n"),
+        }));
+
+        var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
+        var result = PortCommand.PortUnit(source, bundle, target, includeScript: false);
+
+        // Recognized as the same object despite the different TRIGSTR id, reused, not remapped.
+        Assert.Equal("H000", result.RootPortedTo);
+        Assert.DoesNotContain(result.Remaps, r => r.From == "H000");
+        var reloaded = MapDocument.Load(target.SaveToBytes());
+        var w3u = (UnitObjectData)reloaded.GetFile("war3map.w3u")!.Model!;
+        Assert.Equal(1, w3u.NewUnits.Count(u => u.NewId == "H000".FromRawcode())); // no duplicate
+    }
+
     private static SimpleObjectDataModification Str(string code, string value) =>
         new() { Id = code.FromRawcode(), Type = ObjectDataType.String, Value = value };
 

@@ -8,10 +8,12 @@ namespace Wc3.Tests;
 
 public sealed class SetupTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "wc3mcp-setup-" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "wc3ctl-setup-" + Guid.NewGuid().ToString("N"));
     private readonly List<(string Program, string[] Args)> _runs = new();
     private readonly Dictionary<string, string> _onPath = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly ServerEntry Entry = new("wc3", @"C:\Tools\wc3-mcp\wc3-mcp.exe", Array.Empty<string>(), null);
+    private static readonly SetupProduct Product = SetupProduct.Standalone;
+    private static readonly string N = Product.DefaultServerName;
+    private static readonly ServerEntry Entry = new(N, @"C:\Tools\wc3ctl\Wc3.Mcp.exe", Array.Empty<string>(), null);
 
     public SetupTests() => Directory.CreateDirectory(_root);
 
@@ -32,10 +34,12 @@ public sealed class SetupTests : IDisposable
 
     private string? _userPath = @"C:\Existing;C:\Other";
 
-    private (int Code, string Output) Cli(params string[] args)
+    private (int Code, string Output) Cli(params string[] args) => Cli(Product, args);
+
+    private (int Code, string Output) Cli(SetupProduct product, params string[] args)
     {
         var sw = new StringWriter();
-        int code = SetupCli.Run(args, Env, sw, Entry);
+        int code = SetupCli.Run(args, Env, sw, product, Entry);
         return (code, sw.ToString());
     }
 
@@ -59,8 +63,8 @@ public sealed class SetupTests : IDisposable
         var root = JsonNode.Parse(File.ReadAllText(file))!;
         Assert.Equal("dark", (string?)root["theme"]);
         Assert.Equal("other.exe", (string?)root["mcpServers"]!["other"]!["command"]);
-        Assert.Equal(Entry.Command, (string?)root["mcpServers"]!["wc3"]!["command"]);
-        Assert.Equal("stdio", (string?)root["mcpServers"]!["wc3"]!["type"]);
+        Assert.Equal(Entry.Command, (string?)root["mcpServers"]![N]!["command"]);
+        Assert.Equal("stdio", (string?)root["mcpServers"]![N]!["type"]);
         Assert.True(File.Exists(file + ConfigFile.BackupSuffix), "the original was not backed up");
     }
 
@@ -120,7 +124,7 @@ public sealed class SetupTests : IDisposable
 
         Assert.Equal(0, Cli("install", id).Code);
 
-        var server = JsonNode.Parse(File.ReadAllText(file))![key]!["wc3"]!;
+        var server = JsonNode.Parse(File.ReadAllText(file))![key]![N]!;
         Assert.Equal(Entry.Command, (string?)server["command"]);
         Assert.Equal(hasType, server["type"] is not null);
     }
@@ -136,7 +140,7 @@ public sealed class SetupTests : IDisposable
 
         Assert.Equal(0, code);
         var servers = JsonNode.Parse(File.ReadAllText(file))!["mcpServers"]!.AsObject();
-        Assert.False(servers.ContainsKey("wc3"));
+        Assert.False(servers.ContainsKey(N));
         Assert.True(servers.ContainsKey("other"));
     }
 
@@ -152,14 +156,14 @@ public sealed class SetupTests : IDisposable
 
         Assert.Contains("# my settings", text);
         Assert.Contains("[mcp_servers.other]", text);
-        Assert.Single(text.Split('\n'), l => l.Trim() == "[mcp_servers.wc3]");
+        Assert.Single(text.Split('\n'), l => l.Trim() == $"[mcp_servers.{N}]");
         Assert.Contains($"command = '{Entry.Command}'", text);
         // The second install had no --game-dir, so the env table from the first is gone.
-        Assert.DoesNotContain("[mcp_servers.wc3.env]", text);
+        Assert.DoesNotContain($"[mcp_servers.{N}.env]", text);
 
         Assert.Equal(0, Cli("uninstall", "codex").Code);
         text = File.ReadAllText(file);
-        Assert.DoesNotContain("mcp_servers.wc3", text);
+        Assert.DoesNotContain($"mcp_servers.{N}", text);
         Assert.Contains("[mcp_servers.other]", text);
         Assert.Contains("model = \"o3\"", text);
     }
@@ -198,11 +202,11 @@ public sealed class SetupTests : IDisposable
 
         Assert.Equal(0, code);
         Assert.Equal(2, _runs.Count);
-        Assert.Equal(new[] { "mcp", "remove", "wc3", "--scope", "user" }, _runs[0].Args);
+        Assert.Equal(new[] { "mcp", "remove", N, "--scope", "user" }, _runs[0].Args);
         var add = _runs[1].Args;
         Assert.Equal(new[] { "mcp", "add", "--transport", "stdio", "--scope", "user" }, add.Take(6));
         Assert.Contains($"WC3_GAME_DIR={Path.GetFullPath(_root)}", add);
-        Assert.Equal(new[] { "wc3", "--", Entry.Command }, add.Skip(add.Length - 3));
+        Assert.Equal(new[] { N, "--", Entry.Command }, add.Skip(add.Length - 3));
         Assert.False(File.Exists(Path.Combine(Home, ".claude.json")), "the Claude Code state file must never be edited directly");
     }
 
@@ -213,7 +217,7 @@ public sealed class SetupTests : IDisposable
 
         Cli("install", "cursor", "--game-dir", _root);
 
-        var env = JsonNode.Parse(File.ReadAllText(Path.Combine(Home, ".cursor", "mcp.json")))!["mcpServers"]!["wc3"]!["env"]!;
+        var env = JsonNode.Parse(File.ReadAllText(Path.Combine(Home, ".cursor", "mcp.json")))!["mcpServers"]![N]!["env"]!;
         Assert.Equal(Path.GetFullPath(_root), (string?)env[Wc3.Mcp.Wc3Tools.GameDirVariable]);
     }
 
@@ -277,5 +281,29 @@ public sealed class SetupTests : IDisposable
         Directory.CreateDirectory(Path.Combine(Home, ".cursor"));
         Cli("install", "cursor", "--no-path");
         Assert.Equal(@"C:\Existing;C:\Other", _userPath);
+    }
+
+    [Fact]
+    public void The_cli_entry_starts_the_server_with_mcp_serve()
+    {
+        var entry = ServerEntry.ForThisProcess(N, null, SetupProduct.Wc3ctl.ServeArgs);
+        Assert.Equal(new[] { "mcp", "serve" }, entry.Args.TakeLast(2));
+        Assert.Empty(ServerEntry.ForThisProcess(N, null).Args.Where(a => a == "serve"));
+    }
+
+    [Fact]
+    public void Help_and_version_name_the_command_that_was_typed()
+    {
+        var (code, help) = Cli(SetupProduct.Wc3ctl, "help");
+        Assert.Equal(0, code);
+        Assert.Contains("wc3ctl mcp install --all", help);
+        Assert.Contains("'wc3ctl mcp serve' is the MCP server", help);
+        Assert.Contains(ConfigFile.BackupSuffix, help);
+        // No hard-coded product name. The backup suffix is the build's own (wc3-mcp in the public build).
+        Assert.DoesNotContain("wc3-mcp", help.Replace(ConfigFile.BackupSuffix, ""));
+
+        Assert.Contains("Run with no arguments, it is the MCP server", Cli("help").Output);
+        Assert.StartsWith("wc3ctl mcp ", Cli(SetupProduct.Wc3ctl, "version").Output);
+        Assert.Equal(Cli(SetupProduct.Wc3ctl, "help").Output, Cli(SetupProduct.Wc3ctl).Output);
     }
 }

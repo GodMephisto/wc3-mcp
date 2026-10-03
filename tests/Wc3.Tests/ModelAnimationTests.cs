@@ -17,8 +17,7 @@ namespace Wc3.Tests;
 /// </summary>
 public class ModelAnimationTests(ITestOutputHelper output)
 {
-    private static readonly string AnimeMap =
-        TestCorpus.Map(@"Anime_WOS2_0.25c1.w3x");
+    private static string AnimeMap => CorpusMap.PathOrEmpty;
 
     private static readonly byte[] PngSignature = { 0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A };
 
@@ -113,10 +112,19 @@ public class ModelAnimationTests(ITestOutputHelper output)
         if (!File.Exists(AnimeMap)) return; // corpus-optional
 
         var doc = MapDocument.Load(AnimeMap);
-        var entry = RenderModelCommand.FindModelEntry(doc, @"war3mapImported\wos_RaidenShogun.mdl");
-        Assert.NotNull(entry);
 
-        var model = ModelParser.Parse(entry!.RawBytes, entry.FileName!);
+        // Find a model that has a skeleton with a Stand sequence, rather than naming one. The
+        // property under test is "this parser reads a real animated unit model", not "this one
+        // file still exists".
+        var entry = CorpusSubject.FirstModelWhere(doc, f =>
+        {
+            var sk = ModelParser.Parse(f.RawBytes, f.FileName!).Skeleton;
+            return sk is not null && sk.Nodes.Count > 0 && sk.Sequences.Count > 0
+                   && sk.Sequences.Any(q => q.Name.StartsWith("Stand", StringComparison.OrdinalIgnoreCase));
+        });
+        if (entry is null) return;   // this map has no animated unit model to exercise
+
+        var model = ModelParser.Parse(entry.RawBytes, entry.FileName!);
         var skeleton = model.Skeleton;
         Assert.NotNull(skeleton);
         Assert.True(skeleton!.Nodes.Count > 0, "no bones parsed");

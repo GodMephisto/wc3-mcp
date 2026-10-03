@@ -70,6 +70,11 @@ public static class MapFormatRegistry
     public static bool IsKnown(string fileName) =>
         _parsers.ContainsKey(fileName) || _parsers.ContainsKey(StripLocaleLayer(fileName));
 
+    /// <summary>Every file name this registry recognizes. Reused as the base of the standard
+    /// name list <see cref="StandardMapFileNames"/> probes into a protected archive, so the two
+    /// lists cannot drift apart.</summary>
+    public static IReadOnlyCollection<string> KnownFileNames => _parsers.Keys;
+
     public static bool TryGetParser(string fileName, out ParseFn parser)
     {
         if (_parsers.TryGetValue(fileName, out var p) && p is not null)
@@ -83,10 +88,32 @@ public static class MapFormatRegistry
 
     internal static void Register(string fileName, ParseFn parser) => _parsers[fileName] = parser;
 
+    /// <summary>
+    /// A parsed model plus the bytes the parser never consumed.
+    ///
+    /// Real maps carry trailing bytes past the end of what the format's reader understands, and
+    /// they are not noise to be discarded. Measured across the map library: six object tables on
+    /// three maps end with a trailing int32 zero (an empty table count the World Editor writes and
+    /// War3Net's writer omits), and one war3mapUnits.doo ends with a stray 0x0A. Re-serializing
+    /// those models produces a strict PREFIX of the original file, so a user who edited a single
+    /// unit would silently shorten the file.
+    ///
+    /// Carrying the tail turns byte-faithfulness into something stronger and simpler to state:
+    /// everything we read is written back, and so is everything we did not understand.
+    /// </summary>
+    public sealed record ParsedModel(object Model, byte[] UnreadTail);
+
     public static object ReadWith<T>(byte[] raw, Func<BinaryReader, T> read)
     {
         using var ms = new MemoryStream(raw);
         using var reader = new BinaryReader(ms);
-        return read(reader) ?? throw new InvalidDataException($"Parser for {typeof(T).Name} returned null.");
+        var model = read(reader) ?? throw new InvalidDataException(
+            $"Parser for {typeof(T).Name} returned null.");
+
+        // Position is where the reader stopped, so anything after it was never looked at. Free to
+        // capture here, and impossible to recover later once the model has been edited.
+        long consumed = ms.Position;
+        if (consumed >= raw.LongLength) return model;
+        return new ParsedModel(model, raw.AsSpan((int)consumed).ToArray());
     }
 }

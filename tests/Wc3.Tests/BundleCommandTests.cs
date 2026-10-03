@@ -81,7 +81,10 @@ public class BundleCommandTests
         Assert.Contains(new BundleEdge("A000", "B000", "abuf:1"), bundle.Edges);
         Assert.Contains(new BundleEdge("H000", @"war3mapImported\hero.mdx", "umdl"), bundle.Edges);
         Assert.Contains(new BundleEdge(@"war3mapImported\hero.mdx", @"Textures\Hero.blp", "texture"), bundle.Edges);
-        Assert.Equal(4, bundle.Edges.Count);
+        // A string edge records WHICH object wants the display string, so a front end can tell the
+        // root's own names and tooltips from the ones the script closure carries in.
+        Assert.Contains(new BundleEdge("H000", "Dark Paladin", "string"), bundle.Edges);
+        Assert.Equal(5, bundle.Edges.Count);
     }
 
     [Fact]
@@ -305,6 +308,35 @@ public class BundleCommandTests
 
         Assert.Contains(bundle.Files, f => f is { Category: "model", PresentInMap: true });
         Assert.Contains(bundle.Files, f => f.Path == @"war3mapImported\Tohno.blp");
+    }
+
+    [Fact]
+    public void Extensionless_icon_reference_is_found_and_categorized_icon()
+    {
+        // A unit whose icon field stores the command-button path with NO extension (the game
+        // appends .blp at load); the file is imported as ...BTNRaiden.blp. The bundle must find
+        // it and mark it present, else the port drops the custom icon and the unit shows the
+        // black-and-green missing box.
+        var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
+        var unit = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = "H000".FromRawcode() };
+        unit.Modifications.Add(new SimpleObjectDataModification
+        {
+            Id = "uico".FromRawcode(), Type = ObjectDataType.String,
+            Value = @"ReplaceableTextures\CommandButtons\BTNRaiden",
+        });
+        w3u.NewUnits.Add(unit);
+
+        var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = Serialize(w => w.Write(w3u)),
+            [@"ReplaceableTextures\CommandButtons\BTNRaiden.blp"] = new byte[] { 1, 2, 3, 4 },
+        }));
+
+        var bundle = BundleCommand.ResolveUnit(doc, "H000", ctx: null, preDiagnostics: Array.Empty<string>());
+
+        var icon = bundle.Files.Single(f => f.Path == @"ReplaceableTextures\CommandButtons\BTNRaiden");
+        Assert.True(icon.PresentInMap, "extensionless icon import must resolve to the stored .blp");
+        Assert.Equal("icon", icon.Category);
     }
 
     private static byte[] Serialize(Action<BinaryWriter> write)

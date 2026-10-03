@@ -5,7 +5,8 @@ using Xunit;
 
 namespace Wc3.Tests;
 
-// Depends on the local WC3 CASC install (same assumption as the object-data / model-render tests).
+// Depends on the local WC3 CASC install (same assumption as the object-data and model-render
+// tests), so it is tagged GameData and stays out of the hermetic CI run.
 [Trait("Category", "GameData")]
 public class TerrainArtCatalogTests
 {

@@ -31,8 +31,9 @@
 
 ### src/Wc3.Commands
 
-No direct PackageReference. Depends on Wc3.MapDocument, Wc3.GameData,
-Wc3.Render, Wc3.Modeling.
+- War3Net.CodeAnalysis.Decompilers 6.0.3
+
+Also depends on Wc3.MapDocument, Wc3.GameData, Wc3.Render, Wc3.Modeling.
 
 ### tests/Wc3.Tests
 
@@ -40,6 +41,7 @@ Wc3.Render, Wc3.Modeling.
 - xunit 2.5.3
 - xunit.runner.visualstudio 2.5.3
 - SixLabors.ImageSharp 3.1.12
+- War3Net.CodeAnalysis.Decompilers 6.0.3
 
 ## Native dependencies
 
@@ -49,17 +51,9 @@ alpha.3). It is a native x64 library packaged under
 
 ## Warcraft III
 
-Warcraft III Reforged is optional. The following tools need a running install:
-
-- uabi_profile (with game_dir)
-- object_list (with game_dir)
-- object_get (with game_dir)
-- render_model (with game_dir)
-- port_unit (with game_dir)
-- palette_doodad (with game_dir)
-- audit_map (with game_dir)
-- trigger_catalog_list (with game_dir)
-- trigger_catalog_describe (with game_dir)
+Warcraft III Reforged is optional. Tools that take a `game_dir` argument use the
+install to read base game data, and without one they work on the map's own data
+and say so. `wc3-mcp doctor` shows which install, if any, was found.
 
 ## An MCP client
 

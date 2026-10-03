@@ -59,10 +59,10 @@ public sealed partial class McpToolSmokeTests
     }
 
     [Fact, Covers("player_list")]
-    public async Task Player_list_on_a_blank_map_has_one_player()
+    public async Task Player_list_on_a_blank_map_lists_its_user_slots()
     {
         var players = Rows(await Call("player_list", Args(("map", Fixture))));
-        Assert.Single(players);
+        Assert.Equal(BlankPlayers, players.Count);
 
         var p = players[0];
         Assert.Equal(0, Prop(p, "id").GetInt32());
@@ -79,7 +79,7 @@ public sealed partial class McpToolSmokeTests
     }
 
     [Fact, Covers("force_list")]
-    public async Task Force_list_on_a_blank_map_has_one_force_with_player_0()
+    public async Task Force_list_on_a_blank_map_has_one_force_holding_every_player()
     {
         var forces = Rows(await Call("force_list", Args(("map", Fixture))));
         Assert.Single(forces);
@@ -88,8 +88,7 @@ public sealed partial class McpToolSmokeTests
         Assert.Equal(0, Prop(f, "index").GetInt32());
         var pids = Prop(f, "playerIds");
         Assert.Equal(System.Text.Json.JsonValueKind.Array, pids.ValueKind);
-        Assert.Single(pids.EnumerateArray());
-        Assert.Equal(0, pids.EnumerateArray().Single().GetInt32());
+        Assert.Equal(Enumerable.Range(0, BlankPlayers), pids.EnumerateArray().Select(e => e.GetInt32()));
         Assert.False(Prop(f, "allied").GetBoolean());
         Assert.False(Prop(f, "alliedVictory").GetBoolean());
         Assert.False(Prop(f, "sharedVision").GetBoolean());

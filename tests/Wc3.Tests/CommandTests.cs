@@ -47,4 +47,47 @@ public class CommandTests
         var result = Wc3.Commands.RoundtripCommand.Execute(MapDocument.Load(path));
         Assert.True(result.Faithful, string.Join(",", result.Mismatches));
     }
+
+    [Fact]
+    public void List_types_nameless_entries_when_asked_and_never_otherwise()
+    {
+        var blp = new byte[64];
+        System.Text.Encoding.ASCII.GetBytes("BLP1").CopyTo(blp, 0);
+        var doc = MapDocument.Load(SyntheticMap.Build(
+            new Dictionary<string, byte[]> { ["war3map.j"] = new byte[] { 1, 2, 3 } },
+            new[] { blp }));
+
+        var typed = ListCommand.Execute(doc, typeUnnamed: true);
+        var unnamed = typed.Files.Single(f => f.Name is null);
+        Assert.Equal("BLP texture", unnamed.ContentType);
+        // A named entry's name already answers the question, no type is reported for it.
+        Assert.All(typed.Files.Where(f => f.Name is not null), f => Assert.Null(f.ContentType));
+
+        // The default stays type-free, the cheap sweep the Studio status line relies on.
+        var plain = ListCommand.Execute(doc);
+        Assert.All(plain.Files, f => Assert.Null(f.ContentType));
+    }
+
+    [Fact]
+    public void List_marks_names_the_harvest_recovered()
+    {
+        var script = "globals\r\nendglobals\r\nfunction Cast takes nothing returns nothing\r\n"
+            + "    call AddSpecialEffect(\"war3mapImported\\\\Foo.mdx\", 0, 0)\r\n"
+            + "endfunction\r\n";
+        var doc = MapDocument.Load(SyntheticMap.BuildProtected(
+            visibleFiles: new Dictionary<string, byte[]> { ["(listfile)"] = new byte[] { 0 } },
+            hiddenFiles: new Dictionary<string, byte[]>
+            {
+                ["war3map.j"] = System.Text.Encoding.UTF8.GetBytes(script),
+                [@"war3mapImported\Foo.mdx"] = new byte[] { 1, 2, 3 },
+            }));
+        doc.HarvestAssetNames();
+
+        var r = ListCommand.Execute(doc);
+        var recovered = r.Files.Single(f => f.Name == @"war3mapImported\Foo.mdx");
+        Assert.True(recovered.NameFromHarvest);
+        // The script's own name came from Load's standard-name probe, not from the harvest.
+        var scriptEntry = r.Files.Single(f => f.Name == "war3map.j");
+        Assert.False(scriptEntry.NameFromHarvest);
+    }
 }

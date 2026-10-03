@@ -95,13 +95,19 @@ public class ModelRendererTests
     [Trait("Category", "Corpus")]
     public void Renders_map_imported_model_end_to_end()
     {
-        string map = TestCorpus.Map(@"Anime_WOS2_0.25c1.w3x");
+        string map = CorpusMap.PathOrEmpty;
         if (!File.Exists(map)) return; // corpus-optional
 
-        // The object field says .mdl but the import is binary .mdx — exercises
-        // the extension-swap lookup along with textures and rasterization.
+        // Find a model in whatever map resolved, rather than naming one. Naming one tied this
+        // test to a single file, and when that file went away the test stopped running instead of
+        // failing, which is how it stayed green while proving nothing.
         var doc = Wc3.Model.MapDocument.Load(map);
-        var png = Wc3.Commands.RenderModelCommand.Execute(doc, @"war3mapImported\wos_Bambietta.mdl");
+        // Asked for as .mdl though the archive stores .mdx, which is how object data names a
+        // model and therefore exercises the extension-swap lookup as well as geometry and textures.
+        var asMdl = CorpusSubject.LargestModelAsMdl(doc);
+        if (asMdl is null) return;   // a map with no imported models proves nothing here
+
+        var png = Wc3.Commands.RenderModelCommand.Execute(doc, asMdl);
 
         Assert.Equal(PngSignature, png[..8]);
         Assert.True(png.Length > 10_000, $"suspiciously small render ({png.Length} bytes)");

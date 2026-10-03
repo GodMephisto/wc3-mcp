@@ -13,12 +13,17 @@ public sealed record ServerEntry(string Name, string Command, IReadOnlyList<stri
     /// The entry for the running process. A published exe starts itself. Under <c>dotnet Wc3.Mcp.dll</c>
     /// the host is dotnet, so the entry starts dotnet with this assembly's path.
     /// </summary>
-    public static ServerEntry ForThisProcess(string name, string? gameDir)
+    public static ServerEntry ForThisProcess(string name, string? gameDir, IReadOnlyList<string>? serveArgs = null)
     {
         var exe = Environment.ProcessPath ?? throw new InvalidOperationException("cannot tell where this program is");
+        var tail = serveArgs ?? Array.Empty<string>();
         if (Path.GetFileNameWithoutExtension(exe).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
-            return new ServerEntry(name, exe, new[] { typeof(ServerEntry).Assembly.Location }, gameDir);
-        return new ServerEntry(name, exe, Array.Empty<string>(), gameDir);
+        {
+            // Under dotnet the host is dotnet, so the entry starts dotnet with the entry assembly.
+            var assembly = System.Reflection.Assembly.GetEntryAssembly()?.Location ?? typeof(ServerEntry).Assembly.Location;
+            return new ServerEntry(name, exe, new[] { assembly }.Concat(tail).ToArray(), gameDir);
+        }
+        return new ServerEntry(name, exe, tail.ToArray(), gameDir);
     }
 
     /// <summary>The JSON object most clients use for one stdio server.</summary>
@@ -235,11 +240,11 @@ public static class CodexToml
 /// <summary>Writes a config file safely, keeping the previous version beside it.</summary>
 public static class ConfigFile
 {
-    /// <summary>The suffix of the copy kept before each change.</summary>
-    public const string BackupSuffix = ".wc3-mcp.bak";
+    /// <summary>The suffix of the copy kept before each change, <c>.wc3ctl.bak</c> or <c>.wc3-mcp.bak</c>.</summary>
+    public static string BackupSuffix { get; } = "." + ServerIdentity.ProductId + ".bak";
 
     /// <summary>
-    /// Copies the current file to <c>NAME.wc3-mcp.bak</c>, writes the new text to a temp file in the
+    /// Copies the current file to NAME plus <see cref="BackupSuffix"/>, writes the new text to a temp file in the
     /// same folder, then moves it into place, so a crash never leaves a half-written config.
     /// </summary>
     public static void ReplaceWithBackup(string path, string text)

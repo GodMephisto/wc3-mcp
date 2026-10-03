@@ -3,7 +3,7 @@
   "manifest_version": "0.3",
   "name": "wc3-mcp",
   "display_name": "Warcraft III Map Tools",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Read, audit and edit Warcraft III maps byte-faithfully",
   "long_description": "wc3-mcp lets an AI assistant open Warcraft III .w3x and .w3m maps, inspect units, abilities, items, triggers, regions and cameras, audit object data, and make edits that leave every untouched file byte for byte. It reads game data from your own Warcraft III install and ships no game files. Windows only.",
   "author": {

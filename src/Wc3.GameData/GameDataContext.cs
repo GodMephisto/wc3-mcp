@@ -20,6 +20,17 @@ public sealed class GameDataContext
     public required WorldEditStrings Strings { get; init; }
     public required UnitNameTable UnitNames { get; init; }
 
+    /// <summary>The World Editor's enumerated field types, so a closed-set field offers the
+    /// values the game defines with the names it calls them, rather than whatever tokens the
+    /// base data happens to contain. See EditorEnumData.</summary>
+    public EditorEnumData EditorEnums { get; init; } = EditorEnumData.Empty;
+
+    /// <summary>The World Editor's catalogs from UI\WorldEditData.txt (tilesets, sky models,
+    /// loading screens, sound channels, brushes, editor settings), each entry with its stored
+    /// key, every payload field and the resolved display name. See EditorCatalogData for why
+    /// these are not served through <see cref="EditorEnums"/>.</summary>
+    public EditorCatalogData EditorCatalogs { get; init; } = EditorCatalogData.Empty;
+
     /// <summary>Per-type build failures: that type's store is left Empty and the reason
     /// recorded here — a missing type never fails the whole open.</summary>
     public IReadOnlyList<string> Diagnostics { get; init; } = Array.Empty<string>();

@@ -56,7 +56,7 @@ public static class RenderModelCommand
     {
         if (FindModelEntry(doc, modelInternalPath) is { } entry)
         {
-            var model = ModelParser.Parse(entry.RawBytes, entry.FileName!);
+            var model = ModelParser.Parse(entry.CurrentBytes, entry.FileName!);
             return new PreparedModel(model, ResolveTextures(doc, model, ctx));
         }
 
@@ -248,10 +248,88 @@ public static class RenderModelCommand
     public static MapFileEntry? FindModelEntry(MapDocument doc, string path)
     {
         foreach (var candidate in PathCandidates(path))
-            if (doc.GetFile(candidate) is { } entry && entry.RawBytes.Length > 0)
+            if (doc.GetFile(candidate) is { } entry && entry.CurrentBytes.Length > 0)
                 return entry;
         return null;
     }
+
+    private static readonly string[] TextureExtensions = { ".blp", ".tga", ".dds" };
+
+    /// <summary>
+    /// Resolves a texture/icon reference to the map entry that holds it, trying both slash
+    /// conventions and, when the reference carries no extension (an icon Art field stores
+    /// "...\BTNFoo" and the game appends .blp at load), the .blp/.tga/.dds it really lives
+    /// under, plus the sibling texture extensions when a wrong one is given. Returns null when
+    /// no in-map file backs the path (a base-game texture). Public so discovery and the port
+    /// resolve icons identically — do not reimplement this lookup.
+    /// </summary>
+    public static MapFileEntry? FindTextureEntry(MapDocument doc, string path)
+    {
+        foreach (var candidate in TexturePathCandidates(path))
+            if (doc.GetFile(candidate) is { } entry && entry.CurrentBytes.Length > 0)
+                return entry;
+        return null;
+    }
+
+    /// <summary>Both slash conventions x {as-given, then sibling .blp/.tga/.dds for a
+    /// wrong-extension ref, or all three appended for an extensionless ref}.</summary>
+    private static IEnumerable<string> TexturePathCandidates(string path)
+    {
+        foreach (var p in new[] { path, path.Replace('/', '\\'), path.Replace('\\', '/') }.Distinct())
+        {
+            yield return p;
+            var ext = Path.GetExtension(p);
+            bool hasTexExt = TextureExtensions.Any(e => ext.Equals(e, StringComparison.OrdinalIgnoreCase));
+            if (hasTexExt)
+            {
+                var stem = p[..^ext.Length];
+                foreach (var e in TextureExtensions)
+                    if (!ext.Equals(e, StringComparison.OrdinalIgnoreCase))
+                        yield return stem + e;
+            }
+            else
+            {
+                foreach (var e in TextureExtensions) yield return p + e;
+            }
+        }
+    }
+
+    private static readonly string[] SoundExtensions = { ".mp3", ".wav", ".flac" };
+
+    /// <summary>
+    /// Resolves a sound reference to the map entry that holds it. Trigger sound calls store the
+    /// path with no extension (MakeSound("...\Hero_Foo_Q") and the file lives under .mp3), so this
+    /// tries both slash conventions and appends .mp3/.wav/.flac. Returns null when no in-map file
+    /// backs the path. Shared so discovery and the port resolve sounds identically.
+    /// </summary>
+    public static MapFileEntry? FindSoundEntry(MapDocument doc, string path)
+    {
+        foreach (var p in new[] { path, path.Replace('/', '\\'), path.Replace('\\', '/') }.Distinct())
+        {
+            if (doc.GetFile(p) is { CurrentBytes.Length: > 0 } exact) return exact;
+            var ext = Path.GetExtension(p);
+            var stem = SoundExtensions.Any(e => ext.Equals(e, StringComparison.OrdinalIgnoreCase))
+                ? p[..^ext.Length] : p;
+            foreach (var e in SoundExtensions)
+                if (doc.GetFile(stem + e) is { CurrentBytes.Length: > 0 } hit) return hit;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// One universal asset resolver: resolves ANY asset reference (a model, texture, icon or
+    /// sound) to the map entry that stores it, regardless of how it is spelled. It tries a model
+    /// match (.mdx/.mdl swap and variation-0), then a texture match (.blp/.tga/.dds), then a
+    /// sound match (.mp3/.wav/.flac), each covering both slash conventions, the case-insensitive
+    /// table, an extensionless reference (the game appends the extension at load), and a wrong
+    /// sibling extension. Returns null only when no in-map file backs the path (a base-game
+    /// asset). Discovery and the port both resolve through here, so what a bundle marks present
+    /// is exactly what the port can copy.
+    /// </summary>
+    public static MapFileEntry? FindAssetEntry(MapDocument doc, string path) =>
+        FindModelEntry(doc, path)
+        ?? FindTextureEntry(doc, path)
+        ?? FindSoundEntry(doc, path);
 
     /// <summary>Both slash conventions x {as-given, sibling .mdx/.mdl, extensionless + either,
     /// variation-0 + either}. The variation-0 forms come last so they can never shadow an
@@ -301,7 +379,7 @@ public static class RenderModelCommand
             var entry = doc.GetFile(path)
                 ?? doc.GetFile(path.Replace('/', '\\'))
                 ?? doc.GetFile(path.Replace('\\', '/'));
-            byte[]? bytes = entry is { RawBytes.Length: > 0 } ? entry.RawBytes : null;
+            byte[]? bytes = entry is { CurrentBytes.Length: > 0 } ? entry.CurrentBytes : null;
             if (bytes is null && ctx is not null)
                 foreach (var candidate in CascTextureCandidates(path))
                     if (ctx.TryReadFile(candidate, out var cascBytes)) { bytes = cascBytes; break; }

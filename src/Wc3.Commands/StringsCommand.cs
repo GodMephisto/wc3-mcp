@@ -19,8 +19,12 @@ public sealed record StringsListResult(string? FileName, IReadOnlyList<WtsEntry>
 /// Reads/edits the map's trigger-string table (war3map.wts) as TEXT, byte-faithfully:
 /// <see cref="SetEntry"/> splices only the target entry's body and leaves every other
 /// character of the file untouched (headers, braces, comments, blank lines, other entries).
-/// War3Net's TriggerStrings model stays parse-only here — re-serializing it would rewrite
+/// War3Net's TriggerStrings model stays parse-only here, re-serializing it would rewrite
 /// the whole file and lose the original spacing.
+///
+/// "Byte-faithfully" is meant literally, and only became literally true once the splice moved
+/// off UTF-8. See <see cref="Set"/> for what a UTF-8 round trip does to a map carrying a byte
+/// that is not valid UTF-8.
 /// </summary>
 public static class StringsCommand
 {
@@ -98,15 +102,32 @@ public static class StringsCommand
     {
         var entry = doc.GetFile(WtsFileName)
             ?? throw new FileNotFoundException($"map contains no {WtsFileName}", WtsFileName);
-        var updated = SetEntry(CurrentSource(entry), id, newText);
-        doc.AddOrReplaceRawFile(WtsFileName, Encoding.UTF8.GetBytes(updated));
+
+        // Spliced in Latin-1, not UTF-8, so that bytes outside the edited entry survive exactly.
+        //
+        // The old path decoded the whole file as UTF-8 and re-encoded it, which is byte-identical
+        // only while every byte in the file IS valid UTF-8. Measured across the map library, three
+        // maps fail that (all three GGGA versions, one truncated multi-byte sequence each), and on
+        // those a UTF-8 round trip silently rewrote one byte into the three bytes of U+FFFD. So
+        // editing any one string permanently damaged an unrelated one.
+        //
+        // Latin-1 maps every byte 0..255 to the same code point and back, making it a transparent
+        // carrier for arbitrary bytes, and it leaves the ASCII structure the span scan looks for
+        // (STRING, braces, line breaks) exactly where it was. The replacement text is converted to
+        // its UTF-8 BYTES first and then carried the same way, so new text is still written as
+        // real UTF-8.
+        string carrier = Encoding.Latin1.GetString(entry.CurrentBytes);
+        string replacement = Encoding.Latin1.GetString(Encoding.UTF8.GetBytes(newText));
+        var updated = SetEntry(carrier, id, replacement);
+        doc.AddOrReplaceRawFile(WtsFileName, Encoding.Latin1.GetBytes(updated));
     }
 
-    /// <summary>Current text of the entry: the pending raw override when one exists, else the
-    /// original bytes. UTF-8 keeps a BOM as U+FEFF through GetString/GetBytes, so decode +
-    /// re-encode of untouched text is byte-identical.</summary>
+    /// <summary>Current text of the entry for READING: the pending raw override when one exists,
+    /// else the original bytes, decoded as UTF-8 because that is what the file is and what makes
+    /// the strings display correctly. The write path deliberately does NOT use this, see
+    /// <see cref="Set"/>.</summary>
     private static string CurrentSource(MapFileEntry entry)
-        => Encoding.UTF8.GetString(entry.OverrideBytes ?? entry.RawBytes);
+        => Encoding.UTF8.GetString(entry.CurrentBytes);
 
     private static List<EntrySpan> ParseSpans(string src)
     {
@@ -170,7 +191,13 @@ public static class StringsCommand
     private static bool TryParseHeader(string line, out int id)
     {
         id = 0;
-        var s = line.TrimStart('\uFEFF');   // tolerate a UTF-8 BOM before the first header
+        // Tolerate a UTF-8 BOM before the first header, in EITHER form it can reach here. A UTF-8
+        // decode turns it into one U+FEFF. The write path carries the file in Latin-1 so that
+        // undecodable bytes survive (see Set), and there the same BOM arrives as the three
+        // separate characters EF BB BF. Trimming only the first form silently stopped matching
+        // every header in a BOM'd file the moment the carrier changed, which is most real maps.
+        var s = line.TrimStart('\uFEFF');
+        if (s.StartsWith("\u00EF\u00BB\u00BF", StringComparison.Ordinal)) s = s[3..];
         if (!s.StartsWith("STRING ", StringComparison.Ordinal)) return false;
         return int.TryParse(s["STRING ".Length..].Trim(), NumberStyles.None, CultureInfo.InvariantCulture, out id);
     }

@@ -54,7 +54,7 @@ public static class PlacementCommand
         int creationNumber = NextCreationNumber(units);
         units.Units.Add(NewUnitData(typeRawcode.FromRawcode(), ownerId, x, y, z, rotation, scale, creationNumber));
 
-        doc.AddOrReplaceModelFile(UnitsFile, units);
+        CommitUnits(doc, units);
         return new(true, $"placed {typeRawcode} (owner {ownerId}) at ({x}, {y}) as unit #{creationNumber}", creationNumber);
     }
 
@@ -89,7 +89,7 @@ public static class PlacementCommand
         int creationNumber = NextCreationNumber(units);
         units.Units.Add(NewUnitData(itemRawcode.FromRawcode(), ItemOwnerId, x, y, z, rotation, scale, creationNumber));
 
-        doc.AddOrReplaceModelFile(UnitsFile, units);
+        CommitUnits(doc, units);
         return new(true, $"placed item {itemRawcode} at ({x}, {y}) as widget #{creationNumber}", creationNumber);
     }
 
@@ -153,7 +153,7 @@ public static class PlacementCommand
         if (existing is not null)
         {
             existing.Position = new Vector3(x, y, existing.Position.Z);
-            doc.AddOrReplaceModelFile(UnitsFile, units);
+            CommitUnits(doc, units);
             return new(true,
                 $"moved player {player} start location to ({x}, {y}) (unit #{existing.CreationNumber})",
                 existing.CreationNumber);
@@ -175,6 +175,19 @@ public static class PlacementCommand
         if (doc.GetFile(UnitsFile)?.Model is MapUnits existing)
             return existing;
         return new MapUnits(DefaultFormat, DefaultSubVersion, useNewFormat: true);
+    }
+
+    /// <summary>
+    /// Persists a war3mapUnits.doo change and regenerates the runtime creation script so the
+    /// preplaced widgets actually spawn in game. Every unit and item write funnels through here
+    /// so the .doo and its generated <c>CreateAllUnits</c>/<c>CreateAllItems</c> never drift
+    /// apart. See <see cref="PreplacedUnitsScript"/> for why the script (not the .doo) is what
+    /// spawns widgets in a map that ships a custom war3map.j.
+    /// </summary>
+    internal static void CommitUnits(MapDocument doc, MapUnits units)
+    {
+        doc.AddOrReplaceModelFile(UnitsFile, units);
+        PreplacedUnitsScript.Sync(doc);
     }
 
     private static int NextCreationNumber(MapUnits units) =>

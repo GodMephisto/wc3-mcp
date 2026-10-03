@@ -97,7 +97,7 @@ public abstract class MapUnitsEdit : IMapEdit
         {
             var units = PlacementCommand.GetOrCreateUnits(doc);
             units.Units.Add(_placed);
-            doc.AddOrReplaceModelFile(PlacementCommand.UnitsFile, units);
+            PlacementCommand.CommitUnits(doc, units);
         }
     }
 
@@ -106,7 +106,7 @@ public abstract class MapUnitsEdit : IMapEdit
         var units = PlacementCommand.GetOrCreateUnits(doc);
         if (_placed is not null)
             units.Units.Remove(_placed);
-        doc.AddOrReplaceModelFile(PlacementCommand.UnitsFile, units);
+        PlacementCommand.CommitUnits(doc, units);
     }
 
     private static MapUnits ModelOf(MapDocument doc) =>
@@ -275,7 +275,7 @@ public sealed class RemoveUnitEdit : IMapEdit
         _removed = units.Units.FirstOrDefault(u => u.CreationNumber == _creationNumber);
         if (_removed is not null)
             units.Units.Remove(_removed);
-        doc.AddOrReplaceModelFile(PlacementCommand.UnitsFile, units);
+        PlacementCommand.CommitUnits(doc, units);
     }
 
     public void Revert(MapDocument doc)
@@ -284,6 +284,6 @@ public sealed class RemoveUnitEdit : IMapEdit
             return;
         var units = PlacementCommand.GetOrCreateUnits(doc);
         units.Units.Add(_removed);
-        doc.AddOrReplaceModelFile(PlacementCommand.UnitsFile, units);
+        PlacementCommand.CommitUnits(doc, units);
     }
 }

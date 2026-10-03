@@ -85,9 +85,12 @@ public static class TriggerReadCommand
         var categories = new List<TriggerCategoryInfo>();
         var triggers = new List<TriggerInfo>();
 
-        // war3map.wct carries one code body per TriggerDefinition, in wtg document order
-        // (GUI triggers get an empty slot). Track the ordinal to pair them up.
-        int definitionOrdinal = 0;
+        // Which wct slot belongs to which definition is decided by WctPairing, because the rule
+        // depends on the wtg sub-version and getting it wrong shows one trigger's script under
+        // another trigger's name with nothing looking amiss. This used to count every definition
+        // unconditionally, which mispaired every custom-text body after the first GUI trigger on
+        // every sub-version map.
+        var slots = WctPairing.SlotIndices(wtg);
         foreach (var item in wtg.TriggerItems)
         {
             switch (item)
@@ -97,8 +100,7 @@ public static class TriggerReadCommand
                         cat.Id, cat.Name ?? string.Empty, cat.Type.ToString()));
                     break;
                 case TriggerDefinition td:
-                    triggers.Add(ToTriggerInfo(td, wct, definitionOrdinal));
-                    definitionOrdinal++;
+                    triggers.Add(ToTriggerInfo(td, wtg, wct, slots));
                     break;
                 // DeletedTriggerItem stubs and TriggerVariableDefinition tree entries
                 // (the sub-version format mirrors variables into the tree) carry no
@@ -117,16 +119,12 @@ public static class TriggerReadCommand
         return new TriggerModel(categories, triggers, variables, language);
     }
 
-    private static TriggerInfo ToTriggerInfo(TriggerDefinition td, MapCustomTextTriggers? wct, int ordinal)
+    private static TriggerInfo ToTriggerInfo(
+        TriggerDefinition td, MapTriggers wtg, MapCustomTextTriggers? wct,
+        IReadOnlyDictionary<TriggerDefinition, int> slots)
     {
-        // The sub-version format marks custom-text triggers by item type (Script); the
-        // classic format by the IsCustomTextTrigger flag. Honour either.
-        bool isCustomText = td.IsCustomTextTrigger || td.Type == TriggerItemType.Script;
-
-        string? customText = null;
-        if (isCustomText && wct is not null && ordinal < wct.CustomTextTriggers.Count)
-            // Bodies are stored null-terminated; trim so consumers see clean script text.
-            customText = wct.CustomTextTriggers[ordinal].Code?.TrimEnd('\0');
+        bool isCustomText = WctPairing.IsCustomText(td);
+        string? customText = WctPairing.BodyFor(wtg, wct, td, slots);
 
         return new TriggerInfo(
             td.Id,

@@ -12,8 +12,7 @@ namespace Wc3.Tests;
 /// </summary>
 public class BundleCorpusTests
 {
-    private static readonly string MapPath =
-        TestCorpus.Map(@"Anime_WOS2_0.25c1.w3x");
+    private static string MapPath => CorpusMap.PathOrEmpty;
 
     [Fact]
     [Trait("Category", "Corpus")]
@@ -44,9 +43,14 @@ public class BundleCorpusTests
         if (!File.Exists(MapPath)) return;
         var doc = MapDocument.Load(MapPath);
 
-        // H000 "Raiden Ei" — her spell handlers live in war3map.j behind
-        // rawcode-initialized globals (integer RaidenQ_ID= 'A000' ...).
-        var bundle = BundleCommand.ResolveUnit(doc, "H000", ctx: null, preDiagnostics: Array.Empty<string>());
+        // Find a custom unit whose script closure is non-empty, rather than naming one. This test
+        // used to name 'H000' from a specific map, and once that map was gone it skipped in silence
+        // instead of failing. The property under test is that a bundle reaches script through
+        // rawcode-initialised globals at all, not that one particular hero exists.
+        var hero = FirstUnitWithAScriptClosure(doc);
+        if (hero is null) return;   // this map has no unit whose handlers are reachable that way
+
+        var bundle = BundleCommand.ResolveUnit(doc, hero, ctx: null, preDiagnostics: Array.Empty<string>());
 
         Assert.NotEmpty(bundle.Functions);
         Assert.Contains(bundle.Functions, f => f.Reason.StartsWith("references ", StringComparison.Ordinal));
@@ -54,5 +58,27 @@ public class BundleCorpusTests
         // Deterministic: ordered by declaration position, no duplicate names.
         Assert.Equal(bundle.Functions.OrderBy(f => f.StartLine).Select(f => f.Name), bundle.Functions.Select(f => f.Name));
         Assert.Equal(bundle.Functions.Count, bundle.Functions.Select(f => f.Name).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    /// <summary>
+    /// The first custom unit in the map whose bundle reaches at least one script function both by
+    /// direct rawcode reference and by call closure, which is what the assertions below need.
+    /// Bounded so a map full of units does not turn this into a sweep.
+    /// </summary>
+    private static string? FirstUnitWithAScriptClosure(MapDocument doc)
+    {
+        int examined = 0;
+        foreach (var o in ObjectListCommand.Execute(doc, ObjectKind.Unit, gameDirOverride: null).Items)
+        {
+            if (o.BaseRawcode is null || o.BaseRawcode == o.Rawcode) continue;  // custom only
+            if (++examined > 40) break;      // bounded, and 40 covers any real map's hero roster
+
+            var b = BundleCommand.ResolveUnit(doc, o.Rawcode, ctx: null,
+                preDiagnostics: Array.Empty<string>());
+            if (b.Functions.Any(f => f.Reason.StartsWith("references ", StringComparison.Ordinal))
+                && b.Functions.Any(f => f.Reason.StartsWith("called by ", StringComparison.Ordinal)))
+                return o.Rawcode;
+        }
+        return null;
     }
 }

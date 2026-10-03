@@ -11,8 +11,7 @@ namespace Wc3.Tests;
 /// </summary>
 public class ModelingCorpusTests
 {
-    private static readonly string AnimeMap =
-        TestCorpus.Map(@"Anime_WOS2_0.25c1.w3x");
+    private static string AnimeMap => CorpusMap.PathOrEmpty;
 
     private static readonly string BlpSamplesDir =
         System.IO.Path.Combine(System.IO.Path.GetTempPath(), @"wc3x_modelsamples\blp");

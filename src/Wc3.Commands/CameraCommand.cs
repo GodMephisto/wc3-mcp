@@ -57,7 +57,7 @@ public static class CameraCommand
         if (string.IsNullOrWhiteSpace(name))
             return new CameraOpResult(false, "Camera name must not be blank.");
 
-        var cameras = GetCameras(doc);
+        var cameras = GetOrCreateCameras(doc);
         if (cameras.Cameras.Any(c => NameEq(c.Name, name)))
             return new CameraOpResult(false, $"A camera named '{name}' already exists.");
 
@@ -74,7 +74,7 @@ public static class CameraCommand
     /// value, a rename onto an existing camera, or a missing target camera.</summary>
     public static CameraOpResult Set(MapDocument doc, string name, string field, string value)
     {
-        var cameras = GetCameras(doc);
+        var cameras = GetOrCreateCameras(doc);
         var cam = cameras.Cameras.FirstOrDefault(c => NameEq(c.Name, name));
         if (cam is null)
             return new CameraOpResult(false, $"No camera named '{name}'.");
@@ -94,7 +94,7 @@ public static class CameraCommand
     /// w3c back into the in-memory document.</summary>
     public static CameraOpResult Remove(MapDocument doc, string name)
     {
-        var cameras = GetCameras(doc);
+        var cameras = GetOrCreateCameras(doc);
         var cam = cameras.Cameras.FirstOrDefault(c => NameEq(c.Name, name));
         if (cam is null)
             return new CameraOpResult(false, $"No camera named '{name}'.");
@@ -169,9 +169,24 @@ public static class CameraCommand
         return true;
     }
 
-    private static MapCameras GetCameras(MapDocument doc) =>
+    /// <summary>
+    /// The map's parsed cameras, creating an empty modern section if the map has none.
+    /// </summary>
+    /// <remarks>
+    /// A map with no war3map.w3c has no cameras, which is not the same as having cameras that
+    /// cannot be edited. Throwing here made <see cref="Add"/> refuse on every map that never
+    /// defined one, so the Cameras panel could show a map's cameras but never give it a first
+    /// one, and the reason surfaced as an exception rather than a message. That contradicted
+    /// this file's own documented intent, "add creates the file on first use", and it made
+    /// cameras behave unlike regions, where PlacementCommand.GetOrCreateRegions has always
+    /// created the section on demand. The two now match.
+    ///
+    /// Set and Remove reach through here too and are still correct, an absent section yields
+    /// zero cameras, so they report "no camera named X" instead of raising.
+    /// </remarks>
+    internal static MapCameras GetOrCreateCameras(MapDocument doc) =>
         doc.GetFile(FileName)?.Model as MapCameras
-        ?? new MapCameras(MapCamerasFormatVersion.v0, false);
+        ?? new MapCameras(MapCamerasFormatVersion.v0, useNewFormat: false);
 
     private static CameraFields ToFields(Camera c) => new(
         Name: c.Name ?? string.Empty,
