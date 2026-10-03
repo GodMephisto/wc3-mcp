@@ -215,12 +215,3 @@ is in [CREDITS.md](CREDITS.md).
 Warcraft III is made by Blizzard Entertainment. This project is unofficial, is
 not affiliated with or endorsed by Blizzard, reads your own install and ships no
 game files.
-
-## License
-
-Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE). Free for
-everyone, commercial use included. If you redistribute wc3-mcp or a modified
-copy, keep the LICENSE and NOTICE files with it.
-
-If you ship a map or project made with wc3-mcp, a credit to GodMephisto is
-appreciated, though not required.
