@@ -218,6 +218,9 @@ game files.
 
 ## License
 
-Free for everyone. Non-commercial use needs no credit. Commercial use (selling
-it, or using it in a paid product or service) must credit GodMephisto. See
-LICENSE.
+Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE). Free for
+everyone, commercial use included. If you redistribute wc3-mcp or a modified
+copy, keep the LICENSE and NOTICE files with it.
+
+If you ship a map or project made with wc3-mcp, a credit to GodMephisto is
+appreciated, though not required.

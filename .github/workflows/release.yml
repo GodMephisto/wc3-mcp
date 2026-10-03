@@ -28,6 +28,7 @@ jobs:
       - name: Copy license files
         run: >
           Copy-Item LICENSE -Destination dist-mcp/;
+          Copy-Item NOTICE -Destination dist-mcp/;
           Copy-Item THIRD-PARTY-NOTICES.md -Destination dist-mcp/;
           Copy-Item CREDITS.md -Destination dist-mcp/
 
