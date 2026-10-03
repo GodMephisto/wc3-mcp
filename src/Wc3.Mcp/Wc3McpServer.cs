@@ -26,7 +26,7 @@ public static class Wc3McpServer
     }
 
     /// <summary>The release version, reported to clients and by wc3-mcp version.</summary>
-    public const string Version = "0.1.0";
+    public const string Version = "0.1.1";
 
     /// <summary>Server options with every tool registered.</summary>
     public static McpServerOptions CreateOptions()

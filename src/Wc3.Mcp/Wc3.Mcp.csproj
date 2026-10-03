@@ -9,7 +9,7 @@
     <!-- The command people type and every AI app starts. The namespace stays Wc3.Mcp. -->
     <AssemblyName>wc3-mcp</AssemblyName>
     <RootNamespace>Wc3.Mcp</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
