@@ -55,6 +55,9 @@ public static class ReplayCommand
             return new ReplayReport(Array.Empty<ReplaySummary>(),
                 new[] { "no replay folder found under Documents\\Warcraft III\\BattleNet, pass a path" });
 
+        if (!File.Exists(path) && !Directory.Exists(path))
+            return new ReplayReport(Array.Empty<ReplaySummary>(), new[] { $"no file or folder at {path}" });
+
         IEnumerable<string> files = File.Exists(path)
             ? new[] { path }
             : Directory.Exists(path)

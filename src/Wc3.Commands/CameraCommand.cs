@@ -171,8 +171,7 @@ public static class CameraCommand
 
     private static MapCameras GetCameras(MapDocument doc) =>
         doc.GetFile(FileName)?.Model as MapCameras
-        ?? throw new InvalidOperationException(
-            $"{FileName} is missing or could not be parsed; cameras are not editable.");
+        ?? new MapCameras(MapCamerasFormatVersion.v0, false);
 
     private static CameraFields ToFields(Camera c) => new(
         Name: c.Name ?? string.Empty,

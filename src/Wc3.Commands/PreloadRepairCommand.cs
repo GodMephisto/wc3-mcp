@@ -50,18 +50,11 @@ public static class PreloadRepairCommand
 
     private static readonly Regex FunctionHeader = new(@"^\s*(?:constant\s+)?function\s+(\w+)\s+takes\b",
         RegexOptions.Compiled);
-    private static readonly Regex IntegerGlobal = new(@"^\s*(?:constant\s+)?integer\s+(\w+)\s*=\s*'([^']{4})'",
-        RegexOptions.Compiled);
     private static readonly Regex TimerSingle = new(
         @"TriggerRegisterTimerEventSingle\s*\(\s*(\w+)\s*,\s*([0-9]*\.?[0-9]+)\s*\)", RegexOptions.Compiled);
     private static readonly Regex AddAction = new(@"TriggerAddAction\s*\(\s*(\w+)\s*,\s*function\s+(\w+)\s*\)",
         RegexOptions.Compiled);
     private static readonly Regex Reference = new(@"(?:\bfunction\s+(\w+))|(?:ExecuteFunc\s*\(\s*""(\w+)""\s*\))|(?:\b(\w+)\s*\()",
-        RegexOptions.Compiled);
-    // A rawcode is written 'n015', or as the same four bytes in hex, $6E303135, which is how
-    // YDWE and optimised maps such as Otaku Defense print every id.
-    private static readonly Regex Token = new(@"'([^']{4})'|\$([0-9A-Fa-f]{8})\b|\b([A-Za-z_]\w*)\b", RegexOptions.Compiled);
-    private static readonly Regex IntegerGlobalHex = new(@"^\s*(?:constant\s+)?integer\s+(\w+)\s*=\s*\$([0-9A-Fa-f]{8})\b",
         RegexOptions.Compiled);
     private static readonly Regex InitBlizzard = new(@"^\s*call\s+InitBlizzard\s*\(\s*\)\s*$", RegexOptions.Compiled);
 
@@ -107,12 +100,9 @@ public static class PreloadRepairCommand
 
         // Function bodies by name, and integer globals that hold a rawcode.
         var bodies = new Dictionary<string, (int Start, int End)>(StringComparer.Ordinal);
-        var globals = new Dictionary<string, string>(StringComparer.Ordinal);
+        var globals = JassRawcodes.Globals(lines);
         for (int i = 0; i < lines.Length; i++)
         {
-            if (IntegerGlobal.Match(lines[i]) is { Success: true } g) globals.TryAdd(g.Groups[1].Value, g.Groups[2].Value);
-            else if (IntegerGlobalHex.Match(lines[i]) is { Success: true } h && FromHex(h.Groups[2].Value) is { } hx)
-                globals.TryAdd(h.Groups[1].Value, hx);
             if (FunctionHeader.Match(lines[i]) is not { Success: true } f) continue;
             int end = i + 1;
             while (end < lines.Length && lines[end].Trim() != "endfunction") end++;
@@ -148,25 +138,14 @@ public static class PreloadRepairCommand
                         : r.Groups[2].Success ? r.Groups[2].Value : r.Groups[3].Value;
                     if (bodies.ContainsKey(callee) && !seen.Contains(callee)) queue.Enqueue(callee);
                 }
-                foreach (Match t in Token.Matches(code))
-                {
-                    if (t.Groups[1].Success) tokens.Add(t.Groups[1].Value);
-                    else if (t.Groups[2].Success) { if (FromHex(t.Groups[2].Value) is { } hx) tokens.Add(hx); }
-                    else if (globals.TryGetValue(t.Groups[3].Value, out var raw)) tokens.Add(raw);
-                }
+                tokens.UnionWith(JassRawcodes.In(code, globals));
             }
         }
 
         // Only what the map defines. Base game assets ship in the game's own storage and are not
         // what a 285 MB map spends its first second reading.
-        // An optimised map keeps its objects in SLK tables inside the archive instead of in
-        // war3map.w3u and war3map.w3a, so both are read.
-        var unitIds = ObjectKinds.MergedEntries(doc, ObjectKinds.Info(ObjectKind.Unit))
-            .Select(e => e.Id.ToRawcode()).Concat(SlkIds(doc, @"Units\UnitData.slk"))
-            .ToHashSet(StringComparer.Ordinal);
-        var abilityIds = ObjectKinds.MergedEntries(doc, ObjectKinds.Info(ObjectKind.Ability))
-            .Select(e => e.Id.ToRawcode()).Concat(SlkIds(doc, @"Units\AbilityData.slk"))
-            .ToHashSet(StringComparer.Ordinal);
+        var unitIds = JassRawcodes.MapDefined(doc, ObjectKind.Unit, @"Units\UnitData.slk");
+        var abilityIds = JassRawcodes.MapDefined(doc, ObjectKind.Ability, @"Units\AbilityData.slk");
         var abilities = tokens.Where(abilityIds.Contains).Order(StringComparer.Ordinal).ToList();
 
         // Every unit type the script names anywhere, for a map that spawns new types all game.
@@ -174,12 +153,7 @@ public static class PreloadRepairCommand
         // Abilities stay limited to the early walk, since a map can name thousands.
         if (allUnits)
             foreach (var line in lines)
-                foreach (Match t in Token.Matches(StripComment(line)))
-                {
-                    if (t.Groups[1].Success) tokens.Add(t.Groups[1].Value);
-                    else if (t.Groups[2].Success) { if (FromHex(t.Groups[2].Value) is { } hx) tokens.Add(hx); }
-                    else if (globals.TryGetValue(t.Groups[3].Value, out var raw)) tokens.Add(raw);
-                }
+                tokens.UnionWith(JassRawcodes.In(StripComment(line), globals));
         var units = tokens.Where(unitIds.Contains).Order(StringComparer.Ordinal).ToList();
         return new(entries, seen.Count(bodies.ContainsKey), units, abilities);
     }
@@ -241,37 +215,8 @@ public static class PreloadRepairCommand
         return string.Join(nl, lines);
     }
 
-    private static IEnumerable<string> SlkIds(MapDocument doc, string name)
-    {
-        if (!doc.TryReadFileByName(name, out var bytes) || bytes.Length == 0) return Array.Empty<string>();
-        try { return GameData.SlkTable.Parse(bytes).RowKeys.Where(k => k.Length == 4).ToList(); }
-        catch (Exception) { return Array.Empty<string>(); }
-    }
-
     /// <summary>$6E303135 as the rawcode 'n015', when all four bytes are printable.</summary>
-    internal static string? FromHex(string hex)
-    {
-        var chars = new char[4];
-        for (int i = 0; i < 4; i++)
-        {
-            int b = Convert.ToInt32(hex.Substring(i * 2, 2), 16);
-            if (b < 0x20 || b > 0x7E) return null;
-            chars[i] = (char)b;
-        }
-        return new string(chars);
-    }
+    internal static string? FromHex(string hex) => JassRawcodes.FromHex(hex);
 
-    private static string StripComment(string line)
-    {
-        // A // inside a string literal is not a comment, so strings are skipped while scanning.
-        bool inString = false;
-        for (int i = 0; i < line.Length - 1; i++)
-        {
-            char c = line[i];
-            if (c == '\\' && inString) { i++; continue; }
-            if (c == '"') inString = !inString;
-            else if (!inString && c == '/' && line[i + 1] == '/') return line[..i];
-        }
-        return line;
-    }
+    private static string StripComment(string line) => JassRawcodes.StripComment(line);
 }

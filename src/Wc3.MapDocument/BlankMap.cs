@@ -81,6 +81,28 @@ public static class BlankMap
             // Explicit (it is also the enum default): GetScriptFile names the script
             // file off this — Jass → "war3map.j".
             ScriptLanguage = ScriptLanguage.Jass,
+            // The terrain is TileEdge tiles a side with no unplayable border, so all of it is playable.
+            // Left at 0, map_info reported a 0 x 0 map for every map this created.
+            PlayableMapAreaWidth = o.TileEdge,
+            PlayableMapAreaHeight = o.TileEdge,
+            // The same one player and one force the script's InitCustomPlayerSlots and
+            // InitCustomTeams set up, so the info file and the script agree and the
+            // player and force editors have something to edit.
+            Players = new List<PlayerData>
+            {
+                new()
+                {
+                    Id = 0,
+                    Name = "Player 1",
+                    Controller = PlayerController.User,
+                    Race = PlayerRace.Human,
+                    Flags = PlayerFlags.RaceSelectable,
+                },
+            },
+            Forces = new List<ForceData>
+            {
+                new() { Name = "Force 1", Players = new Bitmask32(1) },
+            },
         };
         EnsureSerializable(info);
 

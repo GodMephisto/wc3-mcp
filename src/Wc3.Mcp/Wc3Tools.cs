@@ -59,7 +59,12 @@ public static class Wc3Tools
     public static ReplayReport ReplaySummary(
         [Description("A .w3g file, or a folder searched recursively. Default: every Battle.net account's replays.")] string? path = null,
         [Description("Only games whose map path contains this text.")] string? map = null)
-        => Run(() => ReplayCommand.Execute(path, map));
+        => Run(() =>
+        {
+            if (path is not null && !File.Exists(path) && !Directory.Exists(path))
+                throw new McpException($"no .w3g file or folder at {path}");
+            return ReplayCommand.Execute(path, map);
+        });
 
     [McpServerTool(Name = "object_list", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("List the map's custom/modified objects of one Object Editor kind: rawcode, base rawcode (null = created from scratch) and resolved name.")]
@@ -118,6 +123,24 @@ public static class Wc3Tools
             return new ObjectNewToolResult(full, r.Message, r.NewRawcode);
         });
 
+    [McpServerTool(Name = "unit_abilities", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Every ability a unit has, each tagged with where it comes from. ObjectNormal and ObjectHero are the "
+        + "unit type's own lists (uabi, uhab). Spellbook is inside a spellbook the unit has (passives often hide there). "
+        + "PlacedUnit is set on one placed unit, with its level. MorphForm comes from a form the unit turns into. "
+        + "Script is given by war3map.j at runtime, found where a statement names the unit type and the ability, or "
+        + "where an add-ability call sits inside an if that tests for the unit type. Script entries are inferred and "
+        + "carry their line number. Use this rather than object_get when asking what abilities a unit really has.")]
+    public static UnitAbilitiesResult UnitAbilities(
+        [Description("Path to a .w3x/.w3m map file.")] string map,
+        [Description("Four-character unit type rawcode, e.g. 'H000'. Ignored when creation_number is given.")] string rawcode,
+        [Description("Creation number of a placed unit, to include the abilities and levels set on that one unit.")] int? creation_number = null,
+        [Description("Warcraft III install directory (overrides auto-detection and the WC3_GAME_DIR env var). Used to resolve ability names.")] string? game_dir = null)
+        => Run(() =>
+        {
+            var doc = LoadMap(map);
+            return UnitAbilitiesCommand.Execute(doc, rawcode, ResolveGameDir(game_dir), creation_number);
+        });
+
     [McpServerTool(Name = "bundle_unit", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Resolve everything a unit depends on - the porting preview: referenced objects (with custom-to-map flags), asset files, trigger strings, dependency edges and the JASS trigger-function closure.")]
     public static UnitBundle BundleUnit(
@@ -164,7 +187,7 @@ public static class Wc3Tools
                 new TextContentBlock { Text = JsonSerializer.Serialize(info, Wc3McpServer.JsonOptions) },
             };
             if (inline)
-                content.Add(new ImageContentBlock { MimeType = "image/png", Data = png });
+                content.Add(ImageContentBlock.FromBytes(png, "image/png")); // Data must be base64, FromBytes encodes it
             return new CallToolResult { Content = content };
         });
 
@@ -833,9 +856,13 @@ public static class Wc3Tools
     }
 
     /// <summary>Explicit argument wins; else the WC3_GAME_DIR env var; else auto-detect.</summary>
-    private static string? ResolveGameDir(string? game_dir) =>
+    /// <summary>The variable that names the Warcraft III folder for every tool call.</summary>
+    internal const string GameDirVariable = "WC3_GAME_DIR";
+
+    /// <summary>A tool's game_dir argument, else WC3_GAME_DIR, else null (auto-detect).</summary>
+    internal static string? ResolveGameDir(string? game_dir) =>
         !string.IsNullOrWhiteSpace(game_dir) ? game_dir
-        : Environment.GetEnvironmentVariable("WC3_GAME_DIR") is { Length: > 0 } env ? env
+        : Environment.GetEnvironmentVariable(GameDirVariable) is { Length: > 0 } env ? env
         : null;
 }
 

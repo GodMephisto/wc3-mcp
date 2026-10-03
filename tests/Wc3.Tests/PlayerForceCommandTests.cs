@@ -13,12 +13,14 @@ public class PlayerForceCommandTests
         TestCorpus.Map(@"GGGA_V0.02a.w3x");
 
     /// <summary>Blank map whose parsed MapInfo is seeded with three players and two
-    /// forces (players 0+1 in force 0, player 2 in force 1) — BlankMap itself
-    /// synthesizes an empty player/force list, so the fixture adds its own.</summary>
+    /// forces (players 0+1 in force 0, player 2 in force 1). BlankMap's own single
+    /// player and force are cleared first, so the fixture controls every slot.</summary>
     private static MapDocument Fixture()
     {
         var doc = BlankMap.Create();
         var info = (MapInfo)doc.GetFile(MapInfoCommand.FileName)!.Model!;
+        info.Players.Clear();
+        info.Forces.Clear();
 
         for (int id = 0; id < 3; id++)
         {
@@ -95,10 +97,32 @@ public class PlayerForceCommandTests
     [Fact]
     public void GetPlayersAndForces_AreEmptyWhenInfoHasNone()
     {
-        // BlankMap synthesizes empty player/force lists — the read APIs must not throw.
+        // A map whose info lists no players or forces must read as empty, not throw.
         var doc = BlankMap.Create();
+        var info = (MapInfo)doc.GetFile(MapInfoCommand.FileName)!.Model!;
+        info.Players.Clear();
+        info.Forces.Clear();
         Assert.Empty(PlayerForceCommand.GetPlayers(doc));
         Assert.Empty(PlayerForceCommand.GetForces(doc));
+    }
+
+    [Fact]
+    public void BlankMap_has_the_one_player_and_force_its_script_sets_up()
+    {
+        // The blank script runs SetPlayerController(Player(0), MAP_CONTROL_USER) and puts
+        // player 0 in team 0, so the info file must say the same or the editors have nothing.
+        var doc = BlankMap.Create();
+
+        var player = Assert.Single(PlayerForceCommand.GetPlayers(doc));
+        Assert.Equal(0, player.Id);
+        Assert.Equal("User", player.Controller);
+        var force = Assert.Single(PlayerForceCommand.GetForces(doc));
+        Assert.Equal(new[] { 0 }, force.PlayerIds);
+
+        // And it survives a save and reload.
+        var reloaded = MapDocument.Load(doc.SaveToBytes());
+        Assert.Single(PlayerForceCommand.GetPlayers(reloaded));
+        Assert.Single(PlayerForceCommand.GetForces(reloaded));
     }
 
     [Fact]

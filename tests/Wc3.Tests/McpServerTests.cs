@@ -28,31 +28,10 @@ public class McpServerTests
         "sound_list", "sound_remove", "sound_set", "terrain_blight",
         "terrain_cliff", "terrain_deform", "terrain_paint", "terrain_ramp",
         "terrain_stats", "terrain_water", "trigger_catalog_describe", "trigger_catalog_list",
-        "uabi_profile",
+        "uabi_profile", "unit_abilities",
     };
 
-    /// <summary>Runs the body against a live in-memory client/server session.</summary>
-    private static async Task WithClient(Func<McpClient, CancellationToken, Task> body)
-    {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-        Pipe clientToServer = new(), serverToClient = new();
-        await using var server = McpServer.Create(
-            new StreamServerTransport(clientToServer.Reader.AsStream(), serverToClient.Writer.AsStream()),
-            Wc3McpServer.CreateOptions());
-        Task run = server.RunAsync(timeout.Token);
-        try
-        {
-            await using var client = await McpClient.CreateAsync(
-                new StreamClientTransport(clientToServer.Writer.AsStream(), serverToClient.Reader.AsStream()),
-                cancellationToken: timeout.Token);
-            await body(client, timeout.Token);
-        }
-        finally
-        {
-            timeout.Cancel();
-            try { await run; } catch (OperationCanceledException) { }
-        }
-    }
+    private static Task WithClient(Func<McpClient, CancellationToken, Task> body) => McpTestClient.WithClient(body);
 
     [Fact]
     public async Task Initialize_reports_server_identity_and_tools_list_exposes_every_tool()
