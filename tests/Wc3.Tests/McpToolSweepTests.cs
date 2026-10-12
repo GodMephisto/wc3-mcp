@@ -53,27 +53,8 @@ public class McpToolSweepTests
     private static bool IsReadOnly(string tool) =>
         !MutatingPrefixes.Any(p => tool.StartsWith(p, StringComparison.Ordinal));
 
-    private static async Task WithClient(Func<McpClient, CancellationToken, Task> body)
-    {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(5));
-        Pipe clientToServer = new(), serverToClient = new();
-        await using var server = McpServer.Create(
-            new StreamServerTransport(clientToServer.Reader.AsStream(), serverToClient.Writer.AsStream()),
-            Wc3McpServer.CreateOptions());
-        Task run = server.RunAsync(timeout.Token);
-        try
-        {
-            await using var client = await McpClient.CreateAsync(
-                new StreamClientTransport(clientToServer.Writer.AsStream(), serverToClient.Reader.AsStream()),
-                cancellationToken: timeout.Token);
-            await body(client, timeout.Token);
-        }
-        finally
-        {
-            timeout.Cancel();
-            try { await run; } catch (OperationCanceledException) { }
-        }
-    }
+    private static Task WithClient(Func<McpClient, CancellationToken, Task> body) =>
+        McpTestClient.WithClient(body, TimeSpan.FromMinutes(5));
 
     [Fact]
     [Trait("Category", "Corpus")]

@@ -5,13 +5,13 @@ updates:
     schedule:
       interval: weekly
     # Pinned majors. ImageSharp 4 carries a build-time license
-    # gate, Avalonia 12 needs a newer Roslyn than the .NET 8 SDK ships, War3Net 7 targets a newer
+    # gate, Avalonia past 11.2 needs a newer Roslyn than the .NET 8 SDK ships, War3Net 7 targets a newer
     # SDK. The ImageSharp advisories are handled in TextureConvert by not decoding TIFF or ICC.
     ignore:
       - dependency-name: SixLabors.ImageSharp
         update-types: [version-update:semver-major]
       - dependency-name: "Avalonia*"
-        update-types: [version-update:semver-major]
+        update-types: [version-update:semver-major, version-update:semver-minor]
       - dependency-name: "War3Net.*"
         update-types: [version-update:semver-major]
       - dependency-name: System.CommandLine
