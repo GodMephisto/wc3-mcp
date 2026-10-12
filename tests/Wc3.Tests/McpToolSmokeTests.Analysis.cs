@@ -7,8 +7,10 @@ using ModelContextProtocol.Protocol;
 
 namespace Wc3.Tests;
 
-public sealed partial class McpToolSmokeTests
+public sealed class McpSmokeAnalysisTests : McpSmokeBase
 {
+    public McpSmokeAnalysisTests(SmokeFixture f) : base(f) { }
+
     private const string GameDir = @"C:\Warcraft III";
 
     /// <summary>The rich map and the rawcodes it defines.</summary>

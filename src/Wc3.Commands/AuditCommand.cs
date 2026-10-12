@@ -192,7 +192,7 @@ public static class AuditCommand
                 try
                 {
                     var merged = ObjectGetCommand.Execute(
-                        doc, ObjectKind.Ability, rawcode, gameDirOverride);
+                        doc, ObjectKind.Ability, rawcode, gameDirOverride, abilities);
                     fields = merged.Fields.Any(f => f.Source == "base")
                         ? merged.Fields.Where(f => f.Source == "base")
                             .GroupBy(f => f.Code, StringComparer.OrdinalIgnoreCase)
@@ -467,11 +467,13 @@ public static class AuditCommand
         foreach (var kind in ObjectKinds.All)
             foreach (var e in ObjectKinds.MergedEntries(doc, ObjectKinds.Info(kind)))
                 defined.Add(e.Id.ToRawcode());
+        var index = ObjectKinds.MergedEntries(doc, ObjectKinds.Info(ObjectKind.Ability))
+            .ToDictionary(e => e.Id);
 
         foreach (var id in abilityIds.OrderBy(i => i))
         {
             string rawcode = id.ToRawcode();
-            var merged = ObjectGetCommand.Execute(doc, ObjectKind.Ability, rawcode, gameDirOverride);
+            var merged = ObjectGetCommand.Execute(doc, ObjectKind.Ability, rawcode, gameDirOverride, index);
             var field = merged.Fields.FirstOrDefault(f =>
                 f.Name.Equals("Requirements", StringComparison.OrdinalIgnoreCase));
             if (field is null || field.Source != "base" || string.IsNullOrWhiteSpace(field.Value))

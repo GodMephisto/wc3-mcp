@@ -111,7 +111,7 @@ In PowerShell, with the .NET 8 SDK installed,
 ```powershell
 git clone https://github.com/GodMephisto/wc3-mcp
 cd wc3-mcp
-dotnet test --filter "Category!=Corpus&Category!=GameData"
+dotnet test --filter "Category!=Corpus&Category!=GameData&Category!=Doctor"
 dotnet publish src/Wc3.Mcp/Wc3.Mcp.csproj -c Release --self-contained -r win-x64 -o dist-mcp
 .\dist-mcp\wc3-mcp.exe install --all
 ```
@@ -125,7 +125,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 
 ## Tools
 
-97 tools.
+105 tools.
 
 | Name | Read/Write | Description |
 |---|---|---|
@@ -142,6 +142,10 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | camera_set | writes | Set a field on a camera and save the edited map to out_path. |
 | deprotect_map | read-only | Recover the file names a protected map stripped. |
 | diff | read-only | Compare two maps and report which internal files were added, removed or changed. |
+| doctor_check | read-only | Will this map run on Reforged 3.0, and if not, why. |
+| doctor_compare | read-only | What differs between two versions of a map, file by file (added, removed, changed) with names recovered on protected archives, plus object, script and s... |
+| doctor_fix | writes | Repair a COPY of a map for Reforged 3.0 with the doctor's Fix map: protection, fake file tables, scrambled ids, data the 3.0 engine refuses, broken SLK... |
+| doctor_inspect | read-only | Read-only doctor reports on one map. |
 | editor_catalog_get | read-only | Show one World Editor catalog's entries, each with its stored key (the token a map file actually carries), its resolved display name and every payload field. |
 | editor_catalog_list | read-only | List the World Editor's catalog names from UI\WorldEditData.txt with entry counts (TileSets, SkyModels, LoadingScreens, SoundChannels, MapSizes, the brush... |
 | file_get_text | read-only | Read one internal file decoded as UTF-8, with any leading BOM stripped. |
@@ -189,9 +193,13 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | repair_generated | writes | Repair a map that wc3ctl itself generated, whose preplaced-hero helper block is too narrow for the heroes installed into it, and save the repaired map to... |
 | replay_summary | read-only | Read recorded games (.w3g) and report each one's map, length, players, and how and when every player left. |
 | roundtrip | read-only | Verify the map survives a load and save byte for byte. |
+| script_check | read-only | Check the map script for errors that stop it loading, war3map.j or war3map.lua. |
+| script_decompile | writes | Turn every Lua entry of a map that ships as precompiled Lua 5.3 bytecode (war3map.lua or a module it requires, common in YDWE maps) back into Lua source... |
+| script_format | writes | Reprint a Lua map script and save the map to out_path. |
 | script_functions | read-only | List every function declared in the map's compiled script, with where it starts and ends. |
 | script_leaks | read-only | Find handle leaks in a map's war3map.j (locations, groups, forces, effects, timers, text tags, lightning and triggers created and never destroyed), each... |
 | script_references | read-only | Find every use of a name in the map's compiled script. |
+| script_to_lua | writes | Convert a JASS map to a Lua map and save it to out_path. |
 | search | read-only | Search the map's contents for a string, ignoring case. |
 | sound_add | writes | Add a new sound definition (keyed by name) to the map's sound catalog and save the edited map to out_path. |
 | sound_list | read-only | List the map's sound catalog (war3map.w3s). |

@@ -104,8 +104,8 @@ public class DecompilerFidelityProbe
         _out.WriteLine($"\nMap.Open succeeded. script present={map.Script is not null}, "
                      + $"length={map.Script?.Length ?? 0:N0}");
 
-        // TriggerData.Default is the stock table and needs no game install.
-        var decompiler = new JassScriptDecompiler(map, TriggerData.Default);
+        // TriggerDataSource.Default is the stock table and needs no game install.
+        var decompiler = new JassScriptDecompiler(map, TriggerDataSource.Default);
 
         bool ok;
         MapTriggers? rebuilt;

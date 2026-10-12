@@ -7,29 +7,40 @@ namespace Wc3.Render;
 /// <summary>
 /// Resolves WC3 ground tiles to decoded RGBA tile textures from the base-game CASC:
 /// tileId (4CC, e.g. "Lgrs") -> Terrain.slk row (dir/file) -> DDS/BLP -> RGBA cropped to a cell.
-/// Never throws; yields null when a tile is unavailable so callers fall back to flat colours.
+/// Never throws. Yields null when a tile is unavailable so callers fall back to flat colours.
 /// </summary>
 public sealed class TerrainArtCatalog
 {
-    /// <summary>Variation-cell size we crop to. Reforged tiles are 512x256 variation atlases;
-    /// the top-left <see cref="Cell"/>x<see cref="Cell"/> region is variation 0.</summary>
+    /// <summary>Variation-cell size we crop to. Reforged tiles are 512x256 variation atlases.
+    /// The top-left <see cref="Cell"/>x<see cref="Cell"/> region is variation 0.</summary>
     public const int Cell = 128;
 
     private readonly GameDataContext _ctx;
+    private readonly Wc3.Model.MapDocument? _map;
     private readonly SlkTable? _slk;
     private readonly Dictionary<string, TextureImage?> _cache = new(StringComparer.OrdinalIgnoreCase);
 
-    private TerrainArtCatalog(GameDataContext ctx, SlkTable? slk) { _ctx = ctx; _slk = slk; }
+    private TerrainArtCatalog(GameDataContext ctx, Wc3.Model.MapDocument? map, SlkTable? slk)
+    {
+        _ctx = ctx;
+        _map = map;
+        _slk = slk;
+    }
 
-    /// <summary>Opens Terrain.slk from the given context. Never throws.</summary>
-    public static TerrainArtCatalog Open(GameDataContext ctx)
+    /// <summary>
+    /// Opens Terrain.slk from the given context. Never throws. If a map document is
+    /// provided, texture lookups check the map's own imports first (see
+    /// <see cref="MapDocument.TryReadFileByName"/>) before falling back to the base
+    /// game CASC. Without a map, only the CASC is consulted.
+    /// </summary>
+    public static TerrainArtCatalog Open(GameDataContext ctx, Wc3.Model.MapDocument? map = null)
     {
         SlkTable? slk = null;
         if (ctx.TryReadFile("war3.w3mod:terrainart\\terrain.slk", out var bytes))
         {
             try { slk = SlkTable.Parse(bytes); } catch { slk = null; }
         }
-        return new TerrainArtCatalog(ctx, slk);
+        return new TerrainArtCatalog(ctx, map, slk);
     }
 
     /// <summary>Whether Terrain.slk was found (else every Resolve returns null).</summary>
@@ -55,16 +66,44 @@ public sealed class TerrainArtCatalog
 
     public TextureImage? Resolve(TerrainType type) => Resolve(TileIdOf(type));
 
-    /// <summary>Resolves a tile id to a <see cref="Cell"/>x<see cref="Cell"/> RGBA image (cached).</summary>
-    public TextureImage? Resolve(string tileId)
+    /// <summary>
+    /// Returns the relative file path a terrain type maps to, as defined in
+    /// Terrain.slk (dir + file). Returns null when Terrain.slk is not available.
+    /// This is the path the game uses for ground tiles.
+    /// </summary>
+    public string? TilePath(string tileId)
     {
-        if (_cache.TryGetValue(tileId, out var cached)) return cached;
-        var img = Load(tileId);
-        _cache[tileId] = img;
+        if (_slk == null || !_slk.TryGetRow(tileId, out var row)) return null;
+        row.TryGetValue("dir", out var dir);
+        row.TryGetValue("file", out var file);
+        if (string.IsNullOrWhiteSpace(file)) return null;
+        return string.IsNullOrWhiteSpace(dir) ? file! : dir!.TrimEnd('\\') + "\\" + file;
+    }
+
+    /// <summary>
+    /// Resolves a tile id to a <see cref="Cell"/>x<see cref="Cell"/> RGBA image
+    /// (cached). When the catalog was opened with a map document, the map's
+    /// own imports are checked first, matching the game's own precedence.
+    /// </summary>
+    public TextureImage? Resolve(string tileId) => Resolve(tileId, _map);
+
+    /// <summary>
+    /// Resolves a tile id to a <see cref="Cell"/>x<see cref="Cell"/> RGBA image
+    /// (cached). When a map document is supplied, the map's imports are checked
+    /// first, then the base game CASC. Without a map, only the CASC is used.
+    /// </summary>
+    public TextureImage? Resolve(string tileId, Wc3.Model.MapDocument? map)
+    {
+        // Map-scoped key: use a distinct cache entry per map so that map A's
+        // override does not leak into map B's resolution.
+        string key = map is null ? tileId : $"map:{map.GetHashCode():X8}:{tileId}";
+        if (_cache.TryGetValue(key, out var cached)) return cached;
+        var img = Load(tileId, map);
+        _cache[key] = img;
         return img;
     }
 
-    private TextureImage? Load(string tileId)
+    private TextureImage? Load(string tileId, Wc3.Model.MapDocument? map)
     {
         if (_slk == null || !_slk.TryGetRow(tileId, out var row)) return null;
         row.TryGetValue("dir", out var dir);
@@ -72,7 +111,27 @@ public sealed class TerrainArtCatalog
         if (string.IsNullOrWhiteSpace(file)) return null;
         var rel = string.IsNullOrWhiteSpace(dir) ? file! : dir!.TrimEnd('\\') + "\\" + file;
 
-        // Reforged ships .dds; older/classic installs .blp.
+        // When a map document is provided, check its own imports first.
+        // The game reads imported files from the map's MPQ before the CASC,
+        // so this matches the runtime precedence.
+        if (map is not null)
+        {
+            foreach (var (ext, isDds) in new[] { (".dds", true), (".blp", false) })
+            {
+                var path = rel + ext;
+                if (map.TryReadFileByName(path, out var tex))
+                {
+                    try
+                    {
+                        var full = isDds ? DdsDecoder.Decode(tex) : BlpDecoder.Decode(tex);
+                        return Crop(full, Cell);
+                    }
+                    catch { /* corrupt or unsupported, try the next extension */ }
+                }
+            }
+        }
+
+        // Base game CASC (Reforged ships .dds; older/classic installs .blp).
         foreach (var (ext, isDds) in new[] { (".dds", true), (".blp", false) })
         {
             var path = ("war3.w3mod:" + rel + ext).ToLowerInvariant();
@@ -114,7 +173,7 @@ public sealed class TerrainArtCatalog
 
         TerrainArtCatalog? cat = null;
         if (Wc3.GameData.GameData.TryOpen(null, out var ctx, out _) && ctx != null)
-            cat = Open(ctx);
+            cat = Open(ctx, doc);
 
         int layerBytes = cell * cell * 4;
         var data = new byte[layerCount * layerBytes];
@@ -152,7 +211,7 @@ public sealed class TerrainArtCatalog
         if (types is null || types.Count == 0) return null;
 
         if (!Wc3.GameData.GameData.TryOpen(null, out var ctx, out _) || ctx is null) return null;
-        var cat = Open(ctx);
+        var cat = Open(ctx, doc);
         if (!cat.HasCatalog) return null;
 
         var result = new (byte, byte, byte)?[types.Count];

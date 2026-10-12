@@ -6,15 +6,9 @@ using System.Text.Json;
 
 namespace Wc3.Tests;
 
-public sealed partial class McpToolSmokeTests
+public sealed class McpSmokeInstancesTests : McpSmokeBase
 {
-    /// <summary>The fixture plus one footman, one tree and one region, all placed through MCP.</summary>
-    private async Task<string> PopulatedMap()
-    {
-        var withUnit = await Write("place_unit", Args(("type_rawcode", "hfoo"), ("owner_id", 0), ("x", 64f), ("y", -64f)));
-        var withDoodad = await Write("place_doodad", Args(("type_rawcode", "LTlt"), ("x", 128f), ("y", 128f)), withUnit);
-        return await Write("place_region", Args(("name", "Spawn"), ("left", -256f), ("bottom", -256f), ("right", 256f), ("top", 256f)), withDoodad);
-    }
+    public McpSmokeInstancesTests(SmokeFixture f) : base(f) { }
 
     [Fact, Covers("placed_units_list", "placed_unit_get")]
     public async Task Placed_unit_reads_back_with_its_scale_named()

@@ -61,7 +61,7 @@ public class TriggerCommandTests
         var bytes = TriggerCommand.Serialize(NewTriggers());
         using var ms = new MemoryStream(bytes);
         using var r = new BinaryReader(ms);
-        var reser = TriggerCommand.Serialize(r.ReadMapTriggers());
+        var reser = TriggerCommand.Serialize(r.ReadMapTriggers(TriggerDataSource.Default));
         Assert.Equal(bytes, reser);
     }
 

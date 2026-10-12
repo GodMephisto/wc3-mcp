@@ -4,6 +4,7 @@
 // map that opens again, and the change must be there when read back through another tool.
 // The tests are split by tool family into McpToolSmokeTests.<Family>.cs. Every test names the
 // tools it covers with [Covers], and Every_tool_is_covered fails for any tool left out.
+using Wc3.Model;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -44,23 +45,25 @@ public sealed class SmokeFixture : IDisposable
     }
 }
 
-public sealed partial class McpToolSmokeTests : IClassFixture<SmokeFixture>
+/// <summary>Shared helpers for the per-area MCP smoke test classes. Split so xUnit can run the
+/// areas in parallel, since it never runs two tests of one class at once.</summary>
+public abstract class McpSmokeBase : IClassFixture<SmokeFixture>
 {
-    private readonly SmokeFixture _f;
-    public McpToolSmokeTests(SmokeFixture f) => _f = f;
+    protected readonly SmokeFixture _f;
+    protected McpSmokeBase(SmokeFixture f) => _f = f;
 
     /// <summary>The shared blank map. Never written to, every write test checks that.</summary>
-    private string Fixture => _f.Map;
+    protected string Fixture => _f.Map;
 
     /// <summary>The user slots a blank map gets, which its script's SetPlayers sets up too.</summary>
-    private static readonly int BlankPlayers = new Wc3.Model.BlankMapOptions().PlayerCount;
+    protected static readonly int BlankPlayers = new Wc3.Model.BlankMapOptions().PlayerCount;
 
     /// <summary>A fresh output path in the test folder.</summary>
-    private string NewOut(string label, string ext = ".w3x") =>
+    protected string NewOut(string label, string ext = ".w3x") =>
         Path.Combine(_f.Dir, $"{label}-{Guid.NewGuid():N}{ext}");
 
     /// <summary>Calls a tool and returns its JSON result. Fails with the tool's own message on an error.</summary>
-    private static async Task<JsonElement> Call(string tool, Dictionary<string, object?> args)
+    protected static async Task<JsonElement> Call(string tool, Dictionary<string, object?> args)
     {
         JsonElement root = default;
         await McpTestClient.WithClient(async (client, ct) =>
@@ -76,7 +79,7 @@ public sealed partial class McpToolSmokeTests : IClassFixture<SmokeFixture>
     }
 
     /// <summary>Calls a tool that must refuse, and returns its message.</summary>
-    private static async Task<string> CallError(string tool, Dictionary<string, object?> args)
+    protected static async Task<string> CallError(string tool, Dictionary<string, object?> args)
     {
         string message = "";
         await McpTestClient.WithClient(async (client, ct) =>
@@ -94,7 +97,7 @@ public sealed partial class McpToolSmokeTests : IClassFixture<SmokeFixture>
     /// Asserts the input map's bytes did not change and the output opens through map_info.
     /// Returns the output path, so the caller can read the change back.
     /// </summary>
-    private async Task<string> Write(string tool, Dictionary<string, object?> args, string? map = null)
+    protected async Task<string> Write(string tool, Dictionary<string, object?> args, string? map = null)
     {
         map ??= Fixture;
         var outPath = NewOut(tool);
@@ -108,10 +111,10 @@ public sealed partial class McpToolSmokeTests : IClassFixture<SmokeFixture>
         return outPath;
     }
 
-    private static string Sha(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
+    protected static string Sha(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path)));
 
     /// <summary>A property by name, ignoring case, since the server writes camelCase.</summary>
-    private static JsonElement Prop(JsonElement e, string name)
+    protected static JsonElement Prop(JsonElement e, string name)
     {
         foreach (var p in e.EnumerateObject())
             if (string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) return p.Value;
@@ -120,7 +123,7 @@ public sealed partial class McpToolSmokeTests : IClassFixture<SmokeFixture>
     }
 
     /// <summary>The rows of a result, whether it is a bare array or an object holding one array.</summary>
-    private static List<JsonElement> Rows(JsonElement e)
+    protected static List<JsonElement> Rows(JsonElement e)
     {
         if (e.ValueKind == JsonValueKind.Array) return e.EnumerateArray().ToList();
         var arrays = e.EnumerateObject().Where(p => p.Value.ValueKind == JsonValueKind.Array).ToList();
@@ -128,13 +131,44 @@ public sealed partial class McpToolSmokeTests : IClassFixture<SmokeFixture>
         return arrays[0].Value.EnumerateArray().ToList();
     }
 
-    private static Dictionary<string, object?> Args(params (string Key, object? Value)[] pairs) =>
+    /// <summary>The fixture plus one footman, one tree and one region, all placed through MCP.</summary>
+    protected async Task<string> PopulatedMap()
+    {
+        var withUnit = await Write("place_unit", Args(("type_rawcode", "hfoo"), ("owner_id", 0), ("x", 64f), ("y", -64f)));
+        var withDoodad = await Write("place_doodad", Args(("type_rawcode", "LTlt"), ("x", 128f), ("y", 128f)), withUnit);
+        return await Write("place_region", Args(("name", "Spawn"), ("left", -256f), ("bottom", -256f), ("right", 256f), ("top", 256f)), withDoodad);
+    }
+
+
+    protected string FolderFixture()
+    {
+        var folder = Path.Combine(_f.Dir, $"folder-{Guid.NewGuid():N}.w3x");
+        foreach (var f in MapDocument.Load(Fixture).Files)
+        {
+            if (f.FileName is null || f.FileName.StartsWith('(')) continue;
+            var path = Path.Combine(folder, f.FileName.Replace('\\', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllBytes(path, f.RawBytes);
+        }
+        return folder;
+    }
+
+
+    protected static Dictionary<string, object?> Args(params (string Key, object? Value)[] pairs) =>
         pairs.ToDictionary(p => p.Key, p => p.Value);
+
+}
+
+public sealed partial class McpToolSmokeTests : McpSmokeBase
+{
+    public McpToolSmokeTests(SmokeFixture f) : base(f) { }
 
     [Fact]
     public async Task Every_tool_is_covered()
     {
-        var covered = typeof(McpToolSmokeTests).GetMethods(BindingFlags.Public | BindingFlags.Instance)
+        var covered = typeof(McpSmokeBase).Assembly.GetTypes()
+            .Where(t => t.IsSubclassOf(typeof(McpSmokeBase)))
+            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             .SelectMany(m => m.GetCustomAttribute<CoversAttribute>()?.Tools ?? Array.Empty<string>())
             .ToHashSet(StringComparer.Ordinal);
         var served = new HashSet<string>(StringComparer.Ordinal);

@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="War3Net.CodeAnalysis.Decompilers" Version="6.0.3" />
+    <PackageReference Include="War3Net.CodeAnalysis.Decompilers" Version="6.1.1" />
   </ItemGroup>
 
 </Project>

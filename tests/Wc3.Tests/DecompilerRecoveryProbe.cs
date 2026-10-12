@@ -2,6 +2,7 @@
 using System.Reflection;
 using War3Net.Build;
 using War3Net.Build.Script;
+using Wc3.Model;
 using War3Net.CodeAnalysis.Decompilers;
 using Xunit;
 using Xunit.Abstractions;
@@ -51,7 +52,7 @@ public class DecompilerRecoveryProbe
                 .Select(Convert.ToInt64).Aggregate(0L, (a, b) => a | b));
 
         var map = (Map)openMethod.Invoke(null, new object?[] { MapPath, allFlags })!;
-        bool ok = new JassScriptDecompiler(map, TriggerData.Default).TryDecompileMapTriggers(
+        bool ok = new JassScriptDecompiler(map, TriggerDataSource.Default).TryDecompileMapTriggers(
             MapTriggersFormatVersion.v7, null, out var tree);
 
         _out.WriteLine($"decompile returned {ok}, tree is {(tree is null ? "null" : "present")}");

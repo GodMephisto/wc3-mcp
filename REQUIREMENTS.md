@@ -13,7 +13,7 @@
 
 ### src/Wc3.MapDocument
 
-- War3Net.Build 6.0.3
+- War3Net.Build 6.1.1
 - War3Net.IO.Mpq 6.0.3
 
 ### src/Wc3.GameData
@@ -31,7 +31,7 @@
 
 ### src/Wc3.Commands
 
-- War3Net.CodeAnalysis.Decompilers 6.0.3
+- War3Net.CodeAnalysis.Decompilers 6.1.1
 
 Also depends on Wc3.MapDocument, Wc3.GameData, Wc3.Render, Wc3.Modeling.
 
@@ -41,7 +41,7 @@ Also depends on Wc3.MapDocument, Wc3.GameData, Wc3.Render, Wc3.Modeling.
 - xunit 2.5.3
 - xunit.runner.visualstudio 2.5.3
 - SixLabors.ImageSharp 3.1.12
-- War3Net.CodeAnalysis.Decompilers 6.0.3
+- War3Net.CodeAnalysis.Decompilers 6.1.1
 
 ## Native dependencies
 

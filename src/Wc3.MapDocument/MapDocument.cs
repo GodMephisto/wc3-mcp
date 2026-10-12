@@ -45,7 +45,20 @@ public sealed class MapDocument
 
     private MapDocument(byte[] originalBytes) => _originalBytes = originalBytes;
 
-    public static MapDocument Load(string path) => Load(File.ReadAllBytes(path));
+    /// <summary>
+    /// The folder a folder-mode map was loaded from, or null for an archive. Save writes such a
+    /// document back as a folder (see <see cref="FolderMap"/>).
+    /// </summary>
+    public string? SourceFolder { get; private set; }
+
+    /// <summary>Loads a .w3x/.w3m archive, or a map saved in folder mode when the path is a directory.</summary>
+    public static MapDocument Load(string path)
+    {
+        if (!Directory.Exists(path)) return Load(File.ReadAllBytes(path));
+        var doc = Load(FolderMap.Pack(path));
+        doc.SourceFolder = Path.GetFullPath(path);
+        return doc;
+    }
 
     public static MapDocument Load(byte[] fileBytes)
     {
@@ -396,6 +409,8 @@ public sealed class MapDocument
 
     // Bytes resolved by MPQ name hash, cached per name. null means the archive does not hold it.
     private readonly Dictionary<string, byte[]?> _byNameCache = new(StringComparer.OrdinalIgnoreCase);
+    // Opened on the first by-name read over the in-memory original, so it holds no file handle.
+    private MpqArchive? _byNameArchive;
 
     /// <summary>
     /// Reads a file by name through the archive's HASH table rather than through the listfile.
@@ -426,26 +441,31 @@ public sealed class MapDocument
             return bytes.Length > 0;
         }
 
-        if (!_byNameCache.TryGetValue(fileName, out var cached))
+        byte[]? cached;
+        lock (_byNameCache)
         {
-            cached = null;
-            try
+            if (!_byNameCache.TryGetValue(fileName, out cached))
             {
-                using var source = new MemoryStream(_originalBytes);
-                using var archive = MpqArchive.Open(source, loadListFile: false);
-                using var fs = archive.OpenFile(fileName);
-                using var ms = new MemoryStream();
-                fs.CopyTo(ms);
-                cached = ms.ToArray();
+                try
+                {
+                    // One archive per document. Opening one parses the hash and block tables,
+                    // which on a 65,536 entry map cost far more than the read, and an audit
+                    // probes hundreds of names. It is not thread safe, hence the lock.
+                    _byNameArchive ??= MpqArchive.Open(new MemoryStream(_originalBytes), loadListFile: false);
+                    using var fs = _byNameArchive.OpenFile(fileName);
+                    using var ms = new MemoryStream();
+                    fs.CopyTo(ms);
+                    cached = ms.ToArray();
+                }
+                catch (Exception)
+                {
+                    // Not present, or unreadable. Both are "the archive cannot give you this name",
+                    // and neither is worth a diagnostic, because callers probe several candidate
+                    // spellings of a model path and most probes are expected to miss.
+                    cached = null;
+                }
+                _byNameCache[fileName] = cached;
             }
-            catch (Exception)
-            {
-                // Not present, or unreadable. Both are "the archive cannot give you this name",
-                // and neither is worth a diagnostic, because callers probe several candidate
-                // spellings of a model path and most probes are expected to miss.
-                cached = null;
-            }
-            _byNameCache[fileName] = cached;
         }
 
         if (cached is null) return false;
@@ -552,7 +572,7 @@ public sealed class MapDocument
             named.OverrideBytes = bytes;
             named.Model = null;
             named.IsDirty = true;
-            _byNameCache.Remove(fileName);
+            lock (_byNameCache) _byNameCache.Remove(fileName);
             return true;
         }
 
@@ -568,16 +588,17 @@ public sealed class MapDocument
             entry.Model = null;
             entry.IsDirty = true;
             entry.RecoveredFileName ??= fileName;
-            _byNameCache.Remove(fileName);
+            lock (_byNameCache) _byNameCache.Remove(fileName);
             return true;
         }
         return false;
     }
 
-    /// <summary>Block index to payload size, for every entry with no name.</summary>
+    /// <summary>Block index to payload size, for every entry with no name. RawSize, so asking
+    /// for sizes decompresses nothing.</summary>
     public IReadOnlyDictionary<int, int> UnnamedBlocks() =>
         _files.Where(f => f.FileName is null)
-            .ToDictionary(f => f.BlockIndex, f => f.RawBytes.Length);
+            .ToDictionary(f => f.BlockIndex, f => f.RawSize);
 
     /// <summary>
     /// What an entry actually is, read from its own bytes rather than from its name.
@@ -621,13 +642,23 @@ public sealed class MapDocument
                 int end = body.IndexOf((byte)0);
                 return System.Text.Encoding.Latin1.GetString(end < 0 ? body : body[..end]);
             }
-            if (size == 0) break;
+            // A size past the bytes in hand ends the walk. Callers pass a prefix, and a garbage size
+            // over int.MaxValue would otherwise step backwards and never stop.
+            if (size == 0 || size > (uint)(data.Length - p - 8)) break;
             p += 8 + (int)size;
         }
         return "";
     }
 
-    public void Save(string path) => File.WriteAllBytes(path, SaveToBytes());
+    /// <summary>
+    /// Saves to <paramref name="path"/> in the form the map was loaded in, a folder for a folder
+    /// map and an archive otherwise.
+    /// </summary>
+    public void Save(string path)
+    {
+        if (SourceFolder is not null) FolderMap.Unpack(SaveToBytes(), path);
+        else File.WriteAllBytes(path, SaveToBytes());
+    }
 
     public byte[] SaveToBytes()
     {
@@ -693,6 +724,31 @@ public sealed class MapDocument
         var blockSize = SourceBlockSize();
         bool needsBlockSize = blockSize != MpqArchiveCreateOptions.DefaultBlockSize;
 
+        try
+        {
+            WriteArchive(builder, mpq, dropListFile, dropAttributes, grown, blockSize, needsBlockSize);
+        }
+        catch (ArgumentException ex) when (ex.Message.Contains("Fixed position files overlap", StringComparison.Ordinal))
+        {
+            // A protection, not a defect. The archive places files on top of each other and on the
+            // header on purpose, which the game reads happily and no rebuild can reproduce. Measured
+            // on GGGA_V0.07e.w3x, where every save path failed with War3Net's bare message.
+            throw new InvalidOperationException(
+                "This map is protected so that its archive files overlap each other and the header. "
+                + "It reads normally but cannot be rebuilt, so it cannot be saved or round-tripped. "
+                + "Unprotect a copy first (doctor_fix, or wc3ctl doctor fix), then edit that copy.", ex);
+        }
+
+        using var outStream = new MemoryStream();
+        outStream.Write(PreArchiveData, 0, PreArchiveData.Length);
+        mpq.Position = 0;
+        mpq.CopyTo(outStream);
+        return outStream.ToArray();
+    }
+
+    private static void WriteArchive(MpqArchiveBuilder builder, MemoryStream mpq, bool dropListFile,
+        bool dropAttributes, ushort? grown, ushort blockSize, bool needsBlockSize)
+    {
         if (dropListFile || dropAttributes)
             builder.SaveTo(mpq, new MpqArchiveCreateOptions
             {
@@ -709,12 +765,6 @@ public sealed class MapDocument
                 BlockSize = blockSize,
                 HashTableSize = grown,
             }, leaveOpen: true);
-
-        using var outStream = new MemoryStream();
-        outStream.Write(PreArchiveData, 0, PreArchiveData.Length);
-        mpq.Position = 0;
-        mpq.CopyTo(outStream);
-        return outStream.ToArray();
     }
 
     /// <summary>

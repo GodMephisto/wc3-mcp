@@ -187,6 +187,55 @@ public static class Wc3Tools
         [Description("Function or global name to find uses of.")] string name)
         => Run(() => ScriptCommand.References(LoadMap(map), name));
 
+    [McpServerTool(Name = "script_check", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Check the map script for errors that stop it loading, war3map.j or war3map.lua. Lua is checked against Lua 5.3 exactly as luac 5.3.6 would, with its line and message, JASS by the built-in JASS checks. A script that fails here cannot run, and the game gives no reason, it just shows no slots.")]
+    public static ScriptCheckResult ScriptCheck(
+        [Description("Path to a .w3x/.w3m map file or map folder.")] string map)
+        => Run(() => ScriptCommand.Check(LoadMap(map)));
+
+    [McpServerTool(Name = "script_format", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Reprint a Lua map script and save the map to out_path. pretty is indented with comments kept, canonical is one fixed form for diffing two builds. The result compiles to the same Lua instructions as the original. JASS maps are refused. The input map is NEVER modified, and nothing is written when the script is already in that form.")]
+    public static object ScriptFormat(
+        [Description("Path to a .w3x/.w3m map file or map folder.")] string map,
+        [Description("Where to save the reformatted map.")] string out_path,
+        [Description("pretty or canonical.")] string style = "pretty")
+        => Run(() =>
+        {
+            var full = ResolveOutPath(map, out_path);
+            var doc = LoadMap(map);
+            var r = ScriptCommand.Format(doc, style);
+            if (r.Changed) doc.Save(full);
+            return new { r.ScriptFile, r.Style, r.Changed, r.BytesBefore, r.BytesAfter, SavedTo = r.Changed ? full : null };
+        });
+
+    [McpServerTool(Name = "script_to_lua", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Convert a JASS map to a Lua map and save it to out_path. The script becomes war3map.lua, which keeps the JASS rules Lua lacks (32 bit integer wrap, integer division toward zero, division by zero gives zero, a null string concatenates as empty, unset array slots read their type default), and the w3i script language is set to Lua so the game runs it. war3map.j is left as a one line stub. Warnings name untyped calls, and custom text triggers the World Editor would regenerate as JASS. Lua maps are refused. The input map is NEVER modified.")]
+    public static JassToLuaSummary ScriptToLua(
+        [Description("Path to a .w3x/.w3m map file or map folder.")] string map,
+        [Description("Where to save the converted map.")] string out_path)
+        => Run(() =>
+        {
+            var full = ResolveOutPath(map, out_path);
+            var doc = LoadMap(map);
+            var r = JassToLuaCommand.Convert(doc);
+            doc.Save(full);
+            return r;
+        });
+
+    [McpServerTool(Name = "script_decompile", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Turn every Lua entry of a map that ships as precompiled Lua 5.3 bytecode (war3map.lua or a module it requires, common in YDWE maps) back into Lua source that runs the same, and save the map to out_path. The source is a transcription of the bytecode, one statement per instruction with gotos, not the author's original text. Both standard Lua 5.3 and the KK YDWE engine's opcode numbering are read. Nothing is written when the map holds no bytecode. The input map is NEVER modified.")]
+    public static object ScriptDecompile(
+        [Description("Path to a .w3x/.w3m map file or map folder.")] string map,
+        [Description("Where to save the decompiled map.")] string out_path)
+        => Run(() =>
+        {
+            var full = ResolveOutPath(map, out_path);
+            var doc = LoadMap(map);
+            var r = LuaDecompileCommand.Decompile(doc);
+            if (r.Files.Count > 0) doc.Save(full);
+            return new { r.Files, r.Failed, SavedTo = r.Files.Count > 0 ? full : null };
+        });
+
     [McpServerTool(Name = "terrain_info", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("The terrain grid's extents in corners, plus the map's ground and cliff tile lists. Texture fields on a corner are indexes into those lists, so read this first to know what an index means.")]
     public static TerrainEditCommand.TerrainInfo TerrainInfoTool(
@@ -1292,6 +1341,57 @@ public static class Wc3Tools
         [Description("Warcraft III install directory (overrides auto-detection and the WC3_GAME_DIR env var).")] string? game_dir = null)
         => Run(() => EditorCatalogCommand.List(name, ResolveGameDir(game_dir)));
 
+    // ---- Devo's Map Doctor, run as an external program --------------------
+
+    private const string DoctorNote = " Runs Devo's Map Doctor (MIT, github.com/devoltzz/devos-map-doctor), "
+        + "found through WC3_DOCTOR or %LOCALAPPDATA%\\wc3ctl\\doctor\\<version>\\, and only a pinned build. "
+        + "Returns the doctor's own JSON unchanged.";
+
+    [McpServerTool(Name = "doctor_check", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Will this map run on Reforged 3.0, and if not, why. A verdict plus findings, each with a "
+        + "code, a severity (blocker, warning, info), the affected files or models, and whether the doctor "
+        + "can fix it. Catches what stops a map loading that wc3ctl's own checks do not, such as half "
+        + "written Buttonpos in SLK profile tables and models with more than 255 matrix groups. Never "
+        + "starts the game." + DoctorNote)]
+    public static MapDoctorResult DoctorCheck(
+        [Description("Path to a .w3x/.w3m map file.")] string map,
+        [Description("Check against an older game instead, 1.24a to 1.28.5 or 1.29.2, such as 1.27.")] string? game = null)
+        => Run(() => MapDoctorCommand.Check(map, game));
+
+    [McpServerTool(Name = "doctor_inspect", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Read-only doctor reports on one map. diag is what protects the map and what the World "
+        + "Editor needs, including whether it runs in SLK mode and the fix steps that apply. files lists "
+        + "the archive's files with recovered names, card the name, author, players and loading screen, "
+        + "rawcodes the object ids with names, recipes the item recipes the script makes." + DoctorNote)]
+    public static MapDoctorResult DoctorInspect(
+        [Description("Path to a .w3x/.w3m map file.")] string map,
+        [Description("One of diag, files, card, rawcodes, recipes.")] string report = "diag")
+        => Run(() => MapDoctorCommand.ReadOnly(report, map));
+
+    [McpServerTool(Name = "doctor_compare", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("What differs between two versions of a map, file by file (added, removed, changed) "
+        + "with names recovered on protected archives, plus object, script and string summaries. The "
+        + "fastest way to see what someone else's fix actually changed." + DoctorNote)]
+    public static MapDoctorResult DoctorCompare(
+        [Description("The first map.")] string map,
+        [Description("The map to compare it with.")] string other)
+        => Run(() => MapDoctorCommand.Compare(map, other));
+
+    [McpServerTool(Name = "doctor_fix", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
+    [Description("Repair a COPY of a map for Reforged 3.0 with the doctor's Fix map: protection, fake "
+        + "file tables, scrambled ids, data the 3.0 engine refuses, broken SLK tables, crashing models, "
+        + "portrait cameras, data pointers, ability lists. The original is never written and an existing "
+        + "output is never overwritten. Run doctor_inspect (diag) first to see which steps apply." + DoctorNote)]
+    public static MapDoctorResult DoctorFix(
+        [Description("Path to a .w3x/.w3m map file.")] string map,
+        [Description("Where to write the repaired copy. Default <map>_doctor.<ext> beside the input.")] string? out_path = null,
+        [Description("Steps and extras, without dashes, such as listfile, data, portraits, uabi. Prefix no- to "
+            + "drop a default step. Empty applies the steps the doctor picks for this map. Allowed: unprotect, "
+            + "fake-files, listfile, ids, data, script-back, editor-files, counts, doodads, gui-triggers, "
+            + "script-objects, safe-units, models, model-names, portraits, data-pointers, kk-textures, "
+            + "green-icons, uabi, preload, single-player, shrink, strip-indent.")] string[]? options = null)
+        => Run(() => MapDoctorCommand.Fix(map, options, out_path));
+
     // ---- shared plumbing -------------------------------------------------
 
     /// <summary>Expected failures become clean MCP tool errors, never stack traces.</summary>
@@ -1306,7 +1406,7 @@ public static class Wc3Tools
     {
         if (string.IsNullOrWhiteSpace(map))
             throw new McpException("map path is required");
-        if (!File.Exists(map))
+        if (!File.Exists(map) && !Directory.Exists(map))
             throw new McpException($"map not found: {map}");
         try { return MapDocument.Load(map); }
         catch (Exception ex) { throw new McpException($"could not load '{map}': {ex.Message}"); }
@@ -1404,9 +1504,13 @@ public static class Wc3Tools
     {
         if (string.IsNullOrWhiteSpace(outPath))
             throw new McpException("out_path is required");
-        string full = Path.GetFullPath(outPath);
-        if (string.Equals(full, Path.GetFullPath(map), StringComparison.OrdinalIgnoreCase))
+        string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(outPath));
+        string input = Path.TrimEndingDirectorySeparator(Path.GetFullPath(map));
+        if (string.Equals(full, input, StringComparison.OrdinalIgnoreCase))
             throw new McpException("out_path must not be the input map file itself");
+        // A folder map's copy cannot live inside the folder it was read from.
+        if (Directory.Exists(input) && full.StartsWith(input + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            throw new McpException("out_path must not be inside the input map folder");
         return full;
     }
 

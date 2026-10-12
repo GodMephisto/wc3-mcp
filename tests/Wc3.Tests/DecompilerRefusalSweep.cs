@@ -97,7 +97,7 @@ public class DecompilerRefusalSweep
             MapTriggers? rebuilt = null;
             try
             {
-                ok = new JassScriptDecompiler(map, TriggerData.Default).TryDecompileMapTriggers(
+                ok = new JassScriptDecompiler(map, TriggerDataSource.Default).TryDecompileMapTriggers(
                     own?.FormatVersion ?? MapTriggersFormatVersion.v7, own?.SubVersion, out rebuilt);
             }
             catch (Exception ex)

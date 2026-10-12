@@ -425,11 +425,11 @@ public class UnitAbilitiesCommandTests
             ["war3map.w3a"] = SerializeObject(w3a),
         }));
 
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        var result = UnitAbilitiesCommand.Execute(doc, "H000", gameDir: null);
-        sw.Stop();
-        Assert.True(result.Found);
-        Assert.True(sw.ElapsedMilliseconds < 5000, "spellbook cycle did not complete in time");
+        // A cycle that is not broken never returns, so a generous watchdog catches it without
+        // flaking when parallel tests share the CPU.
+        var run = Task.Run(() => UnitAbilitiesCommand.Execute(doc, "H000", gameDir: null));
+        Assert.True(run.Wait(TimeSpan.FromSeconds(30)), "spellbook cycle did not complete in time");
+        Assert.True(run.Result.Found);
     }
 
     [Fact]

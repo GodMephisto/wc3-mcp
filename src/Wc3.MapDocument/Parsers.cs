@@ -84,7 +84,7 @@ public static class DefaultParsers
     /// writes one, or someone opens a map the World Editor actually saved, the plain overload is
     /// not enough.
     ///
-    /// War3Net ships the stock table as TriggerData.Default, so this needs no game install and no
+    /// War3Net ships the stock table as TriggerDataSource.Default, so this needs no game install and no
     /// reference from this project to Wc3.GameData. A map built against a CUSTOM TriggerData can
     /// still defeat it, which is why the plain overload remains as a fallback: this is never worse
     /// than what it replaced, and is better wherever functions exist.
@@ -93,7 +93,7 @@ public static class DefaultParsers
     {
         try
         {
-            return MapFormatRegistry.ReadWith(raw, r => r.ReadMapTriggers(TriggerData.Default));
+            return MapFormatRegistry.ReadWith(raw, r => r.ReadMapTriggers(TriggerDataSource.Default));
         }
         catch (Exception)
         {

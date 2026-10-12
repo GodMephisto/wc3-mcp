@@ -35,8 +35,17 @@ public class ScriptCommandTests
     {
         var r = ScriptCommand.Functions(DocWith("war3map.lua", "local x = 1\nfunction main()\nend\n"));
         Assert.Equal("war3map.lua", r.ScriptFile);
-        // Lua goes through the JASS scanner best-effort; no JASS-shaped functions here.
+        Assert.Null(r.SyntaxError);
+        var main = Assert.Single(r.Functions);
+        Assert.Equal(("main", 2, 3), (main.Name, main.StartLine, main.EndLine));
+    }
+
+    [Fact]
+    public void Functions_reports_a_lua_syntax_error_instead_of_an_empty_list()
+    {
+        var r = ScriptCommand.Functions(DocWith("war3map.lua", "function main()\n  x = \nend\n"));
         Assert.Empty(r.Functions);
+        Assert.StartsWith("3: ", r.SyntaxError);
     }
 
     [Fact]

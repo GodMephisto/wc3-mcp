@@ -127,6 +127,8 @@ public static class FileEditCommand
     /// once instead of at each of the 67 places that used to make it by hand.</remarks>
     private static byte[] CurrentBytes(MapFileEntry entry) => entry.CurrentBytes;
 
+    // CurrentSize, never CurrentBytes(f).Length. The length forces every deferred entry to
+    // decompress, and file_list took 949 s on a protected map with 65k entries that way.
     private static FileState ToState(MapFileEntry f) =>
-        new(f.FileName, CurrentBytes(f).Length, f.IsDirty, f.OverrideBytes is not null);
+        new(f.FileName, f.CurrentSize, f.IsDirty, f.OverrideBytes is not null);
 }

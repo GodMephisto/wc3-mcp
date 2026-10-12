@@ -9,8 +9,10 @@ using Wc3.Model;
 
 namespace Wc3.Tests;
 
-public sealed partial class McpToolSmokeTests
+public sealed class McpSmokePlacementTests : McpSmokeBase
 {
+    public McpSmokePlacementTests(SmokeFixture f) : base(f) { }
+
     private static T Model<T>(string map, string file) where T : class =>
         MapDocument.Load(map).GetFile(file)?.Model as T ?? throw new Xunit.Sdk.XunitException($"{file} missing in {map}");
 

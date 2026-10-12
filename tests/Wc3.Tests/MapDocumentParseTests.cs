@@ -2,6 +2,7 @@
 using Wc3.Model;
 namespace Wc3.Tests;
 
+[Collection("Serial")]
 public class MapDocumentParseTests
 {
     [Fact]

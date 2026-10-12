@@ -250,12 +250,13 @@ public static class LintCommand
             // reported absent (see AssetPathCandidates.Unescape).
             var raw = AssetPathCandidates.Unescape(m.Groups[1].Value);
             if (!AssetPathCandidates.LooksLikeAssetPath(raw) || !seen.Add(raw)) continue;
-            if (AssetPathCandidates.Expand(raw).Any(c => doc.GetFile(c) is not null)) continue;
             // A path the map never claimed to import is a base-game asset the archive is not
             // expected to hold, and flagging those buries the ones that matter. Only report a
-            // path the map itself says it imports.
+            // path the map itself says it imports. Checked before the archive lookup, which
+            // scans every entry and so costs seconds per path on a 65,536 entry map.
             if (!imported.Contains(raw) && !raw.StartsWith("war3mapImported", StringComparison.OrdinalIgnoreCase))
                 continue;
+            if (AssetPathCandidates.Expand(raw).Any(c => doc.GetFile(c) is not null)) continue;
             missing.Add(raw);
         }
         return missing.Count == 0

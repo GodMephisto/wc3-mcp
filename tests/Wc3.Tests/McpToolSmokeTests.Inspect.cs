@@ -8,8 +8,10 @@ using Wc3.Model;
 
 namespace Wc3.Tests;
 
-public sealed partial class McpToolSmokeTests
+public sealed class McpSmokeInspectTests : McpSmokeBase
 {
+    public McpSmokeInspectTests(SmokeFixture f) : base(f) { }
+
     [Fact, Covers("validate", "lint", "roundtrip")]
     public async Task A_blank_map_validates_lints_clean_and_round_trips()
     {

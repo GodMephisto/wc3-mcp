@@ -8,8 +8,10 @@ using ModelContextProtocol.Protocol;
 
 namespace Wc3.Tests;
 
-public sealed partial class McpToolSmokeTests
+public sealed class McpSmokeObjectsTests : McpSmokeBase
 {
+    public McpSmokeObjectsTests(SmokeFixture f) : base(f) { }
+
     /// <summary>Helper for write tools with game_dir. Verifies the input map is unchanged.</summary>
     private async Task<string> WriteGameDir(string tool, Dictionary<string, object?> args, string? map = null)
     {

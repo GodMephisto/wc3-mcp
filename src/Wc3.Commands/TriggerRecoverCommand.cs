@@ -75,7 +75,7 @@ public static class TriggerRecoverCommand
             // holds NO war3map.wct slot, so a tree of purely GUI triggers needs no wct at all,
             // and War3Net offers no wct writer. Without this the pairing rule would demand one
             // empty slot per trigger and the map would be written inconsistent. See WctPairing.
-            var decompiler = new JassScriptDecompiler(map, TriggerData.Default);
+            var decompiler = new JassScriptDecompiler(map, TriggerDataSource.Default);
             if (!decompiler.TryDecompileMapTriggers(
                     MapTriggersFormatVersion.v7, MapTriggersSubVersion.v4, out tree) || tree is null)
                 return new(false,

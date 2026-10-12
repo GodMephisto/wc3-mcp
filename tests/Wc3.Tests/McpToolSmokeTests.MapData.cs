@@ -3,8 +3,10 @@
 // map_info_get, map_info_set, file_list, file_get_text, file_set, list_files, new_map.
 namespace Wc3.Tests;
 
-public sealed partial class McpToolSmokeTests
+public sealed class McpSmokeMapDataTests : McpSmokeBase
 {
+    public McpSmokeMapDataTests(SmokeFixture f) : base(f) { }
+
     [Fact, Covers("sound_list")]
     public async Task Sound_list_on_a_blank_map_is_empty()
     {

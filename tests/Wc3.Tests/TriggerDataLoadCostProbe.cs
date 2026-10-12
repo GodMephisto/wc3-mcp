@@ -11,8 +11,8 @@ namespace Wc3.Tests;
 /// <summary>
 /// What wiring TriggerData into the wtg parser costs at load time.
 ///
-/// The parser now prefers ReadMapTriggers(reader, TriggerData.Default) so that a trigger holding
-/// any function can be read at all. TriggerData.Default is the stock World-Editor function table,
+/// The parser now prefers ReadMapTriggers(reader, TriggerDataSource.Default) so that a trigger holding
+/// any function can be read at all. TriggerDataSource.Default is the stock World-Editor function table,
 /// 38 events, 32 conditions, 677 actions and 571 calls, and something has to build it. Load
 /// performance is a stated goal on this project, so a change that quietly added a second to every
 /// map open would be a bad trade for a capability most maps do not exercise.
@@ -29,11 +29,11 @@ public class TriggerDataLoadCostProbe
     {
         // First touch pays for building it. Everything after is a field read.
         var cold = Stopwatch.StartNew();
-        var table = TriggerData.Default;
+        var table = TriggerDataSource.Default;
         cold.Stop();
 
         var warm = Stopwatch.StartNew();
-        for (int i = 0; i < 1000; i++) _ = TriggerData.Default.TriggerActions.Count;
+        for (int i = 0; i < 1000; i++) _ = TriggerDataSource.Default.TriggerActions.Count;
         warm.Stop();
 
         _out.WriteLine($"first access {cold.ElapsedMilliseconds}ms "
@@ -52,7 +52,7 @@ public class TriggerDataLoadCostProbe
             "Warcraft III", "Maps", "Download");
         if (!Directory.Exists(dir)) { _out.WriteLine("library absent, skipped"); return; }
 
-        _ = TriggerData.Default;   // pay the one-off cost before timing anything
+        _ = TriggerDataSource.Default;   // pay the one-off cost before timing anything
 
         _out.WriteLine($"{"map",-44} {"bytes",10} {"plain",9} {"withTable",11}");
         _out.WriteLine(new string('-', 78));
@@ -102,7 +102,7 @@ public class TriggerDataLoadCostProbe
             var sw = Stopwatch.StartNew();
             using var ms = new MemoryStream(raw);
             using var r = new BinaryReader(ms);
-            _ = useTable ? r.ReadMapTriggers(TriggerData.Default) : r.ReadMapTriggers();
+            _ = useTable ? r.ReadMapTriggers(TriggerDataSource.Default) : r.ReadMapTriggers();
             sw.Stop();
             return sw.ElapsedTicks * 1_000_000 / Stopwatch.Frequency;
         }

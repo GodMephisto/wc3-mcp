@@ -4,19 +4,74 @@ using Wc3.Model;
 
 namespace Wc3.Commands;
 
-public sealed record ScriptFunctionsResult(string ScriptFile, IReadOnlyList<JassFunction> Functions);
+/// <summary>The functions a map script declares. <paramref name="SyntaxError"/> is set when a Lua
+/// script does not parse, as luac would report it, and the list is then empty.</summary>
+public sealed record ScriptFunctionsResult(
+    string ScriptFile, IReadOnlyList<JassFunction> Functions, string? SyntaxError = null);
 
 /// <summary>Where a name is used in the map's script, and how many of those uses pass it as a
 /// <c>code</c> value rather than calling it.</summary>
 public sealed record ScriptReferencesResult(
     string ScriptFile, string Name, int AsCode, IReadOnlyList<JassReference> References);
 
+/// <summary>One problem a script check found. Line 0 means the whole script.</summary>
+public sealed record ScriptIssue(DiagnosticSeverity Severity, int Line, string Message);
+
+/// <summary>A syntax and structure check of the map script, whichever language it is in.</summary>
+public sealed record ScriptCheckResult(string ScriptFile, string Language, bool Ok, IReadOnlyList<ScriptIssue> Issues);
+
+/// <summary>A Lua script printed back in one style. <paramref name="Changed"/> is false when the
+/// script already was in that form.</summary>
+public sealed record ScriptFormatResult(string ScriptFile, string Style, bool Changed, int BytesBefore, int BytesAfter);
+
 public static class ScriptCommand
 {
     /// <summary>
+    /// Checks the map script. JASS goes through <see cref="JassScriptCheck"/>, Lua through the Lua 5.3
+    /// parser, which refuses exactly what luac 5.3.6 refuses, with its line and message. A Lua script
+    /// that luac refuses cannot run at all, the game shows no slots and nothing in the log says why.
+    /// </summary>
+    public static ScriptCheckResult Check(MapDocument doc)
+    {
+        var (file, source) = Read(doc);
+        if (IsLua(file))
+        {
+            var e = Lua.LuaParser.Check(source);
+            var issues = e is null
+                ? Array.Empty<ScriptIssue>()
+                : new[] { new ScriptIssue(DiagnosticSeverity.Error, e.Line, e.Detail) };
+            return new ScriptCheckResult(file, "lua", e is null, issues);
+        }
+        var jass = JassScriptCheck.Check(source).Select(i => new ScriptIssue(i.Severity, i.Line, i.Message)).ToList();
+        return new ScriptCheckResult(file, "jass", jass.All(i => i.Severity != DiagnosticSeverity.Error), jass);
+    }
+
+    /// <summary>
+    /// Prints a Lua script back as "pretty" (indented, comments kept) or "canonical" (one fixed form,
+    /// for diffing two builds). The printed script compiles to the same luac instructions as the
+    /// original, measured on 47 real map scripts. JASS is refused, there is no JASS printer.
+    /// </summary>
+    public static ScriptFormatResult Format(MapDocument doc, string style)
+    {
+        var (file, source) = Read(doc);
+        if (!IsLua(file))
+            throw new NotSupportedException($"{file} is JASS. Formatting is for Lua scripts only.");
+        var chunk = Lua.LuaParser.Parse(source);
+        string printed = style.ToLowerInvariant() switch
+        {
+            "pretty" => Lua.LuaPrinter.Pretty(chunk),
+            "canonical" => Lua.LuaPrinter.Canonical(chunk),
+            _ => throw new ArgumentException($"style must be pretty or canonical, not {style}."),
+        };
+        var before = ScriptEncoding.GetByteCount(source);
+        bool changed = printed != source;
+        if (changed) Write(doc, printed);
+        return new ScriptFormatResult(file, style.ToLowerInvariant(), changed, before, ScriptEncoding.GetByteCount(printed));
+    }
+
+    /// <summary>
     /// Lists the functions declared in the map's script (war3map.j, else war3map.lua).
-    /// Lua scripts go through the same JASS scanner best-effort — typically zero hits,
-    /// but the result still names the file so the caller knows what was inspected.
+    /// A Lua script is indexed by the Lua parser, so its functions come back in the same records.
     /// </summary>
     public static ScriptFunctionsResult Functions(MapDocument doc)
     {
@@ -25,6 +80,11 @@ public static class ScriptCommand
         // Prefer pending in-memory edits (OverrideBytes) over the original bytes so
         // re-listing after a script edit reflects the current document state.
         var source = ScriptText.GetString(entry.CurrentBytes);
+        if (IsLua(entry.FileName!))
+        {
+            try { return new ScriptFunctionsResult(entry.FileName!, Lua.LuaScriptIndex.Functions(source)); }
+            catch (Lua.LuaSyntaxError e) { return new ScriptFunctionsResult(entry.FileName!, [], $"{e.Line}: {e.Detail}"); }
+        }
         var functions = JassFunctionIndex.Parse(source).OrderBy(f => f.StartLine).ToList();
         return new ScriptFunctionsResult(entry.FileName!, functions);
     }
@@ -110,18 +170,29 @@ public static class ScriptCommand
     public static ScriptReferencesResult References(MapDocument doc, string name)
     {
         var (file, source) = Read(doc);
-        var uses = JassReferences.FindUses(source, name);
+        var uses = IsLua(file) ? Lua.LuaScriptIndex.References(source, name) : JassReferences.FindUses(source, name);
         return new ScriptReferencesResult(
             file, name,
             uses.Count(r => r.Kind == JassReferenceKind.CodeReference),
             uses);
     }
 
-    /// <summary>The map's script entry, war3map.j first, else war3map.lua.</summary>
+    /// <summary>True when the script entry is a Lua script rather than JASS.</summary>
+    public static bool IsLua(string scriptFile) => scriptFile.EndsWith(".lua", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The map's script entry, war3map.j first, else war3map.lua. A map whose w3i says Lua runs
+    /// its Lua whatever JASS it still carries (a converted map keeps a stub war3map.j, since an
+    /// entry cannot be removed), so there the Lua comes first.
+    /// </summary>
     private static MapFileEntry ScriptEntry(MapDocument doc) =>
-        doc.GetFile("war3map.j")
+        ((doc.GetFile("war3map.w3i")?.Model as War3Net.Build.Info.MapInfo)?.ScriptLanguage == War3Net.Build.Info.ScriptLanguage.Lua
+            ? doc.GetFile("war3map.lua") ?? doc.GetFile(@"scripts\war3map.lua")
+            : null)
+        ?? doc.GetFile("war3map.j")
         ?? doc.GetFile(@"scripts\war3map.j")
         ?? doc.GetFile("war3map.lua")
+        ?? doc.GetFile(@"scripts\war3map.lua")
         ?? throw new FileNotFoundException(
             "map contains no war3map.j or war3map.lua", "war3map.j");
 

@@ -85,7 +85,7 @@ public class EcaRoundTripProbe
         {
             using var ms = new MemoryStream(bytes);
             using var r = new BinaryReader(ms);
-            var back = r.ReadMapTriggers();
+            var back = r.ReadMapTriggers(TriggerDataSource.Default);
             var td = back.TriggerItems.OfType<TriggerDefinition>().SingleOrDefault();
             _out.WriteLine(td is null
                 ? "  no TriggerData: the trigger did not come back"
@@ -127,7 +127,7 @@ public class EcaRoundTripProbe
     [Fact]
     public void Does_the_built_in_TriggerData_read_them_back()
     {
-        // War3Net ships the stock World-Editor function table as TriggerData.Default, with no
+        // War3Net ships the stock World-Editor function table as TriggerDataSource.Default, with no
         // constructor and no loader, so this needs no game install and no reference from
         // Wc3.MapDocument to Wc3.GameData. That is what makes wiring it into the parser cheap.
         var bytes = TriggerCommand.Serialize(WithFunctions());
@@ -135,7 +135,7 @@ public class EcaRoundTripProbe
         using var r = new BinaryReader(ms);
 
         MapTriggers back;
-        try { back = r.ReadMapTriggers(TriggerData.Default); }
+        try { back = r.ReadMapTriggers(TriggerDataSource.Default); }
         catch (Exception ex)
         {
             _out.WriteLine($"THREW {ex.GetType().Name}: {ex.Message}");
@@ -164,7 +164,7 @@ public class EcaRoundTripProbe
         // NOT how many there are, so the count is taken from the table on read. A function written
         // with the wrong number of parameters therefore makes the reader run off the end of the
         // stream, which is exactly the error seen.
-        var td = TriggerData.Default;
+        var td = TriggerDataSource.Default;
         _out.WriteLine($"table: {td.TriggerEvents.Count} event(s), "
                      + $"{td.TriggerConditions.Count} condition(s), "
                      + $"{td.TriggerActions.Count} action(s), {td.TriggerCalls.Count} call(s)");

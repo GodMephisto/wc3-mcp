@@ -185,13 +185,16 @@ public static class NameRecoveryCommand
                 .ToList(),
             "icon twin", spread: false, extra: IconTwins);
 
-        var bytesByBlock = doc.Files.ToDictionary(f => f.BlockIndex, f => f.RawBytes);
+        // A 4 KB prefix, never the whole entry. IdentifyBytes reads the magic, 120 bytes for its
+        // text check and an MDX's MODL chunk, which follows the 12 byte VERS chunk. This line used
+        // to hold every entry's full bytes in a dictionary, decompressing all of a 283 MB archive.
+        var entryByBlock = doc.Files.ToDictionary(f => f.BlockIndex);
         var still = unnamedSizes
             .Where(kv => !recovered.ContainsKey(kv.Key))
             .Select(kv =>
             {
                 var (kind, selfName) = MapDocument.IdentifyBytes(
-                    bytesByBlock.GetValueOrDefault(kv.Key, Array.Empty<byte>()));
+                    entryByBlock.TryGetValue(kv.Key, out var e) ? e.ReadPrefix(4096) : Array.Empty<byte>());
                 return new UnnamedBlock(kv.Key, kv.Value, kind, selfName);
             })
             .OrderByDescending(u => u.SizeBytes)
@@ -274,12 +277,36 @@ public static class NameRecoveryCommand
                 }
     }
 
+    /// <summary>True when the entry starts with the given four byte magic, read without
+    /// decompressing more than the entry's first sector.</summary>
+    private static bool StartsWith(MapFileEntry entry, ReadOnlySpan<byte> magic) =>
+        entry.ReadPrefix(magic.Length).AsSpan().SequenceEqual(magic);
+
+    /// <summary>
+    /// True for the asset kinds whose bytes never name another file, textures, images and audio.
+    /// They are most of a map's bytes, so the content sweep skips them on their magic alone. On a
+    /// protected map the sweep decompressed every one of them and took most of the 809 s.
+    /// </summary>
+    private static bool CannotNameOtherFiles(MapFileEntry entry)
+    {
+        var head = entry.ReadPrefix(4);
+        if (head.Length < 4) return head.Length == 0;
+        return head.AsSpan().SequenceEqual("BLP1"u8) || head.AsSpan().SequenceEqual("BLP2"u8)
+            || head.AsSpan().SequenceEqual("RIFF"u8) || head.AsSpan().SequenceEqual("DDS "u8)
+            || head.AsSpan().SequenceEqual("OggS"u8)
+            || (head[0] == 'I' && head[1] == 'D' && head[2] == '3')
+            || (head[0] == 0xFF && (head[1] & 0xE0) == 0xE0)   // MPEG audio frame sync
+            || (head[0] == 0x89 && head[1] == 'P' && head[2] == 'N' && head[3] == 'G')
+            || (head[0] == 0xFF && head[1] == 0xD8);            // JPEG
+    }
+
     private static IEnumerable<string> TexturePaths(MapDocument doc)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in doc.Files)
         {
-            var data = entry.OverrideBytes ?? entry.RawBytes;
+            if (!StartsWith(entry, "MDLX"u8)) continue;
+            var data = entry.CurrentBytes;
             if (data.Length < 8 || data[0] != 'M' || data[1] != 'D' || data[2] != 'L' || data[3] != 'X')
                 continue;
             int p = 4;
@@ -310,7 +337,8 @@ public static class NameRecoveryCommand
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in doc.Files.Where(f => f.FileName is null))
         {
-            var (_kind, selfName) = MapDocument.IdentifyBytes(entry.OverrideBytes ?? entry.RawBytes);
+            if (!StartsWith(entry, "MDLX"u8)) continue;   // only a model declares its own name
+            var (_kind, selfName) = MapDocument.IdentifyBytes(entry.CurrentBytes);
             if (selfName.Length > 1 && seen.Add(selfName)) yield return selfName;
         }
     }
@@ -321,7 +349,8 @@ public static class NameRecoveryCommand
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in doc.Files)
         {
-            var data = entry.OverrideBytes ?? entry.RawBytes;
+            if (CannotNameOtherFiles(entry)) continue;
+            var data = entry.CurrentBytes;
             if (data.Length == 0) continue;
             foreach (Match m in AssetName.Matches(Encoding.Latin1.GetString(data)))
             {

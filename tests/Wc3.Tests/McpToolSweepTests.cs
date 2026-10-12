@@ -42,7 +42,7 @@ public class McpToolSweepTests
         // wrong stem, and they refused cleanly for want of an out_path rather than doing
         // anything. Named explicitly so the filter does not depend on a naming accident.
         "placed_unit_remove", "placed_unit_set", "placed_doodad_remove", "placed_doodad_set",
-        "test_load", "trace_load", "debug_wiring", "repair", "bundle_",
+        "test_load", "trace_load", "debug_wiring", "repair", "bundle_", "doctor_fix",
     };
 
     /// <summary>

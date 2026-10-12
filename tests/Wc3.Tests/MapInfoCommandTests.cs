@@ -103,12 +103,12 @@ public class MapInfoCommandTests
         info.MapAuthor = "TRIGSTR_101";
         var doc = LoadSynthetic(info, new Dictionary<string, byte[]>
         {
-            ["war3map.wts"] = Wts((100u, "Gutsy Geoid Game"), (101u, "GodMephisto")),
+            ["war3map.wts"] = Wts((100u, "Gutsy Geoid Game"), (101u, "Sample Author")),
         });
 
         var fields = MapInfoCommand.Read(doc);
         Assert.Equal("Gutsy Geoid Game", fields.MapName);
-        Assert.Equal("GodMephisto", fields.Author);
+        Assert.Equal("Sample Author", fields.Author);
     }
 
     [Fact]

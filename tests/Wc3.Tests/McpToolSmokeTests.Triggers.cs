@@ -6,8 +6,10 @@ using System.Text.Json;
 
 namespace Wc3.Tests;
 
-public sealed partial class McpToolSmokeTests
+public sealed class McpSmokeTriggersTests : McpSmokeBase
 {
+    public McpSmokeTriggersTests(SmokeFixture f) : base(f) { }
+
     private const string HelloTrigger = """
         function Trig_Hello_Actions takes nothing returns nothing
             call DisplayTextToForce( GetPlayersAll(), "hello" )

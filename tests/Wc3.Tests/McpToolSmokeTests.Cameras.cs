@@ -2,8 +2,10 @@
 // Cameras. The worked example for the other families. Each write is read back with camera_list.
 namespace Wc3.Tests;
 
-public sealed partial class McpToolSmokeTests
+public sealed class McpSmokeCamerasTests : McpSmokeBase
 {
+    public McpSmokeCamerasTests(SmokeFixture f) : base(f) { }
+
     [Fact, Covers("camera_list")]
     public async Task Camera_list_on_a_blank_map_is_empty()
     {

@@ -1,0 +1,717 @@
+[
+ {
+  "name": "assignment",
+  "source": "a = 1\na, b.c, d[1] = 1, 2, 3\nx, y = f()\na.b.c.d = {}\na[b][c] = 1\na:b().c = 2\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "local",
+  "source": "local a\nlocal b, c = 1\nlocal d, e = ...\nlocal f = f\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "local attributes",
+  "source": "local x <const>, y <close> = 5, nil\nlocal z <const> = x\n",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near '<'"
+  }
+ },
+ {
+  "name": "function statements",
+  "source": "function f(a, b, ...) return ... end\nfunction a.b.c:m(x) return self, x end\nlocal function g(n) if n > 0 then return g(n - 1) end end\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "calls",
+  "source": "f()\nf \"s\"\nf {1, 2}\nf[[long]]\na.b:c(1)\na:b\"x\":c{}\nf()()\n(f)()\nobj:m\"s\"\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "call across lines",
+  "source": "local t = x\n(f)()\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "if",
+  "source": "if a then b() elseif c then d() elseif e then else f() end\nif x then end\nif a then if b then c() else d() end end\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "while and for",
+  "source": "while i < 10 do i = i + 1 end\nfor i = 1, 10 do end\nfor i = 10, 1, -1 do print(i) end\nfor k, v in pairs(t) do end\nfor a, b, c in next, t, nil do break end\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "repeat",
+  "source": "repeat local x = f() until x\nrepeat until true\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "do and return",
+  "source": "do local x = 1 end\ndo return end\nreturn 1, 2;",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "goto and labels",
+  "source": "for i = 1, 3 do\n  if i == 2 then goto continue end\n  local x = i\n  ::continue::\nend\n::top:: do goto top end\ndo goto e; local z = 1; ::e:: end\nwhile true do goto out end\n::out::",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "precedence",
+  "source": "x = a or b and c < d | e ~ f & g << h .. i + j * k ^ -l\nx = -x ^ 2\nx = 2 ^ -3\nx = not a == b\nx = #t + 1\nx = ~x\nx = a // b % c\nx = a .. b .. c\nx = a ^ b ^ c\nx = a < b == (c > d)\nx = - - x\nx = not not x\nx = a >> 1 << 2\nx = 1 + 2 - 3 * 4 / 5 % 6\nx = (a + b) * c\nx = ((a))\nx = a~=b\nx = a ~ ~b\nx = 1 .. 2\nx = a..b\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "tables",
+  "source": "t = {}\nt = {1, 2, 3,}\nt = {a = 1; b = 2}\nt = {[k] = v, [1 + 1] = 2}\nt = {{}, {{}}, f(), g}\nt = {\"x\"; [[y]], z = {w = 1}}\nt = {[ [[k]] ] = 1}\nt = {f = function() end, 1}\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "varargs",
+  "source": "local function v(...) local a, b = ... return select(\"#\", ...), {...}, (...) end\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "function expressions",
+  "source": "local f = function(x) return x end\n(function() end)()\nlocal g = function(...) end\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "numbers",
+  "source": "n = {0, 3, 3.0, 3.1416, 314.16e-2, 0.31416E1, 34e1, 0x0.1E, 0xA23p-4, 0X1.921FB54442D18P+1, 0xff, .5, 5., 9223372036854775807, 9223372036854775808, 0xffffffffffffffff, 1e+10, 1E-2, 0x.8p1, 0xA., 007}\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "strings",
+  "source": "s = {'a', \"b\\\"c\", \"\\65\\066\\x43\\u{48}\\z\n       !\", 'tab\\tnl\\n', \"a\\\nb\", [[x]], [==[a]]b]==], [[\nfirst line]], '\\'', \"\\\\\", \"\\0\", \"\\255\", \"\\u{10FFFF}\", \"caf\u00c3\u00a9\"}\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "Lua 5.3, not 5.4",
+  "source": "x = 5y = 6\n::a:: do ::a:: end\ns = \"\\u{10FFFF}\"\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "comments",
+  "source": "-- header\n--[[ long\ncomment ]]\nlocal a = 1 -- trailing\n--[==[ level ]==]\nlocal t = {\n  1, -- one\n  2, --[[ two ]]\n}\nfunction f()\n  -- inside\n  x = 1\n  -- before end\nend -- after end\nif a then -- then\nelse -- else\n  -- only comment\nend\n-- eof comment",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "semicolons",
+  "source": ";;a = 1;;b = 2;\nlocal c = 3;",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "world editor",
+  "source": "function Trig_Test_Conditions()\n    if (not (GetTriggerUnit() == udg_Hero)) then\n        return false\n    end\n    return true\nend\n\nfunction Trig_Test_Func003C()\n    if (not (udg_Count > 0)) then\n        return false\n    end\n    return true\nend\n\nfunction Trig_Test_Func005A()\n    KillUnit(GetEnumUnit())\nend\n\nfunction Trig_Test_Actions()\n    -- a comment action\n    udg_Count = (udg_Count + 1)\n    udg_Units[udg_Count] = GetTriggerUnit()\n    if (Trig_Test_Func003C()) then\n        DisplayTextToForce(GetPlayersAll(), \"TRIGSTR_003\")\n    else\n        DoNothing()\n    end\n    bj_forLoopAIndex = 1\n    bj_forLoopAIndexEnd = 10\n    while (true) do\n        if (bj_forLoopAIndex > bj_forLoopAIndexEnd) then break end\n        CreateNUnitsAtLoc(1, FourCC(\"hfoo\"), Player(0), GetRectCenter(GetPlayableMapRect()), bj_UNIT_FACING)\n        bj_forLoopAIndex = bj_forLoopAIndex + 1\n    end\n    ForGroupBJ(GetUnitsInRectAll(GetPlayableMapRect()), Trig_Test_Func005A)\nend\n\nfunction InitTrig_Test()\n    gg_trg_Test = CreateTrigger()\n    DisableTrigger(gg_trg_Test)\n    TriggerRegisterPlayerChatEvent(gg_trg_Test, Player(0), \"-ap\", true)\n    TriggerAddCondition(gg_trg_Test, Condition(Trig_Test_Conditions))\n    TriggerAddAction(gg_trg_Test, Trig_Test_Actions)\nend\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "minified",
+  "source": "a=1 b=2 function f()return 1 end local x=y(f)()if a then b()elseif c then d()else e()end;for i=1,2 do end;local t={a=1,[2]=3,\"x\"}return t",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "methods",
+  "source": "local obj = {}\nfunction obj:get() return self.v end\nfunction obj.new(v) return setmetatable({v = v}, {__index = obj}) end\nprint(obj.new(1):get())\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "upvalues and _ENV",
+  "source": "local a = 1\nlocal function outer()\n  local b = 2\n  return function() return a + b + c end\nend\nlocal _ENV = setmetatable({}, {__index = _G})\nfunction main() end\nx = 1\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "suffix chains",
+  "source": "x = a.b.c:d(1):e().f[g][\"h\"]\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "CRLF",
+  "source": "a = 1\r\nb = [[x\r\ny]]\r\n-- c\r\nc = \"\\\r\n\"\r\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "empty",
+  "source": "",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "only comments",
+  "source": "-- a\n--[[ b ]]",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "197 levels",
+  "source": "x = (((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((1)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "200 locals",
+  "source": "local a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, a61, a62, a63, a64, a65, a66, a67, a68, a69, a70, a71, a72, a73, a74, a75, a76, a77, a78, a79, a80, a81, a82, a83, a84, a85, a86, a87, a88, a89, a90, a91, a92, a93, a94, a95, a96, a97, a98, a99, a100, a101, a102, a103, a104, a105, a106, a107, a108, a109, a110, a111, a112, a113, a114, a115, a116, a117, a118, a119, a120, a121, a122, a123, a124, a125, a126, a127, a128, a129, a130, a131, a132, a133, a134, a135, a136, a137, a138, a139, a140, a141, a142, a143, a144, a145, a146, a147, a148, a149, a150, a151, a152, a153, a154, a155, a156, a157, a158, a159, a160, a161, a162, a163, a164, a165, a166, a167, a168, a169, a170, a171, a172, a173, a174, a175, a176, a177, a178, a179, a180, a181, a182, a183, a184, a185, a186, a187, a188, a189, a190, a191, a192, a193, a194, a195, a196, a197, a198, a199",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "199 targets",
+  "source": "a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a = 1",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "255 upvalues",
+  "source": "local a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, a61, a62, a63, a64, a65, a66, a67, a68, a69, a70, a71, a72, a73, a74, a75, a76, a77, a78, a79, a80, a81, a82, a83, a84, a85, a86, a87, a88, a89, a90, a91, a92, a93, a94, a95, a96, a97, a98, a99, a100, a101, a102, a103, a104, a105, a106, a107, a108, a109, a110, a111, a112, a113, a114, a115, a116, a117, a118, a119, a120, a121, a122, a123, a124, a125, a126, a127, a128, a129, a130, a131, a132, a133, a134, a135, a136, a137, a138, a139, a140, a141, a142, a143, a144, a145, a146, a147, a148, a149\nlocal function f()\n  local b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66, b67, b68, b69, b70, b71, b72, b73, b74, b75, b76, b77, b78, b79, b80, b81, b82, b83, b84, b85, b86, b87, b88, b89, b90, b91, b92, b93, b94, b95, b96, b97, b98, b99, b100, b101, b102, b103, b104\n  return function() local _ _ = a0 _ = a1 _ = a2 _ = a3 _ = a4 _ = a5 _ = a6 _ = a7 _ = a8 _ = a9 _ = a10 _ = a11 _ = a12 _ = a13 _ = a14 _ = a15 _ = a16 _ = a17 _ = a18 _ = a19 _ = a20 _ = a21 _ = a22 _ = a23 _ = a24 _ = a25 _ = a26 _ = a27 _ = a28 _ = a29 _ = a30 _ = a31 _ = a32 _ = a33 _ = a34 _ = a35 _ = a36 _ = a37 _ = a38 _ = a39 _ = a40 _ = a41 _ = a42 _ = a43 _ = a44 _ = a45 _ = a46 _ = a47 _ = a48 _ = a49 _ = a50 _ = a51 _ = a52 _ = a53 _ = a54 _ = a55 _ = a56 _ = a57 _ = a58 _ = a59 _ = a60 _ = a61 _ = a62 _ = a63 _ = a64 _ = a65 _ = a66 _ = a67 _ = a68 _ = a69 _ = a70 _ = a71 _ = a72 _ = a73 _ = a74 _ = a75 _ = a76 _ = a77 _ = a78 _ = a79 _ = a80 _ = a81 _ = a82 _ = a83 _ = a84 _ = a85 _ = a86 _ = a87 _ = a88 _ = a89 _ = a90 _ = a91 _ = a92 _ = a93 _ = a94 _ = a95 _ = a96 _ = a97 _ = a98 _ = a99 _ = a100 _ = a101 _ = a102 _ = a103 _ = a104 _ = a105 _ = a106 _ = a107 _ = a108 _ = a109 _ = a110 _ = a111 _ = a112 _ = a113 _ = a114 _ = a115 _ = a116 _ = a117 _ = a118 _ = a119 _ = a120 _ = a121 _ = a122 _ = a123 _ = a124 _ = a125 _ = a126 _ = a127 _ = a128 _ = a129 _ = a130 _ = a131 _ = a132 _ = a133 _ = a134 _ = a135 _ = a136 _ = a137 _ = a138 _ = a139 _ = a140 _ = a141 _ = a142 _ = a143 _ = a144 _ = a145 _ = a146 _ = a147 _ = a148 _ = a149 _ = b0 _ = b1 _ = b2 _ = b3 _ = b4 _ = b5 _ = b6 _ = b7 _ = b8 _ = b9 _ = b10 _ = b11 _ = b12 _ = b13 _ = b14 _ = b15 _ = b16 _ = b17 _ = b18 _ = b19 _ = b20 _ = b21 _ = b22 _ = b23 _ = b24 _ = b25 _ = b26 _ = b27 _ = b28 _ = b29 _ = b30 _ = b31 _ = b32 _ = b33 _ = b34 _ = b35 _ = b36 _ = b37 _ = b38 _ = b39 _ = b40 _ = b41 _ = b42 _ = b43 _ = b44 _ = b45 _ = b46 _ = b47 _ = b48 _ = b49 _ = b50 _ = b51 _ = b52 _ = b53 _ = b54 _ = b55 _ = b56 _ = b57 _ = b58 _ = b59 _ = b60 _ = b61 _ = b62 _ = b63 _ = b64 _ = b65 _ = b66 _ = b67 _ = b68 _ = b69 _ = b70 _ = b71 _ = b72 _ = b73 _ = b74 _ = b75 _ = b76 _ = b77 _ = b78 _ = b79 _ = b80 _ = b81 _ = b82 _ = b83 _ = b84 _ = b85 _ = b86 _ = b87 _ = b88 _ = b89 _ = b90 _ = b91 _ = b92 _ = b93 _ = b94 _ = b95 _ = b96 _ = b97 _ = b98 _ = b99 _ = b100 _ = b101 _ = b102 _ = b103 _ = b104 end\nend\n",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "198 labels in a row",
+  "source": "::l0:: ::l1:: ::l2:: ::l3:: ::l4:: ::l5:: ::l6:: ::l7:: ::l8:: ::l9:: ::l10:: ::l11:: ::l12:: ::l13:: ::l14:: ::l15:: ::l16:: ::l17:: ::l18:: ::l19:: ::l20:: ::l21:: ::l22:: ::l23:: ::l24:: ::l25:: ::l26:: ::l27:: ::l28:: ::l29:: ::l30:: ::l31:: ::l32:: ::l33:: ::l34:: ::l35:: ::l36:: ::l37:: ::l38:: ::l39:: ::l40:: ::l41:: ::l42:: ::l43:: ::l44:: ::l45:: ::l46:: ::l47:: ::l48:: ::l49:: ::l50:: ::l51:: ::l52:: ::l53:: ::l54:: ::l55:: ::l56:: ::l57:: ::l58:: ::l59:: ::l60:: ::l61:: ::l62:: ::l63:: ::l64:: ::l65:: ::l66:: ::l67:: ::l68:: ::l69:: ::l70:: ::l71:: ::l72:: ::l73:: ::l74:: ::l75:: ::l76:: ::l77:: ::l78:: ::l79:: ::l80:: ::l81:: ::l82:: ::l83:: ::l84:: ::l85:: ::l86:: ::l87:: ::l88:: ::l89:: ::l90:: ::l91:: ::l92:: ::l93:: ::l94:: ::l95:: ::l96:: ::l97:: ::l98:: ::l99:: ::l100:: ::l101:: ::l102:: ::l103:: ::l104:: ::l105:: ::l106:: ::l107:: ::l108:: ::l109:: ::l110:: ::l111:: ::l112:: ::l113:: ::l114:: ::l115:: ::l116:: ::l117:: ::l118:: ::l119:: ::l120:: ::l121:: ::l122:: ::l123:: ::l124:: ::l125:: ::l126:: ::l127:: ::l128:: ::l129:: ::l130:: ::l131:: ::l132:: ::l133:: ::l134:: ::l135:: ::l136:: ::l137:: ::l138:: ::l139:: ::l140:: ::l141:: ::l142:: ::l143:: ::l144:: ::l145:: ::l146:: ::l147:: ::l148:: ::l149:: ::l150:: ::l151:: ::l152:: ::l153:: ::l154:: ::l155:: ::l156:: ::l157:: ::l158:: ::l159:: ::l160:: ::l161:: ::l162:: ::l163:: ::l164:: ::l165:: ::l166:: ::l167:: ::l168:: ::l169:: ::l170:: ::l171:: ::l172:: ::l173:: ::l174:: ::l175:: ::l176:: ::l177:: ::l178:: ::l179:: ::l180:: ::l181:: ::l182:: ::l183:: ::l184:: ::l185:: ::l186:: ::l187:: ::l188:: ::l189:: ::l190:: ::l191:: ::l192:: ::l193:: ::l194:: ::l195:: ::l196:: ::l197:: ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "3000 additions",
+  "source": "x = a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a + a",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "3000 fields",
+  "source": "x = a.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b.b",
+  "luac": {
+   "ok": true
+  }
+ },
+ {
+  "name": "unexpected end",
+  "source": "x = ",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near <eof>"
+  }
+ },
+ {
+  "name": "operator without operand",
+  "source": "x = 1 +",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near <eof>"
+  }
+ },
+ {
+  "name": "unclosed call",
+  "source": "f(\n1,\n",
+  "luac": {
+   "ok": false,
+   "line": 3,
+   "message": "unexpected symbol near <eof>"
+  }
+ },
+ {
+  "name": "unclosed if",
+  "source": "if x then\n  y()\n",
+  "luac": {
+   "ok": false,
+   "line": 3,
+   "message": "'end' expected (to close 'if' at line 1) near <eof>"
+  }
+ },
+ {
+  "name": "for without comma",
+  "source": "for i = 1 do end",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "',' expected near 'do'"
+  }
+ },
+ {
+  "name": "local number",
+  "source": "local 1 = 2",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "<name> expected near '1'"
+  }
+ },
+ {
+  "name": "expression statement",
+  "source": "x = 1\na + b = c",
+  "luac": {
+   "ok": false,
+   "line": 2,
+   "message": "syntax error near '+'"
+  }
+ },
+ {
+  "name": "parenthesized target",
+  "source": "(a) = 1",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "syntax error near '='"
+  }
+ },
+ {
+  "name": "call target",
+  "source": "f() = 1",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "syntax error near '='"
+  }
+ },
+ {
+  "name": "bare index",
+  "source": "a.b",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "syntax error near <eof>"
+  }
+ },
+ {
+  "name": "malformed number",
+  "source": "x = 1..2",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "malformed number near '1..2'"
+  }
+ },
+ {
+  "name": "hex without digits",
+  "source": "x = 0x",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "malformed number near '0x'"
+  }
+ },
+ {
+  "name": "exponent without digits",
+  "source": "x = 3e",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "malformed number near '3e'"
+  }
+ },
+ {
+  "name": "number touching a keyword",
+  "source": "x = 1and 2",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "malformed number near '1a'"
+  }
+ },
+ {
+  "name": "unfinished string",
+  "source": "x = \"abc\ny = 1",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unfinished string near '\"abc'"
+  }
+ },
+ {
+  "name": "unfinished long string",
+  "source": "x = [[abc\n\n",
+  "luac": {
+   "ok": false,
+   "line": 3,
+   "message": "unfinished long string (starting at line 1) near <eof>"
+  }
+ },
+ {
+  "name": "unfinished long comment",
+  "source": "x = 1\n--[[ abc\n",
+  "luac": {
+   "ok": false,
+   "line": 3,
+   "message": "unfinished long comment (starting at line 2) near <eof>"
+  }
+ },
+ {
+  "name": "invalid escape",
+  "source": "x = \"\\q\"",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "invalid escape sequence near '\"\\q'"
+  }
+ },
+ {
+  "name": "decimal escape too large",
+  "source": "x = \"\\300\"",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "decimal escape too large near '\"\\300\"'"
+  }
+ },
+ {
+  "name": "hex escape",
+  "source": "x = \"\\xZZ\"",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "hexadecimal digit expected near '\"\\xZ'"
+  }
+ },
+ {
+  "name": "UTF-8 escape too large",
+  "source": "x = \"\\u{110000}\"",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "UTF-8 value too large near '\"\\u{110000'"
+  }
+ },
+ {
+  "name": "UTF-8 escape without brace",
+  "source": "x = \"\\u{12\"",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "missing '}' near '\"\\u{12\"'"
+  }
+ },
+ {
+  "name": "hex escape after a digit",
+  "source": "x = \"\\x4Z\"",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "hexadecimal digit expected near '\"\\x4Z'"
+  }
+ },
+ {
+  "name": "bad escape in an unfinished string",
+  "source": "x = \"\\300\ny = 1",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "decimal escape too large near '\"\\300\n'"
+  }
+ },
+ {
+  "name": "unfinished string at the end",
+  "source": "x = \"abc",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unfinished string near <eof>"
+  }
+ },
+ {
+  "name": "invalid long delimiter",
+  "source": "x = [==x",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "invalid long string delimiter near '[=='"
+  }
+ },
+ {
+  "name": "break outside a loop",
+  "source": "x = 1\nbreak\n",
+  "luac": {
+   "ok": false,
+   "line": 3,
+   "message": "<break> at line 2 not inside a loop"
+  }
+ },
+ {
+  "name": "goto without label",
+  "source": "goto nowhere",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "no visible label 'nowhere' for <goto> at line 1"
+  }
+ },
+ {
+  "name": "goto into a local scope",
+  "source": "do goto l; local x = 1; ::l:: print(x) end",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "<goto l> at line 1 jumps into the scope of local 'x'"
+  }
+ },
+ {
+  "name": "goto into the repeat scope",
+  "source": "repeat goto l; local x ::l:: until x",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "<goto l> at line 1 jumps into the scope of local 'x'"
+  }
+ },
+ {
+  "name": "label twice",
+  "source": "::a:: ::a::",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "label 'a' already defined on line 1"
+  }
+ },
+ {
+  "name": "vararg outside",
+  "source": "function f() return ... end",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "cannot use '...' outside a vararg function near '...'"
+  }
+ },
+ {
+  "name": "return not last",
+  "source": "return 1; x = 2",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "<eof> expected near 'x'"
+  }
+ },
+ {
+  "name": "unknown attribute",
+  "source": "local x <foo> = 1",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near '<'"
+  }
+ },
+ {
+  "name": "assignment to const",
+  "source": "local x <const> = 1\nx = 2",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near '<'"
+  }
+ },
+ {
+  "name": "two to-be-closed",
+  "source": "local a <close>, b <close> = nil, nil",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near '<'"
+  }
+ },
+ {
+  "name": "unknown character",
+  "source": "x = 1 @ 2",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near '@'"
+  }
+ },
+ {
+  "name": "non-ASCII name",
+  "source": "local caf\u00c3\u00a9 = 1",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near '<\\195>'"
+  }
+ },
+ {
+  "name": "field without value",
+  "source": "local t = {a = }",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near '}'"
+  }
+ },
+ {
+  "name": "extra end",
+  "source": "x = function() end end",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "<eof> expected near 'end'"
+  }
+ },
+ {
+  "name": "method without arguments",
+  "source": "a:b",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "function arguments expected near <eof>"
+  }
+ },
+ {
+  "name": "string with a suffix",
+  "source": "x = \"a\":len()",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "unexpected symbol near ':'"
+  }
+ },
+ {
+  "name": "parameter after dots",
+  "source": "function f(..., a) end",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "')' expected near ','"
+  }
+ },
+ {
+  "name": "goto a keyword",
+  "source": "goto break",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "<name> expected near 'break'"
+  }
+ },
+ {
+  "name": "error after a long string",
+  "source": "local s = [[\n\n]] +",
+  "luac": {
+   "ok": false,
+   "line": 3,
+   "message": "unexpected symbol near <eof>"
+  }
+ },
+ {
+  "name": "201 locals",
+  "source": "local a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, a61, a62, a63, a64, a65, a66, a67, a68, a69, a70, a71, a72, a73, a74, a75, a76, a77, a78, a79, a80, a81, a82, a83, a84, a85, a86, a87, a88, a89, a90, a91, a92, a93, a94, a95, a96, a97, a98, a99, a100, a101, a102, a103, a104, a105, a106, a107, a108, a109, a110, a111, a112, a113, a114, a115, a116, a117, a118, a119, a120, a121, a122, a123, a124, a125, a126, a127, a128, a129, a130, a131, a132, a133, a134, a135, a136, a137, a138, a139, a140, a141, a142, a143, a144, a145, a146, a147, a148, a149, a150, a151, a152, a153, a154, a155, a156, a157, a158, a159, a160, a161, a162, a163, a164, a165, a166, a167, a168, a169, a170, a171, a172, a173, a174, a175, a176, a177, a178, a179, a180, a181, a182, a183, a184, a185, a186, a187, a188, a189, a190, a191, a192, a193, a194, a195, a196, a197, a198, a199, a200",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "too many local variables (limit is 200) in main function near <eof>"
+  }
+ },
+ {
+  "name": "198 levels",
+  "source": "x = ((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((1))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "too many C levels (limit is 200) in main function near '1'"
+  }
+ },
+ {
+  "name": "200 targets",
+  "source": "a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a, a = 1",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "too many C levels (limit is 200) in main function near '='"
+  }
+ },
+ {
+  "name": "256 upvalues",
+  "source": "local a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, a25, a26, a27, a28, a29, a30, a31, a32, a33, a34, a35, a36, a37, a38, a39, a40, a41, a42, a43, a44, a45, a46, a47, a48, a49, a50, a51, a52, a53, a54, a55, a56, a57, a58, a59, a60, a61, a62, a63, a64, a65, a66, a67, a68, a69, a70, a71, a72, a73, a74, a75, a76, a77, a78, a79, a80, a81, a82, a83, a84, a85, a86, a87, a88, a89, a90, a91, a92, a93, a94, a95, a96, a97, a98, a99, a100, a101, a102, a103, a104, a105, a106, a107, a108, a109, a110, a111, a112, a113, a114, a115, a116, a117, a118, a119, a120, a121, a122, a123, a124, a125, a126, a127, a128, a129, a130, a131, a132, a133, a134, a135, a136, a137, a138, a139, a140, a141, a142, a143, a144, a145, a146, a147, a148, a149\nlocal function f()\n  local b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32, b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47, b48, b49, b50, b51, b52, b53, b54, b55, b56, b57, b58, b59, b60, b61, b62, b63, b64, b65, b66, b67, b68, b69, b70, b71, b72, b73, b74, b75, b76, b77, b78, b79, b80, b81, b82, b83, b84, b85, b86, b87, b88, b89, b90, b91, b92, b93, b94, b95, b96, b97, b98, b99, b100, b101, b102, b103, b104, b105\n  return function() local _ _ = a0 _ = a1 _ = a2 _ = a3 _ = a4 _ = a5 _ = a6 _ = a7 _ = a8 _ = a9 _ = a10 _ = a11 _ = a12 _ = a13 _ = a14 _ = a15 _ = a16 _ = a17 _ = a18 _ = a19 _ = a20 _ = a21 _ = a22 _ = a23 _ = a24 _ = a25 _ = a26 _ = a27 _ = a28 _ = a29 _ = a30 _ = a31 _ = a32 _ = a33 _ = a34 _ = a35 _ = a36 _ = a37 _ = a38 _ = a39 _ = a40 _ = a41 _ = a42 _ = a43 _ = a44 _ = a45 _ = a46 _ = a47 _ = a48 _ = a49 _ = a50 _ = a51 _ = a52 _ = a53 _ = a54 _ = a55 _ = a56 _ = a57 _ = a58 _ = a59 _ = a60 _ = a61 _ = a62 _ = a63 _ = a64 _ = a65 _ = a66 _ = a67 _ = a68 _ = a69 _ = a70 _ = a71 _ = a72 _ = a73 _ = a74 _ = a75 _ = a76 _ = a77 _ = a78 _ = a79 _ = a80 _ = a81 _ = a82 _ = a83 _ = a84 _ = a85 _ = a86 _ = a87 _ = a88 _ = a89 _ = a90 _ = a91 _ = a92 _ = a93 _ = a94 _ = a95 _ = a96 _ = a97 _ = a98 _ = a99 _ = a100 _ = a101 _ = a102 _ = a103 _ = a104 _ = a105 _ = a106 _ = a107 _ = a108 _ = a109 _ = a110 _ = a111 _ = a112 _ = a113 _ = a114 _ = a115 _ = a116 _ = a117 _ = a118 _ = a119 _ = a120 _ = a121 _ = a122 _ = a123 _ = a124 _ = a125 _ = a126 _ = a127 _ = a128 _ = a129 _ = a130 _ = a131 _ = a132 _ = a133 _ = a134 _ = a135 _ = a136 _ = a137 _ = a138 _ = a139 _ = a140 _ = a141 _ = a142 _ = a143 _ = a144 _ = a145 _ = a146 _ = a147 _ = a148 _ = a149 _ = b0 _ = b1 _ = b2 _ = b3 _ = b4 _ = b5 _ = b6 _ = b7 _ = b8 _ = b9 _ = b10 _ = b11 _ = b12 _ = b13 _ = b14 _ = b15 _ = b16 _ = b17 _ = b18 _ = b19 _ = b20 _ = b21 _ = b22 _ = b23 _ = b24 _ = b25 _ = b26 _ = b27 _ = b28 _ = b29 _ = b30 _ = b31 _ = b32 _ = b33 _ = b34 _ = b35 _ = b36 _ = b37 _ = b38 _ = b39 _ = b40 _ = b41 _ = b42 _ = b43 _ = b44 _ = b45 _ = b46 _ = b47 _ = b48 _ = b49 _ = b50 _ = b51 _ = b52 _ = b53 _ = b54 _ = b55 _ = b56 _ = b57 _ = b58 _ = b59 _ = b60 _ = b61 _ = b62 _ = b63 _ = b64 _ = b65 _ = b66 _ = b67 _ = b68 _ = b69 _ = b70 _ = b71 _ = b72 _ = b73 _ = b74 _ = b75 _ = b76 _ = b77 _ = b78 _ = b79 _ = b80 _ = b81 _ = b82 _ = b83 _ = b84 _ = b85 _ = b86 _ = b87 _ = b88 _ = b89 _ = b90 _ = b91 _ = b92 _ = b93 _ = b94 _ = b95 _ = b96 _ = b97 _ = b98 _ = b99 _ = b100 _ = b101 _ = b102 _ = b103 _ = b104 _ = b105 end\nend\n",
+  "luac": {
+   "ok": false,
+   "line": 4,
+   "message": "too many upvalues (limit is 255) in function at line 4 near 'end'"
+  }
+ },
+ {
+  "name": "200 labels in a row",
+  "source": "::l0:: ::l1:: ::l2:: ::l3:: ::l4:: ::l5:: ::l6:: ::l7:: ::l8:: ::l9:: ::l10:: ::l11:: ::l12:: ::l13:: ::l14:: ::l15:: ::l16:: ::l17:: ::l18:: ::l19:: ::l20:: ::l21:: ::l22:: ::l23:: ::l24:: ::l25:: ::l26:: ::l27:: ::l28:: ::l29:: ::l30:: ::l31:: ::l32:: ::l33:: ::l34:: ::l35:: ::l36:: ::l37:: ::l38:: ::l39:: ::l40:: ::l41:: ::l42:: ::l43:: ::l44:: ::l45:: ::l46:: ::l47:: ::l48:: ::l49:: ::l50:: ::l51:: ::l52:: ::l53:: ::l54:: ::l55:: ::l56:: ::l57:: ::l58:: ::l59:: ::l60:: ::l61:: ::l62:: ::l63:: ::l64:: ::l65:: ::l66:: ::l67:: ::l68:: ::l69:: ::l70:: ::l71:: ::l72:: ::l73:: ::l74:: ::l75:: ::l76:: ::l77:: ::l78:: ::l79:: ::l80:: ::l81:: ::l82:: ::l83:: ::l84:: ::l85:: ::l86:: ::l87:: ::l88:: ::l89:: ::l90:: ::l91:: ::l92:: ::l93:: ::l94:: ::l95:: ::l96:: ::l97:: ::l98:: ::l99:: ::l100:: ::l101:: ::l102:: ::l103:: ::l104:: ::l105:: ::l106:: ::l107:: ::l108:: ::l109:: ::l110:: ::l111:: ::l112:: ::l113:: ::l114:: ::l115:: ::l116:: ::l117:: ::l118:: ::l119:: ::l120:: ::l121:: ::l122:: ::l123:: ::l124:: ::l125:: ::l126:: ::l127:: ::l128:: ::l129:: ::l130:: ::l131:: ::l132:: ::l133:: ::l134:: ::l135:: ::l136:: ::l137:: ::l138:: ::l139:: ::l140:: ::l141:: ::l142:: ::l143:: ::l144:: ::l145:: ::l146:: ::l147:: ::l148:: ::l149:: ::l150:: ::l151:: ::l152:: ::l153:: ::l154:: ::l155:: ::l156:: ::l157:: ::l158:: ::l159:: ::l160:: ::l161:: ::l162:: ::l163:: ::l164:: ::l165:: ::l166:: ::l167:: ::l168:: ::l169:: ::l170:: ::l171:: ::l172:: ::l173:: ::l174:: ::l175:: ::l176:: ::l177:: ::l178:: ::l179:: ::l180:: ::l181:: ::l182:: ::l183:: ::l184:: ::l185:: ::l186:: ::l187:: ::l188:: ::l189:: ::l190:: ::l191:: ::l192:: ::l193:: ::l194:: ::l195:: ::l196:: ::l197:: ::l198:: ::l199:: ",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "too many C levels (limit is 200) in main function near '::'"
+  }
+ },
+ {
+  "name": "semicolon 200 levels deep",
+  "source": "do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do do ; end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end end",
+  "luac": {
+   "ok": false,
+   "line": 1,
+   "message": "too many C levels (limit is 200) in main function near ';'"
+  }
+ },
+ {
+  "name": "bad label after a label",
+  "source": "goto c local x = 1 ::c:: ::\nend",
+  "luac": {
+   "ok": false,
+   "line": 2,
+   "message": "<name> expected near 'end'"
+  }
+ }
+]

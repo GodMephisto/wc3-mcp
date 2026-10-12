@@ -31,6 +31,25 @@ public static class ObjectGetCommand
             : Execute(doc, kind, rawcode, null, new[] { diagnostic });
     }
 
+    /// <summary>
+    /// The same pipeline with the kind's merged entries already indexed, for callers that look
+    /// up many objects of one kind. Merging the entries walks the whole object file, so doing
+    /// it once per lookup made the audit quadratic in the map's object count.
+    /// </summary>
+    internal static MergedObjectResult Execute(MapDocument doc, ObjectKind kind, string rawcode,
+        string? gameDirOverride, IReadOnlyDictionary<int, MapObjectEntry> index)
+    {
+        if (!GameData.GameData.TryOpen(gameDirOverride, out var ctx, out var diagnostic))
+            ctx = null;
+        var pre = ctx is null ? new[] { diagnostic } : Array.Empty<string>();
+        if (rawcode.Length == 4 && index.TryGetValue(rawcode.FromRawcode(), out var entry))
+            return MergeEntry(doc, kind, rawcode, entry, ctx, pre);
+        if (ctx is not null && ObjectKinds.TryGetBaseFields(ctx, kind, rawcode, out var baseFields))
+            return MergeStandard(kind, rawcode, baseFields, ctx, pre);
+        var none = new Dictionary<string, string>();
+        return Merge(rawcode, null, definedInMap: false, name: null, none, none, code => code, pre);
+    }
+
     /// <summary>Kind-agnostic core: map deltas of any kind, then any base store.</summary>
     internal static MergedObjectResult Execute(
         MapDocument doc, string rawcode, GameDataContext? ctx, IReadOnlyList<string> preDiagnostics)

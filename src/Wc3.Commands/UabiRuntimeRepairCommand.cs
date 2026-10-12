@@ -42,8 +42,13 @@ public sealed record UabiRuntimeResult(
 ///
 /// What stays. Hero abilities (uhab), which are learned and not granted. Any unit type named
 /// by an ability's data, because a morph or transformation switches a unit into that type
-/// without creating it, so no event would ever give it its list. Locust (Aloc), whose behaviour
-/// differs when it is added after creation. Anything the map itself does not set.
+/// without creating it, so no event would ever give it its list. Any unit type carrying Locust
+/// (Aloc), a dummy, keeps its whole list, because maps create dummies constantly and the adder
+/// would run on every one (reported as a real performance cost). Locust, Invulnerable and the
+/// inventory abilities, and any custom ability based on them, stay in every list, because they
+/// behave differently when added after creation and are a handful of ids shared by many types,
+/// so moving them barely lowers the distinct count. With keepSharedAt, any id listed by at least
+/// that many unit types stays for the same reason. Anything the map itself does not set.
 ///
 /// What it cannot know. Whether the map's own code depends on an ability being present at an
 /// earlier moment than creation. A clean pjass parse proves the script is valid, not that the
@@ -53,7 +58,15 @@ public static class UabiRuntimeRepairCommand
 {
     private const string Marker = "wc3ctl_uabi";
     private const int CallsPerChunk = 400;       // well under the per-thread operation limit
-    private static readonly HashSet<string> KeepInData = new(StringComparer.Ordinal) { "Aloc" };
+    private const string Locust = "Aloc";
+
+    /// <summary>Base abilities that stay in uabi, along with every custom ability based on one.
+    /// Locust and Invulnerable set state that differs when added after creation, and the five
+    /// inventories are the hero, human, night elf, orc and undead inventory.</summary>
+    private static readonly HashSet<string> KeepBases = new(StringComparer.Ordinal)
+    {
+        Locust, "Avul", "AInv", "Aihn", "Aien", "Aion", "Aiun",
+    };
     private static readonly Regex Rawcode = new(@"\b[A-Za-z0-9]{4}\b", RegexOptions.Compiled);
     private static readonly Regex RunInit = new(@"^\s*call\s+RunInitializationTriggers\s*\(\s*\)\s*$",
         RegexOptions.Compiled);
@@ -62,43 +75,68 @@ public static class UabiRuntimeRepairCommand
 
     /// <param name="only">When given, move only these ability ids and leave every other entry in
     /// uabi, so one suspect ability can be isolated in a bisection (AInv, the inventory 3.0.0
-    /// reworked, is the case this was added for). Null moves everything.</param>
-    public static UabiRuntimeResult Execute(MapDocument doc, bool apply, IReadOnlyCollection<string>? only = null)
+    /// reworked, is the case this was added for). Naming an id moves it even when it is on the
+    /// keep list. Null moves everything that is not kept.</param>
+    /// <param name="keepSharedAt">When above zero, any ability id listed in uabi by at least this
+    /// many unit types stays in the data. Zero keeps only the fixed list.</param>
+    public static UabiRuntimeResult Execute(MapDocument doc, bool apply, IReadOnlyCollection<string>? only = null,
+        int keepSharedAt = 0)
     {
-        // Only a real 4 character id can be added by script. Anything else, a typo such as
-        // 'A0S4m' included, stays in the list exactly as the author wrote it.
-        bool Moves(string id) => id.Length == 4 && !KeepInData.Contains(id)
-            && (only is null || only.Count == 0 || only.Contains(id, StringComparer.Ordinal));
         ArgumentNullException.ThrowIfNull(doc);
+        bool named = only is { Count: > 0 };
         var diagnostics = new List<string>();
         var kept = new List<UabiKept>();
         var info = ObjectKinds.Info(ObjectKind.Unit);
         var units = ObjectKinds.MergedEntries(doc, info);
 
         // Every 4 character token any ability's data mentions. A unit type in here can be
-        // entered by morphing, which creates nothing and so fires no event.
+        // entered by morphing, which creates nothing and so fires no event. Abilities based on
+        // a kept base are kept themselves.
         var namedByAbilities = new HashSet<string>(StringComparer.Ordinal);
+        var keepIds = new HashSet<string>(KeepBases, StringComparer.Ordinal);
         foreach (var a in ObjectKinds.MergedEntries(doc, ObjectKinds.Info(ObjectKind.Ability)))
+        {
+            if (a.OldId != 0 && KeepBases.Contains(a.OldId.ToRawcode())) keepIds.Add(a.Id.ToRawcode());
             foreach (var (_, v) in a.Mods)
                 if (v is not null)
                     foreach (Match m in Rawcode.Matches(v)) namedByAbilities.Add(m.Value);
+        }
 
-        var plan = new List<(string Unit, List<string> Move, List<string> Stay)>();
-        var before = new HashSet<string>(StringComparer.Ordinal);
-        var after = new HashSet<string>(StringComparer.Ordinal);
-        int withUabi = 0;
+        var lists = new List<(MapObjectEntry Unit, List<string> Ids)>();
         foreach (var u in units)
         {
             var mods = ObjectKinds.ModsToDict(u.Mods);
             if (!mods.TryGetValue("uabi", out var list) || string.IsNullOrWhiteSpace(list)) continue;
             var ids = list.Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
-            if (ids.Count == 0) continue;
-            withUabi++;
+            if (ids.Count > 0) lists.Add((u, ids));
+        }
+
+        var shared = new HashSet<string>(StringComparer.Ordinal);
+        if (keepSharedAt > 0)
+            foreach (var g in lists.SelectMany(l => l.Ids.Distinct()).GroupBy(i => i, StringComparer.Ordinal))
+                if (g.Count() >= keepSharedAt) shared.Add(g.Key);
+
+        // Only a real 4 character id can be added by script. Anything else, a typo such as
+        // 'A0S4m' included, stays in the list exactly as the author wrote it.
+        bool Moves(string id) => id.Length == 4 && id != Locust
+            && (named ? only!.Contains(id, StringComparer.Ordinal) : !keepIds.Contains(id) && !shared.Contains(id));
+
+        var plan = new List<(string Unit, List<string> Move, List<string> Stay)>();
+        var before = new HashSet<string>(StringComparer.Ordinal);
+        var after = new HashSet<string>(StringComparer.Ordinal);
+        int withUabi = lists.Count;
+        foreach (var (u, ids) in lists)
+        {
             before.UnionWith(ids);
             string raw = u.Id.ToRawcode();
-            if (namedByAbilities.Contains(raw))
+            string? keepWhole = namedByAbilities.Contains(raw)
+                ? "an ability names this unit type, so a morph can enter it without creating it"
+                : ids.Contains(Locust, StringComparer.Ordinal)
+                    ? "carries Locust (Aloc), a dummy, so no dummy created at runtime pays for the adder"
+                    : null;
+            if (keepWhole is not null)
             {
-                kept.Add(new(raw, "an ability names this unit type, so a morph can enter it without creating it"));
+                kept.Add(new(raw, keepWhole));
                 after.UnionWith(ids);
                 continue;
             }
@@ -109,8 +147,14 @@ public static class UabiRuntimeRepairCommand
         }
 
         int refs = plan.Sum(p => p.Move.Count);
+        var keptIds = named ? new List<string>()
+            : before.Where(i => keepIds.Contains(i) || shared.Contains(i)).OrderBy(i => i, StringComparer.Ordinal).ToList();
         string summary = $"{plan.Count} of {withUabi} unit type(s) with uabi, {refs} reference(s), "
             + $"distinct ids in uabi {before.Count} before, {after.Count} after";
+        if (keptIds.Count > 0)
+            diagnostics.Add($"{keptIds.Count} ability id(s) stay in every list (state, inventory"
+                + (keepSharedAt > 0 ? $", or listed by {keepSharedAt}+ unit types" : "")
+                + $"), {string.Join(", ", keptIds.Take(20))}" + (keptIds.Count > 20 ? ", ..." : ""));
         if (!apply || plan.Count == 0)
             return new(true, summary, withUabi, plan.Count, refs, before.Count, after.Count, kept, diagnostics);
 

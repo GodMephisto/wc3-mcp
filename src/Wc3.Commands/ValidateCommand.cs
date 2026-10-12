@@ -182,14 +182,17 @@ public static class ValidateCommand
     /// validation shape. Lua maps are not analyzed (no Lua checker yet), which reads as no issues.</summary>
     private static IEnumerable<ValidationIssue> ScriptIssues(MapDocument doc)
     {
-        var entry = doc.GetFile("war3map.j") ?? doc.GetFile("scripts\\war3map.j");
-        byte[]? bytes = entry?.CurrentBytes;
-        if (entry?.FileName is null || bytes is null || bytes.Length == 0) yield break;
-
-        // Latin1 round-trips every byte, matching how ScriptPorter reads and writes the script.
-        string jass = System.Text.Encoding.Latin1.GetString(bytes);
-        foreach (var i in JassScriptCheck.Check(jass))
-            yield return new ValidationIssue(i.Severity, "script", entry.FileName,
+        // war3map.j or war3map.lua, whichever the map runs. A Lua map used to get no script check
+        // here at all, so a script luac refuses passed validate.
+        ScriptCheckResult? r = null;
+        try
+        {
+            if (ScriptCommand.Read(doc).Source.Length > 0) r = ScriptCommand.Check(doc);
+        }
+        catch (FileNotFoundException) { }
+        if (r is null) yield break;
+        foreach (var i in r.Issues)
+            yield return new ValidationIssue(i.Severity, "script", r.ScriptFile,
                 i.Line > 0 ? $"line {i.Line}: {i.Message}" : i.Message);
     }
 }

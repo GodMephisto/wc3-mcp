@@ -15,7 +15,7 @@ namespace Wc3.Tests;
 public class UabiRuntimeRepairTests
 {
     //   h000  uabi A000,A001        moved
-    //   h001  uabi Aloc,A002        A002 moved, Aloc stays in the data
+    //   h001  uabi Aloc,A002        a dummy (Locust), its whole list stays
     //   h002  uabi A003             an ability morphs into it, so it stays
     //   h003  uabi in the SKIN      moved, and cleared in the skin layer
     private static byte[] Sample(string nl = "\r\n")
@@ -59,20 +59,20 @@ public class UabiRuntimeRepairTests
     }
 
     [Fact]
-    public void Moves_the_lists_keeps_morph_targets_and_locust()
+    public void Moves_the_lists_keeps_morph_targets_and_dummies()
     {
         var doc = MapDocument.Load(Sample());
         var r = UabiRuntimeRepairCommand.Execute(doc, apply: true);
         Assert.True(r.Ok, r.Message);
-        Assert.Equal(3, r.UnitTypesMoved);
-        Assert.Equal(4, r.ReferencesMoved);
+        Assert.Equal(2, r.UnitTypesMoved);
+        Assert.Equal(3, r.ReferencesMoved);
         Assert.Equal(6, r.DistinctBefore);
-        Assert.Equal(new[] { "A003", "Aloc" }.Length, r.DistinctAfter);
-        Assert.Equal("h002", Assert.Single(r.Kept).Rawcode);
+        Assert.Equal(new[] { "A002", "A003", "Aloc" }.Length, r.DistinctAfter);
+        Assert.Equal(new[] { "h001", "h002" }, r.Kept.Select(k => k.Rawcode).OrderBy(x => x));
 
         var rebuilt = MapDocument.Load(doc.SaveToBytes());
         Assert.Equal("", Uabi(rebuilt, "h000"));
-        Assert.Equal("Aloc", Uabi(rebuilt, "h001"));
+        Assert.Equal("Aloc,A002", Uabi(rebuilt, "h001"));
         Assert.Equal("A003", Uabi(rebuilt, "h002"));
         Assert.Equal("", Uabi(rebuilt, "h003"));
     }
@@ -162,7 +162,7 @@ public class UabiRuntimeRepairTests
 
         var doc2 = MapDocument.Load(map);
         Assert.True(UabiRuntimeRepairCommand.Execute(doc2, apply: true).Ok);
-        Assert.Equal("A0S4m", Uabi(MapDocument.Load(doc2.SaveToBytes()), "h000"));
+        Assert.Equal("AInv,A0S4m", Uabi(MapDocument.Load(doc2.SaveToBytes()), "h000"));
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public class UabiRuntimeRepairTests
     {
         var doc = MapDocument.Load(Sample());
         var r = UabiRuntimeRepairCommand.Execute(doc, apply: false);
-        Assert.Equal(3, r.UnitTypesMoved);
+        Assert.Equal(2, r.UnitTypesMoved);
         Assert.DoesNotContain(doc.Files, f => f.IsDirty);
     }
 
@@ -180,6 +180,53 @@ public class UabiRuntimeRepairTests
     [InlineData("a\nb\nc", "\n")]
     public void Line_ending_is_the_one_the_script_mostly_uses(string s, string expected) =>
         Assert.Equal(expected, UabiRuntimeRepairCommand.LineEnding(s));
+
+    [Fact]
+    public void Invulnerable_inventories_and_abilities_based_on_them_stay_in_every_list()
+    {
+        var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
+        w3u.NewUnits.Add(Unit("h000", "Avul,Aihn,A00I,A001"));
+        var w3a = new AbilityObjectData(ObjectDataFormatVersion.v2);
+        w3a.NewAbilities.Add(new LevelObjectModification { OldId = "AInv".FromRawcode(), NewId = "A00I".FromRawcode() });
+        var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = Serialize(w => w.Write(w3u)),
+            ["war3map.w3a"] = Serialize(w => w.Write(w3a)),
+            ["war3map.j"] = Encoding.Latin1.GetBytes(MinimalScript),
+        }));
+        var r = UabiRuntimeRepairCommand.Execute(doc, apply: true);
+        Assert.True(r.Ok, r.Message);
+        Assert.Equal(1, r.ReferencesMoved);
+        Assert.Equal("Avul,Aihn,A00I", Uabi(MapDocument.Load(doc.SaveToBytes()), "h000"));
+        Assert.Contains(r.Diagnostics, d => d.Contains("A00I") && d.Contains("Avul"));
+    }
+
+    [Fact]
+    public void Keep_shared_keeps_ids_listed_by_enough_unit_types()
+    {
+        var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
+        w3u.NewUnits.Add(Unit("h000", "A00S,A000"));
+        w3u.NewUnits.Add(Unit("h001", "A00S,A001"));
+        w3u.NewUnits.Add(Unit("h002", "A00S,A002"));
+        byte[] map = SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3u"] = Serialize(w => w.Write(w3u)),
+            ["war3map.j"] = Encoding.Latin1.GetBytes(MinimalScript),
+        });
+
+        var doc = MapDocument.Load(map);
+        var r = UabiRuntimeRepairCommand.Execute(doc, apply: true, keepSharedAt: 3);
+        Assert.True(r.Ok, r.Message);
+        Assert.Equal(3, r.ReferencesMoved);
+        var rebuilt = MapDocument.Load(doc.SaveToBytes());
+        Assert.Equal("A00S", Uabi(rebuilt, "h000"));
+        Assert.Equal("A00S", Uabi(rebuilt, "h002"));
+
+        // One short of the threshold, so the shared id moves like any other.
+        Assert.Equal(6, UabiRuntimeRepairCommand.Execute(MapDocument.Load(map), apply: false, keepSharedAt: 4).ReferencesMoved);
+    }
+
+    private const string MinimalScript = "function main takes nothing returns nothing\r\nendfunction\r\n";
 
     private static string Uabi(MapDocument doc, string unit) =>
         ObjectKinds.ModsToDict(ObjectKinds.MergedEntries(doc, ObjectKinds.Info(ObjectKind.Unit))

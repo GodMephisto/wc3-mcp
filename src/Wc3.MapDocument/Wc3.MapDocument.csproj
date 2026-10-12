@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="War3Net.Build" Version="6.0.3" />
+    <PackageReference Include="War3Net.Build" Version="6.1.1" />
     <PackageReference Include="War3Net.IO.Mpq" Version="6.0.3" />
   </ItemGroup>
 

@@ -168,7 +168,7 @@ public static class PjassGate
 
     /// <summary>Reads a script header out of CASC, trying the documented location first and then
     /// falling back to a listfile search, since the layout differs across game versions.</summary>
-    private static bool TryReadHeader(GameData.GameDataContext ctx, string fileName, out byte[] bytes)
+    internal static bool TryReadHeader(GameData.GameDataContext ctx, string fileName, out byte[] bytes)
     {
         if (ctx.TryReadFile(Path.Combine("scripts", fileName), out bytes)) return true;
         foreach (var candidate in ctx.FindFiles(fileName, 20))

@@ -1,5 +1,6 @@
 // src/Wc3.Commands/TriggerFunctionBuilder.cs
 using War3Net.Build.Script;
+using Wc3.Model;
 
 namespace Wc3.Commands;
 
@@ -26,7 +27,7 @@ public sealed record TriggerFunctionSignature(
 /// exactly the declared number of parameters, filling any the caller did not supply from the
 /// table's own defaults.
 ///
-/// The table is War3Net's <see cref="TriggerData.Default"/>, the stock Reforged one, which needs
+/// The table is War3Net's <see cref="TriggerDataSource.Default"/>, the stock Reforged one, which needs
 /// no game install. A map built against a custom TriggerData is outside what this can author, and
 /// says so rather than writing something unreadable.
 /// </summary>
@@ -125,7 +126,7 @@ public static class TriggerFunctionBuilder
             return new TriggerFunctionParameter
             { Type = TriggerFunctionParameterType.String, Value = string.Empty };
 
-        if (TriggerData.Default.TriggerCalls.ContainsKey(value))
+        if (TriggerDataSource.Default.TriggerCalls.ContainsKey(value))
         {
             var (nested, error) = Build(TriggerFunctionType.Call, value, null);
             if (error is null && nested is not null)
@@ -137,7 +138,7 @@ public static class TriggerFunctionBuilder
                 };
         }
 
-        if (TriggerData.Default.TriggerParams.ContainsKey(value))
+        if (TriggerDataSource.Default.TriggerParams.ContainsKey(value))
             return new TriggerFunctionParameter
             { Type = TriggerFunctionParameterType.Preset, Value = value };
 
@@ -151,10 +152,10 @@ public static class TriggerFunctionBuilder
 
     private static System.Collections.IDictionary TableFor(TriggerFunctionType kind) => kind switch
     {
-        TriggerFunctionType.Event => TriggerData.Default.TriggerEvents,
-        TriggerFunctionType.Condition => TriggerData.Default.TriggerConditions,
-        TriggerFunctionType.Action => TriggerData.Default.TriggerActions,
-        TriggerFunctionType.Call => TriggerData.Default.TriggerCalls,
+        TriggerFunctionType.Event => TriggerDataSource.Default.TriggerEvents,
+        TriggerFunctionType.Condition => TriggerDataSource.Default.TriggerConditions,
+        TriggerFunctionType.Action => TriggerDataSource.Default.TriggerActions,
+        TriggerFunctionType.Call => TriggerDataSource.Default.TriggerCalls,
         _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown function kind."),
     };
 

@@ -59,6 +59,16 @@ public class MapLoadPerfTests
     }
 
     [Fact]
+    public void File_list_reports_sizes_without_decompressing_anything()
+    {
+        // file_list once read every entry's bytes to measure it, 949 s on a protected map.
+        var doc = MapDocument.Load(SampleMap());
+        var listed = Wc3.Commands.FileEditCommand.ListFiles(doc);
+        Assert.Equal(4, listed.Single(f => f.Name == "mystery.bin").SizeBytes);
+        Assert.False(doc.GetFile("mystery.bin")!.IsMaterialized);
+    }
+
+    [Fact]
     public void RawSize_reflects_directly_assigned_bytes()
     {
         var doc = MapDocument.Load(SampleMap());
