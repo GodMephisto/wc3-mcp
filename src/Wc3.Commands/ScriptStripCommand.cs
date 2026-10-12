@@ -39,8 +39,9 @@ public sealed record StripResult(
 /// </summary>
 public static class ScriptStripCommand
 {
-    /// <summary>Functions Warcraft III calls itself. Everything live hangs off one of these.</summary>
-    private static readonly string[] EngineEntryPoints =
+    /// <summary>Functions Warcraft III calls itself. Everything live hangs off one of these.
+    /// Shared with the unused-function finder so the two passes agree on what is an entry point.</summary>
+    internal static readonly string[] EngineEntryPoints =
     {
         "main", "config", "InitGlobals", "InitCustomTriggers", "InitCustomTeams",
         "InitAllyPriorities", "CreateAllUnits", "CreateNeutralPassiveBuildings",

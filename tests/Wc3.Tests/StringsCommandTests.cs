@@ -1,4 +1,5 @@
 using Wc3.Commands;
+using Wc3.Model;
 
 namespace Wc3.Tests;
 
@@ -162,5 +163,77 @@ public class StringsCommandTests
             "STRING 7\r\n{\r\nSecond line one\r\nSecond line two\r\n}\r\n\r\n" +
             "STRING 12\r\n{\r\ny\r\n}\r\n",
             result);
+    }
+
+    [Fact]
+    public void UpsertEntry_ExistingId_ReplacesLikeSetEntry()
+    {
+        Assert.Equal(StringsCommand.SetEntry(Crlf, 7, "Replaced"), StringsCommand.UpsertEntry(Crlf, 7, "Replaced"));
+    }
+
+    [Fact]
+    public void UpsertEntry_MissingId_AppendsBlockInFileStyle()
+    {
+        var result = StringsCommand.UpsertEntry(Crlf, 99, "Fresh");
+
+        // Every existing character survives verbatim; the new block matches CRLF.
+        Assert.Equal(
+            Crlf + "STRING 99\r\n{\r\nFresh\r\n}\r\n",
+            result);
+        Assert.Equal("Fresh", StringsCommand.Get(result, 99)!.Text);
+    }
+
+    [Fact]
+    public void UpsertEntry_LfFile_AppendsWithLf()
+    {
+        var result = StringsCommand.UpsertEntry("STRING 1\n{\nA\n}\n", 2, "B");
+        Assert.Equal("STRING 1\n{\nA\n}\nSTRING 2\n{\nB\n}\n", result);
+    }
+
+    [Fact]
+    public void UpsertEntry_NoTrailingTerminator_AddsSeparatorBeforeBlock()
+    {
+        var result = StringsCommand.UpsertEntry("STRING 1\r\n{\r\nA\r\n}", 2, "B");
+        Assert.Equal("STRING 1\r\n{\r\nA\r\n}\r\nSTRING 2\r\n{\r\nB\r\n}\r\n", result);
+    }
+
+    [Fact]
+    public void UpsertEntry_EmptyText_AddsEmptyBlock()
+    {
+        var result = StringsCommand.UpsertEntry("STRING 1\n{\nA\n}\n", 2, "");
+        Assert.Equal("STRING 1\n{\nA\n}\nSTRING 2\n{\n}\n", result);
+    }
+
+    [Fact]
+    public void Upsert_MissingEntry_AppendsAndStacks()
+    {
+        var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.wts"] = System.Text.Encoding.UTF8.GetBytes("STRING 1\r\n{\r\nA\r\n}\r\n"),
+        }));
+
+        StringsCommand.Upsert(doc, 1, "A2");
+        StringsCommand.Upsert(doc, 2, "B");
+
+        var entries = StringsCommand.List(doc).Entries;
+        Assert.Equal(new[] { 1, 2 }, entries.Select(e => e.Id));
+        Assert.Equal("A2", entries[0].Text);
+        Assert.Equal("B", entries[1].Text);
+    }
+
+    [Fact]
+    public void Upsert_NoWts_CreatesTable()
+    {
+        var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.j"] = System.Text.Encoding.UTF8.GetBytes("function main takes nothing returns nothing\nendfunction\n"),
+        }));
+
+        StringsCommand.Upsert(doc, 5, "created");
+
+        var listed = StringsCommand.List(doc);
+        Assert.NotNull(listed.FileName);
+        Assert.Equal("created", Assert.Single(listed.Entries).Text);
+        Assert.Equal(5, listed.Entries[0].Id);
     }
 }

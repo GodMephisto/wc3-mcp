@@ -8,6 +8,32 @@ namespace Wc3.Commands;
 public sealed record ReplayLeave(
     int PlayerId, string? Name, TimeSpan At, int Reason, int Result, string Meaning);
 
+/// <summary>One player as the recorded player list carries them. <see cref="Id"/> is the slot the
+/// game assigned (1 based). <see cref="Team"/>, <see cref="Race"/> and <see cref="Actions"/> are
+/// null when the record does not carry them, which is the case for every replay read by this
+/// parser, since a .w3g player list holds names only and the settings blob holds the map path
+/// alone. They exist so the pure table and stats builders can resolve them when a source does
+/// supply them, and so the absence is explicit rather than a guess.</summary>
+public sealed record ReplayPlayer(int Id, string? Name, int? Team, string? Race, int? Actions);
+
+/// <summary>One chat line, at the game time it was sent.</summary>
+public sealed record ReplayChat(TimeSpan At, int PlayerId, string? Name, string Text);
+
+/// <summary>The full in memory shape of one recorded game, the record set every replay table,
+/// timeline, diff and stats builder reads. <see cref="Disconnected"/> is true when any player left
+/// with the disconnect result code, which is what a dropped or desynced connection records.</summary>
+public sealed record ReplayGame(
+    string File,
+    DateTime Saved,
+    string? Map,
+    TimeSpan Length,
+    int Build,
+    IReadOnlyList<ReplayPlayer> Players,
+    IReadOnlyList<ReplayLeave> Leaves,
+    IReadOnlyList<ReplayChat> Chats,
+    bool Disconnected,
+    string? Problem);
+
 /// <summary>One recorded game. <see cref="Disconnected"/> is true when any player left with the
 /// disconnect result code, which is what a dropped or desynced connection records.</summary>
 public sealed record ReplaySummary(
@@ -81,7 +107,7 @@ public static class ReplayCommand
     public static ReplaySummary Read(string file)
     {
         var saved = File.GetLastWriteTime(file);
-        try { return Parse(file, File.ReadAllBytes(file), saved); }
+        try { return Summarize(ParseGame(file, File.ReadAllBytes(file), saved)); }
         catch (Exception e) when (e is InvalidDataException or IndexOutOfRangeException
                                      or ArgumentOutOfRangeException or EndOfStreamException)
         {
@@ -90,7 +116,30 @@ public static class ReplayCommand
         }
     }
 
-    internal static ReplaySummary Parse(string file, byte[] b, DateTime saved)
+    /// <summary>The richer in memory record the five replay report commands read. Same parser as
+    /// <see cref="Read"/>, so a fix to the format reaches every replay command at once.</summary>
+    public static ReplayGame ReadGame(string file)
+    {
+        var saved = File.GetLastWriteTime(file);
+        try { return ParseGame(file, File.ReadAllBytes(file), saved); }
+        catch (Exception e) when (e is InvalidDataException or IndexOutOfRangeException
+                                     or ArgumentOutOfRangeException or EndOfStreamException)
+        {
+            return new ReplayGame(file, saved, null, TimeSpan.Zero, 0,
+                Array.Empty<ReplayPlayer>(), Array.Empty<ReplayLeave>(),
+                Array.Empty<ReplayChat>(), false, e.Message);
+        }
+    }
+
+    internal static ReplaySummary Summarize(ReplayGame g) => new(
+        g.File, g.Saved, g.Map, g.Length, g.Build,
+        g.Players.Where(p => !string.IsNullOrEmpty(p.Name)).Select(p => p.Name!).ToList(),
+        g.Leaves, g.Disconnected, g.Problem);
+
+    internal static ReplaySummary Parse(string file, byte[] b, DateTime saved) =>
+        Summarize(ParseGame(file, b, saved));
+
+    internal static ReplayGame ParseGame(string file, byte[] b, DateTime saved)
     {
         if (b.Length < 68 || !b.AsSpan(0, Magic.Length).SequenceEqual(Magic))
             throw new InvalidDataException("not a Warcraft III replay");
@@ -121,6 +170,7 @@ public static class ReplayCommand
         r.Skip(r.U16());
 
         var leaves = new List<ReplayLeave>();
+        var chats = new List<ReplayChat>();
         long ms = 0;
         string? problem = null;
         while (!r.End)
@@ -140,7 +190,12 @@ public static class ReplayCommand
                     ms += r.U16();
                     r.Skip(n - 2);
                     break;
-                case 0x20: r.Skip(1); r.Skip(r.U16()); break;
+                case 0x20:
+                    int cpid = r.Byte();
+                    string text = ChatText(r.Bytes(r.U16()));
+                    chats.Add(new(TimeSpan.FromMilliseconds(ms), cpid,
+                        players.GetValueOrDefault(cpid), text));
+                    break;
                 case 0x22: r.Skip(r.Byte()); break;
                 case 0x23: r.Skip(10); break;
                 case 0x2F: r.Skip(8); break;
@@ -153,8 +208,38 @@ public static class ReplayCommand
         }
 
         bool dropped = leaves.Any(l => l.Result == 0x01);
-        return new ReplaySummary(file, saved, map, length, build,
-            players.OrderBy(p => p.Key).Select(p => p.Value).ToList(), leaves, dropped, problem);
+        var roster = players.OrderBy(p => p.Key)
+            .Select(p => new ReplayPlayer(p.Key, p.Value, null, null, null)).ToList();
+        return new ReplayGame(file, saved, map, length, build, roster, leaves, chats, dropped, problem);
+    }
+
+    /// <summary>The chat record is a player id, a u16 length and that many bytes, where the bytes
+    /// open with a five byte prefix (a 0x20 mode byte and a zero u32) before the text. Verified
+    /// against the replays here, the line reads "-repick" or "cool" once the prefix is dropped.
+    /// Only the human text is kept, and a leading prefix that does not match is left in place so
+    /// an unfamiliar layout loses nothing.</summary>
+    internal static string ChatText(byte[] raw)
+    {
+        var span = raw.AsSpan();
+        if (span.Length >= 5 && span[0] == 0x20 && span[1] == 0 && span[2] == 0
+            && span[3] == 0 && span[4] == 0)
+            span = span[5..];
+        return Encoding.UTF8.GetString(span).TrimEnd('\0');
+    }
+
+    /// <summary>The map path as the settings blob records it. A real path is relative to the game
+    /// folder and starts at the Maps folder, but the four bytes before it in the decoded settings
+    /// are a value, not a separator, so the raw read carries a short non text prefix. This trims
+    /// to the Maps root when one is present and otherwise returns the raw value unchanged.</summary>
+    public static string? CleanMapPath(string? recorded)
+    {
+        if (string.IsNullOrEmpty(recorded)) return recorded;
+        foreach (var root in new[] { "Maps\\", "Maps/" })
+        {
+            int i = recorded.IndexOf(root, StringComparison.OrdinalIgnoreCase);
+            if (i >= 0) return recorded[i..];
+        }
+        return recorded;
     }
 
     private static string Meaning(int result) => result switch
@@ -240,6 +325,11 @@ public static class ReplayCommand
             _p += n;
         }
         public void ToEnd() => _p = _b.Length;
+        public byte[] Bytes(int n)
+        {
+            if (n < 0 || _p + n > _b.Length) throw new EndOfStreamException("replay ends early");
+            var s = _b[_p..(_p + n)]; _p += n; return s;
+        }
         public byte[] CBytes()
         {
             int e = Array.IndexOf(_b, (byte)0, _p);

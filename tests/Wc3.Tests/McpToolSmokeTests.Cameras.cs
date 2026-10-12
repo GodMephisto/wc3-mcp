@@ -36,4 +36,27 @@ public sealed class McpSmokeCamerasTests : McpSmokeBase
         await CallError("camera_set", Args(("map", Fixture), ("out_path", NewOut("cam")),
             ("name", "Nope"), ("field", "FieldOfView"), ("value", "1")));
     }
+
+    [Fact, Covers("camera_tour")]
+    public async Task Camera_tour_adds_interpolated_cameras()
+    {
+        var two = await Write("camera_add", Args(("name", "A"), ("target_x", 0f), ("target_y", 0f)));
+        var three = await Write("camera_add", Args(("name", "B"), ("target_x", 1000f), ("target_y", 2000f)), two);
+
+        var tour = await Write("camera_tour", Args(("from", "A"), ("to", "B"), ("count", 3)), three);
+
+        var cams = Rows(await Call("camera_list", Args(("map", tour))));
+        Assert.Equal(5, cams.Count);
+        Assert.Contains(cams, c => Prop(c, "name").GetString() == "A-tour-1");
+        Assert.Contains(cams, c => Prop(c, "name").GetString() == "A-tour-3");
+        var mid = cams.Single(c => Prop(c, "name").GetString() == "A-tour-2");
+        Assert.Equal(500f, Prop(mid, "targetX").GetSingle(), 3);
+    }
+
+    [Fact, Covers("camera_tour")]
+    public async Task Camera_tour_on_a_missing_camera_is_refused()
+    {
+        await CallError("camera_tour", Args(("map", Fixture), ("out_path", NewOut("tour")),
+            ("from", "Ghost"), ("to", "Nope"), ("count", 2)));
+    }
 }

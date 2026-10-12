@@ -84,6 +84,64 @@ public static class StringsCommand
         return wtsSource[..span.BodyStart] + newBody + wtsSource[span.BodyEnd..];
     }
 
+    /// <summary>
+    /// Returns <paramref name="wtsSource"/> with entry <paramref name="id"/> set to
+    /// <paramref name="newText"/>, appending a fresh <c>STRING id</c> block when the id is absent
+    /// rather than throwing. The replace path is exactly <see cref="SetEntry"/>, so an existing
+    /// entry keeps its byte-faithful splice. The add path appends a block using the file's own
+    /// terminator style (CRLF when it carries one, else LF, else the WorldEdit CRLF default) and
+    /// adds a separating terminator only when the file did not already end with one.
+    /// </summary>
+    public static string UpsertEntry(string wtsSource, int id, string newText)
+    {
+        ArgumentNullException.ThrowIfNull(wtsSource);
+        ArgumentNullException.ThrowIfNull(newText);
+        if (Get(wtsSource, id) is not null) return SetEntry(wtsSource, id, newText);
+
+        var terminator = DominantTerminator(wtsSource);
+        var sb = new StringBuilder(wtsSource);
+        if (wtsSource.Length > 0 && !wtsSource.EndsWith(terminator, StringComparison.Ordinal))
+            sb.Append(terminator);
+        sb.Append("STRING ").Append(id.ToString(CultureInfo.InvariantCulture)).Append(terminator);
+        sb.Append('{').Append(terminator);
+        if (newText.Length > 0) sb.Append(NormalizeLineBreaks(newText, terminator)).Append(terminator);
+        sb.Append('}').Append(terminator);
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Sets or adds entry <paramref name="id"/> in the document's war3map.wts through the same
+    /// Latin-1 carrier <see cref="Set"/> uses, so bytes outside the entry survive and new text is
+    /// written as real UTF-8. When the map has no war3map.wts at all, one is created holding just
+    /// this entry. Edits stack, each call re-reads the pending override.
+    /// </summary>
+    public static void Upsert(MapDocument doc, int id, string newText)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        ArgumentNullException.ThrowIfNull(newText);
+
+        var entry = doc.GetFile(WtsFileName);
+        if (entry is null)
+        {
+            doc.AddOrReplaceRawFile(WtsFileName, Encoding.UTF8.GetBytes(UpsertEntry(string.Empty, id, newText)));
+            return;
+        }
+
+        string carrier = Encoding.Latin1.GetString(entry.CurrentBytes);
+        string replacement = Encoding.Latin1.GetString(Encoding.UTF8.GetBytes(newText));
+        doc.AddOrReplaceRawFile(WtsFileName, Encoding.Latin1.GetBytes(UpsertEntry(carrier, id, replacement)));
+    }
+
+    /// <summary>The terminator the file already uses, so an appended block matches it. CRLF wins
+    /// when present (a CRLF file contains LF too), then LF, and a file with neither falls back to
+    /// the WorldEdit CRLF convention.</summary>
+    private static string DominantTerminator(string src)
+    {
+        if (src.Contains("\r\n", StringComparison.Ordinal)) return "\r\n";
+        if (src.Contains('\n')) return "\n";
+        return "\r\n";
+    }
+
     /// <summary>Lists the document's trigger strings (empty result with null FileName when
     /// the map has no war3map.wts). Reads any pending in-memory edit, not the original bytes.</summary>
     public static StringsListResult List(MapDocument doc)

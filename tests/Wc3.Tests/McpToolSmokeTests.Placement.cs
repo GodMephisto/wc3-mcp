@@ -86,6 +86,52 @@ public sealed class McpSmokePlacementTests : McpSmokeBase
             ("type_rawcode", "hfoo"), ("owner_id", 0), ("x", 0f), ("y", 0f)));
     }
 
+    [Fact, Covers("place_grid")]
+    public async Task Place_grid_lays_out_a_rows_by_cols_block()
+    {
+        var outPath = NewOut("place_grid");
+        var r = await Call("place_grid", Args(("map", Fixture), ("out_path", outPath),
+            ("type_rawcode", "hfoo"), ("rows", 2), ("cols", 3)));
+        Assert.Equal(6, Prop(r, "placed").GetInt32());
+        Assert.Equal(6, Rows(await Call("placed_units_list", Args(("map", outPath)))).Count);
+    }
+
+    [Fact, Covers("place_scatter")]
+    public async Task Place_scatter_places_the_requested_count()
+    {
+        var outPath = NewOut("place_scatter");
+        var r = await Call("place_scatter", Args(("map", Fixture), ("out_path", outPath),
+            ("type_rawcode", "hfoo"), ("count", 5), ("seed", 3)));
+        Assert.Equal(5, Prop(r, "placed").GetInt32());
+        Assert.Equal(5, Rows(await Call("placed_units_list", Args(("map", outPath)))).Count);
+    }
+
+    [Fact, Covers("placed_stats")]
+    public async Task Placed_stats_counts_the_placed_objects()
+    {
+        var map = await PopulatedMap();
+        var r = await Call("placed_stats", Args(("map", map)));
+        Assert.Equal(1, Prop(r, "unitTotal").GetInt32());
+        Assert.Equal(1, Prop(r, "doodadTotal").GetInt32());
+    }
+
+    [Fact, Covers("placed_missing_refs")]
+    public async Task Placed_missing_refs_flags_a_stranger_rawcode()
+    {
+        var map = await Write("place_unit", Args(("type_rawcode", "zX9q"), ("owner_id", 0), ("x", 0f), ("y", 0f)));
+        var r = await Call("placed_missing_refs", Args(("map", map)));
+        Assert.True(Prop(r, "count").GetInt32() >= 1);
+        Assert.Contains(Rows(r), m => Prop(m, "rawcode").GetString() == "zX9q");
+    }
+
+    [Fact, Covers("placed_fix_refs")]
+    public async Task Placed_fix_refs_drops_a_stranger_placement()
+    {
+        var map = await Write("place_unit", Args(("type_rawcode", "zX9q"), ("owner_id", 0), ("x", 0f), ("y", 0f)));
+        var fixedMap = await Write("placed_fix_refs", Args(), map);
+        Assert.Empty(Rows(await Call("placed_units_list", Args(("map", fixedMap)))));
+    }
+
     [Fact, Covers("pathing_paint")]
     public async Task Pathing_paint_changes_war3map_wpm()
     {
@@ -94,6 +140,44 @@ public sealed class McpSmokePlacementTests : McpSmokeBase
         Assert.True(MapDocument.Load(outPath).TryReadFileByName(PathingCommand.PathingFile, out var after));
         Assert.Equal(before.Length, after.Length);
         Assert.NotEqual(before, after);
+    }
+
+    [Fact, Covers("region_create")]
+    public async Task Region_create_writes_the_region_from_corner_and_size()
+    {
+        var outPath = await Write("region_create", Args(("name", "Box"),
+            ("x", -128f), ("y", -64f), ("w", 256f), ("h", 128f)));
+        var region = Assert.Single(Model<MapRegions>(outPath, PlacementCommand.RegionsFile).Regions,
+            x => x.Name == "Box");
+        Assert.Equal(-128f, region.Left);
+        Assert.Equal(-64f, region.Bottom);
+        Assert.Equal(128f, region.Right);
+        Assert.Equal(64f, region.Top);
+    }
+
+    [Fact, Covers("region_to_rect")]
+    public async Task Region_to_rect_returns_the_corner_values()
+    {
+        var map = await PopulatedMap();
+        var r = await Call("region_to_rect", Args(("map", map), ("region", "Spawn")));
+        Assert.Equal(-256f, Prop(r, "left").GetSingle());
+        Assert.Equal(256f, Prop(r, "right").GetSingle());
+        Assert.Contains("Rect(", Prop(r, "jass").GetString());
+    }
+
+    [Fact, Covers("region_validate")]
+    public async Task Region_validate_is_clean_on_a_single_region()
+    {
+        var map = await PopulatedMap();
+        var r = await Call("region_validate", Args(("map", map)));
+        Assert.Equal(0, Prop(r, "issues").GetArrayLength());
+    }
+
+    [Fact, Covers("pathing_validate")]
+    public async Task Pathing_validate_is_clean_on_a_blank_map()
+    {
+        var r = await Call("pathing_validate", Args(("map", Fixture)));
+        Assert.Equal(0, Prop(r, "issues").GetArrayLength());
     }
 
     private static TerrainTile Tile(string map, int x, int y)

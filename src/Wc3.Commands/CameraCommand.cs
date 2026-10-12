@@ -20,6 +20,11 @@ public sealed record CameraFields(
 /// the op (-1 when the op failed).</summary>
 public sealed record CameraOpResult(bool Ok, string Message, int Count = -1);
 
+/// <summary>Result of a camera tour. <see cref="Names"/> lists the generated cameras in
+/// order (empty when the op failed), and <see cref="Count"/> is the camera total after it.</summary>
+public sealed record CameraTourResult(
+    bool Ok, string Message, IReadOnlyList<string> Names, int Count = -1);
+
 /// <summary>
 /// Read/write access to the map-cameras file (war3map.w3c). The write side mutates the
 /// already-parsed War3Net <see cref="MapCameras"/> model and re-serializes the WHOLE file
@@ -101,6 +106,78 @@ public static class CameraCommand
 
         cameras.Cameras.Remove(cam);
         return Persist(doc, cameras, $"Removed camera '{name}'.");
+    }
+
+    /// <summary>
+    /// Adds <paramref name="count"/> cameras interpolated between the named
+    /// <paramref name="from"/> and <paramref name="to"/> cameras, forming a smooth tour path,
+    /// and writes the re-serialized w3c back into the in-memory document. Each generated
+    /// camera lies at fraction i/(count+1) along the path from the start camera to the end
+    /// camera, so the N cameras sit strictly between the two endpoints, never on top of them.
+    /// Every float field (target position, rotation, angle of attack, distance, roll, field of
+    /// view, clipping planes and local angles) is linearly interpolated. Names are
+    /// <c>&lt;from&gt;-tour-i</c>, made unique if that collides with an existing camera. Rejects
+    /// a non-positive count or a missing endpoint.
+    /// </summary>
+    public static CameraTourResult Tour(MapDocument doc, string from, string to, int count)
+    {
+        if (count < 1)
+            return new(false, $"count must be >= 1 (got {count}).", Array.Empty<string>());
+
+        var cameras = GetOrCreateCameras(doc);
+        var start = cameras.Cameras.FirstOrDefault(c => NameEq(c.Name, from));
+        if (start is null)
+            return new(false, $"No camera named '{from}'.", Array.Empty<string>());
+        var end = cameras.Cameras.FirstOrDefault(c => NameEq(c.Name, to));
+        if (end is null)
+            return new(false, $"No camera named '{to}'.", Array.Empty<string>());
+
+        var names = new List<string>(count);
+        for (int i = 1; i <= count; i++)
+        {
+            float t = (float)i / (count + 1);
+            var cam = Interpolate(start, end, t);
+            cam.Name = UniqueTourName(cameras, from, i);
+            cameras.Cameras.Add(cam);
+            names.Add(cam.Name);
+        }
+
+        var r = Persist(doc, cameras,
+            $"Added {count} camera(s) touring '{from}' to '{to}'.");
+        return new(r.Ok, r.Message, names, r.Count);
+    }
+
+    /// <summary>A new camera holding the linear blend of every float field of
+    /// <paramref name="a"/> and <paramref name="b"/> at fraction <paramref name="t"/>.</summary>
+    private static Camera Interpolate(Camera a, Camera b, float t) => new()
+    {
+        TargetPosition = Vector2.Lerp(a.TargetPosition, b.TargetPosition, t),
+        ZOffset = Lerp(a.ZOffset, b.ZOffset, t),
+        Rotation = Lerp(a.Rotation, b.Rotation, t),
+        AngleOfAttack = Lerp(a.AngleOfAttack, b.AngleOfAttack, t),
+        TargetDistance = Lerp(a.TargetDistance, b.TargetDistance, t),
+        Roll = Lerp(a.Roll, b.Roll, t),
+        FieldOfView = Lerp(a.FieldOfView, b.FieldOfView, t),
+        FarClippingPlane = Lerp(a.FarClippingPlane, b.FarClippingPlane, t),
+        NearClippingPlane = Lerp(a.NearClippingPlane, b.NearClippingPlane, t),
+        LocalPitch = Lerp(a.LocalPitch, b.LocalPitch, t),
+        LocalYaw = Lerp(a.LocalYaw, b.LocalYaw, t),
+        LocalRoll = Lerp(a.LocalRoll, b.LocalRoll, t),
+    };
+
+    private static float Lerp(float a, float b, float t) => a + (b - a) * t;
+
+    /// <summary><c>&lt;from&gt;-tour-i</c>, or that with a numeric suffix when it would
+    /// collide with an existing camera name.</summary>
+    private static string UniqueTourName(MapCameras cameras, string from, int index)
+    {
+        string baseName = $"{from}-tour-{index}";
+        if (!cameras.Cameras.Any(c => NameEq(c.Name, baseName))) return baseName;
+        for (int suffix = 2; ; suffix++)
+        {
+            string candidate = $"{baseName}-{suffix}";
+            if (!cameras.Cameras.Any(c => NameEq(c.Name, candidate))) return candidate;
+        }
     }
 
     /// <summary>Pure field mapping onto a War3Net <see cref="Camera"/> (hermetically

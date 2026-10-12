@@ -123,4 +123,35 @@ public sealed class McpSmokeTriggersTests : McpSmokeBase
         Assert.DoesNotContain(Rows(Prop(model, "triggers")), t => Prop(t, "id").GetInt32() == id);
         Assert.DoesNotContain(Rows(Prop(model, "categories")), c => Prop(c, "id").GetInt32() == catId);
     }
+
+    [Fact, Covers("trigger_export", "trigger_lint", "trigger_dead", "trigger_to_script")]
+    public async Task Read_only_trigger_analysis_tools_answer_on_a_recovered_tree()
+    {
+        var (map, _, _) = await TriggerMap();
+
+        var export = await Call("trigger_export", Args(("map", map)));
+        var triggers = Rows(Prop(export, "triggers"));
+        var hello = triggers.Single(t => Prop(t, "name").GetString() == "Hello");
+        Assert.NotEmpty(Rows(Prop(hello, "events")));
+        Assert.NotEmpty(Rows(Prop(hello, "actions")));
+
+        // Hello carries an event and an action, so neither check has anything to report.
+        var lint = await Call("trigger_lint", Args(("map", map)));
+        Assert.Empty(Rows(Prop(lint, "findings")));
+
+        var dead = await Call("trigger_dead", Args(("map", map)));
+        Assert.Empty(Rows(Prop(dead, "dead")));
+
+        var script = await Call("trigger_to_script", Args(("map", map)));
+        Assert.Contains("InitTrig_Hello", Prop(script, "script").GetString());
+        Assert.Contains("DisplayTextToForce", Prop(script, "script").GetString());
+    }
+
+    [Fact, Covers("trigger_diff")]
+    public async Task Trigger_diff_reports_a_trigger_added_against_a_tree_less_map()
+    {
+        var (map, _, _) = await TriggerMap();
+        var diff = await Call("trigger_diff", Args(("map_a", Fixture), ("map_b", map)));
+        Assert.Contains(Rows(Prop(diff, "added")), n => n.GetString() == "Hello");
+    }
 }

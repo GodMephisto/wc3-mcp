@@ -374,4 +374,26 @@ public class LuaBytecodeTests
         Assert.True(saved.TryReadFileByName(@"scripts\util.lua", out var util));
         Assert.Equal("return 1\n", Encoding.ASCII.GetString(util));
     }
+
+    [Fact]
+    public void The_reader_refuses_a_code_count_larger_than_the_chunk()
+    {
+        // A function declaring 2,000,000,000 instructions with no code bytes after it. The count is
+        // read straight from the file, so it is checked against the bytes left before the array is
+        // sized, the way MdxParser.ReadTrack already guards its key count.
+        var o = new List<byte> { 0x1B, (byte)'L', (byte)'u', (byte)'a', 0x53, 0 };
+        o.AddRange(new byte[] { 0x19, 0x93, 0x0D, 0x0A, 0x1A, 0x0A });
+        o.AddRange(new byte[] { 4, 8, 4, 8, 8 });
+        o.AddRange(BitConverter.GetBytes(0x5678L));            // header check integer
+        o.AddRange(BitConverter.GetBytes(370.5));              // header check float
+        o.Add(0);                                              // main upvalue count
+        o.Add(0);                                              // source, 0 means inherit
+        o.AddRange(BitConverter.GetBytes(0));                  // line defined
+        o.AddRange(BitConverter.GetBytes(0));                  // last line defined
+        o.Add(0); o.Add(0); o.Add(8);                          // params, vararg, max stack
+        o.AddRange(BitConverter.GetBytes(2_000_000_000));      // code count
+
+        var ex = Assert.Throws<LuaBytecodeError>(() => LuaBytecode.Load(o.ToArray()));
+        Assert.Contains("instructions", ex.Message);
+    }
 }

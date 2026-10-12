@@ -16,6 +16,9 @@ public static class DdsDecoder
     private const uint PfFourCc = 0x4;
     private const uint PfRgb = 0x40;
 
+    /// <summary>Ceiling on one decoded texture, 256 MiB RGBA, about 64 megapixels.</summary>
+    private const long MaxDecodedBytes = 256L * 1024 * 1024;
+
     public static bool LooksLikeDds(byte[] bytes) =>
         bytes.Length >= 4 && BinaryPrimitives.ReadUInt32LittleEndian(bytes) == Magic;
 
@@ -28,6 +31,16 @@ public static class DdsDecoder
         var span = dds.AsSpan();
         int height = BinaryPrimitives.ReadInt32LittleEndian(span[12..]);
         int width = BinaryPrimitives.ReadInt32LittleEndian(span[16..]);
+
+        // The header is attacker-controlled when a map imports a texture, so bound the pixel count
+        // before any allocation. Without this a ~150 byte file declaring 23170 by 23170 asked for
+        // about 2 GB, and larger values overflowed the int multiply into a negative length.
+        if (width <= 0 || height <= 0)
+            throw new InvalidDataException($"invalid DDS dimensions {width}x{height}");
+        if ((long)width * height * 4 > MaxDecodedBytes)
+            throw new InvalidDataException(
+                $"DDS {width}x{height} exceeds the {MaxDecodedBytes / (1024 * 1024)} MiB decode ceiling");
+
         uint pfFlags = BinaryPrimitives.ReadUInt32LittleEndian(span[80..]);
         string fourCc = Encoding.ASCII.GetString(dds, 84, 4);
         uint bitCount = BinaryPrimitives.ReadUInt32LittleEndian(span[88..]);
@@ -67,7 +80,7 @@ public static class DdsDecoder
 
     private static TextureImage DecodeRaw32(byte[] dds, int offset, int width, int height, uint rMask)
     {
-        var rgba = new byte[width * height * 4];
+        var rgba = new byte[(int)((long)width * height * 4)];
         bool bgra = rMask == 0x00FF0000; // else assume RGBA layout
         for (int i = 0; i < width * height; i++)
         {
@@ -87,7 +100,7 @@ public static class DdsDecoder
         byte[] dds, int offset, int width, int height, int blockBytes,
         Action<byte[], int, byte[]> decodeBlock)
     {
-        var rgba = new byte[width * height * 4];
+        var rgba = new byte[(int)((long)width * height * 4)];
         var block = new byte[16 * 4];
         int blocksWide = Math.Max(1, (width + 3) / 4);
         int blocksHigh = Math.Max(1, (height + 3) / 4);

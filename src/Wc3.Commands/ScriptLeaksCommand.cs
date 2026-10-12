@@ -9,8 +9,11 @@ namespace Wc3.Commands;
 /// <summary>One leak finding. Line is 1-based in war3map.j.</summary>
 public sealed record ScriptLeak(string Rule, string Heat, string Function, int Line, string Handle, string Code, string Why);
 
-/// <summary>A timer or trigger that fires on a period, and the function it runs.</summary>
-public sealed record ScriptPeriodic(string Function, double? Period, int Line, int Reached);
+/// <summary>A timer or trigger that fires on a period, the function it runs, how many functions
+/// its call tree reaches, and how many of the ranked hot leaks that tree contains. The hot-leak
+/// count is what lets the runtime join say which periodic driver a measured handle slope belongs
+/// to, without re-deriving the call graph.</summary>
+public sealed record ScriptPeriodic(string Function, double? Period, int Line, int Reached, int HotLeaks);
 
 public sealed record ScriptLeaksResult(
     bool Ok,
@@ -46,7 +49,9 @@ public sealed record ScriptLeaksResult(
 /// </summary>
 public static class ScriptLeaksCommand
 {
-    private static readonly Dictionary<string, string> Creators = new(StringComparer.Ordinal)
+    /// <summary>The creator call to the handle type it returns. Shared with the Lua leak pass so
+    /// both languages agree on what a handle-creating call is.</summary>
+    internal static readonly Dictionary<string, string> Creators = new(StringComparer.Ordinal)
     {
         ["Location"] = "location", ["GetUnitLoc"] = "location", ["GetRectCenter"] = "location",
         ["GetSpellTargetLoc"] = "location", ["PolarProjectionBJ"] = "location", ["OffsetLocation"] = "location",
@@ -70,7 +75,9 @@ public static class ScriptLeaksCommand
         ["AddLightningEx"] = "lightning", ["CreateTrigger"] = "trigger",
     };
 
-    private static readonly Dictionary<string, string[]> Destroyers = new(StringComparer.Ordinal)
+    /// <summary>The destroyer calls for each handle type. Shared with the Lua leak pass, where a
+    /// handle released through one of these is not counted, the same rule as JASS.</summary>
+    internal static readonly Dictionary<string, string[]> Destroyers = new(StringComparer.Ordinal)
     {
         ["location"] = new[] { "RemoveLocation" },
         ["group"] = new[] { "DestroyGroup" },
@@ -97,6 +104,11 @@ public static class ScriptLeaksCommand
     private static readonly Regex RealGlobal = new(@"^\s*(?:constant\s+)?real\s+(\w+)\s*=\s*([0-9]*\.?[0-9]+)\s*$", RegexOptions.Compiled);
     private static readonly Regex WantDestroy = new(@"\bset\s+bj_wantDestroyGroup\s*=\s*true", RegexOptions.Compiled);
 
+    /// <summary>How hot a finding is, ranked so every leak list groups hot code first, then code
+    /// that repeats, then code that runs once. Shared with the Lua leak pass so the two rank
+    /// identically.</summary>
+    internal static int HeatRank(string heat) => heat == "hot" ? 0 : heat == "repeat" ? 1 : 2;
+
     public static ScriptLeaksResult Execute(MapDocument doc)
     {
         var diagnostics = new List<string>();
@@ -104,6 +116,12 @@ public static class ScriptLeaksCommand
             return new(false, why, 0, 0, 0, Array.Empty<ScriptLeak>(), Array.Empty<ScriptPeriodic>(), diagnostics);
         return Analyze(script, diagnostics);
     }
+
+    /// <summary>
+    /// Analyzes a script string directly, for a front end that holds unsaved editor text. The
+    /// document overload reads the map's stored script; this one scans exactly what is passed.
+    /// </summary>
+    public static ScriptLeaksResult Analyze(string script) => Analyze(script, null);
 
     internal static ScriptLeaksResult Analyze(string script, List<string>? diagnostics = null)
     {
@@ -172,10 +190,15 @@ public static class ScriptLeaksCommand
         var leaks = new List<ScriptLeak>();
         foreach (var f in functions) Scan(f, lines, byName, Heat(f.Name), leaks);
 
-        int Rank(string h) => h == "hot" ? 0 : h == "repeat" ? 1 : 2;
+        int Rank(string h) => HeatRank(h);
         var ordered = leaks.OrderBy(l => Rank(l.Heat)).ThenBy(l => l.Rule).ThenBy(l => l.Line).ToList();
         var periodicOut = periodic
-            .Select(p => new ScriptPeriodic(p.Fn, p.P, p.Line, Reach(new[] { p.Fn }).Count))
+            .Select(p =>
+            {
+                var reach = Reach(new[] { p.Fn });
+                int hotLeaks = ordered.Count(l => l.Heat == "hot" && reach.Contains(l.Function));
+                return new ScriptPeriodic(p.Fn, p.P, p.Line, reach.Count, hotLeaks);
+            })
             .OrderBy(p => p.Period ?? double.MaxValue).ThenBy(p => p.Line).ToList();
 
         int inHot = ordered.Count(l => l.Heat == "hot"), inRepeat = ordered.Count(l => l.Heat == "repeat");

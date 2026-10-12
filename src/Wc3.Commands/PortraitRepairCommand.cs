@@ -246,6 +246,7 @@ public static class PortraitRepairCommand
 
         var outBytes = new MemoryStream();
         outBytes.Write(data.AsSpan(0, 4));                       // MDLX
+        Span<byte> len = stackalloc byte[4];
         foreach (var (tag, body, size) in chunks)
         {
             byte[]? rebuilt = tag switch
@@ -258,7 +259,6 @@ public static class PortraitRepairCommand
 
             var payload = rebuilt ?? data[body..(body + size)];
             outBytes.Write(System.Text.Encoding.ASCII.GetBytes(tag));
-            Span<byte> len = stackalloc byte[4];
             BinaryPrimitives.WriteUInt32LittleEndian(len, (uint)payload.Length);
             outBytes.Write(len);
             outBytes.Write(payload);
@@ -276,6 +276,7 @@ public static class PortraitRepairCommand
     {
         var o = new MemoryStream();
         int p = body, end = body + size;
+        Span<byte> len = stackalloc byte[4];
         while (p < end)
         {
             if (p + 4 > end) return null;
@@ -287,7 +288,6 @@ public static class PortraitRepairCommand
                 : GeosetInsertPoint(data, p, p + inclusive);
             if (insertAt < 0) return null;
 
-            Span<byte> len = stackalloc byte[4];
             BinaryPrimitives.WriteUInt32LittleEndian(len, (uint)(inclusive + pad));
             o.Write(len);                                        // the new inclusive size
             o.Write(data.AsSpan(p + 4, insertAt - (p + 4)));      // everything before the field

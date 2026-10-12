@@ -148,8 +148,9 @@ public static class ImportsCommand
 
     /// <summary>True when the path names engine data rather than something the author imported.
     /// Applied to the manifest and the archive alike, on the separator-normalised path, because
-    /// war3map.imp does not always spell its separators the way the archive does.</summary>
-    private static bool IsEngineFile(string path)
+    /// war3map.imp does not always spell its separators the way the archive does. Internal so the
+    /// asset commands share this one test rather than each keeping its own structural file list.</summary>
+    internal static bool IsEngineFile(string path)
     {
         string p = Normalize(path);
         return MapFormatRegistry.IsKnown(p) || NonImportFiles.Contains(p);

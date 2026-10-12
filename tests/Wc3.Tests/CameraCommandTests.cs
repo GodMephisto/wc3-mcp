@@ -196,6 +196,68 @@ public class CameraCommandTests
         Assert.Empty(CameraCommand.List(doc));
     }
 
+    // ---- tour ----
+
+    [Fact]
+    public void Tour_interpolates_every_field_between_the_endpoints()
+    {
+        var a = Cam("Start", 0f, 0f);
+        a.ZOffset = 0f; a.TargetDistance = 1000f; a.Rotation = 0f;
+        var b = Cam("End", 1000f, 2000f);
+        b.ZOffset = 100f; b.TargetDistance = 2000f; b.Rotation = 180f;
+        var doc = Doc(a, b);
+
+        var r = CameraCommand.Tour(doc, "Start", "End", 3);
+
+        Assert.True(r.Ok, r.Message);
+        Assert.Equal(new[] { "Start-tour-1", "Start-tour-2", "Start-tour-3" }, r.Names);
+        Assert.Equal(5, r.Count);
+
+        var cams = CameraCommand.List(doc);
+        var mid = cams.Single(c => c.Name == "Start-tour-2"); // t = 2/4 = 0.5
+        Assert.Equal(500f, mid.TargetX);
+        Assert.Equal(1000f, mid.TargetY);
+        Assert.Equal(50f, mid.ZOffset);
+        Assert.Equal(1500f, mid.TargetDistance);
+        Assert.Equal(90f, mid.Rotation);
+
+        var first = cams.Single(c => c.Name == "Start-tour-1"); // t = 1/4 = 0.25
+        Assert.Equal(250f, first.TargetX);
+        Assert.Equal(25f, first.ZOffset);
+    }
+
+    [Fact]
+    public void Tour_rejects_missing_endpoint()
+    {
+        var doc = Doc(Cam("Start"));
+        Assert.False(CameraCommand.Tour(doc, "Start", "Ghost", 3).Ok);
+        Assert.False(CameraCommand.Tour(doc, "Ghost", "Start", 3).Ok);
+        Assert.Single(CameraCommand.List(doc));
+    }
+
+    [Fact]
+    public void Tour_rejects_non_positive_count()
+    {
+        var doc = Doc(Cam("Start"), Cam("End"));
+        Assert.False(CameraCommand.Tour(doc, "Start", "End", 0).Ok);
+        Assert.Equal(2, CameraCommand.List(doc).Count);
+    }
+
+    [Fact]
+    public void Tour_result_survives_a_reserialize()
+    {
+        var doc = Doc(Cam("Start", 0f, 0f), Cam("End", 1000f, 0f));
+        Assert.True(CameraCommand.Tour(doc, "Start", "End", 1).Ok);
+
+        var reloaded = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.w3c"] = doc.GetFile("war3map.w3c")!.OverrideBytes!,
+        }));
+        var cams = CameraCommand.List(reloaded);
+        Assert.Equal(3, cams.Count);
+        Assert.Contains(cams, c => c.Name == "Start-tour-1" && c.TargetX == 500f);
+    }
+
     // ---- pure ApplyField coverage (no MapDocument) ----
 
     [Theory]

@@ -51,6 +51,13 @@ public static class UnitInstanceCommand
         return units.Units.Select(u => ToInfo(u, names)).ToList();
     }
 
+    /// <summary>A brief listing, the total unit count and only the first page of units.</summary>
+    public static PlacedUnitsBriefResult ListBrief(MapDocument doc)
+    {
+        var (page, total, truncated) = BriefListing.FirstPage(List(doc));
+        return new PlacedUnitsBriefResult(total, truncated, page);
+    }
+
     /// <summary>The placed unit with this creation number, or null when absent.</summary>
     public static UnitInstanceInfo? Get(MapDocument doc, int creationNumber)
     {

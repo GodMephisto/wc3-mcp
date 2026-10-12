@@ -141,6 +141,36 @@ public static class PlayerForceCommand
             $"vision={sharedVision}, unitControl={sharedUnitControl}, advUnitControl={sharedAdvUnitControl})");
     }
 
+    /// <summary>Shared guard for a whole-w3i edit. Runs <paramref name="mutate"/> against the
+    /// parsed <see cref="MapInfo"/> and, only when it returns a success, re-serializes the file
+    /// through the same write path as <see cref="SetPlayerForce"/>. A failure leaves the document
+    /// untouched (no dirty flag, no bytes changed). Every player/force command goes through here
+    /// so the refusal shape and the write path cannot drift between them.</summary>
+    internal static PlayerForceEditResult Edit(MapDocument doc, Func<MapInfo, PlayerForceEditResult> mutate)
+    {
+        if (doc.GetFile(MapInfoCommand.FileName)?.Model is not MapInfo info)
+            return new(false, $"map has no parseable {MapInfoCommand.FileName}");
+        var result = mutate(info);
+        if (result.Ok)
+            WriteBack(doc, info);
+        return result;
+    }
+
+    /// <summary>The player with the given 0-based id, or null. Exposed so the one-field player
+    /// commands share the lookup and its exact error text.</summary>
+    internal static PlayerData? FindPlayer(MapInfo info, int playerId) =>
+        info.Players?.FirstOrDefault(p => p.Id == playerId);
+
+    /// <summary>Guards a force index the way <see cref="SetForceFlags"/> does, returning the
+    /// failure result to hand back to the caller when it is out of range.</summary>
+    internal static PlayerForceEditResult? CheckForceIndex(MapInfo info, int forceIndex)
+    {
+        if (info.Forces is null || forceIndex < 0 || forceIndex >= info.Forces.Count)
+            return new(false,
+                $"invalid force index {forceIndex}, map has {info.Forces?.Count ?? 0} force(s)");
+        return null;
+    }
+
     private static bool InMask(Bitmask32? mask, int playerId) =>
         mask is not null && playerId is >= 0 and <= 31 && mask[playerId];
 

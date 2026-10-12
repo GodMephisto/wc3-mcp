@@ -35,13 +35,15 @@ public class McpToolSweepTests
     private static readonly string[] MutatingPrefixes =
     {
         "camera_add", "camera_remove", "camera_set", "force_set", "map_info_set", "new_map",
-        "object_set", "object_new", "place_", "port_", "hero_install", "script_repair",
+        "object_set", "object_new", "object_migrate", "object_bulk_set", "object_import",
+        "object_rename", "object_export", "place_", "port_", "hero_install", "script_repair",
         "script_strip", "strings_set", "sound_", "region_remove", "unit_set", "unit_remove",
         "doodad_set", "doodad_remove", "terrain_", "pathing_", "file_set", "convert",
         // These slipped through on the first run because the prefix list keyed off the
         // wrong stem, and they refused cleanly for want of an out_path rather than doing
         // anything. Named explicitly so the filter does not depend on a naming accident.
         "placed_unit_remove", "placed_unit_set", "placed_doodad_remove", "placed_doodad_set",
+        "placed_fix_refs",
         "test_load", "trace_load", "debug_wiring", "repair", "bundle_", "doctor_fix",
     };
 

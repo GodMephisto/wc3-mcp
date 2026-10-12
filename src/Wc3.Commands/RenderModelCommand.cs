@@ -402,8 +402,9 @@ public static class RenderModelCommand
     }
 
     /// <summary>Sniffs the container (DDS magic, else BLP); undecodable bytes are null —
-    /// the caller shades those geosets flat.</summary>
-    private static TextureImage? TryDecodeTexture(byte[] bytes)
+    /// the caller shades those geosets flat. Internal so the folder thumbnail renderer
+    /// decodes a texture exactly the way the map renderer does.</summary>
+    internal static TextureImage? TryDecodeTexture(byte[] bytes)
     {
         try
         {

@@ -79,4 +79,38 @@ public static class PlayerColors
         NeutralPassiveId => "Neutral Passive",
         _ => $"Player {id + 1}",
     };
+
+    /// <summary>The 24 playable color names in id order, matching the World Editor's
+    /// player-properties color list (ids 12..23 arrived with Reforged). The four neutral
+    /// slots have no canonical name and are deliberately excluded.</summary>
+    public static IReadOnlyList<string> ColorNames { get; } = Array.AsReadOnly(Names);
+
+    /// <summary>Resolves a color name to its 0-based team color id the way the World Editor
+    /// spells it, ignoring case and the separators in "Light Blue" or "dark_green", so
+    /// "lightblue", "Light Blue" and "LIGHT-BLUE" all resolve to id 9. False when the text
+    /// names none of the 24 playable slots.</summary>
+    public static bool TryParseId(string? name, out int id)
+    {
+        id = -1;
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+        var wanted = Normalize(name);
+        for (var i = 0; i < Names.Length; i++)
+        {
+            if (Normalize(Names[i]) != wanted)
+                continue;
+            id = i;
+            return true;
+        }
+        return false;
+    }
+
+    private static string Normalize(string text)
+    {
+        var buffer = new System.Text.StringBuilder(text.Length);
+        foreach (var c in text)
+            if (char.IsLetterOrDigit(c))
+                buffer.Append(char.ToLowerInvariant(c));
+        return buffer.ToString();
+    }
 }

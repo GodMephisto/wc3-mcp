@@ -125,9 +125,15 @@ public static class GameDataSnapshotCommand
         return null;
     }
 
-    /// <summary>The build string, which is what a snapshot is named after. Read from the client
-    /// binary because that is what the crash reports and the patch notes both quote.</summary>
-    private static string? ReadBuild(string install)
+    /// <summary>The build string, which is what a snapshot is named after. Read from
+    /// .build.info first, using GameInstall.ReadBuildVersion. Falls back to the old
+    /// exe-version read when the info file is missing or empty.</summary>
+    private static string? ReadBuild(string install) =>
+        GameInstall.ReadBuildVersion(install) ?? ReadBuildFromExe(install);
+
+    /// <summary>The old path reads FileVersionInfo off Warcraft III.exe. This is
+    /// the fallback when .build.info is absent or carries no version.</summary>
+    private static string? ReadBuildFromExe(string install)
     {
         string exe = Path.Combine(install, "_retail_", "x86_64", "Warcraft III.exe");
         if (!File.Exists(exe)) return null;

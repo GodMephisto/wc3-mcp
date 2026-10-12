@@ -541,8 +541,9 @@ public static partial class TerrainCommand
         return new(true, $"{describe} — {changed} tiles changed", changed);
     }
 
-    /// <summary>Mean of a tile and its in-grid 4-neighbours, read from the snapshot.</summary>
-    private static float SmoothedHeight(float[] src, int w, int h, int x, int y)
+    /// <summary>Mean of a tile and its in-grid 4-neighbours, read from the snapshot.
+    /// Shared by the single-dab Smooth brush and <see cref="TerrainSmoothCommand"/>.</summary>
+    internal static float SmoothedHeight(float[] src, int w, int h, int x, int y)
     {
         float sum = src[y * w + x];
         int n = 1;

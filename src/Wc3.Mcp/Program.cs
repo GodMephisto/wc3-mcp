@@ -30,12 +30,7 @@ public static class Program
         builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace);
 
         builder.Services
-            .AddMcpServer(options =>
-            {
-                var configured = Wc3McpServer.CreateOptions();
-                options.ServerInfo = configured.ServerInfo;
-                options.ToolCollection = configured.ToolCollection;
-            })
+            .AddMcpServer(Wc3McpServer.ApplyTo)
             .WithStdioServerTransport();
 
         await builder.Build().RunAsync();

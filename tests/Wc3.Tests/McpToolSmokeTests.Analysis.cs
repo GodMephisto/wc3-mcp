@@ -154,6 +154,70 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
         Assert.Empty(Rows(Prop(r, "games")));
     }
 
+    /// <summary>A synthetic .w3g in the fixture folder, so the replay tools need no real game.</summary>
+    private string SyntheticReplay(params ReplayFixtures.Event[] events)
+    {
+        string path = Path.Combine(_f.Dir, $"replay-{Guid.NewGuid():N}.w3g");
+        File.WriteAllBytes(path, ReplayFixtures.Build(events: events));
+        return path;
+    }
+
+    [Fact, Covers("replay_players")]
+    public async Task Replay_players_lists_each_player_and_their_leave()
+    {
+        var replay = SyntheticReplay(new ReplayFixtures.Leave(1000, 2, 0x0C, 0x07));
+        var r = await Call("replay_players", Args(("replay", replay)));
+        var players = Rows(Prop(r, "players"));
+        Assert.Equal(2, players.Count);
+        var guest = Assert.Single(players, p => Prop(p, "slot").GetInt32() == 2);
+        Assert.Equal("Guest#2", Prop(guest, "name").GetString());
+        Assert.Equal("left", Prop(guest, "leaveMeaning").GetString());
+    }
+
+    [Fact, Covers("replay_timeline")]
+    public async Task Replay_timeline_orders_start_chat_leave_and_end()
+    {
+        var replay = SyntheticReplay(
+            new ReplayFixtures.Chat(500, 1, "hello"),
+            new ReplayFixtures.Leave(1000, 2, 0x0C, 0x07));
+        var r = await Call("replay_timeline", Args(("replay", replay)));
+        var events = Rows(Prop(r, "events"));
+        Assert.Equal(new[] { "game start", "chat", "leave", "game end" },
+            events.Select(e => Prop(e, "kind").GetString()).ToArray());
+    }
+
+    [Fact, Covers("replay_diff")]
+    public async Task Replay_diff_reports_a_length_delta_between_two_games()
+    {
+        var a = SyntheticReplay(new ReplayFixtures.Leave(500, 2, 0x0C, 0x07));
+        var b = SyntheticReplay(new ReplayFixtures.Leave(900, 2, 0x0C, 0x07));
+        var r = await Call("replay_diff", Args(("a", a), ("b", b)));
+        Assert.True(Prop(r, "sameMap").GetBoolean());
+        var delta = Prop(r, "leaveDeltas").EnumerateArray()
+            .Single(d => Prop(d, "playerId").GetInt32() == 2).GetProperty("delta").GetString();
+        Assert.Equal(TimeSpan.FromMilliseconds(400), TimeSpan.Parse(delta!));
+    }
+
+    [Fact, Covers("replay_find_map")]
+    public async Task Replay_find_map_resolves_the_recorded_map_in_a_folder()
+    {
+        var folder = Directory.CreateDirectory(Path.Combine(_f.Dir, "maps-" + Guid.NewGuid().ToString("N"))).FullName;
+        Directory.CreateDirectory(Path.Combine(folder, "Download"));
+        File.WriteAllBytes(Path.Combine(folder, "Download", "BaseMap_Repro.w3x"), new byte[] { 1 });
+        var replay = SyntheticReplay();
+        var r = await Call("replay_find_map", Args(("replay", replay), ("maps", folder)));
+        Assert.True(Prop(r, "found").GetBoolean());
+    }
+
+    [Fact, Covers("replay_stats")]
+    public async Task Replay_stats_aggregates_duration_players_and_disconnects()
+    {
+        var replay = SyntheticReplay(new ReplayFixtures.Leave(3000, 2, 0x0C, 0x01));
+        var r = await Call("replay_stats", Args(("replay", replay)));
+        Assert.Equal(2, Prop(r, "playerCount").GetInt32());
+        Assert.Equal(1, Prop(r, "disconnects").GetInt32());
+    }
+
     // The trigger catalog is read from the install's ui\triggerdata.txt.
     [Fact, Trait("Category", "GameData"), Covers("trigger_catalog_list", "trigger_catalog_describe")]
     public async Task Trigger_catalog_lists_and_describes_a_known_action()
@@ -193,5 +257,114 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
         Assert.NotNull(inline);
         Assert.Equal(signature, inline![..4]);
         Assert.Equal(File.ReadAllBytes(png), inline);
+    }
+
+    [Fact, Covers("gamedata_schema_diff")]
+    public async Task Gamedata_schema_diff_returns_zero_changes_for_identical_schema_folders()
+    {
+        var schemaA = NewOut("schema-a");
+        var schemaB = NewOut("schema-b");
+        Directory.CreateDirectory(schemaA);
+        Directory.CreateDirectory(schemaB);
+        // Both folders get the same minimal manifest so the tool has something to load.
+        File.WriteAllText(Path.Combine(schemaA, "manifest.json"), @"{""schemaVersion"":1,""build"":""3.0.0.24268"",""source"":""test""}");
+        File.WriteAllText(Path.Combine(schemaB, "manifest.json"), @"{""schemaVersion"":1,""build"":""3.0.0.24268"",""source"":""test""}");
+        var r = await Call("gamedata_schema_diff", Args(("a", schemaA), ("b", schemaB)));
+        Assert.Equal(0, Prop(r, "changes").GetArrayLength());
+    }
+
+    [Fact, Covers("gamedata_schema_diff")]
+    public async Task Gamedata_schema_diff_filters_by_section()
+    {
+        var schemaA = NewOut("schema-section");
+        var schemaB = NewOut("schema-section");
+        Directory.CreateDirectory(schemaA);
+        Directory.CreateDirectory(schemaB);
+        File.WriteAllText(Path.Combine(schemaA, "manifest.json"), @"{""schemaVersion"":1,""build"":""3.0.0.24268"",""source"":""test""}");
+        File.WriteAllText(Path.Combine(schemaB, "manifest.json"), @"{""schemaVersion"":1,""build"":""3.0.0.24269"",""source"":""test""}");
+        // With a section filter, objects changes should be excluded when both have no objects.
+        var r = await Call("gamedata_schema_diff", Args(("a", schemaA), ("b", schemaB), ("section", "objects")));
+        Assert.Equal(0, Prop(r, "changes").GetArrayLength());
+    }
+
+    /// <summary>A map whose war3map.j carries the shapes the script toolkit commands look for.</summary>
+    private async Task<string> ScriptedMap()
+    {
+        var script = Prop(await Call("file_get_text", Args(("map", Fixture), ("internal_path", "war3map.j"))), "text").GetString()!;
+        int g = script.IndexOf("endglobals", StringComparison.Ordinal);
+        string globalsBlock = "    integer udg_NeverRead = 0\n    integer udg_ReadOnce = 0\n";
+        script = script[..g] + globalsBlock + script[g..];
+        int main = script.IndexOf("function main takes nothing", StringComparison.Ordinal);
+        string extra = string.Join("\n",
+            "function SmokeNullLocal takes nothing returns nothing",
+            "    local group g = CreateGroup()",
+            "    call DestroyGroup(g)",
+            "endfunction",
+            "function SmokeComplex takes integer n returns integer",
+            "    if n > 0 and n < 10 then",
+            "        return 1",
+            "    endif",
+            "    return 0",
+            "endfunction",
+            "function SmokeUnused takes nothing returns nothing",
+            "endfunction",
+            "function SmokeReadsGlobal takes nothing returns nothing",
+            "    set udg_ReadOnce = GetRandomInt(1, 2)",
+            "    call BJDebugMsg(I2S(udg_ReadOnce))",
+            "endfunction",
+            "");
+        script = script[..main] + extra + script[main..];
+        var file = NewOut("scripted", ".j");
+        File.WriteAllText(file, script);
+        var outMap = NewOut("scripted");
+        await Call("file_set", Args(("map", Fixture), ("out_path", outMap), ("internal_path", "war3map.j"), ("from", file)));
+        return outMap;
+    }
+
+    [Fact, Covers("script_unused_globals")]
+    public async Task Script_unused_globals_reports_the_global_never_read()
+    {
+        var map = await ScriptedMap();
+        var r = await Call("script_unused_globals", Args(("map", map)));
+        var names = Rows(Prop(r, "globals")).Select(g => Prop(g, "name").GetString()).ToList();
+        Assert.Contains("udg_NeverRead", names);
+        Assert.DoesNotContain("udg_ReadOnce", names);
+    }
+
+    [Fact, Covers("script_unused_functions")]
+    public async Task Script_unused_functions_reports_the_uncalled_function()
+    {
+        var map = await ScriptedMap();
+        var r = await Call("script_unused_functions", Args(("map", map)));
+        var names = Rows(Prop(r, "functions")).Select(f => Prop(f, "name").GetString()).ToList();
+        Assert.Contains("SmokeUnused", names);
+        Assert.DoesNotContain("main", names);
+    }
+
+    [Fact, Covers("script_null_locals")]
+    public async Task Script_null_locals_reports_the_destroyed_but_unset_local()
+    {
+        var map = await ScriptedMap();
+        var r = await Call("script_null_locals", Args(("map", map)));
+        var rows = Rows(Prop(r, "locals"));
+        Assert.Contains(rows, l => Prop(l, "function").GetString() == "SmokeNullLocal");
+    }
+
+    [Fact, Covers("script_complexity")]
+    public async Task Script_complexity_ranks_the_branching_function()
+    {
+        var map = await ScriptedMap();
+        var r = await Call("script_complexity", Args(("map", map)));
+        var rows = Rows(Prop(r, "functions"));
+        Assert.Contains(rows, f => Prop(f, "function").GetString() == "SmokeComplex"
+            && Prop(f, "complexity").GetInt32() >= 2);
+    }
+
+    [Fact, Covers("script_callgraph")]
+    public async Task Script_callgraph_lists_edges_between_declared_functions()
+    {
+        var map = await ScriptedMap();
+        var r = await Call("script_callgraph", Args(("map", map)));
+        Assert.True(Prop(r, "edges").GetInt32() >= 1);
     }
 }

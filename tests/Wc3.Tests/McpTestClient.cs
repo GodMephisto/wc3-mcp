@@ -24,7 +24,7 @@ internal static class McpTestClient
         Pipe clientToServer = new(), serverToClient = new();
         await using var server = McpServer.Create(
             new StreamServerTransport(clientToServer.Reader.AsStream(), serverToClient.Writer.AsStream()),
-            Wc3McpServer.CreateOptions());
+            ConfiguredOptions());
         Task run = server.RunAsync(timeout.Token);
         try
         {
@@ -38,5 +38,13 @@ internal static class McpTestClient
             timeout.Cancel();
             try { await run; } catch (OperationCanceledException) { }
         }
+    }
+
+    /// <summary>The options the stdio entry point publishes, so the tests exercise that exact wiring.</summary>
+    private static McpServerOptions ConfiguredOptions()
+    {
+        var options = new McpServerOptions();
+        Wc3McpServer.ApplyTo(options);
+        return options;
     }
 }

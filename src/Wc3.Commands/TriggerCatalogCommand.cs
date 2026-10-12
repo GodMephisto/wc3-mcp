@@ -70,6 +70,25 @@ public static class TriggerCatalogCommand
     }
 
     /// <summary>
+    /// Loads the catalog like <see cref="Load"/> but returns null instead of throwing when no
+    /// catalog is available. Callers that only resolve values opportunistically (a preset's script
+    /// form in the to-script renderer) use this, so a machine without the game installed renders
+    /// with the raw names rather than failing outright.
+    /// </summary>
+    public static TriggerDataCatalog? TryLoad(string? filePath, string? gameDir, out string source)
+    {
+        try
+        {
+            return Load(filePath, gameDir, out source);
+        }
+        catch (InvalidOperationException)
+        {
+            source = string.Empty;
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Lists functions, optionally filtered by <paramref name="kind"/>
     /// (event|condition|action|call) and/or a case-insensitive <paramref name="search"/>
     /// over name and display name. Results are sorted by name.

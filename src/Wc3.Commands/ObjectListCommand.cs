@@ -31,6 +31,13 @@ public static class ObjectListCommand
     internal static ObjectListResult Execute(MapDocument doc, ObjectKind kind, GameDataContext? ctx) =>
         Execute(doc, kind, ObjectKinds.MergedEntries(doc, ObjectKinds.Info(kind)), ctx);
 
+    /// <summary>A brief listing, the total object count and only the first page of items.</summary>
+    public static ObjectListBriefResult ExecuteBrief(MapDocument doc, ObjectKind kind, string? gameDirOverride)
+    {
+        var (page, total, truncated) = BriefListing.FirstPage(Execute(doc, kind, gameDirOverride).Items);
+        return new ObjectListBriefResult(total, truncated, page);
+    }
+
     private static ObjectListResult Execute(
         MapDocument doc, ObjectKind kind, IReadOnlyList<MapObjectEntry> entries, GameDataContext? ctx)
     {

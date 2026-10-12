@@ -97,4 +97,20 @@ public class DdsDecoderTests
         Assert.False(DdsDecoder.LooksLikeDds(new byte[] { 1, 2, 3, 4, 5 }));
         Assert.Throws<InvalidDataException>(() => DdsDecoder.Decode(new byte[] { 1, 2, 3, 4 }));
     }
+
+    [Fact]
+    public void Decode_refuses_an_oversized_header_before_it_allocates()
+    {
+        // A map can import a texture, so the size comes from the file. 23170x23170 asks for about
+        // 2 GB and 40000x40000 overflows the int multiply. Both must be refused from the header.
+        Assert.Throws<InvalidDataException>(() => DdsDecoder.Decode(Header("DXT1", 23170, 23170)));
+        Assert.Throws<InvalidDataException>(() => DdsDecoder.Decode(Header("DXT1", 40000, 40000)));
+    }
+
+    [Fact]
+    public void Decode_refuses_a_zero_or_negative_dimension()
+    {
+        Assert.Throws<InvalidDataException>(() => DdsDecoder.Decode(Header("DXT1", 0, 16)));
+        Assert.Throws<InvalidDataException>(() => DdsDecoder.Decode(Header("DXT1", 16, -4)));
+    }
 }

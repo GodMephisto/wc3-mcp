@@ -22,4 +22,11 @@ public static class ListCommand
             f.FileName, f.RawSize, f.IsKnown, f.IsParsed,
             typeUnnamed && f.FileName is null ? ContentTypeSniffer.Sniff(f).DisplayName : null,
             f.NameFromHarvest)).ToList());
+
+    /// <summary>A brief listing, the total file count and only the first page of files.</summary>
+    public static FileListBriefResult ExecuteBrief(MapDocument doc, bool typeUnnamed = false)
+    {
+        var (page, total, truncated) = BriefListing.FirstPage(Execute(doc, typeUnnamed).Files);
+        return new FileListBriefResult(total, truncated, page);
+    }
 }

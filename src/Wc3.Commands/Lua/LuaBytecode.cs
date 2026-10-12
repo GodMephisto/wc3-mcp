@@ -122,6 +122,12 @@ public static class LuaBytecode
             int line = Int(), last = Int();
             int ps = Byte(), va = Byte(), st = Byte();
             int nc = Count();
+            // Each instruction is _sinstr bytes, so a count past the remaining input cannot be real.
+            // Checked before the allocation, which is otherwise sized straight from the file. A small
+            // crafted chunk declaring int.MaxValue instructions asked for about 8.5 GB.
+            if ((long)nc * _sinstr > _d.Length - Position)
+                throw new LuaBytecodeError(
+                    $"function declares {nc} instructions but only {_d.Length - Position} bytes remain");
             var code = new uint[nc];
             for (int k = 0; k < nc; k++) code[k] = (uint)Little(Raw(_sinstr), signed: false);
             var consts = new List<object?>();
