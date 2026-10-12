@@ -138,6 +138,17 @@ public class TextureConvertTests
     }
 
     [Fact]
+    public void A_tiff_source_is_refused_so_the_pinned_tiff_decoder_never_runs()
+    {
+        // ImageSharp 3.1.12's TIFF decoder has an open advisory (GHSA-wmxv-xphr-5c9g). The
+        // default configuration would decode this, so a pass here proves TIFF is not registered.
+        using var img = new Image<Rgba32>(4, 4);
+        using var ms = new MemoryStream();
+        img.SaveAsTiff(ms);
+        Assert.Throws<NotSupportedException>(() => TextureConvert.Convert(ms.ToArray(), ".tif", ".png"));
+    }
+
+    [Fact]
     public void Garbage_source_bytes_are_rejected_with_a_clear_message()
     {
         Assert.Throws<NotSupportedException>(
