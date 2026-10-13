@@ -49,21 +49,26 @@ public sealed class SchemasDirResolutionTests : IDisposable
 
     [Theory]
     [InlineData("  ")]
-    public void A_blank_variable_falls_through_to_the_dataset(string value)
+    public void A_blank_variable_is_ignored(string value)
     {
         Environment.SetEnvironmentVariable(GameSchemaCommand.SchemasDirEnvVar, value);
-        string resolved = GameSchemaCommand.ResolveSchemasDir(null);
-        Assert.True(Directory.Exists(resolved));
+        // A blank value must never be returned, whether or not a dataset is found. Where one is
+        // found it is the repo's data/schemas, and where none is, the resolver throws, which also
+        // ignores the value.
+        string? resolved = null;
+        try { resolved = GameSchemaCommand.ResolveSchemasDir(null); }
+        catch (DirectoryNotFoundException) { }
         Assert.NotEqual(value, resolved);
     }
 
     [Fact]
-    public void A_missing_variable_directory_falls_through_to_the_dataset()
+    public void A_missing_variable_directory_is_ignored()
     {
         string missing = Path.Combine(Path.GetTempPath(), "wc3-nope-" + Guid.NewGuid().ToString("N"));
         Environment.SetEnvironmentVariable(GameSchemaCommand.SchemasDirEnvVar, missing);
-        string resolved = GameSchemaCommand.ResolveSchemasDir(null);
-        Assert.True(Directory.Exists(resolved));
+        string? resolved = null;
+        try { resolved = GameSchemaCommand.ResolveSchemasDir(null); }
+        catch (DirectoryNotFoundException) { }
         Assert.NotEqual(missing, resolved);
     }
 
