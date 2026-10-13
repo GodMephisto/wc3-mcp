@@ -64,7 +64,9 @@ public sealed class GameDataContext
             if (_casc is null)
             {
                 if (_cascFailed) return false;
-                if (!CascGameDataSource.TryOpen(InstallDir, out _casc, out _))
+                bool opened;
+                lock (CascGate.Sync) opened = CascGameDataSource.TryOpen(InstallDir, out _casc, out _);
+                if (!opened)
                 {
                     _cascFailed = true;
                     return false;
@@ -103,7 +105,9 @@ public sealed class GameDataContext
             if (_casc is null)
             {
                 if (_cascFailed) return Array.Empty<string>();
-                if (!CascGameDataSource.TryOpen(InstallDir, out _casc, out _))
+                bool opened;
+                lock (CascGate.Sync) opened = CascGameDataSource.TryOpen(InstallDir, out _casc, out _);
+                if (!opened)
                 {
                     _cascFailed = true;
                     return Array.Empty<string>();

@@ -1,6 +1,21 @@
 using CascLib.NET;
 namespace Wc3.GameData;
 
+/// <summary>
+/// The one lock that guards every CASC storage open in the process. The native
+/// CascLib open is not safe to run concurrently, measured at 2026-10-13 with
+/// 32 simultaneous opens of the same install, where one threw
+/// "The system cannot find the file specified" and a concurrent
+/// <see cref="GameData.TryOpen"/> build failed on 24 to 30 of 32 threads with
+/// "unitmetadata.slk not found in game data". Serializing the open makes a cold
+/// cache safe under the parallel test run. Ongoing reads on an already-open
+/// handle are outside this gate.
+/// </summary>
+internal static class CascGate
+{
+    internal static readonly object Sync = new();
+}
+
 public sealed class CascGameDataSource : IGameDataSource
 {
     private readonly CascStorage _storage;
@@ -9,7 +24,15 @@ public sealed class CascGameDataSource : IGameDataSource
     public static bool TryOpen(string installDir, out CascGameDataSource? source, out string? error)
     {
         source = null; error = null;
-        try { source = new CascGameDataSource(new CascStorage(installDir)); return true; }
+        try
+        {
+            // The native open races itself process wide, so one open at a time.
+            CascGameDataSource? opened;
+            lock (CascGate.Sync)
+                opened = new CascGameDataSource(new CascStorage(installDir));
+            source = opened;
+            return true;
+        }
         catch (Exception ex) { error = ex.Message; return false; }
     }
 

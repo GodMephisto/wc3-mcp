@@ -104,18 +104,21 @@ public static class Wc3Tools
         => Run(() => LeakHarnessCommand.Execute(LoadMap(map), lang, target, out_path));
 
     [McpServerTool(Name = "leak_join", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("Join a map's static leak list to a wc3watch session folder. Reads samples.csv, fits "
-        + "the handle slope and the memory slope, and aligns a rising slope with the periodic candidates "
-        + "from the static list. Read-only. A folder with no samples.csv is reported clearly.")]
+    [Description("Join a map's static leak list to a wc3watch session folder. Reads samples.csv and "
+        + "events.csv, fits the handle and memory slopes from the session's forced garbage collection "
+        + "when one was marked, and joins each rising window to the periodic candidates from the static "
+        + "list and the session events and game log lines near it. Names the likely leaking trigger. "
+        + "Read-only. A folder with no samples.csv is reported clearly.")]
     public static LeakJoinResult LeakJoin(
         [Description("Path to a .w3x/.w3m map file.")] string map,
-        [Description("A wc3watch session folder holding samples.csv.")] string session_folder)
+        [Description("A wc3watch session folder holding samples.csv and, optionally, events.csv.")] string session_folder)
         => Run(() => LeakJoinCommand.Execute(LoadMap(map), session_folder));
 
     [McpServerTool(Name = "leak_ab", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("Diff two wc3watch sessions and report whether the handle and memory slope fell, the "
-        + "usual shape being one session with a trigger live and one with it disabled. With a map, name "
-        + "the periodic candidate whose predicted rate is nearest the drop, labelled an inference. Read-only.")]
+    [Description("Diff two wc3watch sessions and report whether the handle and memory slope fell, each "
+        + "measured from its own forced garbage collection. The usual shape is one session with a "
+        + "trigger live and one with it disabled. With a map, name the periodic candidate whose "
+        + "predicted rate is nearest the drop, labelled an inference. Read-only.")]
     public static LeakAbResult LeakAb(
         [Description("First wc3watch session folder.")] string session_a,
         [Description("Second wc3watch session folder.")] string session_b,
@@ -128,6 +131,16 @@ public static class Wc3Tools
         + "the detector's accuracy is a measured number. Read-only.")]
     public static LeakBenchmarkResult LeakBenchmark()
         => Run(() => LeakBenchmarkCommand.Execute());
+
+    [McpServerTool(Name = "leak_model", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Report the model-level leaks and waste across a map's imported models and textures, "
+        + "the join between the model audit and the import table. Finds an imported model no field or "
+        + "script names, a model naming a texture the map does not hold, a model imported more than once "
+        + "under different names with identical bytes, and an imported texture no imported model names. "
+        + "Reuses the existing model parser and import primitives. Read-only.")]
+    public static LeakModelResult LeakModel(
+        [Description("Path to a .w3x/.w3m map file.")] string map)
+        => Run(() => LeakModelCommand.Execute(LoadMap(map)));
 
     [McpServerTool(Name = "script_unused_globals", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Find the globals a map's war3map.j declares and never reads, the variable half of "
@@ -430,6 +443,76 @@ public static class Wc3Tools
             return new AssetImportWireToolResult(full, r.Imported, r.FieldsSet, r.Diagnostics);
         });
 
+    [McpServerTool(Name = "model_audit", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Audit a .mdx or .mdl model for the resource waste and draw-nothing problems an optimiser can remove, and report what it holds. Finds duplicate textures, geosets with no texture or no triangles, zero-area faces, unused skeleton nodes and non-finite vertices. Counts the effects an MDX carries, particle emitters, particle emitters 2, ribbons and popcorns, from the binary chunk list, and reads each particle emitter's payload to report one that references a node the model does not define or a texture outside its texture list. Read-only.")]
+    public static ModelAuditResult ModelAudit(
+        [Description("Path to a .mdx or .mdl model file.")] string model)
+        => Run(() => ModelAuditCommand.ExecutePath(model));
+
+    [McpServerTool(Name = "model_optimize", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Decimate a .mdx or .mdl model's geometry with the quadric error metric, drop zero-area faces and duplicate textures, and write a smaller MDX at out_path, leaving the other chunks untouched. ratio is the target fraction of faces to keep. Set strip_effects to also drop the model's effect chunks, particle emitters (PREM), particle emitters 2 (PRE2), ribbons (RIBB) and corns (CORN), which changes how the model looks, so it defaults to false. Returns the before and after vertex and face counts and the number of effect chunks removed. The input is never modified.")]
+    public static ModelOptimizeResult ModelOptimize(
+        [Description("Path to a .mdx or .mdl model file.")] string model,
+        [Description("Output .mdx path. The input is never modified.")] string out_path,
+        [Description("Target fraction of faces to keep, between 0 and 1.")] float ratio = 0.5f,
+        [Description("Drop the model's effects (particle emitters, particle emitters 2, ribbons and corns) when true. Changes how the model looks. Default false.")] bool strip_effects = false)
+        => Run(() =>
+        {
+            if (string.Equals(Path.GetFullPath(out_path), Path.GetFullPath(model), StringComparison.OrdinalIgnoreCase))
+                throw new McpException("out_path must not be the input model");
+            return ModelOptimizeCommand.ExecutePath(model, ratio, out_path, strip_effects);
+        });
+
+    [McpServerTool(Name = "model_lod", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Generate a level-of-detail chain for a .mdx or .mdl model, writing one decimated MDX per ratio into out_dir by running the optimiser once per ratio. ratios is a comma-separated list of target fractions of faces to keep, each between 0 and 1, for example 1,0.5,0.25, processed in the order given so a descending list produces a descending chain. Each level keeps the model's materials, textures, sequences, bones, emitters and cameras byte for byte and shrinks only the geometry. Ratio 1 is the original geometry and its file is byte identical to the input. The input is never modified. Returns one level per ratio with its vertex and face count and byte size, plus the total bytes written.")]
+    public static ModelLodResult ModelLod(
+        [Description("Path to a .mdx or .mdl model file.")] string model,
+        [Description("Comma-separated target fractions of faces to keep, each between 0 and 1, for example 1,0.5,0.25.")] string ratios,
+        [Description("Output directory for the LOD chain. Created when missing. The input is never modified.")] string out_dir)
+        => Run(() => ModelLodCommand.ExecutePath(model, ratios, out_dir));
+
+    [McpServerTool(Name = "texture_optimize", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Shrink a .blp, .dds or standard image texture to fit a maximum side, preserving aspect ratio, and write it at out_path in the same format. The input is never modified. Returns the before and after dimensions and byte sizes.")]
+    public static TextureOptimizeResult TextureOptimize(
+        [Description("Path to a texture file.")] string texture,
+        [Description("Output path. The input is never modified.")] string out_path,
+        [Description("Maximum side length in pixels.")] int max = 256)
+        => Run(() =>
+        {
+            if (string.Equals(Path.GetFullPath(out_path), Path.GetFullPath(texture), StringComparison.OrdinalIgnoreCase))
+                throw new McpException("out_path must not be the input texture");
+            return TextureOptimizeCommand.ExecutePath(texture, max, out_path);
+        });
+
+    [McpServerTool(Name = "texture_atlas", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Pack two or more .blp, .dds or standard image textures into one power-of-two atlas and write it at out_path in the first input's format. Every input is decoded, placed deterministically by a shelf packer, and left unmodified. Returns the atlas size, its byte count and each input's pixel rectangle, so a caller can build the UV mapping.")]
+    public static TextureAtlasResult TextureAtlas(
+        [Description("Two or more paths to texture files.")] string[] images,
+        [Description("Output atlas path. The inputs are never modified.")] string out_path,
+        [Description("Maximum atlas side in pixels. The atlas is the smallest power of two that fits and does not exceed this.")] int max = 512)
+        => Run(() =>
+        {
+            string full = Path.GetFullPath(out_path);
+            foreach (var image in images)
+                if (string.Equals(full, Path.GetFullPath(image), StringComparison.OrdinalIgnoreCase))
+                    throw new McpException("out_path must not be one of the input textures");
+            if (Path.GetDirectoryName(full) is { Length: > 0 } dir) Directory.CreateDirectory(dir);
+            return TextureAtlasCommand.ExecutePaths(images, max, full);
+        });
+
+    [McpServerTool(Name = "map_optimize", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Shrink every imported model and texture inside a map in one pass and write a new map to out_path with only those files replaced, everything else byte for byte. Each model is decimated at ratio (the target fraction of faces to keep) and each texture is scaled to fit max_texture on its longest side, reusing the model and texture optimisers. A file whose optimised bytes are not smaller is left untouched. Reports the per-file before and after sizes, the per-kind counts and the total byte saving. The input map is NEVER modified.")]
+    public static MapOptimizeResult MapOptimize(
+        [Description("Path to a .w3x/.w3m map file. Read-only; the edited copy is written to out_path.")] string map,
+        [Description("Output map path. The input is never modified.")] string out_path,
+        [Description("Target fraction of a model's faces to keep, between 0 and 1. Default 0.5.")] float ratio = 0.5f,
+        [Description("Maximum texture side in pixels. A texture larger than this on either side is scaled down. Default 256.")] int max_texture = 256)
+        => Run(() =>
+        {
+            string full = ResolveOutPath(map, out_path);
+            return MapOptimizeCommand.ExecutePath(map, ratio, max_texture, full);
+        });
+
     [McpServerTool(Name = "model_export_obj", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Export a map-imported model to Wavefront OBJ at out_path, writing an MTL and any map-resolvable textures converted to PNG beside it. The map itself is never modified. Returns the .obj path, the .mtl path and the texture file names.")]
     public static ModelExportObjToolResult ModelExportObj(
@@ -455,6 +538,24 @@ public static class Wc3Tools
                 textures.Add(name);
             }
             return new ModelExportObjToolResult(full, mtlPath, textures);
+        });
+
+    [McpServerTool(Name = "model_import", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Import a foreign model file into a Warcraft III MDX at out_path. Accepts Wavefront OBJ (.obj), glTF 2.0 (.gltf and .glb), STL (.stl, binary and ASCII), PLY (.ply, ASCII and binary little-endian) and FBX ASCII (.fbx). Binary FBX is not supported. The format is detected from the file content, so a correct extension is not required. Builds one v800 geoset per source primitive with normals and UVs, triangulating an n-gon face as a fan, computing a per-face normal when the source carries none and zeroing UVs when it has none. Each glTF material's baseColorTexture image is converted to .blp beside the MDX and referenced by a texture entry, one entry per distinct texture, so a multi-material model keeps every material. A model that names no material keeps the single default texture. Every glTF animation becomes a named MDX SEQS sequence whose integer frame interval is its time range scaled by fps, 30 by default. Bone keyframe tracks are not written. The input is never modified. Returns the output path, the geoset, vertex, face, texture and material counts, the sequence count and names, and the texture files written.")]
+    public static ModelImportToolResult ModelImport(
+        [Description("Path to a foreign model file, one of OBJ, glTF, GLB, STL, PLY or ASCII FBX.")] string obj,
+        [Description("Output .mdx path. The input is never modified.")] string out_path,
+        [Description("Optional texture path to embed, relative to the map, overriding every material. Omit to use the model's own materials, or war3mapImported\\<name>.blp when it names none.")] string? texture = null,
+        [Description("Frames per second used to convert a glTF animation's time range into a sequence frame interval. The Warcraft III default is 30.")] double fps = 30)
+        => Run(() =>
+        {
+            string full = Path.GetFullPath(out_path);
+            if (string.Equals(full, Path.GetFullPath(obj), StringComparison.OrdinalIgnoreCase))
+                throw new McpException("out_path must not be the input OBJ");
+            var r = ModelImportCommand.ExecutePath(obj, out_path, texture, fps);
+            return new ModelImportToolResult(
+                full, r.Geosets, r.Vertices, r.Faces, r.Textures, r.Materials,
+                r.Sequences, r.SequenceNames ?? Array.Empty<string>(), r.TextureFiles);
         });
 
     [McpServerTool(Name = "lint", ReadOnly = true, Idempotent = true, OpenWorld = false)]
@@ -1469,6 +1570,19 @@ public static class Wc3Tools
         [Description("Path to a .w3x/.w3m map file.")] string map)
         => Run(() => TerrainCommand.Stats(LoadMap(map)));
 
+    [McpServerTool(Name = "terrain_audit", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Audit a map's terrain (war3map.w3e) for its size and its measurable waste: grid and tile counts, distinct ground and cliff textures in use, cliff/ramp/water/blight totals, the war3map.w3e byte size, and any uniform, all-zero or out-of-range-tileset pattern found. Reports which checks it ran. Read-only.")]
+    public static TerrainAuditResult TerrainAudit(
+        [Description("Path to a .w3x/.w3m map file.")] string map)
+        => Run(() => TerrainAuditCommand.ExecutePath(map));
+
+    [McpServerTool(Name = "terrain_optimize", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Shrink a map's war3map.w3e by dropping the declared ground and cliff tile types the terrain never references and remapping every corner's ground and cliff texture index onto the compacted list, saving the edited copy to out_path. Every other file is written back byte for byte. Reports the before and after declared tile counts and the war3map.w3e byte saving. The input map is never modified.")]
+    public static TerrainOptimizeResult TerrainOptimize(
+        [Description("Path to the source .w3x/.w3m map file. Read-only; the edited copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map). Created/overwritten; parent directories are created as needed.")] string out_path)
+        => Run(() => TerrainOptimizeCommand.ExecutePath(map, out_path));
+
     [McpServerTool(Name = "terrain_deform", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
     [Description("Raise/lower/set/flatten/smooth ground height over a circular or square brush, saving the edited map to out_path. The input map is NEVER modified in place.")]
     public static TerrainToolResult TerrainDeform(
@@ -1855,6 +1969,22 @@ public static class Wc3Tools
         [Description("Output map file path (must differ from the input map). To make SEVERAL edits, pass this file as the next call's map argument. Each tool loads the map fresh from disk and writes a new file, so two edits both reading the ORIGINAL map produce two separate outputs and the first edit is lost.")] string out_path,
         [Description("Sound definition name to remove.")] string name)
         => Run(() => SaveSound(map, out_path, doc => SoundCommand.Remove(doc, name)));
+
+    [McpServerTool(Name = "sound_optimize", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Shrink a sound file by decoding it, resampling to a target rate (default 22050 Hz), optionally setting the channel count and encoding it. The format comes from out_path's extension, .mp3 selects MP3 and anything else WAV. The input is never modified. Reads .wav natively and .mp3 through the Windows codecs. When no MP3 encoder is present the command writes WAV and reports a note rather than failing. Returns the before and after format, sample rate, channel count and byte size.")]
+    public static SoundOptimizeResult SoundOptimize(
+        [Description("Path to a .wav or .mp3 sound file.")] string sound,
+        [Description("Output path. Its extension picks the format, .mp3 for MP3, anything else for WAV. The input is never modified.")] string out_path,
+        [Description("Target sample rate in Hz. Default 22050.")] int rate = SoundOptimizeCommand.DefaultRate,
+        [Description("Output channels, source, mono or stereo. Default source keeps the source channel count.")] string channels = "source",
+        [Description("MP3 bitrate in kbps, default 128. Applies to .mp3 output only, ignored for WAV.")] int bitrate = SoundOptimizeCommand.DefaultBitrateKbps)
+        => Run(() =>
+        {
+            if (string.Equals(Path.GetFullPath(out_path), Path.GetFullPath(sound), StringComparison.OrdinalIgnoreCase))
+                throw new McpException("out_path must not be the input sound");
+            return SoundOptimizeCommand.ExecutePath(
+                sound, rate, SoundOptimizeCommand.ParseChannels(channels), bitrate, out_path);
+        });
 
     // ---- camera catalog (war3map.w3c) ------------------------------------
 
@@ -2751,7 +2881,7 @@ public static class Wc3Tools
         => Run(() => TargetBuildSettings.List(schemasDir: schemas_dir, fullOnly: full_only));
 
     [McpServerTool(Name = "gamedata_schema_diff", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("Compare two schema folders (produced by gamedata schema) and report added, removed and changed object fields, trigger functions, script types and natives. Groups output by section (objects, triggers, script) then by file or category. A section only one build has is listed as not compared rather than everything added or removed. Use this to track what a patch changes across builds, or to check whether two maps targeting different patches are compatible.")]
+    [Description("Compare two schema folders (produced by gamedata schema) and report added, removed and changed object fields, trigger functions, script types and natives, and enumerated field option sets. Groups output by section (objects, triggers, script, enums) then by file or category. A section only one build has is listed as not compared rather than everything added or removed. Use this to track what a patch changes across builds, or to check whether two maps targeting different patches are compatible.")]
     public static SchemaDiffResult GameDataSchemaDiff(
         [Description("Path to the first schema folder (from gamedata schema).")] string a,
         [Description("Path to the second schema folder (from gamedata schema).")] string b,
@@ -2789,8 +2919,16 @@ public static class Wc3Tools
         [Description("Optional path to schemas directory containing schema folders with manifest.json.")] string? schemas_dir = null)
         => Run(() => GamedataBoundsCommand.Execute(code, target, schemas_dir));
 
+    [McpServerTool(Name = "gamedata_enum", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Report the closed set of legal values for an enumerated object field type, from the build's UnitEditorData.txt, in one build or every build where it exists. The type is the metadata SLK type column, the one gamedata_bounds reports for a field code. This is the authority a picker should offer, not the values a stock object happens to use.")]
+    public static GamedataEnumResult GameDataEnum(
+        [Description("The enumerated field type to inspect, the metadata SLK type column.")] string type,
+        [Description("Build name or schema folder path to search. Omit to search every build.")] string? target = null,
+        [Description("Optional path to schemas directory containing schema folders with manifest.json.")] string? schemas_dir = null)
+        => Run(() => GamedataEnumCommand.Execute(type, target, schemas_dir));
+
     [McpServerTool(Name = "gamedata_coverage", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("List one row per schema folder with the build, its era, and which sections it holds (objects, triggers, script), plus field and native counts, so a reader can tell a build carrying real object data from one carrying only its script.")]
+    [Description("List one row per schema folder with the build, its era, and which sections it holds (objects, triggers, script, enums), plus field and native counts, so a reader can tell a build carrying real object data from one carrying only its script.")]
     public static GamedataCoverageResult GameDataCoverage(
         [Description("Optional path to schemas directory containing schema folders with manifest.json.")] string? schemas_dir = null)
         => Run(() => GamedataCoverageCommand.Execute(schemas_dir));
@@ -2977,6 +3115,12 @@ public sealed record AssetImportWireToolResult(
 
 /// <summary>model_export_obj outcome: where the .obj landed, its .mtl path and the texture names.</summary>
 public sealed record ModelExportObjToolResult(string SavedTo, string Mtl, IReadOnlyList<string> Textures);
+
+/// <summary>model_import outcome: where the .mdx landed, the counts it holds, the sequence count and
+/// names, and the texture files written.</summary>
+public sealed record ModelImportToolResult(
+    string SavedTo, int Geosets, int Vertices, int Faces, int Textures, int Materials,
+    int Sequences, IReadOnlyList<string> SequenceNames, IReadOnlyList<string> TextureFiles);
 
 /// <summary>port_unit outcome: where the new .ported map was written plus the full port report.</summary>
 public sealed record PortUnitToolResult(string SavedTo, PortResult Report);

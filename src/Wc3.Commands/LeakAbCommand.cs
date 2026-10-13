@@ -38,6 +38,10 @@ public static class LeakAbCommand
         var b = LeakWorkflow.Summarize(sessionB);
         if (a.Error is not null) diagnostics.Add($"session A, {a.Error}");
         if (b.Error is not null) diagnostics.Add($"session B, {b.Error}");
+        if (a.Baseline is { } ba)
+            diagnostics.Add($"session A measured from its forced garbage collection at {ba:HH:mm:ss}");
+        if (b.Baseline is { } bb)
+            diagnostics.Add($"session B measured from its forced garbage collection at {bb:HH:mm:ss}");
 
         double? handleDrop = a.HandlesPerMin is { } ha && b.HandlesPerMin is { } hb ? ha - hb : null;
         double? memoryDrop = a.MemoryPerMin is { } ma && b.MemoryPerMin is { } mb ? ma - mb : null;

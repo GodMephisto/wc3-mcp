@@ -17,6 +17,11 @@ public sealed record SchemaField(
     string MinValue, string MaxValue, bool CanBeEmpty,
     bool UseHero, bool UseUnit, bool UseBuilding, bool UseItem);
 
+/// <summary>One legal value of an enumerated object field type, from the build's
+/// <c>UI\UnitEditorData.txt</c>. The value is what a map stores, the display name is what the
+/// World Editor shows, and the name is null when the WESTRING key could not be resolved.</summary>
+public sealed record SchemaEnumValue(string Value, string? DisplayName);
+
 /// <summary>A GUI trigger type, from TriggerData.txt.</summary>
 public sealed record SchemaTriggerType(string Name, string? BaseType, bool CanBeGlobal, bool CanBeParameter);
 
@@ -43,12 +48,13 @@ public sealed record GameSchema(
     IReadOnlyList<SchemaInput> Inputs, IReadOnlyList<string> Missing,
     IReadOnlyDictionary<string, IReadOnlyList<SchemaField>>? Objects,
     SchemaTriggers? Triggers,
-    IReadOnlyDictionary<string, JassApi>? Script);
+    IReadOnlyDictionary<string, JassApi>? Script,
+    IReadOnlyDictionary<string, IReadOnlyList<SchemaEnumValue>>? Enums = null);
 
 public sealed record SchemaWriteResult(
     string OutDir, string Build, string Source, IReadOnlyList<string> Sections,
     int ObjectFiles, int Fields, int TriggerFunctions, int ScriptFiles, int Natives,
-    IReadOnlyList<string> Missing);
+    int EnumTypes, IReadOnlyList<string> Missing);
 
 /// <summary>One difference between two builds. Section is objects, triggers or script, Group the
 /// file or list inside it, Change is added, removed or changed.</summary>
@@ -62,7 +68,7 @@ public sealed record SchemaIndexEntry(string Build, string Source, IReadOnlyList
     int ObjectFiles, int Fields, int TriggerFunctions,
     IReadOnlyDictionary<string, int> Natives,   // per script file, e.g. scripts/common.j -> 1274
     IReadOnlyDictionary<string, int> Functions, // per script file
-    IReadOnlyList<string> Missing);
+    int EnumTypes, IReadOnlyList<string> Missing);
 
 /// <summary>
 /// Builds, saves, loads and compares per-build schemas. A schema answers "what does this build's
@@ -88,6 +94,14 @@ public static class GameSchemaCommand
     };
 
     public const string TriggerDataFile = @"war3.w3mod:ui\triggerdata.txt";
+
+    /// <summary>The World Editor data files that state the closed set of values an enumerated field
+    /// type may take, and the human names for them. One section per field type, named by the
+    /// <c>type</c> column of a metadata SLK.</summary>
+    public static readonly IReadOnlyList<string> EnumFiles = new[]
+    {
+        @"war3.w3mod:ui\uniteditordata.txt",
+    };
 
     public static readonly IReadOnlyList<string> ScriptFiles = new[]
     {
@@ -160,10 +174,24 @@ public static class GameSchemaCommand
             if (Read(name) is { } bytes)
                 script[ShortName(name)] = JassApiIndex.Parse(Encoding.UTF8.GetString(bytes));
 
+        // The enumerated field option sets. This is the closed set of legal values for a field
+        // type, and the only place the human names live, so a picker can be built from the schema
+        // alone rather than from a live install.
+        var enums = new SortedDictionary<string, IReadOnlyList<SchemaEnumValue>>(StringComparer.OrdinalIgnoreCase);
+        var enumData = EditorEnumData.FromByteSources(strings, EnumFiles.Select(Read).ToArray());
+        foreach (var type in enumData.Types.OrderBy(t => t, StringComparer.Ordinal))
+        {
+            if (!enumData.TryGet(type, out var options) || options.Count == 0) continue;
+            enums[type] = options
+                .Select(o => new SchemaEnumValue(o.Value, o.DisplayName.Length > 0 ? o.DisplayName : null))
+                .ToList();
+        }
+
         return new GameSchema(SchemaVersion, build, source,
             inputs.OrderBy(i => i.Name, StringComparer.Ordinal).ToList(),
             missing.OrderBy(m => m, StringComparer.Ordinal).ToList(),
-            objects.Count > 0 ? objects : null, triggers, script.Count > 0 ? script : null);
+            objects.Count > 0 ? objects : null, triggers, script.Count > 0 ? script : null,
+            enums.Count > 0 ? enums : null);
     }
 
     /// <summary>
@@ -192,11 +220,12 @@ public static class GameSchemaCommand
         return new SchemaWriteResult(Path.GetFullPath(outDir), schema.Build, schema.Source, Sections(schema),
             schema.Objects?.Count ?? 0, schema.Objects?.Values.Sum(f => f.Count) ?? 0,
             schema.Triggers?.Functions.Count ?? 0, schema.Script?.Count ?? 0,
-            schema.Script?.Values.Sum(a => a.Natives.Count) ?? 0, schema.Missing);
+            schema.Script?.Values.Sum(a => a.Natives.Count) ?? 0, schema.Enums?.Count ?? 0, schema.Missing);
     }
 
     public static IReadOnlyList<string> Sections(GameSchema s) =>
-        new[] { s.Objects is null ? null : "objects", s.Triggers is null ? null : "triggers", s.Script is null ? null : "script" }
+        new[] { s.Objects is null ? null : "objects", s.Triggers is null ? null : "triggers",
+                s.Script is null ? null : "script", s.Enums is null ? null : "enums" }
             .Where(x => x is not null).Select(x => x!).ToList();
 
     /// <summary>Writes manifest.json plus one file per section the schema has. Absent sections write
@@ -210,10 +239,11 @@ public static class GameSchemaCommand
             if (value is null) { if (File.Exists(path)) File.Delete(path); return; }
             File.WriteAllText(path, JsonSerializer.Serialize(value, Json) + "\n", new UTF8Encoding(false));
         }
-        Write("manifest.json", schema with { Objects = null, Triggers = null, Script = null });
+        Write("manifest.json", schema with { Objects = null, Triggers = null, Script = null, Enums = null });
         Write("objects.json", schema.Objects);
         Write("triggers.json", schema.Triggers);
         Write("script.json", schema.Script);
+        Write("enums.json", schema.Enums);
     }
 
     public static GameSchema Load(string dir)
@@ -229,6 +259,8 @@ public static class GameSchemaCommand
                 .ToDictionary(kv => kv.Key, kv => (IReadOnlyList<SchemaField>)kv.Value),
             Triggers = Read<SchemaTriggers>("triggers.json"),
             Script = Read<Dictionary<string, JassApi>>("script.json"),
+            Enums = Read<Dictionary<string, List<SchemaEnumValue>>>("enums.json")?
+                .ToDictionary(kv => kv.Key, kv => (IReadOnlyList<SchemaEnumValue>)kv.Value),
         };
     }
 
@@ -244,8 +276,9 @@ public static class GameSchemaCommand
             case "objects": break;
             case "triggers": break;
             case "script": break;
+            case "enums": break;
             default: throw new ArgumentException(
-                $"invalid section '{section}' for schema-diff, expected objects, triggers or script");
+                $"invalid section '{section}' for schema-diff, expected objects, triggers, script or enums");
         }
         var filtered = new SchemaDiffResult(
             r.BuildA, r.BuildB,
@@ -317,6 +350,17 @@ public static class GameSchemaCommand
                     (p, q) => Changed(("signature", Signature(p.Parameters, p.Returns), Signature(q.Parameters, q.Returns))));
             }
 
+        if (a.Enums is null || b.Enums is null) notCompared.Add(Missing("enums", a.Enums is null, b.Enums is null, a, b));
+        else
+            foreach (var type in a.Enums.Keys.Union(b.Enums.Keys).OrderBy(k => k, StringComparer.Ordinal))
+            {
+                if (!a.Enums.ContainsKey(type) || !b.Enums.ContainsKey(type))
+                { notCompared.Add($"enums {type}, only in {(a.Enums.ContainsKey(type) ? a.Build : b.Build)}"); continue; }
+                Compare("enums", type, a.Enums[type], b.Enums[type], v => v.Value,
+                    (p, q) => p.DisplayName == q.DisplayName ? null
+                        : $"name {p.DisplayName ?? "(none)"} -> {q.DisplayName ?? "(none)"}");
+            }
+
         return new SchemaDiffResult(a.Build, b.Build, changes, notCompared);
     }
 
@@ -347,15 +391,31 @@ public static class GameSchemaCommand
         static string Show(string? s) => string.IsNullOrEmpty(s) ? "(none)" : s;
     }
 
+    /// <summary>The environment variable that points the toolkit at a schemas directory.</summary>
+    public const string SchemasDirEnvVar = "WC3_SCHEMAS_DIR";
+
     /// <summary>
-    /// Resolve the schemas directory. An explicit path that exists wins, then a <c>schemas</c>
-    /// folder beside the executable, then a walk up from the base directory to a <c>data/schemas</c>
-    /// folder. Throws <see cref="DirectoryNotFoundException"/> when none is found.
+    /// Resolve the schemas directory. An explicit path that exists wins, then the
+    /// <see cref="SchemasDirEnvVar"/> environment variable when it names an existing directory, then
+    /// a <c>schemas</c> folder beside the executable, then a walk up from the base directory to a
+    /// <c>data/schemas</c> folder. Throws <see cref="DirectoryNotFoundException"/> when none is
+    /// found.
     /// </summary>
-    public static string ResolveSchemasDir(string? schemasDir)
+    public static string ResolveSchemasDir(string? schemasDir) =>
+        ResolveSchemasDir(schemasDir, Environment.GetEnvironmentVariable(SchemasDirEnvVar));
+
+    /// <summary>
+    /// The resolution above with the environment value supplied by the caller, so the precedence is
+    /// testable without mutating process environment state. A value that does not name a directory
+    /// is ignored, exactly as an explicit path that does not exist is.
+    /// </summary>
+    internal static string ResolveSchemasDir(string? schemasDir, string? envSchemasDir)
     {
         if (schemasDir is not null && Directory.Exists(schemasDir))
             return Path.GetFullPath(schemasDir);
+
+        if (!string.IsNullOrWhiteSpace(envSchemasDir) && Directory.Exists(envSchemasDir))
+            return Path.GetFullPath(envSchemasDir!);
 
         string baseDir = AppContext.BaseDirectory;
         string candidate1 = Path.Combine(baseDir, "schemas");
@@ -370,8 +430,9 @@ public static class GameSchemaCommand
         }
 
         throw new DirectoryNotFoundException(
-            "could not find schemas directory. Pass --schemas <dir>, or place schemas under "
-            + "<AppContext.BaseDirectory>/schemas or walk up from the base directory to data/schemas.");
+            "could not find schemas directory. Pass --schemas <dir>, set " + SchemasDirEnvVar
+            + ", place schemas under <AppContext.BaseDirectory>/schemas, or walk up from the base "
+            + "directory to data/schemas.");
     }
 
     /// <summary>
@@ -396,6 +457,7 @@ public static class GameSchemaCommand
                 schema.Triggers?.Functions.Count ?? 0,
                 BuildNativesDict(schema),
                 BuildFunctionsDict(schema),
+                schema.Enums?.Count ?? 0,
                 schema.Missing));
         }
         entries.Sort((a, b) => Gbn.Compare(Gbn.Parse(a.Build), Gbn.Parse(b.Build)));

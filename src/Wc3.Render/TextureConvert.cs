@@ -7,6 +7,7 @@ using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using War3Net.Drawing.Blp;
 using Wc3.Modeling;
 
@@ -42,6 +43,59 @@ public static class TextureConvert
         ArgumentNullException.ThrowIfNull(data);
         using var image = LoadRgba(data, fromExt);
         return Save(image, toExt);
+    }
+
+    /// <summary>
+    /// Converts and shrinks in one step. When the source is larger than <paramref name="maxDimension"/>
+    /// on either side, it is scaled down to fit, preserving aspect ratio, then saved. This is the
+    /// texture half of making a model compact, since a WC3 texture is usually far larger than the
+    /// engine needs and a smaller power-of-two size keeps it valid.
+    /// </summary>
+    public static byte[] ConvertScaled(byte[] data, string fromExt, string toExt, int maxDimension)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        using var image = LoadRgba(data, fromExt);
+        if (maxDimension > 0 && (image.Width > maxDimension || image.Height > maxDimension))
+        {
+            int w = image.Width >= image.Height
+                ? maxDimension
+                : Math.Max(1, (int)Math.Round(image.Width * (double)maxDimension / image.Height));
+            int h = image.Height >= image.Width
+                ? maxDimension
+                : Math.Max(1, (int)Math.Round(image.Height * (double)maxDimension / image.Width));
+            image.Mutate(x => x.Resize(w, h));
+        }
+        return Save(image, toExt);
+    }
+
+    /// <summary>The pixel dimensions of a texture, decoded without re-encoding.</summary>
+    public static (int Width, int Height) Dimensions(byte[] data, string fromExt)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        using var image = LoadRgba(data, fromExt);
+        return (image.Width, image.Height);
+    }
+
+    /// <summary>
+    /// Decodes any supported source to raw RGBA8, for a caller that needs the pixels rather than a
+    /// re-encoded file (an atlas packer, most of all). The same decoder backs every other method, so
+    /// .blp and .dds are handled alongside the standard formats.
+    /// </summary>
+    public static TextureImage DecodeRgba(byte[] data, string fromExt)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        using var image = LoadRgba(data, fromExt);
+        var rgba = new byte[image.Width * image.Height * 4];
+        image.CopyPixelDataTo(rgba);
+        return new TextureImage(image.Width, image.Height, rgba);
+    }
+
+    /// <summary>Encodes a raw RGBA8 buffer to the named target format, the inverse of DecodeRgba.</summary>
+    public static byte[] EncodeRgba(TextureImage image, string toExt)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+        using var img = Image.LoadPixelData<Rgba32>(image.Rgba, image.Width, image.Height);
+        return Save(img, toExt);
     }
 
     private static Image<Rgba32> LoadRgba(byte[] data, string fromExt)

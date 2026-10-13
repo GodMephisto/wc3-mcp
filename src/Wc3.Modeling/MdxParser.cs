@@ -323,7 +323,7 @@ internal static class MdxParser
                 if (layerCount > 0 && lp + 16 <= matEnd)
                 {
                     filter = ToFilterMode(ReadU32(b, lp + 4));
-                    texId = checked((int)ReadU32(b, lp + 12));
+                    texId = unchecked((int)ReadU32(b, lp + 12)); // 0xFFFFFFFF means the layer names no texture
                 }
             }
             materials.Add((texId, filter));

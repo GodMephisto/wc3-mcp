@@ -20,6 +20,9 @@
 
   <ItemGroup>
     <PackageReference Include="War3Net.CodeAnalysis.Decompilers" Version="6.1.1" />
+    <!-- Pinned to match src/Wc3.Studio, do NOT bump. 2.2.x is the version the Studio audio player
+         already ships with, and the sound optimiser decodes through the same NAudio. -->
+    <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 
 </Project>

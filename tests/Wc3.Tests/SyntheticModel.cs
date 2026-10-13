@@ -27,7 +27,8 @@ internal static class SyntheticModel
         float[]? vertices = null,
         string texturePath = @"Textures\Test.blp",
         (string Name, int Start, int End)[]? sequences = null,
-        bool includeBone = false)
+        bool includeBone = false,
+        (string Tag, byte[] Payload)[]? extraChunks = null)
     {
         var verts = vertices ?? new float[] { 0, 0, 0, 1, 0, 0, 0, 1, 0 };
         int vertexCount = verts.Length / 3;
@@ -147,9 +148,119 @@ internal static class SyntheticModel
         w.Write((uint)(geoset.Length + 4));
         w.Write((uint)(geoset.Length + 4));
         w.Write(geoset);
+
+        // Extra chunks written verbatim, so a test can add an effect tag (PREM, PRE2, RIBB, CORN)
+        // that the parser skips by size and the audit counts by tag.
+        if (extraChunks is not null)
+            foreach (var (tag, payload) in extraChunks)
+            {
+                w.Write(Encoding.ASCII.GetBytes(tag));
+                w.Write((uint)payload.Length);
+                w.Write(payload);
+            }
         w.Flush();
         return ms.ToArray();
     }
+
+    /// <summary>
+    /// A v800 MDX with one geoset holding an n by n grid, 2*(n-1)^2 triangles, enough geometry for a
+    /// decimator to reduce. The vertices lie in the z=0 plane and the texture, material and UV blocks
+    /// are minimal, so the grid is the whole payload. A degenerate collinear triangle is appended when
+    /// <paramref name="degenerate"/> is set, for a test that a zero-area face is compacted away.
+    /// </summary>
+    public static byte[] GridMdx(int n, bool degenerate = false)
+    {
+        var verts = new List<float>();
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++) { verts.Add(x); verts.Add(y); verts.Add(0); }
+        int V(int x, int y) => y * n + x;
+        var idx = new List<int>();
+        for (int y = 0; y < n - 1; y++)
+            for (int x = 0; x < n - 1; x++)
+            {
+                idx.Add(V(x, y)); idx.Add(V(x + 1, y)); idx.Add(V(x, y + 1));
+                idx.Add(V(x + 1, y)); idx.Add(V(x + 1, y + 1)); idx.Add(V(x, y + 1));
+            }
+        if (degenerate) { idx.Add(V(0, 0)); idx.Add(V(1, 0)); idx.Add(V(2, 0)); } // collinear, zero area
+        int count = verts.Count / 3;
+
+        using var gs = new MemoryStream();
+        using var gw = new BinaryWriter(gs);
+        gw.Write("VRTX"u8); gw.Write((uint)count); foreach (var f in verts) gw.Write(f);
+        gw.Write("NRMS"u8); gw.Write((uint)count);
+        for (int i = 0; i < count; i++) { gw.Write(0f); gw.Write(0f); gw.Write(1f); }
+        gw.Write("PTYP"u8); gw.Write(1u); gw.Write(4u);
+        gw.Write("PCNT"u8); gw.Write(1u); gw.Write((uint)idx.Count);
+        gw.Write("PVTX"u8); gw.Write((uint)idx.Count); foreach (var i in idx) gw.Write((ushort)i);
+        gw.Write("GNDX"u8); gw.Write((uint)count); gw.Write(new byte[count]);
+        gw.Write("MTGC"u8); gw.Write(1u); gw.Write(1u);
+        gw.Write("MATS"u8); gw.Write(1u); gw.Write(0u);
+        gw.Write(0u); gw.Write(0u); gw.Write(0u); // materialId, selectionGroup, selectionFlags
+        foreach (var f in new float[] { 2, -1, -1, 0, n, n, 0 }) gw.Write(f); // extent
+        gw.Write(0u); // per-sequence extent count
+        gw.Write("UVAS"u8); gw.Write(1u);
+        gw.Write("UVBS"u8); gw.Write((uint)count);
+        for (int i = 0; i < count; i++) { gw.Write(0f); gw.Write(0f); }
+        gw.Flush();
+        var geoset = gs.ToArray();
+
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+        w.Write("MDLX"u8);
+        w.Write("VERS"u8); w.Write(4u); w.Write(800u);
+        w.Write("GEOS"u8); w.Write((uint)(geoset.Length + 4)); w.Write((uint)(geoset.Length + 4)); w.Write(geoset);
+        w.Flush();
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// One PREM (particle emitter 1) record, its node header only, which is all the emitter reader
+    /// reads. The record is a uint32 record size counted from the record start, then the node, which
+    /// is size prefixed itself, so the record is recordSize, nodeSize, char[80] name, int objectId,
+    /// int parentId, uint32 flags. The objectId sits at byte 88 and the node header ends at byte 4
+    /// plus nodeSize. Particle emitter 1 carries no texture id, only a spawn model path.
+    /// </summary>
+    public static byte[] ParticleEmitter1Record(int objectId, int parentId = -1, string name = "emitter1")
+    {
+        const int nodeSize = 96; // size field plus the 92 byte node header, no transforms
+        const int recordSize = 4 + nodeSize;
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+        w.Write((uint)recordSize);
+        w.Write((uint)nodeSize);
+        WriteFixed(w, name, 80);
+        w.Write((uint)objectId);
+        w.Write(unchecked((uint)parentId));
+        w.Write(0u);
+        return ms.ToArray();
+    }
+
+    /// <summary>
+    /// One PRE2 (particle emitter 2) record. The node header is as for a PREM, and the fixed emitter
+    /// fields follow it, with the texture id at byte 155 past the end of the node header. The fields
+    /// between are left zero, since the emitter reader does not read them.
+    /// </summary>
+    public static byte[] ParticleEmitter2Record(int objectId, int textureId, int parentId = -1, string name = "emitter2")
+    {
+        const int nodeSize = 96;
+        const int nodeEnd = 4 + nodeSize;   // the record offset where the fixed fields begin
+        const int textureOffset = 155;      // the texture id, past the end of the node header
+        const int recordSize = nodeEnd + textureOffset + 4;
+        using var ms = new MemoryStream();
+        using var w = new BinaryWriter(ms);
+        w.Write((uint)recordSize);
+        w.Write((uint)nodeSize);
+        WriteFixed(w, name, 80);
+        w.Write((uint)objectId);
+        w.Write(unchecked((uint)parentId));
+        w.Write(0u);
+        w.Write(new byte[textureOffset]);   // the PRE2 fixed fields up to the texture id
+        w.Write((uint)textureId);
+        return ms.ToArray();
+    }
+
+    /// <summary>A PIVT chunk payload of one zero pivot per node. Only the count is read.</summary>
+    public static byte[] Pivots(int count) => new byte[count * 12];
 
     /// <summary>A small BLP1 texture of one flat colour, encoded by the shared converter.</summary>
     public static byte[] Blp(int width = 32, int height = 32)

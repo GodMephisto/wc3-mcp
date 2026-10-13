@@ -78,6 +78,20 @@ public sealed class McpSmokeGameDataTests : McpSmokeBase
             .Select(s => s.GetString())));
     }
 
+    [Fact, Covers("gamedata_enum")]
+    public async Task Gamedata_enum_reports_the_option_set()
+    {
+        var root = BuildSchemas();
+        var dir = Directory.EnumerateDirectories(root).First();
+        File.WriteAllText(Path.Combine(dir, "enums.json"),
+            "{\"attackType\":[{\"value\":\"normal\",\"displayName\":\"Normal\"}]}");
+        var r = await Call("gamedata_enum", Args(("type", "attackType"), ("schemas_dir", root)));
+        Assert.Equal("attackType", Prop(r, "type").GetString());
+        var entries = Rows(Prop(r, "entries"));
+        Assert.Single(entries);
+        Assert.Equal("normal", Prop(Rows(Prop(entries[0], "values"))[0], "value").GetString());
+    }
+
     [Fact, Covers("gamedata_sources")]
     public async Task Gamedata_sources_reports_a_hash_per_section_file()
     {

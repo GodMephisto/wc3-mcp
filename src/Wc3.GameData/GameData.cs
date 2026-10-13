@@ -32,6 +32,22 @@ public static class GameData
         var dir = GameInstall.Locate(gameDirOverride);
         if (dir is null) { diagnostic = "Warcraft III install not found (pass --game-dir <path>)"; return false; }
         if (ContextCache.TryGetValue(dir, out var cached)) { ctx = cached; return true; }
+        lock (CascGate.Sync)
+        {
+            if (ContextCache.TryGetValue(dir, out cached)) { ctx = cached; return true; }
+            return Build(dir, out ctx, out diagnostic);
+        }
+    }
+
+    /// <summary>
+    /// Builds the context for an install that is not yet cached. Called under
+    /// <see cref="CascGate"/>, which serializes the native open and every read it
+    /// feeds because neither is safe to interleave with a second open (measured
+    /// 2026-10-13, see <see cref="CascGate"/>).
+    /// </summary>
+    private static bool Build(string dir, out GameDataContext? ctx, out string diagnostic)
+    {
+        ctx = null; diagnostic = "";
         if (!CascGameDataSource.TryOpen(dir, out var src, out var err))
         { diagnostic = $"could not open game data at {dir}: {err}"; return false; }
         // The builders copy all bytes into parsed tables, so the source is safe to
@@ -103,10 +119,18 @@ public static class GameData
         store = null; diagnostic = "";
         var dir = GameInstall.Locate(gameDirOverride);
         if (dir is null) { diagnostic = "Warcraft III install not found (pass --game-dir <path>)"; return false; }
+        lock (CascGate.Sync) return BuildUnits(dir, out store, out diagnostic);
+    }
+
+    /// <summary>Builds the unit store for an install, serialized by <see cref="CascGate"/>
+    /// so the native open and the reads it feeds never interleave with a second open.</summary>
+    private static bool BuildUnits(string dir, out BaseUnitStore? store, out string diagnostic)
+    {
+        store = null; diagnostic = "";
         if (!CascGameDataSource.TryOpen(dir, out var src, out var err))
         { diagnostic = $"could not open game data at {dir}: {err}"; return false; }
         // Build copies all SLK bytes into parsed tables, so the source is safe to
-        // dispose as soon as it returns — success or failure.
+        // dispose as soon as it returns, whether the build succeeded or failed.
         try { store = BaseUnitStore.Build(src!); return true; }
         catch (Exception ex) { diagnostic = $"could not read base unit data: {ex.Message}"; return false; }
         finally { src!.Dispose(); }

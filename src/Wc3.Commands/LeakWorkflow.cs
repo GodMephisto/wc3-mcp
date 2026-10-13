@@ -16,12 +16,19 @@ public sealed record LeakDriver(string Function, double? Period, int HotLeaks, d
 /// <summary>One second of a wc3watch session, reduced to what the leak maths needs.</summary>
 public sealed record LeakSample(int Index, DateTime Time, double? Handles, double? MemoryMb);
 
-/// <summary>The measured slopes of one session. A null slope means too few samples to fit.</summary>
+/// <summary>One line of a wc3watch events.csv. Kind is game_start, game_exit, focus_lost,
+/// focus_gained, match_end, gc_probe or gamelog, and Detail is its text. The gc_probe marks a
+/// forced garbage collection, the point analyze.py measures a Lua map's slope from.</summary>
+public sealed record LeakEvent(int Index, DateTime Time, string Kind, string Detail);
+
+/// <summary>The measured slopes of one session. A null slope means too few samples to fit.
+/// Baseline is the forced garbage collection the slopes were measured from, or null when the
+/// session recorded none and the whole span was used.</summary>
 public sealed record SessionSlope(
     string Session, int Samples, string Span,
     double? HandlesPerMin, double? HandleCorrelation,
     double? MemoryPerMin, double? MemoryCorrelation,
-    string? Error);
+    DateTime? Baseline, int Events, string? Error);
 
 /// <summary>
 /// Shared maths for the leak workflow. The static half is ScriptLeaksCommand, the runtime half is a
@@ -34,6 +41,18 @@ public sealed record SessionSlope(
 /// </summary>
 internal static class LeakWorkflow
 {
+    /// <summary>The event kind a recorder writes when a forced garbage collection was marked.</summary>
+    public const string GcProbeKind = "gc_probe";
+
+    /// <summary>The handle-rise window size, matching analyze.py's HANDLE_WINDOW_S.</summary>
+    private const double WindowSeconds = 30.0;
+
+    /// <summary>How far around a rising window an event or game log line still counts as near,
+    /// matching analyze.py's handle_suspects.</summary>
+    private const double NearSeconds = 3.0;
+
+    private const int MaxWindows = 8;
+
     /// <summary>Hot leak candidates grouped by function and handle kind, in read order.</summary>
     public static IReadOnlyList<LeakTarget> Targets(ScriptLeaksResult r) =>
         r.Leaks.Where(l => l.Heat == "hot")
@@ -113,11 +132,56 @@ internal static class LeakWorkflow
         return samples;
     }
 
-    /// <summary>Least-squares slope in units per minute plus the Pearson correlation, over one field.</summary>
-    public static (double? Slope, double? Correlation) Slope(
-        IReadOnlyList<LeakSample> samples, Func<LeakSample, double?> selector)
+    /// <summary>
+    /// Reads events.csv from a session folder. A missing or headerless file is not an error, since
+    /// events are evidence rather than a requirement, so an empty list comes back and the join
+    /// carries on with the samples alone. Returns one LeakEvent per parseable row in file order.
+    /// </summary>
+    public static IReadOnlyList<LeakEvent> ReadEvents(string sessionFolder)
     {
-        var pts = samples.Select(s => (s.Time, V: selector(s))).Where(p => p.V is not null)
+        string path = Path.Combine(sessionFolder, "events.csv");
+        if (!File.Exists(path)) return Array.Empty<LeakEvent>();
+        var lines = File.ReadAllLines(path);
+        if (lines.Length < 2) return Array.Empty<LeakEvent>();
+        var header = SplitCsv(lines[0]);
+        int timeCol = IndexOf(header, "time");
+        int kindCol = IndexOf(header, "kind");
+        int detailCol = IndexOf(header, "detail");
+        if (timeCol < 0 || kindCol < 0) return Array.Empty<LeakEvent>();
+
+        var events = new List<LeakEvent>();
+        for (int i = 1; i < lines.Length; i++)
+        {
+            if (lines[i].Length == 0) continue;
+            var cells = SplitCsv(lines[i]);
+            if (timeCol >= cells.Count || kindCol >= cells.Count) continue;
+            if (!TryParseTime(cells[timeCol], out var t)) continue;
+            string kind = cells[kindCol].Trim();
+            string detail = detailCol >= 0 && detailCol < cells.Count ? cells[detailCol].Trim() : "";
+            events.Add(new LeakEvent(events.Count, t, kind, detail));
+        }
+        return events;
+    }
+
+    /// <summary>The time of the last forced garbage collection in a session, or null. Lua frees
+    /// memory lazily, so the slope is measured from here when a recording marked one, the same rule
+    /// analyze.py's last_gc_probe applies. A null baseline means the whole span is used.</summary>
+    public static DateTime? LastGcProbe(IReadOnlyList<LeakEvent> events)
+    {
+        DateTime? last = null;
+        foreach (var e in events)
+            if (e.Kind == GcProbeKind && (last is null || e.Time > last)) last = e.Time;
+        return last;
+    }
+
+    /// <summary>Least-squares slope in units per minute plus the Pearson correlation, over one field.
+    /// Points before <paramref name="baseline"/> are dropped, so a session that forced a garbage
+    /// collection is measured from that point the way analyze.py measures it.</summary>
+    public static (double? Slope, double? Correlation) Slope(
+        IReadOnlyList<LeakSample> samples, Func<LeakSample, double?> selector, DateTime? baseline = null)
+    {
+        var pts = samples.Where(s => baseline is null || s.Time >= baseline)
+            .Select(s => (s.Time, V: selector(s))).Where(p => p.V is not null)
             .Select(p => (p.Time, V: p.V!.Value)).ToList();
         if (pts.Count < 3) return (null, null);
         var t0 = pts[0].Time;
@@ -133,30 +197,39 @@ internal static class LeakWorkflow
         return (slope, r);
     }
 
-    /// <summary>The two slopes and the span of one session, with a per-session error when unreadable.</summary>
+    /// <summary>The two slopes and the span of one session, with a per-session error when unreadable.
+    /// When the session marked a forced garbage collection the slopes are measured from it, so a Lua
+    /// map's lazy collection does not overstate the leak.</summary>
     public static SessionSlope Summarize(string session)
     {
         var samples = ReadSamples(session, out var error);
         if (error is not null)
-            return new SessionSlope(session, 0, "", null, null, null, null, error);
-        var (hs, hr) = Slope(samples, s => s.Handles);
-        var (ms, mr) = Slope(samples, s => s.MemoryMb);
+            return new SessionSlope(session, 0, "", null, null, null, null, null, 0, error);
+        var events = ReadEvents(session);
+        var baseline = LastGcProbe(events);
+        var (hs, hr) = Slope(samples, s => s.Handles, baseline);
+        var (ms, mr) = Slope(samples, s => s.MemoryMb, baseline);
         string span = samples.Count == 0 ? ""
             : $"{samples[0].Time:HH:mm:ss} to {samples[^1].Time:HH:mm:ss}";
-        return new SessionSlope(session, samples.Count, span, hs, hr, ms, mr, null);
+        return new SessionSlope(session, samples.Count, span, hs, hr, ms, mr, baseline, events.Count, null);
     }
 
     /// <summary>
-    /// Segments a session into fixed windows and reports the ones whose handle count rose, each with
-    /// the top-ranked periodic driver as the likely cause. This localizes a rising slope in time; the
-    /// driver is from the static list and is a candidate, not a proven attribution.
+    /// Segments a session into fixed windows and reports the ones whose handle count rose. Each
+    /// window carries the periodic driver whose predicted handle rate is nearest the measured rise
+    /// and the session events or game log lines within three seconds of it, the evidence that ties
+    /// the rise to something that actually happened. Points before <paramref name="baseline"/> are
+    /// dropped first, the same baseline the slopes use. The driver is from the static list and is a
+    /// candidate, not a proven attribution.
     /// </summary>
     public static IReadOnlyList<LeakWindow> RisingWindows(
-        IReadOnlyList<LeakSample> samples, IReadOnlyList<LeakDriver> drivers, double windowSeconds = 30.0)
+        IReadOnlyList<LeakSample> samples, IReadOnlyList<LeakDriver> drivers,
+        IReadOnlyList<LeakEvent> events, DateTime? baseline = null, double windowSeconds = WindowSeconds)
     {
-        var withHandles = samples.Where(s => s.Handles is not null).ToList();
+        var withHandles = samples
+            .Where(s => s.Handles is not null && (baseline is null || s.Time >= baseline))
+            .ToList();
         if (withHandles.Count < 2) return Array.Empty<LeakWindow>();
-        string? top = drivers.Count > 0 ? drivers[0].Function : null;
         var t0 = withHandles[0].Time;
         var windows = new List<LeakWindow>();
         foreach (var bucket in withHandles.GroupBy(s => (int)((s.Time - t0).TotalSeconds / windowSeconds)))
@@ -167,12 +240,45 @@ internal static class LeakWorkflow
             if (minutes <= 0) continue;
             double rate = (ordered[^1].Handles!.Value - ordered[0].Handles!.Value) / minutes;
             if (rate <= 0) continue;
+            string? driver = drivers.Count == 0 ? null
+                : drivers.OrderBy(d => Math.Abs(d.PredictedPerMin - rate)).First().Function;
+            var lo = ordered[0].Time.AddSeconds(-NearSeconds);
+            var hi = ordered[^1].Time.AddSeconds(NearSeconds);
             windows.Add(new LeakWindow(
                 ordered[0].Time.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
                 ordered[^1].Time.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
-                ordered.Count, rate, top));
+                ordered.Count, rate, driver, NearText(lo, hi, events)));
         }
-        return windows.OrderByDescending(w => w.HandlesPerMin).Take(8).ToList();
+        return windows.OrderByDescending(w => w.HandlesPerMin).Take(MaxWindows).ToList();
+    }
+
+    /// <summary>The session events and game log lines within a window, as one line, matching the
+    /// evidence analyze.py prints beside a handle-growth window. An empty area reads as such.</summary>
+    private static string NearText(DateTime lo, DateTime hi, IReadOnlyList<LeakEvent> events)
+    {
+        var parts = new List<string>();
+        var logs = new List<string>();
+        foreach (var e in events)
+        {
+            if (e.Time < lo || e.Time > hi) continue;
+            if (e.Kind == "gamelog") { if (e.Detail.Length > 0) logs.Add(e.Detail); }
+            else parts.Add($"{e.Kind} {e.Time:HH:mm:ss}");
+        }
+        var top = logs.GroupBy(NormalizeLog, StringComparer.Ordinal)
+            .Select(g => (Message: g.Key, Count: g.Count()))
+            .OrderByDescending(x => x.Count).ThenBy(x => x.Message, StringComparer.Ordinal).Take(3);
+        parts.AddRange(top.Select(x => $"{x.Count} x {x.Message}"));
+        return parts.Count == 0 ? "no event nearby" : string.Join(", ", parts);
+    }
+
+    /// <summary>A log line with its digits replaced by N, so repeated lines of the same shape group,
+    /// matching analyze.py's norm_log. Truncated the same way analyze.py truncates.</summary>
+    private static string NormalizeLog(string message)
+    {
+        var sb = new StringBuilder(message.Length);
+        foreach (char c in message) sb.Append(char.IsDigit(c) ? 'N' : c);
+        string s = sb.ToString();
+        return s.Length > 110 ? s[..110] : s;
     }
 
     private static int IndexOf(IReadOnlyList<string> header, string name)
@@ -229,5 +335,7 @@ internal static class LeakWorkflow
     }
 }
 
-/// <summary>A stretch of a session where the handle count rose, with the top static candidate.</summary>
-public sealed record LeakWindow(string Start, string End, int Samples, double HandlesPerMin, string? Driver);
+/// <summary>A stretch of a session where the handle count rose, the periodic driver whose predicted
+/// rate is nearest the rise, and the session events or game log lines within three seconds of it.</summary>
+public sealed record LeakWindow(
+    string Start, string End, int Samples, double HandlesPerMin, string? Driver, string Near);

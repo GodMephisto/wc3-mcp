@@ -111,6 +111,46 @@ public class LeakWorkflowTests
             Assert.True(r.Drivers[0].PredictedPerMin > 0);
             Assert.NotEmpty(r.Windows);
             Assert.All(r.Windows, w => Assert.True(w.HandlesPerMin > 0));
+            // A session with no events.csv still joins, on the samples alone.
+            Assert.Null(r.GcProbe);
+            Assert.Equal(0, r.EventsJoined);
+        }
+        finally { Directory.Delete(folder, recursive: true); }
+    }
+
+    [Fact]
+    public void Leak_join_reads_events_and_names_the_candidate_with_runtime_evidence()
+    {
+        var folder = NewSessionWithEvents(risePerSecond: 5.0, gcProbeAtSecond: 10,
+            logAtSecond: 35, logText: "trigger ran spawn 12 units");
+        try
+        {
+            var r = LeakJoinCommand.Execute(MapWith(LeakScript), folder);
+            Assert.True(r.Ok, r.Message);
+            Assert.Equal(new DateTime(2026, 1, 1, 12, 0, 10), r.GcProbe);
+            Assert.True(r.EventsJoined >= 2, $"events {r.EventsJoined}");
+            Assert.Equal("HotTick", r.Drivers[0].Function);
+            // The rising window near the game log line carries it, and names the nearest driver.
+            var evidenced = Assert.Single(r.Windows, w => w.Near.Contains("trigger ran spawn"));
+            Assert.Equal("HotTick", evidenced.Driver);
+        }
+        finally { Directory.Delete(folder, recursive: true); }
+    }
+
+    [Fact]
+    public void Leak_join_measures_from_the_gc_probe_not_the_session_start()
+    {
+        // Flat until the forced collection, then a rise. Measured from the start the slope is
+        // diluted by the flat part. Measured from the gc_probe it reflects the rise, 10 handles a
+        // second is 600 a minute, the way analyze.py reports it.
+        var folder = NewSessionWithEvents(risePerSecond: 0.0, gcProbeAtSecond: 20, riseAfterGc: 10.0);
+        try
+        {
+            var r = LeakJoinCommand.Execute(MapWith(LeakScript), folder);
+            Assert.True(r.Ok, r.Message);
+            Assert.Equal(new DateTime(2026, 1, 1, 12, 0, 20), r.GcProbe);
+            Assert.True(r.HandleSlopePerMin > 500,
+                $"slope measured from the baseline was {r.HandleSlopePerMin}, expected about 600");
         }
         finally { Directory.Delete(folder, recursive: true); }
     }
@@ -143,6 +183,59 @@ public class LeakWorkflowTests
             Assert.Equal("HotTick", r.LikelyDisabled);
         }
         finally { Directory.Delete(a, recursive: true); Directory.Delete(b, recursive: true); }
+    }
+
+    [Fact]
+    public void Leak_ab_measures_each_session_from_its_own_gc_probe_and_marks_the_change()
+    {
+        // A leaks after its forced collection, B is flat after its own. The drop is measured
+        // between the two baselines, and the change is attributed to the disabled candidate.
+        string a = NewSessionWithEvents(risePerSecond: 5.0, gcProbeAtSecond: 10,
+            logAtSecond: 30, logText: "spawn");
+        string b = NewSessionWithEvents(risePerSecond: 0.0, gcProbeAtSecond: 10);
+        try
+        {
+            var r = LeakAbCommand.Execute(a, b, MapWith(LeakScript));
+            Assert.True(r.Ok, r.Message);
+            Assert.True(r.HandlesFell, r.Message);
+            Assert.Equal("HotTick", r.LikelyDisabled);
+            Assert.Equal(new DateTime(2026, 1, 1, 12, 0, 10), r.A.Baseline);
+            Assert.Equal(new DateTime(2026, 1, 1, 12, 0, 10), r.B.Baseline);
+        }
+        finally { Directory.Delete(a, recursive: true); Directory.Delete(b, recursive: true); }
+    }
+
+    /// <summary>Writes a wc3watch session with samples.csv and events.csv. Handles rise by
+    /// <paramref name="risePerSecond"/> across the session and by a further
+    /// <paramref name="riseAfterGc"/> a second from the forced collection on. The gc_probe marks the
+    /// baseline and a game log line is placed so a rising window can be tied to it.</summary>
+    private static string NewSessionWithEvents(double risePerSecond, int gcProbeAtSecond,
+        double riseAfterGc = 0.0, int? logAtSecond = null, string logText = "")
+    {
+        string folder = Path.Combine(Path.GetTempPath(), $"wc3leak-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(folder);
+        var start = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Unspecified);
+
+        var samples = new StringBuilder();
+        samples.AppendLine("time,focus,minimized,wc3_priv_mb,wc3_handles");
+        for (int i = 0; i < 40; i++)
+        {
+            double handles = 1000 + risePerSecond * i + Math.Max(0, i - gcProbeAtSecond) * riseAfterGc;
+            double mem = 200 + 0.1 * i;
+            samples.AppendLine($"{start.AddSeconds(i):yyyy-MM-dd HH:mm:ss.fff},1,0,"
+                + $"{mem.ToString("0.0", CultureInfo.InvariantCulture)},"
+                + $"{handles.ToString("0", CultureInfo.InvariantCulture)}");
+        }
+        File.WriteAllText(Path.Combine(folder, "samples.csv"), samples.ToString());
+
+        var events = new StringBuilder();
+        events.AppendLine("time,kind,detail");
+        events.AppendLine($"{start:yyyy-MM-dd HH:mm:ss},game_start,pid 1");
+        events.AppendLine($"{start.AddSeconds(gcProbeAtSecond):yyyy-MM-dd HH:mm:ss},gc_probe,operator pressed G");
+        if (logAtSecond is { } sec)
+            events.AppendLine($"{start.AddSeconds(sec):yyyy-MM-dd HH:mm:ss},gamelog,{logText}");
+        File.WriteAllText(Path.Combine(folder, "events.csv"), events.ToString());
+        return folder;
     }
 
     [Fact]
