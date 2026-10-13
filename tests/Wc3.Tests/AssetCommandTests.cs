@@ -57,6 +57,24 @@ public class AssetCommandTests
         Assert.Empty(r.Unused);
     }
 
+    [Fact]
+    public void Unused_does_not_flag_an_entry_a_skin_override_names()
+    {
+        // war3mapSkin.txt carries asset paths the object data never repeats
+        // (InfoPanelIconArmorSmall=Gem\Armor\Red.blp). Harvesting it keeps a live import from
+        // reading as unused, which would be a false lead to delete a file the map loads.
+        var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3mapSkin.txt"] = Encoding.UTF8.GetBytes(
+                "[CustomSkin]\nInfoPanelIconArmorSmall=war3mapImported\\SkinIcon.blp\n"),
+            [@"war3mapImported\SkinIcon.blp"] = new byte[] { 1, 2, 3 },
+        }));
+
+        var r = AssetUnusedCommand.Execute(doc);
+
+        Assert.Empty(r.Unused);
+    }
+
     // ---- asset duplicates ----------------------------------------------------
 
     [Fact]

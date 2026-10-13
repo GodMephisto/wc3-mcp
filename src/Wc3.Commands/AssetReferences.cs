@@ -47,6 +47,7 @@ internal static class AssetReferences
         ArgumentNullException.ThrowIfNull(doc);
         var set = new HashSet<string>(StringComparer.Ordinal);
         foreach (var value in ObjectFieldValues(doc)) Add(value);
+        foreach (var value in OverrideFileValues(doc)) Add(value);
         if (ScriptEntry(doc) is { } script)
             foreach (var literal in AssetPathCandidates.NamedInScript(ScriptText.GetString(script.CurrentBytes)))
                 Add(literal);
@@ -68,6 +69,34 @@ internal static class AssetReferences
             foreach (var entry in ObjectKinds.MergedEntries(doc, ObjectKinds.Info(kind)))
                 foreach (var mod in entry.Mods)
                     yield return mod.Value;
+    }
+
+    /// <summary>The map-local Reforged override files, whose values are asset paths.</summary>
+    private static readonly string[] OverrideFiles = { "war3mapSkin.txt", "war3mapMisc.txt" };
+
+    /// <summary>
+    /// Every value in the map-local override files, the right-hand side of each key=value, split
+    /// on commas. war3mapSkin.txt alone names icons, models and sounds the object data never
+    /// repeats (InfoPanelIconArmorSmall=Gem\Armor\Red.blp), so a file it names is used even when no
+    /// object field and no script literal names it. Harvesting it keeps asset_unused from flagging
+    /// a skin-referenced import as unused, which would be a false lead to delete a live file.
+    /// </summary>
+    public static IEnumerable<string> OverrideFileValues(MapDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        foreach (var name in OverrideFiles)
+        {
+            if (doc.GetFile(name) is not { CurrentBytes.Length: > 0 } entry) continue;
+            foreach (var raw in ScriptText.GetString(entry.CurrentBytes).Split('\n'))
+            {
+                var line = raw.Trim();
+                if (line.Length == 0 || line[0] is '[' or '/' or ';') continue;
+                int eq = line.IndexOf('=');
+                if (eq <= 0) continue;
+                foreach (var token in line[(eq + 1)..].Split(',', StringSplitOptions.TrimEntries))
+                    if (token.Length > 0) yield return token;
+            }
+        }
     }
 
     /// <summary>The map's script entry, JASS first then Lua, at the root or under scripts\.</summary>
