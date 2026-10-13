@@ -54,6 +54,9 @@ public static class ScriptSemanticDiffCommand
 
         var byNameA = FirstByName(funcsA);
         var byNameB = FirstByName(funcsB);
+        // Lua chunk-level locals, so a pure rename of one is normalized away too.
+        var chunkLocalsA = ScriptAnalysis.ChunkLocalMap(sourceA, luaA);
+        var chunkLocalsB = ScriptAnalysis.ChunkLocalMap(sourceB, luaB);
 
         var changes = new List<SemanticDiffLine>();
         var handled = new HashSet<string>(StringComparer.Ordinal);
@@ -63,8 +66,8 @@ public static class ScriptSemanticDiffCommand
             if (!byNameB.TryGetValue(fA.Name, out var fB)) continue;
             handled.Add(fA.Name);
 
-            var ca = ScriptAnalysis.CanonicalLines(sourceA, startsA, fA, luaA, dropSignature: false);
-            var cb = ScriptAnalysis.CanonicalLines(sourceB, startsB, fB, luaB, dropSignature: false);
+            var ca = ScriptAnalysis.CanonicalLines(sourceA, startsA, fA, luaA, dropSignature: false, chunkLocalsA);
+            var cb = ScriptAnalysis.CanonicalLines(sourceB, startsB, fB, luaB, dropSignature: false, chunkLocalsB);
             int max = Math.Max(ca.Length, cb.Length);
             for (int i = 0; i < max; i++)
             {

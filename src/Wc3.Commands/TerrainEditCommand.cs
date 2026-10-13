@@ -54,6 +54,13 @@ public static class TerrainEditCommand
     /// ceiling. War3Net throws on serialize past it.</summary>
     public const int MaxTextureVariation = 15;
 
+    /// <summary>The cliff-texture value that means "no cliff". Every uncliffed corner carries it,
+    /// so it is the field's sentinel, not an index into the declared cliff tile list, and a reader
+    /// that compares it against the tile count wrongly calls most of a healthy map out of range.
+    /// Only meaningful while the map declares fewer than sixteen cliff tiles, which is why a value
+    /// this high is a sentinel rather than an index.</summary>
+    public const int CliffTextureNone = 0xF;
+
     /// <summary>Clamps a ground height to the storable range and quantizes it to the 1/512
     /// grid, so a value read back equals what a save/load preserves. The brush paths call
     /// this before writing a tile: the field is a 16-bit ushort (raw = height*512 + 8192),

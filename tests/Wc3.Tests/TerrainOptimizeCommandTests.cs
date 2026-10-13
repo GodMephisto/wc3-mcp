@@ -90,6 +90,34 @@ public sealed class TerrainOptimizeCommandTests
     }
 
     [Fact]
+    public void The_no_cliff_sentinel_is_not_treated_as_a_dangling_index()
+    {
+        // Every uncliffed corner carries cliff texture 0xF, which is above any real map's declared
+        // cliff count (2 to 4). Treating it as an index made the pass refuse every real map with a
+        // "cliff texture index out of range" message and compact nothing.
+        var doc = Doc();
+        var env = Env(doc);
+        var cliffs = Enum.GetValues<CliffType>();
+        env.CliffTypes.Clear();
+        env.CliffTypes.Add(cliffs[0]);
+        env.CliffTypes.Add(cliffs[1]);
+        env.CliffTypes.Add(cliffs[2]);
+
+        var tiles = env.TerrainTiles;
+        foreach (var t in tiles) t.CliffTexture = TerrainEditCommand.CliffTextureNone;
+        tiles[3].CliffTexture = 2;   // uses the third declared cliff
+        tiles[4].CliffTexture = 0;   // and the first, leaving index 1 unused
+
+        var r = TerrainOptimizeCommand.Execute(doc, "synth.w3x");
+
+        Assert.True(r.Ok, r.Message);
+        Assert.Equal(2, r.CliffTypesAfter);
+        Assert.Equal(TerrainEditCommand.CliffTextureNone, tiles[0].CliffTexture); // sentinel untouched
+        Assert.Equal(1, tiles[3].CliffTexture);                                   // remapped down
+        Assert.Equal(0, tiles[4].CliffTexture);
+    }
+
+    [Fact]
     public void A_map_that_uses_every_declared_tile_is_left_unchanged()
     {
         var doc = Doc();

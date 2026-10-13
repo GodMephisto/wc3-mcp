@@ -510,23 +510,19 @@ public static class TargetCompatCommand
 
             foreach (string token in tokens)
             {
-                // Strip trailing non-identifier characters (parentheses, dots) so
-                // ExtraNative matches the schema entry ExtraNative.
-                string name = StripTrailingPunct(token);
-
-                // Strip any bracketed suffix from array access.
-                // udg_Name[16] yields udg_Name.
-                int bracketIdx = name.IndexOf('[');
-                if (bracketIdx > 0)
-                {
-                    name = name[..bracketIdx];
-                }
+                // Take the LEADING identifier run, so "SetUnitX(u," yields SetUnitX and
+                // "udg_Name[16]" yields udg_Name. Trailing-only stripping used to leave the inner
+                // punctuation in place ("SetUnitX(u"), which the undeclared-identifier report then
+                // listed as if it were an identifier.
+                string name = LeadingIdentifier(token);
 
                 // Skip JASS keywords.
                 if (IsKeyword(name)) continue;
 
-                // Skip numeric literals.
-                if (IsNumeric(token)) continue;
+                // Skip numeric literals. Test the STRIPPED token, not the raw one, so a literal
+                // that abuts punctuation (-128.0, or -128.0)) is still recognised and does not
+                // leak into the undeclared-identifier report as "-128.0".
+                if (IsNumeric(name)) continue;
 
                 // Skip empty strings from punctuation-only tokens.
                 if (name.Length == 0) continue;
@@ -612,12 +608,16 @@ public static class TargetCompatCommand
 
     /// <summary>Strip trailing non-identifier characters from a token.
     /// "ExtraNative()" becomes "ExtraNative", "foo.bar" becomes "foo".</summary>
-    private static string StripTrailingPunct(string token)
+    /// <summary>The leading run of identifier characters (letter, digit, underscore) of a token.
+    /// "SetUnitX(u," yields SetUnitX, "udg_Name[16]" yields udg_Name, "-128.0" yields empty. Taking
+    /// the leading run rather than stripping trailing punctuation is what keeps the inner punctuation
+    /// of a call token out of the undeclared-identifier report.</summary>
+    private static string LeadingIdentifier(string token)
     {
-        int i = token.Length - 1;
-        while (i >= 0 && !char.IsLetterOrDigit(token[i]) && token[i] != '_')
-            i--;
-        return i < 0 ? string.Empty : token[..(i + 1)];
+        int i = 0;
+        while (i < token.Length && (char.IsLetterOrDigit(token[i]) || token[i] == '_'))
+            i++;
+        return i == 0 ? string.Empty : token[..i];
     }
 
     /// <summary>JASS keywords that should not be treated as identifiers.</summary>
@@ -823,9 +823,7 @@ public static class TargetCompatCommand
             foreach (string token in tokens)
             {
                 if (IsKeyword(token) || IsNumeric(token)) continue;
-                string name = StripTrailingPunct(token);
-                int bracketIdx = name.IndexOf('[');
-                if (bracketIdx > 0) name = name[..bracketIdx];
+                string name = LeadingIdentifier(token);
                 if (name.Length == 0) continue;
                 if (!declaredInMap.Contains(name))
                     allUsed.Add(name);

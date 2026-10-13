@@ -19,7 +19,12 @@
       <Output TaskParameter="ConsoleOutput" PropertyName="_GitHash" />
     </Exec>
     <PropertyGroup>
-      <_GitHash Condition="'$(_GitHash)' == ''">nogit</_GitHash>
+      <!-- ContinueOnError keeps the build alive when git is absent, but a failing git still prints
+           its message to stdout, which ConsoleToMSBuild captures. Trim, then fall back to nogit
+           unless what is left really looks like a hash, so a source tree without a .git bakes
+           "nogit" rather than "fatal: not a git repository". -->
+      <_GitHash>$(_GitHash.Trim())</_GitHash>
+      <_GitHash Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(_GitHash)', '^[0-9a-f]{7,40}$'))">nogit</_GitHash>
       <_BuildTimeUtc>$([System.DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm"))</_BuildTimeUtc>
     </PropertyGroup>
     <ItemGroup>

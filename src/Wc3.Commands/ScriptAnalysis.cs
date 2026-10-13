@@ -65,14 +65,53 @@ internal static class ScriptAnalysis
     /// otherwise make every function unique.
     /// </summary>
     internal static string[] CanonicalLines(
-        string source, int[] lineStarts, JassFunction f, bool isLua, bool dropSignature)
+        string source, int[] lineStarts, JassFunction f, bool isLua, bool dropSignature,
+        IReadOnlyDictionary<string, string>? chunkLocals = null)
     {
         int start = dropSignature ? f.StartLine + 1 : f.StartLine;
         var slice = ScriptCommand.SliceFunction(source, lineStarts, start, f.EndLine);
         var code = string.Join("\n", CodeLines(slice, isLua));
         var map = LocalMap(code, isLua);
+        // A function-local of the same name shadows a chunk local, so only add the chunk local when
+        // the function did not declare it. Without these, a Lua chunk-level local used inside a
+        // function read as a global and a pure rename of it was reported as a real change.
+        if (chunkLocals is not null)
+            foreach (var (name, token) in chunkLocals)
+                map.TryAdd(name, token);
         if (map.Count > 0) code = RewriteIdentifiers(code, isLua, map).Text;
         return JassLines.Split(code).Select(Normalize).ToArray();
+    }
+
+    /// <summary>A Lua chunk's file-scope locals, in declaration order, mapped to a stable token, so
+    /// a pure rename of one is invisible to the semantic diff exactly as a function-local rename is.
+    /// Empty for JASS, which has no chunk-level locals.</summary>
+    internal static Dictionary<string, string> ChunkLocalMap(string source, bool isLua)
+    {
+        var map = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (!isLua) return map;
+
+        var inFunction = new HashSet<int>();
+        foreach (var f in Functions(source, isLua: true))
+            for (int l = f.StartLine; l <= f.EndLine; l++) inFunction.Add(l);
+
+        var lines = JassLines.Split(source);
+        int i = 0;
+        for (int n = 0; n < lines.Length; n++)
+        {
+            if (inFunction.Contains(n + 1)) continue;
+            var trimmed = lines[n].TrimStart();
+            if (!trimmed.StartsWith("local ", StringComparison.Ordinal)) continue;
+            var rest = trimmed["local ".Length..];
+            if (rest.StartsWith("function", StringComparison.Ordinal)) continue;
+            int eq = rest.IndexOf('=');
+            if (eq >= 0) rest = rest[..eq];
+            foreach (var part in rest.Split(','))
+            {
+                var m = Identifier.Match(part);
+                if (m.Success && !map.ContainsKey(m.Value)) map[m.Value] = "\u0001C" + i++;
+            }
+        }
+        return map;
     }
 
     /// <summary>The whole canonical body joined into one string, for grouping duplicate bodies.</summary>

@@ -95,8 +95,14 @@ public static class ScriptLeaksCommand
     private static readonly Regex SetStmt = new(@"^\s*set\s+(\w+)\s*=\s*(.*)$", RegexOptions.Compiled);
     private static readonly Regex CallStmt = new(@"^\s*call\s+([A-Za-z_]\w*)\s*\(", RegexOptions.Compiled);
     private static readonly Regex ReturnStmt = new(@"^\s*return\b\s*(.*)$", RegexOptions.Compiled);
+    /// <summary>The callback is either an inline "function Name" or a code variable ("GC") assigned
+    /// earlier with "set GC = function Name", which is the form Wurst compiles. Matching only the
+    /// inline form dropped every Wurst periodic timer, so no function was ever classified hot.</summary>
     private static readonly Regex TimerStartPeriodic = new(
-        @"\bTimerStart\s*\(\s*[^,]+,\s*([^,]+?)\s*,\s*true\s*,\s*function\s+(\w+)\s*\)", RegexOptions.Compiled);
+        @"\bTimerStart\s*\(\s*[^,]+,\s*([^,]+?)\s*,\s*true\s*,\s*(?:function\s+)?(\w+)\s*\)", RegexOptions.Compiled);
+    /// <summary>A code variable bound to a function, "set GC = function Tick".</summary>
+    private static readonly Regex CodeAlias = new(
+        @"\bset\s+(\w+)\s*=\s*function\s+(\w+)", RegexOptions.Compiled);
     private static readonly Regex TriggerPeriodic = new(
         @"\bTriggerRegisterTimerEvent(?:Periodic)?\s*\(\s*(\w+)\s*,\s*([^,\)]+?)\s*(?:,\s*true\s*)?\)", RegexOptions.Compiled);
     private static readonly Regex TriggerCallback = new(
@@ -143,6 +149,13 @@ public static class ScriptLeaksCommand
             return reals.TryGetValue(expr, out var r) ? r : null;
         }
 
+        // Code variables bound to a function, so a TimerStart callback named by such a variable
+        // resolves to the function it holds.
+        var codeAliases = new Dictionary<string, string>(StringComparer.Ordinal);
+        for (int i = 0; i < lines.Length; i++)
+            foreach (Match m in CodeAlias.Matches(StripComment(lines[i])))
+                codeAliases[m.Groups[1].Value] = m.Groups[2].Value;
+
         // Call graph. A call edge runs the callee now, a function reference hands it to the
         // engine to run later, which is what makes code repeat.
         var calls = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
@@ -160,7 +173,11 @@ public static class ScriptLeaksCommand
                 foreach (Match r in FunctionRef.Matches(code))
                     if (byName.ContainsKey(r.Groups[1].Value)) { callbacks.Add(r.Groups[1].Value); edges.Add(r.Groups[1].Value); }
                 foreach (Match t in TimerStartPeriodic.Matches(code))
-                    periodic.Add((t.Groups[2].Value, Period(t.Groups[1].Value), i + 1));
+                {
+                    string cb = t.Groups[2].Value;
+                    if (codeAliases.TryGetValue(cb, out var aliased)) cb = aliased;
+                    periodic.Add((cb, Period(t.Groups[1].Value), i + 1));
+                }
                 foreach (Match a in TriggerCallback.Matches(code))
                     (triggerActions.TryGetValue(a.Groups[1].Value, out var l) ? l : triggerActions[a.Groups[1].Value] = new()).Add(a.Groups[2].Value);
             }

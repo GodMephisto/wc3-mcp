@@ -132,7 +132,11 @@ public static class TerrainOptimizeCommand
             }
             if (cliffBefore > 0)
             {
-                if (t.CliffTexture >= cliffBefore) cliffOutOfRange = true;
+                // 0xF means "no cliff" and is not an index, so it is neither dangling nor used.
+                // Treating it as out of range made this refuse every real map, all of whose
+                // uncliffed corners (12429 of 25921 on Gem TD) carry it.
+                if (t.CliffTexture == TerrainEditCommand.CliffTextureNone) { /* sentinel */ }
+                else if (t.CliffTexture >= cliffBefore) cliffOutOfRange = true;
                 else usedCliff[t.CliffTexture] = true;
             }
         }
@@ -169,7 +173,8 @@ public static class TerrainOptimizeCommand
                 int ng = groundRemap[t.Texture];
                 if (ng != t.Texture) { t.Texture = ng; ch = true; }
             }
-            if (cliffBefore > 0)
+            // Skip the sentinel, whose index is outside the remap array and which never moves.
+            if (cliffBefore > 0 && t.CliffTexture != TerrainEditCommand.CliffTextureNone)
             {
                 int nc = cliffRemap[t.CliffTexture];
                 if (nc != t.CliffTexture) { t.CliffTexture = nc; ch = true; }

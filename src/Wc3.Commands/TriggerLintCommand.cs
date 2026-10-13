@@ -8,11 +8,12 @@ namespace Wc3.Commands;
 public sealed record TriggerFinding(string Rule, int TriggerId, string TriggerName, string Detail);
 
 /// <summary>The lint outcome, carrying every finding plus how many triggers were examined and how
-/// many disabled ones were skipped.</summary>
+/// many disabled and custom-text ones were skipped.</summary>
 public sealed record TriggerLintResult(
     IReadOnlyList<TriggerFinding> Findings,
     int TriggersChecked,
     int DisabledSkipped,
+    int CustomTextSkipped,
     string Summary);
 
 /// <summary>
@@ -43,10 +44,11 @@ public static class TriggerLintCommand
         var findings = new List<TriggerFinding>();
         int checkedCount = 0;
         int skipped = 0;
+        int customText = 0;
 
         foreach (var trigger in model.Triggers)
         {
-            if (trigger.IsCustomText) continue;
+            if (trigger.IsCustomText) { customText++; continue; }
             if (!trigger.Enabled) { skipped++; continue; }
             checkedCount++;
 
@@ -70,8 +72,9 @@ public static class TriggerLintCommand
             ? $"{checkedCount} trigger(s) checked, no findings."
             : $"{findings.Count} finding(s) across {checkedCount} trigger(s) checked.";
         if (skipped > 0) summary += $" {skipped} disabled trigger(s) skipped.";
+        if (customText > 0) summary += $" {customText} custom-text trigger(s) skipped.";
 
-        return new TriggerLintResult(findings, checkedCount, skipped, summary);
+        return new TriggerLintResult(findings, checkedCount, skipped, customText, summary);
     }
 
     /// <summary>The distinct event descriptions that appear more than once. Two events count as

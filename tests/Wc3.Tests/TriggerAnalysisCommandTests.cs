@@ -172,11 +172,18 @@ public class TriggerAnalysisCommandTests
 
         var disabled = Gui(0x03000005, "Off", enabled: false);
 
-        var map = Map(Tree(new[] { good, noEvent, duplicate, noAction, disabled }));
+        var script = new TriggerDefinition(TriggerItemType.Script)
+        {
+            Id = 0x03000006, Name = "Custom Script", Description = string.Empty, ParentId = 0x02000001,
+            IsEnabled = true, IsInitiallyOn = true, RunOnMapInit = false,
+        };
+
+        var map = Map(Tree(new[] { good, noEvent, duplicate, noAction, disabled, script }));
         var r = TriggerLintCommand.Lint(map);
 
         Assert.Equal(4, r.TriggersChecked);
         Assert.Equal(1, r.DisabledSkipped);
+        Assert.Equal(1, r.CustomTextSkipped);   // the Script trigger, straight to wct, not linted
         Assert.DoesNotContain(r.Findings, f => f.TriggerName == "Good");
         Assert.Contains(r.Findings, f => f.Rule == TriggerLintCommand.RuleUnreachable && f.TriggerName == "NoEvent");
         Assert.Contains(r.Findings, f => f.Rule == TriggerLintCommand.RuleDuplicateEvent && f.TriggerName == "Duplicate");

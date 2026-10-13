@@ -48,6 +48,27 @@ public class ScriptSemanticDiffTests
         Assert.Contains("bye", one.Text);
     }
 
+    private static MapDocument LuaDoc(string lua) =>
+        MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            ["war3map.lua"] = Encoding.UTF8.GetBytes(lua),
+        }));
+
+    [Fact]
+    public void A_pure_chunk_level_local_rename_is_ignored()
+    {
+        // A Lua file-scope local, renamed, must be normalized away exactly as a function-local
+        // rename is. It used to read as a real change, because the canonicalizer only knew a
+        // function's OWN locals, so the use inside f() looked like a global reference.
+        var a = LuaDoc("local cache = {}\nfunction f()\n    return cache\nend\n");
+        var b = LuaDoc("local store = {}\nfunction f()\n    return store\nend\n");
+
+        var r = ScriptSemanticDiffCommand.Execute(a, b);
+
+        Assert.Equal("lua", r.Language);
+        Assert.Equal(0, r.Changes);
+    }
+
     [Fact]
     public void An_inserted_function_is_reported_whole()
     {

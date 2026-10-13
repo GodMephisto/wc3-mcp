@@ -42,6 +42,27 @@ public class LeakWorkflowTests
     }
 
     [Fact]
+    public void A_periodic_timer_whose_callback_is_a_code_variable_is_joined()
+    {
+        // Wurst compiles a callback as a code variable, "set GC = function HotTick", then
+        // TimerStart(..., true, GC). Matching only the inline "function Name" form dropped it, so a
+        // Wurst map produced no periodic driver and the hot-leak join found nothing to attribute.
+        string script =
+            "function HotTick takes nothing returns nothing\n"
+            + "    call AddSpecialEffect(\"x.mdl\", 0, 0)\n"
+            + "endfunction\n"
+            + "function main takes nothing returns nothing\n"
+            + "    set GC = function HotTick\n"
+            + "    call TimerStart(CreateTimer(), 0.03, true, GC)\n"
+            + "endfunction\n";
+
+        var r = LeakListCommand.Execute(MapWith(script));
+
+        Assert.True(r.Ok, r.Message);
+        Assert.Contains(r.Periodic, p => p.Function == "HotTick" && p.HotLeaks == 1);
+    }
+
+    [Fact]
     public void Leak_harness_jass_names_the_target_and_is_valid_syntax()
     {
         var list = LeakListCommand.Execute(MapWith(LeakScript));

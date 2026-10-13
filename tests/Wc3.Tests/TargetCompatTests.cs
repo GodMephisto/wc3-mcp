@@ -1362,4 +1362,21 @@ public sealed class TargetCompatTests
         Assert.Equal("3.0.0.24268", addedIn);
         Assert.Null(firstSeen);
     }
+
+    [Fact]
+    public void Used_identifiers_reports_the_call_name_not_the_call_token()
+    {
+        // "call SetUnitX(gg_unit_hfoo_0001, 5, 5)" used to yield "SetUnitX(gg_unit_hfoo_0001," as
+        // an undeclared identifier, because only trailing punctuation was stripped. The port
+        // report then listed a call token as if it were a name.
+        var ids = TargetCompatCommand.UsedIdentifiers(
+            "function main takes nothing returns nothing\n"
+            + "    call SetUnitX(gg_unit_hfoo_0001, 5, 5)\n"
+            + "    call udg_Count[7]\n"
+            + "endfunction\n");
+
+        Assert.DoesNotContain(ids, i => i.Name.Contains('(') || i.Name.Contains('['));
+        Assert.Contains(ids, i => i.Name == "SetUnitX");
+        Assert.Contains(ids, i => i.Name == "udg_Count");
+    }
 }

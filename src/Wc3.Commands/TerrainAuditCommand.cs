@@ -193,7 +193,11 @@ public static class TerrainAuditCommand
             signatures.Add(new TileSignature(h, cl, t.Texture, t.CliffTexture, t.Flags));
 
             if (groundTypes > 0 && t.Texture >= groundTypes) groundBad++;
-            if (cliffTypes > 0 && t.CliffTexture >= cliffTypes) cliffBad++;
+            // The 0xF value means "no cliff" and is not an index, so it is not out of range. Without
+            // this every real map reported thousands of out-of-range cliffs, since its uncliffed
+            // corners all carry the sentinel.
+            if (cliffTypes > 0 && t.CliffTexture != TerrainEditCommand.CliffTextureNone
+                && t.CliffTexture >= cliffTypes) cliffBad++;
         }
 
         float mean = tiles.Count > 0 ? (float)(sum / tiles.Count) : 0f;
