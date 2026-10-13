@@ -638,6 +638,12 @@ public static class TargetCompatCommand
             case "debug": case "scope": case "endscope": case "declaration":
             case "variable": case "nothing": case "library": case "requires":
             case "optional": case "initorder": case "onDestroy":
+            // JASS operators and statements the list above never covered, plus the Lua keywords a
+            // vJass or Lua script uses. Without these a plain "and", "set", "elseif" or "end" was
+            // reported as an undeclared identifier in the compat and port reports.
+            case "set": case "elseif": case "and": case "or": case "not": case "this":
+            case "end": case "for": case "while": case "repeat": case "until":
+            case "break": case "in": case "goto": case "nil":
                 return true;
             default:
                 return false;

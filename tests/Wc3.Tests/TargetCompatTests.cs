@@ -1373,10 +1373,15 @@ public sealed class TargetCompatTests
             "function main takes nothing returns nothing\n"
             + "    call SetUnitX(gg_unit_hfoo_0001, 5, 5)\n"
             + "    call udg_Count[7]\n"
+            + "    set udg_Count = udg_Count + 1\n"
+            + "    if udg_Count > 0 and not udg_Done then\n"
+            + "    endif\n"
             + "endfunction\n");
 
         Assert.DoesNotContain(ids, i => i.Name.Contains('(') || i.Name.Contains('['));
         Assert.Contains(ids, i => i.Name == "SetUnitX");
         Assert.Contains(ids, i => i.Name == "udg_Count");
+        // Language keywords are not identifiers, whether the list carried them before or not.
+        Assert.DoesNotContain(ids, i => i.Name is "set" or "and" or "not" or "if" or "then" or "endif");
     }
 }
