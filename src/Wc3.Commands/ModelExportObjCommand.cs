@@ -15,6 +15,6 @@ public static class ModelExportObjCommand
     /// <summary>Parses the model at an internal map path and returns its OBJ text, its MTL text
     /// and the PNG bytes of every texture the map can supply, keyed by the file name the MTL
     /// references. The .mdx/.mdl path swap is handled by the shared model finder.</summary>
-    public static ModelExport Execute(MapDocument doc, string modelInternalPath) =>
-        ConvertCommand.ExportModelToObj(doc, modelInternalPath);
+    public static ModelExport Execute(MapDocument doc, string modelInternalPath, string? mtlName = null) =>
+        ConvertCommand.ExportModelToObj(doc, modelInternalPath, mtlName);
 }

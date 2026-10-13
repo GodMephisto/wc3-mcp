@@ -68,6 +68,25 @@ public class TerrainHeightmapCommandTests
     }
 
     [Fact]
+    public void Import_round_trips_the_very_top_of_the_height_range()
+    {
+        // The top 16-bit sample decodes to 112.0, a hair past the 111.998 ceiling the raw field
+        // holds, so the tile setter used to wrap it to the -16 minimum and the highest exported
+        // height came back inverted. The import clamps to the ceiling now.
+        var src = Blank();
+        Env(src).TerrainTiles[Idx(4, 4)].Height = TerrainEditCommand.MaxGroundHeight;
+
+        var exported = TerrainExportHeightmapCommand.Export(src);
+        Assert.True(exported.Ok, exported.Message);
+
+        var dst = Blank();
+        var imported = TerrainImportHeightmapCommand.Import(dst, exported.Png!);
+        Assert.True(imported.Ok, imported.Message);
+
+        Assert.Equal(TerrainEditCommand.MaxGroundHeight, Env(dst).TerrainTiles[Idx(4, 4)].Height);
+    }
+
+    [Fact]
     public void Import_refuses_a_png_whose_dimensions_do_not_match_the_grid()
     {
         // A heightmap exported from a differently sized map is W+2 per side here.

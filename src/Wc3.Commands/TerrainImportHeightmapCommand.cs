@@ -43,7 +43,12 @@ public static class TerrainImportHeightmapCommand
         int changed = 0;
         for (int i = 0; i < tiles.Count; i++)
         {
-            float height = HeightmapPng.Dequantise(image.Pixels[i]);
+            // Clamp and quantise to the storable ground range. A 16-bit sample decodes to a height
+            // that can sit just past the maximum the 16-bit raw field holds (the top sample is
+            // 112.0 against a 111.998 ceiling), and the tile setter wraps an out-of-range value, so
+            // the highest exported height came back as the -16 minimum. ClampGroundHeight floors it
+            // at the ceiling instead, so export then import is the inverse the class promises.
+            float height = TerrainEditCommand.ClampGroundHeight(HeightmapPng.Dequantise(image.Pixels[i]));
             if (tiles[i].Height != height)
             {
                 tiles[i].Height = height;

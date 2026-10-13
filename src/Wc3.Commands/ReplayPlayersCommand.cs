@@ -15,9 +15,9 @@ public sealed record ReplayPlayersReport(
 
 /// <summary>
 /// The per player table for one recorded game. Name and slot come from the recorded player list,
-/// team and race from the player record when a source carries them (this parser does not, so they
-/// are reported as unknown rather than guessed), and the result and leave time from the leave
-/// events. Read only.
+/// and the result and leave time from the leave events. Team and race are left null because this
+/// parser does not read them from the record, so a null there means not read rather than none.
+/// Read only.
 /// </summary>
 public static class ReplayPlayersCommand
 {

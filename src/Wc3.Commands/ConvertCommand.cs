@@ -35,14 +35,14 @@ public static class ConvertCommand
     /// ReplaceableId/base-game/undecodable textures keep their material but get
     /// no map_Kd. The .mdx/.mdl path swap is handled like everywhere else.
     /// </summary>
-    public static ModelExport ExportModelToObj(MapDocument doc, string modelInternalPath)
+    public static ModelExport ExportModelToObj(MapDocument doc, string modelInternalPath, string? mtlName = null)
     {
         ArgumentNullException.ThrowIfNull(doc);
         var entry = RenderModelCommand.FindModelEntry(doc, modelInternalPath)
             ?? throw new InvalidDataException(
                 $"model '{modelInternalPath}' is not in the map — only map-imported models export");
         var model = ModelParser.Parse(entry.CurrentBytes, entry.FileName!);
-        return Export(model, Path.GetFileNameWithoutExtension(entry.FileName!), doc);
+        return Export(model, Path.GetFileNameWithoutExtension(entry.FileName!), doc, mtlName);
     }
 
     /// <summary>
@@ -50,14 +50,14 @@ public static class ConvertCommand
     /// map to pull textures from, materials reference "&lt;texture basename&gt;.png"
     /// so separately converted textures line up; the Textures dictionary is empty.
     /// </summary>
-    public static ModelExport ExportModelToObj(byte[] modelBytes, string fileName)
+    public static ModelExport ExportModelToObj(byte[] modelBytes, string fileName, string? mtlName = null)
     {
         ArgumentNullException.ThrowIfNull(modelBytes);
         var model = ModelParser.Parse(modelBytes, fileName);
-        return Export(model, Path.GetFileNameWithoutExtension(fileName), doc: null);
+        return Export(model, Path.GetFileNameWithoutExtension(fileName), doc: null, mtlName);
     }
 
-    private static ModelExport Export(Model3D model, string baseName, MapDocument? doc)
+    private static ModelExport Export(Model3D model, string baseName, MapDocument? doc, string? mtlName = null)
     {
         var fileByTexId = new Dictionary<int, string>();
         var textures = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
@@ -92,7 +92,11 @@ public static class ConvertCommand
             }
         }
 
-        var obj = ObjExporter.ToObj(model, baseName + ".mtl");
+        // The OBJ's mtllib must name the MTL the caller will actually write beside it. A caller
+        // that writes the MTL from its own output path (so the pair sits at "<out>.obj" and
+        // "<out>.mtl") passes that stem here; otherwise the OBJ points at "<model basename>.mtl"
+        // and no renderer can find the materials.
+        var obj = ObjExporter.ToObj(model, (mtlName ?? baseName) + ".mtl");
         var mtl = ObjExporter.ToMtl(model, fileByTexId);
         return new ModelExport(obj, mtl, textures);
     }

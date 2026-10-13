@@ -221,9 +221,9 @@ public static class Wc3Tools
         => Run(() => ReplayDiffCommand.Execute(RequireReplay(a), RequireReplay(b)));
 
     [McpServerTool(Name = "replay_players", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("Per-player table for one recorded game (.w3g). Reports name, slot, team, race, "
-        + "result, leave time and leave reason. Team and race are reported as unknown when the "
-        + "record does not carry them. Read-only.")]
+    [Description("Per-player table for one recorded game (.w3g). Reports name, slot, result, "
+        + "leave time and leave reason. Team and race are not carried by this replay parser, so "
+        + "both are omitted rather than guessed. Read-only.")]
     public static ReplayPlayersReport ReplayPlayers(
         [Description("Path to a .w3g recorded game.")] string replay)
         => Run(() => ReplayPlayersCommand.Execute(RequireReplay(replay)));
@@ -522,11 +522,13 @@ public static class Wc3Tools
         => Run(() =>
         {
             var doc = LoadMap(map);
-            var export = ModelExportObjCommand.Execute(doc, model);
             string full = Path.GetFullPath(out_path);
             if (string.Equals(full, Path.GetFullPath(map), StringComparison.OrdinalIgnoreCase))
                 throw new McpException("out_path must not be the map file itself");
             if (Path.GetDirectoryName(full) is { Length: > 0 } dir) Directory.CreateDirectory(dir);
+            // The OBJ's mtllib must name the MTL written beside it, which is named from out_path,
+            // not from the model's own name.
+            var export = ModelExportObjCommand.Execute(doc, model, Path.GetFileNameWithoutExtension(full));
             File.WriteAllText(full, export.Obj);
             var mtlPath = Path.ChangeExtension(full, ".mtl");
             File.WriteAllText(mtlPath, export.Mtl);
@@ -2762,9 +2764,21 @@ public static class Wc3Tools
     /// callers warn instead, which is the same defect one call site further out.</summary>
     private static string ResolveOutPath(string map, string? outPath)
     {
+        string full;
         if (string.IsNullOrWhiteSpace(outPath))
-            throw new McpException("out_path is required");
-        string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(outPath));
+        {
+            // The documented default every mutating tool states, a sibling "<map>.edited.<ext>"
+            // copy so the input is never overwritten. Without it a caller that omits the optional
+            // out_path was refused with "out_path is required" even though the schema and the
+            // description both say it may be omitted.
+            string dir = Path.GetDirectoryName(Path.GetFullPath(map)) ?? ".";
+            full = Path.TrimEndingDirectorySeparator(Path.Combine(dir,
+                Path.GetFileNameWithoutExtension(map) + ".edited" + Path.GetExtension(map)));
+        }
+        else
+        {
+            full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(outPath));
+        }
         string input = Path.TrimEndingDirectorySeparator(Path.GetFullPath(map));
         if (string.Equals(full, input, StringComparison.OrdinalIgnoreCase))
             throw new McpException("out_path must not be the input map file itself");
@@ -2852,7 +2866,8 @@ public static class Wc3Tools
                     installBuild = Wc3.GameData.GameInstall.ReadBuildVersion(installDir);
             }
             catch { /* no game install */ }
-            return new TargetGetResult(result.Build, result.Source.ToString(), installBuild);
+            return new TargetGetResult(result.Build, result.Source.ToString(), installBuild,
+                result.Sections ?? Array.Empty<string>());
         });
 
     [McpServerTool(Name = "target_set", ReadOnly = false, Idempotent = true, OpenWorld = false)]
@@ -3084,7 +3099,7 @@ public static class Wc3Tools
     // ---- target_* result POCOs ------------------------------------------
 
     /// <summary>Target get outcome: the build, its source, and the installed game build.</summary>
-    public sealed record TargetGetResult(string Build, string Source, string? InstallBuild);
+    public sealed record TargetGetResult(string Build, string Source, string? InstallBuild, IReadOnlyList<string> Sections);
 
     /// <summary>Target set outcome: whether it succeeded and the message.</summary>
     public sealed record TargetSetResult(bool Ok, string Message, string? SavedTo);

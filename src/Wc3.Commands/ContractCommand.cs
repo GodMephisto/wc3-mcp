@@ -100,8 +100,15 @@ public static class ContractCommand
     /// <summary>Below this, repeated rawcode calls are a coincidence rather than a roster.</summary>
     private const int MinRegistrationCalls = 8;
 
-    private static readonly Regex RawcodeCall =
-        new(@"\bcall\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*'([^']{4})'", RegexOptions.Compiled);
+    /// <summary>
+    /// A call whose first argument is a rawcode, in either spelling the map can carry. Wurst
+    /// compiled maps write it as a hex literal ($4830334C) where a hand-written map writes a
+    /// quoted one ('H03L'), and matching only the quoted form found no roster at all on GGGA,
+    /// whose 169 RPB_AddHero calls are all hex.
+    /// </summary>
+    private static readonly Regex RawcodeCall = new(
+        @"\bcall\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*(?:'([^']{4})'|\$([0-9A-Fa-f]{8}))",
+        RegexOptions.Compiled);
     /// <summary>
     /// Leading whitespace and "constant" are both allowed, because a real map indents some of its
     /// declarations and this pattern also ENDS a function for the dispatch scan. Anchored at column
@@ -115,6 +122,16 @@ public static class ContractCommand
             RegexOptions.Compiled);
     private static readonly Regex GlobalArray =
         new(@"^\s*(unit|integer|player)\s+array\s+([A-Za-z_][A-Za-z0-9_]*)", RegexOptions.Compiled);
+
+    /// <summary>A four-character rawcode from its 8-digit hex literal, the "$4830334C" form Wurst
+    /// compiles a 'H03L' literal to. The four hex byte pairs are the characters in order.</summary>
+    private static string HexRawcode(string hex)
+    {
+        Span<char> chars = stackalloc char[4];
+        for (int i = 0; i < 4; i++)
+            chars[i] = (char)Convert.ToByte(hex.Substring(i * 2, 2), 16);
+        return new string(chars);
+    }
 
     public static ContractResult Run(MapDocument doc)
     {
@@ -144,9 +161,10 @@ public static class ContractCommand
         {
             if (RawcodeCall.Match(l) is not { Success: true } m) continue;
             var fn = m.Groups[1].Value;
+            string code = m.Groups[2].Success ? m.Groups[2].Value : HexRawcode(m.Groups[3].Value);
             if (!byFunction.TryGetValue(fn, out var list))
                 byFunction[fn] = list = new List<(string, string)>();
-            list.Add((m.Groups[2].Value, l.Trim()));
+            list.Add((code, l.Trim()));
         }
 
         var registries = byFunction

@@ -84,14 +84,20 @@ public static class TargetBuildSettings
     /// </param>
     public static TargetBuildResult Get(string? option = null, string? schemasDir = null)
     {
+        // Every tier carries the resolved build's schema sections, so a caller can see what the
+        // target actually offers without a second call. The description promises this and it used
+        // to be dropped on every path.
+        TargetBuildResult Result(string build, TargetSource source) =>
+            new(build, source, SectionsFor(build, schemasDir));
+
         // Tier 1: explicit option.
         if (option is not null && option.Length > 0)
-            return new TargetBuildResult(option, TargetSource.Option);
+            return Result(option, TargetSource.Option);
 
         // Tier 2: environment variable.
         var envBuild = Environment.GetEnvironmentVariable("WC3_TARGET_BUILD");
         if (envBuild is not null && envBuild.Length > 0)
-            return new TargetBuildResult(envBuild, TargetSource.Environment);
+            return Result(envBuild, TargetSource.Environment);
 
         // Tier 3: settings file.
         try
@@ -104,15 +110,27 @@ public static class TargetBuildSettings
                 if (obj.RootElement.TryGetProperty(SettingsKey, out JsonElement kb)
                     && kb.GetString() is { } stored && stored.Length > 0)
                 {
-                    return new TargetBuildResult(stored, TargetSource.Settings);
+                    return Result(stored, TargetSource.Settings);
                 }
             }
         }
         catch { /* corrupt or unreadable, fall through to default */ }
 
         // Tier 4 derives default from installed game or newest schema.
-        string defaultBuild = ResolveDefaultBuild(schemasDir);
-        return new TargetBuildResult(defaultBuild, TargetSource.Default);
+        return Result(ResolveDefaultBuild(schemasDir), TargetSource.Default);
+    }
+
+    /// <summary>The sections of the named build's schema, or empty when no schema matches it.</summary>
+    private static IReadOnlyList<string> SectionsFor(string build, string? schemasDir)
+    {
+        try
+        {
+            foreach (var info in List(schemasDir))
+                if (string.Equals(info.Build, build, StringComparison.OrdinalIgnoreCase))
+                    return info.Sections;
+        }
+        catch { /* schemas unavailable, sections stay empty */ }
+        return Array.Empty<string>();
     }
 
     /// <summary>

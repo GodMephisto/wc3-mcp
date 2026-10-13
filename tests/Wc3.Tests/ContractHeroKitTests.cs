@@ -128,4 +128,28 @@ public class ContractHeroKitTests
         Assert.Equal(5, registry.Calls.Count(c => c.Line.Contains("\"Stalker\"", StringComparison.Ordinal)));
         Assert.All(registry.Calls, c => Assert.Contains(c.Rawcode, c.Line, StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Registry_reads_a_hex_rawcode_literal()
+    {
+        // The Wurst compiler writes a rawcode as a hex literal ($4830334C for 'H03L') where a
+        // hand-written map writes a quoted one. Matching only the quoted form found no roster at
+        // all on GGGA, whose 169 RPB_AddHero calls are every one of them hex.
+        static string HexOf(string code) => string.Concat(code.Select(c => ((int)c).ToString("X2")));
+        var codes = new[] { "H031", "H032", "H033", "H034", "H035", "H036", "H037", "H038", "H039" };
+        var sb = new StringBuilder();
+        sb.AppendLine("function RPB_AddHero takes integer heroCode, string role, string portrait returns nothing");
+        sb.AppendLine("endfunction");
+        sb.AppendLine("function BuildRoster takes nothing returns nothing");
+        foreach (var code in codes)
+            sb.AppendLine($"    call RPB_AddHero(${HexOf(code)},\"Striker\",\"portrait.blp\")");
+        sb.AppendLine("endfunction");
+        var doc = MapWithScript(sb.ToString());
+
+        var registry = Assert.Single(ContractCommand.Run(doc).Registries);
+        Assert.Equal("RPB_AddHero", registry.Function);
+        Assert.Equal(9, registry.CallCount);
+        Assert.Contains("H031", registry.RegisteredRawcodes);
+        Assert.Contains("H039", registry.RegisteredRawcodes);
+    }
 }

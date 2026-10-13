@@ -200,6 +200,23 @@ public sealed class ModelAssetCommandTests : IDisposable
         Assert.True(export.Textures.ContainsKey("Tri.png"));
     }
 
+    [Fact]
+    public void Export_obj_references_the_mtl_name_the_caller_asks_for()
+    {
+        // A caller names the MTL from its own output path, so the pair sits at "<out>.obj" and
+        // "<out>.mtl", which need not match the model's own name. Without threading the name
+        // through, the OBJ pointed at "<model basename>.mtl" and no renderer found the materials.
+        var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
+        {
+            [@"war3mapImported\Tri.mdx"] = SyntheticModel.BuildMdx(texturePath: @"Textures\Tri.blp"),
+            [@"Textures\Tri.blp"] = SyntheticModel.Blp(),
+        }));
+
+        var export = ModelExportObjCommand.Execute(doc, @"war3mapImported\Tri.mdx", "custom-out");
+
+        Assert.Contains("mtllib custom-out.mtl", export.Obj);
+    }
+
     // ---- fixtures ------------------------------------------------------------
 
     private static UnitObjectData CustomUnit(string rawcode)
