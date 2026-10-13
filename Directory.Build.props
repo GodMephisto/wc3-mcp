@@ -6,7 +6,7 @@
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Wc3.Mcp'">
     <AssemblyName>wc3-mcp</AssemblyName>
     <RootNamespace>Wc3.Mcp</RootNamespace>
-    <Version>0.5.3</Version>
+    <Version>0.5.4</Version>
     <McpProductId>wc3-mcp</McpProductId>
     <McpServerName>wc3</McpServerName>
   </PropertyGroup>
