@@ -64,6 +64,13 @@ public sealed class ModelOptimizeTests
         var model = ModelParser.Parse(output, "grid.mdx");
         Assert.NotEmpty(model.Geosets);
         Assert.True(model.Geosets[0].Indices.Length > 0);
+
+        // UVs must survive decimation and stay sized to the new vertex count. The rewritten UVAS
+        // must keep its per-set UVBS tag; dropping it makes the reader stop at the count and the
+        // model loses every UV, which a textured render then trips over. This pins that contract.
+        var g = model.Geosets[0];
+        Assert.True(g.Uvs.Length > 0, "UVs were dropped by decimation");
+        Assert.Equal(g.Vertices.Length / 3, g.Uvs.Length / 2);
     }
 
     [Fact]

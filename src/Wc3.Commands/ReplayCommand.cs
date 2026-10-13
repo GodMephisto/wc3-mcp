@@ -131,8 +131,11 @@ public static class ReplayCommand
         }
     }
 
+    // CleanMapPath, not the raw g.Map. The settings blob carries a short non-text prefix before the
+    // Maps root, and every sibling report (players, timeline, diff, find-map) trims it. The summary
+    // did not, so it alone emitted the prefix as replacement characters in the map path.
     internal static ReplaySummary Summarize(ReplayGame g) => new(
-        g.File, g.Saved, g.Map, g.Length, g.Build,
+        g.File, g.Saved, CleanMapPath(g.Map), g.Length, g.Build,
         g.Players.Where(p => !string.IsNullOrEmpty(p.Name)).Select(p => p.Name!).ToList(),
         g.Leaves, g.Disconnected, g.Problem);
 

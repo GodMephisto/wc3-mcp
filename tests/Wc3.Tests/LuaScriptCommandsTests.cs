@@ -102,6 +102,26 @@ public class LuaScriptCommandsTests
     }
 
     [Fact]
+    public void Lua_globals_survives_a_file_scope_local()
+    {
+        // The walker had no top-level scope, so the first file-scope `local` indexed an empty scope
+        // list and threw ArgumentOutOfRangeException on every Lua map that declares a local at chunk
+        // level, which is nearly all of them. The tool's whole purpose is Lua maps, so this crashed
+        // on exactly the input it exists for.
+        var lua = string.Join("\n",
+            "local cache = {}",        // 1  file-scope local, previously a crash
+            "count = 0",               // 2  a real global
+            "function main()",         // 3
+            "  count = count + 1",     // 4
+            "end");                    // 5
+
+        var r = LuaGlobalsCommand.Execute(LuaDoc(lua));
+        Assert.True(r.Ok, r.Message);
+        Assert.Contains(r.Globals, g => g.Name == "count");
+        Assert.DoesNotContain(r.Globals, g => g.Name == "cache"); // a local, not a global
+    }
+
+    [Fact]
     public void Lua_globals_does_not_list_a_native_the_map_only_calls()
     {
         var r = LuaGlobalsCommand.Execute(LuaDoc("function main()\n  CreateUnit(nil, 0, 0, 0)\nend\n"));

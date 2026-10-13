@@ -11,7 +11,7 @@ namespace Wc3.Commands;
 public sealed record PlayerInfo(
     int Id,
     string Name,
-    (byte R, byte G, byte B) Color,
+    PlayerColorRgb Color,
     string Race,
     string Controller,
     bool FixedStartPosition);

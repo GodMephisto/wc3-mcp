@@ -73,4 +73,46 @@ public class HeroDefinitionTests
         Assert.Equal(1, HeroDefinition.CurrentSchemaVersion);
         Assert.Equal(HeroDefinition.CurrentSchemaVersion, Sample().SchemaVersion);
     }
+
+    [Fact]
+    public void ReadJson_accepts_camelCase_keys_and_never_leaves_a_collection_null()
+    {
+        // System.Text.Json matches property names case-sensitively by default, so a camelCase
+        // definition (the casing the MCP surface uses) left every collection null and the first
+        // enumeration threw a raw NullReferenceException or ArgumentNullException instead of
+        // reporting a lint finding. ReadJson matches case-insensitively.
+        var json = """
+        {
+          "schemaVersion": 1,
+          "id": "H000",
+          "name": "Probe",
+          "sourceMap": "x.w3x",
+          "exportedFrom": "test",
+          "objects": [],
+          "assets": [],
+          "strings": [],
+          "scriptEntryPoints": [],
+          "globals": [],
+          "requires": [],
+          "reviewNotes": []
+        }
+        """;
+        var d = HeroDefinition.ReadJson(json);
+        Assert.NotNull(d);
+        Assert.Equal("H000", d!.Id);
+        Assert.Empty(d.Objects);
+        Assert.Empty(d.Assets);
+    }
+
+    [Fact]
+    public void ReadJson_coalesces_a_missing_collection_to_empty()
+    {
+        // A definition that omits a collection must read as empty, not null, so lint reports a
+        // missing root object rather than crashing on the first enumeration.
+        var d = HeroDefinition.ReadJson("""{"schemaVersion":1,"id":"H000"}""");
+        Assert.NotNull(d);
+        Assert.Empty(d!.Objects);
+        Assert.Empty(d.Assets);
+        Assert.Empty(d.Globals);
+    }
 }

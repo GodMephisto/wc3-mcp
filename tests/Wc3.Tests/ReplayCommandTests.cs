@@ -28,6 +28,20 @@ public class ReplayCommandTests
     }
 
     [Fact]
+    public void Summarize_trims_the_non_text_prefix_off_the_map_path()
+    {
+        // The settings blob carries a short non-text prefix before the Maps root, because the four
+        // bytes before it are a value and not a separator. Every sibling report trims it through
+        // CleanMapPath; the summary did not, so it alone emitted replacement characters in the map
+        // path. Measured on a real replay: "\uFFFD\u000E\uFFFDMaps/Download/Anime_WOS2_0.32c2.w3x".
+        var g = new ReplayGame("x.w3g", DateTime.UnixEpoch, "\uFFFD\u000E\uFFFDMaps/Download/Foo.w3x",
+            TimeSpan.Zero, 0, Array.Empty<ReplayPlayer>(), Array.Empty<ReplayLeave>(),
+            Array.Empty<ReplayChat>(), false, null);
+        var s = ReplayCommand.Summarize(g);
+        Assert.Equal("Maps/Download/Foo.w3x", s.Map);
+    }
+
+    [Fact]
     public void Public_lobby_with_0x39_metadata_and_a_normal_leave_is_clean()
     {
         var g = ReplayCommand.Parse("x.w3g", Replay(password: "", meta: 0x39, disconnect: false), DateTime.Now);

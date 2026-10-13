@@ -49,7 +49,10 @@ public static class ObjectRenameCommand
             return Refuse(kindName, oldRawcode, newRawcode,
                 $"{kindName} {newRawcode} already exists in the map");
 
-        // Re-key the object's own group, whichever layer holds it.
+        // Re-key the object's own group in EVERY layer that holds it, not just the first. A
+        // Reforged map can split one object across war3map.* and war3mapSkin.*; renaming only the
+        // map layer left the skin group keyed to the old rawcode, so the old code still resolved
+        // and the renamed one was missing the skin half (name, model, icon).
         bool renamed = false;
         foreach (var file in new[] { info.MapFile, info.SkinFile })
         {
@@ -58,7 +61,6 @@ public static class ObjectRenameCommand
             if (!RenameGroup(model, oldId, newId)) continue;
             doc.AddOrReplaceModelFile(file, model);
             renamed = true;
-            break;
         }
         if (!renamed)
             return Refuse(kindName, oldRawcode, newRawcode,

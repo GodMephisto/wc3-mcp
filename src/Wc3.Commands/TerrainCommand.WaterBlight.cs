@@ -138,12 +138,21 @@ public static partial class TerrainCommand
                 bool wasWater = tile.IsWater;
                 float wasHeight = tile.WaterHeight;
 
+                // Clamp to the storable range before writing. The water field keeps 14 bits, so an
+                // out-of-range level wraps modulo 16384 and the tile stores a wrong height while
+                // the brush still reports the tile changed.
                 switch (op)
                 {
-                    case WaterOp.Set:    tile.WaterHeight = amount; tile.IsWater = true;  break;
-                    case WaterOp.Raise:  tile.WaterHeight += amount; tile.IsWater = true; break;
-                    case WaterOp.Lower:  tile.WaterHeight -= amount; tile.IsWater = true; break;
-                    case WaterOp.Remove: tile.IsWater = false;                            break;
+                    case WaterOp.Set:
+                        tile.WaterHeight = TerrainEditCommand.ClampWaterHeight(amount);
+                        tile.IsWater = true; break;
+                    case WaterOp.Raise:
+                        tile.WaterHeight = TerrainEditCommand.ClampWaterHeight(tile.WaterHeight + amount);
+                        tile.IsWater = true; break;
+                    case WaterOp.Lower:
+                        tile.WaterHeight = TerrainEditCommand.ClampWaterHeight(tile.WaterHeight - amount);
+                        tile.IsWater = true; break;
+                    case WaterOp.Remove: tile.IsWater = false; break;
                 }
 
                 if (tile.IsWater != wasWater || tile.WaterHeight != wasHeight) changed++;

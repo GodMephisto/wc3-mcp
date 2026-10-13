@@ -195,25 +195,33 @@ public static class ModelOptimizeCommand
     private static void RemapUvs(MdxGeoset geoset, int[] remap, int newCount)
     {
         var seg = geoset.Segments.FirstOrDefault(s => s.Tag == "UVAS");
-        if (seg is null || seg.Payload.Length < 12) return;
-        // UVAS payload: count(4) then one UVBS per set, tag + count + floats.
+        if (seg is null || seg.Payload.Length < 8) return;
+        // UVAS payload: count(4) then one UVBS per set, each "UVBS" + count + floats. The tag is
+        // part of the set and must be rewritten, not dropped, or the reader stops at the count and
+        // the model loses every UV. Every set is reduced, so all sets stay sized to the new vertex
+        // count (the reader keeps the first, but a stale set would corrupt a multi-UV model).
         var payload = seg.Payload;
-        var outBytes = new List<byte>(payload);
+        int setCount = checked((int)BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(0, 4)));
+        var outBytes = new List<byte>(4 + setCount * (8 + newCount * 8));
+        var head = new byte[4];
+        BinaryPrimitives.WriteUInt32LittleEndian(head, (uint)setCount);
+        outBytes.AddRange(head);
+
         int p = 4;
-        while (p + 8 <= payload.Length)
+        for (int s = 0; s < setCount; s++)
         {
-            if (System.Text.Encoding.ASCII.GetString(payload, p, 4) != "UVBS") break;
+            if (p + 8 > payload.Length
+                || System.Text.Encoding.ASCII.GetString(payload, p, 4) != "UVBS") return; // malformed, leave untouched
             int n = checked((int)BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(p + 4, 4)));
-            if (p + 8 + n * 8 > payload.Length || n != remap.Length) break;
-            var newUv = new byte[4 + newCount * 8];
-            BinaryPrimitives.WriteUInt32LittleEndian(newUv.AsSpan(0, 4), (uint)newCount);
+            if (p + 8 + n * 8 > payload.Length || n != remap.Length) return; // unexpected size, leave untouched
+            var newUv = new byte[8 + newCount * 8];
+            System.Text.Encoding.ASCII.GetBytes("UVBS", newUv.AsSpan(0, 4));
+            BinaryPrimitives.WriteUInt32LittleEndian(newUv.AsSpan(4, 4), (uint)newCount);
             for (int i = 0; i < remap.Length; i++)
                 if (remap[i] >= 0)
-                    Buffer.BlockCopy(payload, p + 8 + i * 8, newUv, 4 + remap[i] * 8, 8);
-            outBytes.RemoveRange(p, 8 + n * 8);
-            outBytes.InsertRange(p, newUv);
-            p += newUv.Length;
-            break; // only the first UV set is reduced, the rest are rare and left as-is
+                    Buffer.BlockCopy(payload, p + 8 + i * 8, newUv, 8 + remap[i] * 8, 8);
+            outBytes.AddRange(newUv);
+            p += 8 + n * 8;
         }
         geoset.Set("UVAS", outBytes.ToArray());
     }

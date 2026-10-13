@@ -45,24 +45,29 @@ public static class ObjectCloneCommand
         if (ObjectKinds.MergedEntries(doc, info).All(e => e.Id != sourceId))
             return new(false, $"{kindName} {rawcode} not found in map");
 
-        var model = ObjectDataWriter.GetOrCreateMapModel(doc, kind);
-        var access = model is null ? null : ObjectDataWriter.AccessFor(model);
-        if (access is null)
-            return new(false, $"map has no parseable {info.MapFile} ({kindName} object data)");
+        // Clone every layer that holds the object. A Reforged map can split one object across
+        // war3map.* and war3mapSkin.* (measured: a unit with 16 fields in the map file and 7 in the
+        // skin file, name, model and icon among the skin half). Cloning only the map layer dropped
+        // that half, so the clone inherited the base unit's name, model and icon rather than the
+        // source's. GetOrCreateModel for an absent skin file returns an empty model whose FindGroup
+        // is null, so nothing is written there unless the source really has a skin group.
+        int copied = 0;
+        bool clonedAnyLayer = false;
+        foreach (var layer in new[] { ObjectLayer.Map, ObjectLayer.Skin })
+        {
+            var model = ObjectDataWriter.GetOrCreateModel(doc, kind, layer);
+            var access = model is null ? null : ObjectDataWriter.AccessFor(model);
+            if (access is null) continue;
+            if (access.FindGroup(sourceId) is not { } sourceGroup) continue;
 
-        // The source group normally lives in war3map.*, but a Reforged map may hold it
-        // in the skin twin instead, so fall back to reading the group from there.
-        var sourceGroup = access.FindGroup(sourceId)
-            ?? (doc.GetFile(info.SkinFile)?.Model is { } skin
-                ? ObjectDataWriter.AccessFor(skin)?.FindGroup(sourceId)
-                : null);
-        if (sourceGroup is null)
+            var clone = access.CreateGroup(BaseIdOf(sourceGroup), newId);
+            copied += CopyModifications(sourceGroup, clone);
+            doc.AddOrReplaceModelFile(ObjectDataWriter.FileFor(kind, layer), model!);
+            clonedAnyLayer = true;
+        }
+        if (!clonedAnyLayer)
             return new(false, $"{kindName} {rawcode} has no field data to clone");
 
-        var clone = access.CreateGroup(BaseIdOf(sourceGroup), newId);
-        int copied = CopyModifications(sourceGroup, clone);
-
-        doc.AddOrReplaceModelFile(info.MapFile, model!);
         return new(true,
             $"cloned {kindName} {rawcode} to {newRawcode} "
             + $"({copied} field value{(copied == 1 ? "" : "s")})",

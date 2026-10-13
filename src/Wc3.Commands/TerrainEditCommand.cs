@@ -46,6 +46,20 @@ public static class TerrainEditCommand
     /// on serialize past it).</summary>
     public const int MaxCliffLevel = 15;
 
+    /// <summary>Clamps a ground height to the storable range and quantizes it to the 1/512
+    /// grid, so a value read back equals what a save/load preserves. The brush paths call
+    /// this before writing a tile: the field is a 16-bit ushort (raw = height*512 + 8192),
+    /// so an out-of-range height wraps modulo 65536 instead of erroring, and a brush that
+    /// reported success would have stored the wrong number.</summary>
+    public static float ClampGroundHeight(float height) =>
+        Quantize(Math.Clamp(height, MinGroundHeight, MaxGroundHeight));
+
+    /// <summary>Clamps a water level to the 14-bit storable range and quantizes it. Same
+    /// reasoning as <see cref="ClampGroundHeight"/> — the water field keeps 14 bits, so an
+    /// out-of-range value wraps modulo 16384.</summary>
+    public static float ClampWaterHeight(float waterHeight) =>
+        Quantize(Math.Clamp(waterHeight, MinWaterHeight, MaxWaterHeight));
+
     /// <summary>Terrain grid summary. <paramref name="Width"/>/<paramref name="Height"/>
     /// are corner counts (tiles + 1 per axis); the tile lists are fourCC ids in map
     /// order, so a corner's texture index points into <paramref name="GroundTiles"/>.</summary>

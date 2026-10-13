@@ -52,6 +52,21 @@ public class TerrainWaterRectTests
     }
 
     [Fact]
+    public void A_water_level_past_the_storable_maximum_clamps_instead_of_wrapping()
+    {
+        // The water field keeps 14 bits, so a value past MaxWaterHeight (~16) wrapped modulo 16384
+        // and stored a wrong level while the brush reported the tile changed. Measured: set 64
+        // stored 0, set 20 stored -12.
+        var doc = BlankTerrain();
+        var r = TerrainCommand.WaterRect(doc, 2, 2, 4, 4, TerrainCommand.WaterOp.Set, 64f);
+        Assert.True(r.Ok, r.Message);
+
+        var env = Reload(doc);
+        Assert.True(env.TerrainTiles[Idx(3, 3)].IsWater);
+        Assert.Equal(TerrainEditCommand.MaxWaterHeight, env.TerrainTiles[Idx(3, 3)].WaterHeight);
+    }
+
+    [Fact]
     public void Corners_may_be_given_in_any_order()
     {
         var forward = BlankTerrain();

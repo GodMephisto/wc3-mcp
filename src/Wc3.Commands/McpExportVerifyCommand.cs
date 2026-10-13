@@ -56,6 +56,14 @@ public static partial class McpExportVerifyCommand
             return Empty(sourceRoot, targetRoot, $"no directory at {targetRoot}");
 
         var source = BuildSource(sourceRoot);
+        // A wrong source root (the home directory, say, when RepoLayout.FindRoot could not find a
+        // wc3ctl checkout and the caller fell back to the process cwd) exists on disk but holds none
+        // of the exported projects, so BuildSource yields nothing and every target file reads as
+        // "removed". Refuse that rather than return a 700-file diff that compares against nothing.
+        if (source.Count == 0)
+            return Empty(sourceRoot, targetRoot,
+                $"no wc3ctl source found under {sourceRoot}; expected {string.Join(", ", ExportedProjects)}. "
+                + "Pass the wc3ctl repository with source_dir.");
         var target = BuildTarget(targetRoot);
 
         var differences = new List<ExportDifference>();

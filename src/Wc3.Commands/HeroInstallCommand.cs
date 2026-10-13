@@ -59,7 +59,7 @@ public static class HeroInstallCommand
             return Fail($"no hero.json in '{definitionDirectory}'");
 
         HeroDefinition? def;
-        try { def = JsonSerializer.Deserialize<HeroDefinition>(File.ReadAllText(jsonPath)); }
+        try { def = HeroDefinition.ReadJson(File.ReadAllText(jsonPath)); }
         catch (JsonException ex) { return Fail($"hero.json could not be parsed: {ex.Message}"); }
         if (def is null) return Fail("hero.json could not be parsed");
         if (def.SchemaVersion > HeroDefinition.CurrentSchemaVersion)

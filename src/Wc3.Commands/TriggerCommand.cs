@@ -248,12 +248,18 @@ public static class TriggerCommand
             return new TriggerOpResult(false,
                 "The root category represents the map itself and cannot be removed.");
 
-        // Gather the subtree. Parenting is by id, so walk it breadth-first over ids.
+        // Gather the subtree. Parenting is by id, and ids are numbered PER TYPE (categories 0..N,
+        // triggers 0..M), so a trigger's id can equal a category's id. Recursing on a trigger id
+        // would then pull in an unrelated category's children, and because those children carry
+        // their own colliding ids the walk cascades and swallows the entire tree: measured on
+        // RATD, removing any one category removed a constant 148 descendants and left 0 triggers.
+        // Only a category holds children, so recurse on category ids only, adding every direct
+        // child but enqueueing just the category ones.
         var doomed = new List<TriggerItem> { item };
         if (recursive)
         {
             var frontier = new Queue<int>();
-            frontier.Enqueue(id);
+            if (IsCategory(item)) frontier.Enqueue(id);
             while (frontier.Count > 0)
             {
                 int parent = frontier.Dequeue();
@@ -261,13 +267,17 @@ public static class TriggerCommand
                 {
                     if (doomed.Any(d => ReferenceEquals(d, child))) continue;
                     doomed.Add(child);
-                    frontier.Enqueue(child.Id);
+                    if (IsCategory(child)) frontier.Enqueue(child.Id);
                 }
             }
         }
         else
         {
-            int children = triggers.TriggerItems.Count(i => i.ParentId == id);
+            // Only a category holds children. A trigger whose id collides with a category id must
+            // not be judged to hold that category's children, which would falsely refuse removing
+            // the trigger.
+            int children = IsCategory(item)
+                ? triggers.TriggerItems.Count(i => i.ParentId == id) : 0;
             if (children > 0)
                 return new TriggerOpResult(false,
                     $"'{item.Name}' still holds {children} item(s). Removing it would orphan them. "
@@ -288,6 +298,11 @@ public static class TriggerCommand
             : $"'{item.Name}' and {doomed.Count - 1} descendant(s)";
         return Persist(doc, triggers, $"Removed {what}.");
     }
+
+    /// <summary>True for the two category kinds, the only trigger-tree items that hold children.
+    /// Used so a recursive removal and the orphan guard never treat a trigger as a parent.</summary>
+    private static bool IsCategory(TriggerItem item) =>
+        item.Type is TriggerItemType.RootCategory or TriggerItemType.Category;
 
     /// <summary>
     /// Appends an event, condition or action to a GUI trigger.

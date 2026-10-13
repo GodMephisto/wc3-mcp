@@ -75,7 +75,11 @@ public static class LuaGlobalsCommand
 
     private sealed class Walker(Dictionary<string, Acc> acc)
     {
-        private readonly List<HashSet<string>> _scopes = new();
+        // One top-level scope, so a chunk-level `local` has somewhere to go. Without it the first
+        // top-level local indexed an empty list and threw ArgumentOutOfRangeException on every Lua
+        // map whose script declares a local at file scope, which is nearly all of them.
+        private readonly List<HashSet<string>> _scopes =
+            new() { new HashSet<string>(StringComparer.Ordinal) };
 
         private bool IsLocal(string name)
         {

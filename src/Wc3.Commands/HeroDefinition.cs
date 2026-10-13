@@ -1,4 +1,6 @@
 // src/Wc3.Commands/HeroDefinition.cs
+using System.Text.Json;
+
 namespace Wc3.Commands;
 
 /// <summary>
@@ -135,4 +137,35 @@ public sealed record HeroDefinition(
     /// a change that would be MIS-read, for example a renamed or re-typed existing field.
     /// </remarks>
     public const int CurrentSchemaVersion = 1;
+
+    private static readonly JsonSerializerOptions JsonOptions =
+        new() { PropertyNameCaseInsensitive = true };
+
+    /// <summary>
+    /// Reads a definition from JSON, tolerating the key casing and coalescing a missing collection
+    /// to empty.
+    ///
+    /// System.Text.Json matches property names case-sensitively by default, and the MCP surface and
+    /// hand-authored files routinely use camelCase. A camelCase definition left every collection
+    /// null, and the first enumeration (RootPresent on Objects, or the asset loop) threw a raw
+    /// NullReferenceException or ArgumentNullException instead of reporting an ordinary lint
+    /// finding. Case-insensitive matching fixes the casing; coalescing a genuinely absent collection
+    /// to empty turns the remaining "nothing declared" case into a lint error rather than a crash.
+    /// </summary>
+    public static HeroDefinition? ReadJson(string json)
+    {
+        var d = JsonSerializer.Deserialize<HeroDefinition>(json, JsonOptions);
+        if (d is null) return null;
+        return d with
+        {
+            Objects = (d.Objects ?? Array.Empty<DefinitionObject>())
+                .Select(o => o with { Fields = o.Fields ?? Array.Empty<DefinitionField>() }).ToList(),
+            Assets = d.Assets ?? Array.Empty<DefinitionAsset>(),
+            Strings = d.Strings ?? Array.Empty<string>(),
+            ScriptEntryPoints = d.ScriptEntryPoints ?? Array.Empty<string>(),
+            Globals = d.Globals ?? Array.Empty<string>(),
+            Requires = d.Requires ?? Array.Empty<DefinitionRequirement>(),
+            ReviewNotes = d.ReviewNotes ?? Array.Empty<string>(),
+        };
+    }
 }

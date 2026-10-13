@@ -52,6 +52,33 @@ public class TerrainCommandTests
         Assert.Equal(6f, env.TerrainTiles[Idx(4, 4)].Height);   // 10 - 4
     }
 
+    [Fact]
+    public void A_height_past_the_storable_maximum_clamps_instead_of_wrapping()
+    {
+        // The ground-height field is a 16-bit ushort (raw = height*512 + 8192), so a value past
+        // MaxGroundHeight (~112) wrapped modulo 65536 and stored a wrong height while the brush
+        // still reported the tile changed. Measured: raise 128 stored 0, raise 200 stored 72.
+        var doc = BlankTerrain();
+        var r = TerrainCommand.Deform(doc, 4, 4, 0, TerrainCommand.HeightOp.Set, 200f,
+            TerrainCommand.BrushShape.Square);
+        Assert.True(r.Ok, r.Message);
+
+        var env = Reload(doc);
+        Assert.Equal(TerrainEditCommand.MaxGroundHeight, env.TerrainTiles[Idx(4, 4)].Height);
+    }
+
+    [Fact]
+    public void A_height_past_the_storable_minimum_clamps_instead_of_wrapping()
+    {
+        var doc = BlankTerrain();
+        var r = TerrainCommand.Deform(doc, 4, 4, 0, TerrainCommand.HeightOp.Set, -500f,
+            TerrainCommand.BrushShape.Square);
+        Assert.True(r.Ok, r.Message);
+
+        var env = Reload(doc);
+        Assert.Equal(TerrainEditCommand.MinGroundHeight, env.TerrainTiles[Idx(4, 4)].Height);
+    }
+
     // --- set / footprints ---------------------------------------------------
 
     [Fact]

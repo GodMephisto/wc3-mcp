@@ -2,6 +2,15 @@
 namespace Wc3.Commands;
 
 /// <summary>
+/// One team color as a named record rather than a <c>(byte R, byte G, byte B)</c> tuple. A
+/// ValueTuple serializes to an EMPTY JSON object under System.Text.Json, because its components are
+/// fields and fields are excluded by default, so player_list reported <c>"color":{}</c> for every
+/// slot while the value was present the whole time. A record exposes R, G and B as properties, so
+/// the color survives serialization on both the CLI and the MCP surface.
+/// </summary>
+public sealed record PlayerColorRgb(byte R, byte G, byte B);
+
+/// <summary>
 /// The Reforged 28-slot player-color table: ids 0..23 are the playable slots
 /// (TeamColor00..TeamColor23 — classic 12 plus the twelve added in patch 1.29),
 /// ids 24..27 are the neutral slots (24 Neutral Hostile, 25 Neutral Victim,
@@ -65,8 +74,11 @@ public static class PlayerColors
 
     /// <summary>The slot's team color. Out-of-range ids fall back to the gray
     /// slot's color rather than throwing — safe for rendering weird owner ids.</summary>
-    public static (byte R, byte G, byte B) Color(int id) =>
-        id >= 0 && id < SlotCount ? Table[id] : Table[8];
+    public static PlayerColorRgb Color(int id)
+    {
+        var t = id >= 0 && id < SlotCount ? Table[id] : Table[8];
+        return new PlayerColorRgb(t.R, t.G, t.B);
+    }
 
     /// <summary>"Player 1 (Red)" .. "Player 24 (Peanut)", the neutral slot names for
     /// 24..27, and a bare "Player N" for out-of-range ids.</summary>

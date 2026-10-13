@@ -42,7 +42,7 @@ public static class HeroLintCommand
             });
 
         HeroDefinition? def;
-        try { def = JsonSerializer.Deserialize<HeroDefinition>(File.ReadAllText(jsonPath)); }
+        try { def = HeroDefinition.ReadJson(File.ReadAllText(jsonPath)); }
         catch (JsonException ex)
         {
             return new(directory, null, new[]

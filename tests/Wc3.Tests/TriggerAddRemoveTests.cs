@@ -255,6 +255,28 @@ public class TriggerAddRemoveTests
     }
 
     [Fact]
+    public void A_recursive_removal_does_not_leak_into_another_category_when_ids_collide()
+    {
+        // Old-format maps number ids per type, so a trigger's id can equal a category's id. The
+        // recursive walk used to enqueue a trigger's id and then match that id as a category id,
+        // pulling in an unrelated category's children. Measured on RATD, removing any one category
+        // removed a constant 148 items and left the tree empty. Removing category A here must take
+        // A and its own trigger only, and leave category B and its trigger alone.
+        var doc = Map(Tree(true,
+            Cat("A", 100),
+            Cat("B", 2),
+            Gui("T_in_A", 2, 100),
+            Gui("T_in_B", 3, 2)));
+
+        var r = TriggerCommand.Remove(doc, 100, recursive: true);
+        Assert.True(r.Ok, r.Message);
+
+        var after = RoundTrip(doc);
+        Assert.Equal(new[] { "B", "T_in_B" },
+            after.TriggerItems.Select(i => i.Name).OrderBy(n => n, StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void The_root_category_cannot_be_removed()
     {
         var doc = Map(Tree(true,

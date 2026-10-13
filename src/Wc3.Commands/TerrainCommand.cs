@@ -252,7 +252,10 @@ public static partial class TerrainCommand
                 if (!keep(x, y)) continue;
                 int idx = rowBase + x;
                 float before = src[idx];
-                float after = op switch
+                // Clamp to the storable range before writing. Without this a raise or set past
+                // the 16-bit field's maximum wraps modulo 65536, so the tile stores a wrong
+                // height while the brush still reports the tile changed.
+                float after = TerrainEditCommand.ClampGroundHeight(op switch
                 {
                     HeightOp.Raise => before + amount,
                     HeightOp.Lower => before - amount,
@@ -260,7 +263,7 @@ public static partial class TerrainCommand
                     HeightOp.Flatten => flattenTarget,
                     HeightOp.Smooth => SmoothedHeight(src, w, h, x, y),
                     _ => before,
-                };
+                });
 
                 if (after != before)
                 {

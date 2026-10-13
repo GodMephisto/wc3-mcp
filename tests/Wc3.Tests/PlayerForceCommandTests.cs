@@ -1,4 +1,5 @@
 // tests/Wc3.Tests/PlayerForceCommandTests.cs
+using System.Text.Json;
 using War3Net.Build.Common;
 using War3Net.Build.Info;
 using Wc3.Commands;
@@ -212,11 +213,24 @@ public class PlayerForceCommandTests
     [Fact]
     public void PlayerColors_MatchTheKnownReforgedTable()
     {
-        Assert.Equal(((byte)0xFF, (byte)0x03, (byte)0x03), PlayerColors.Color(0));  // red
-        Assert.Equal(((byte)0x00, (byte)0x42, (byte)0xFF), PlayerColors.Color(1));  // blue
-        Assert.Equal(((byte)0x1C, (byte)0xE6, (byte)0xB9), PlayerColors.Color(2));  // teal
-        Assert.Equal(((byte)0x95, (byte)0x96, (byte)0x97), PlayerColors.Color(8));  // gray
-        Assert.Equal(((byte)0xA4, (byte)0x6F, (byte)0x33), PlayerColors.Color(23)); // peanut
+        Assert.Equal(new PlayerColorRgb(0xFF, 0x03, 0x03), PlayerColors.Color(0));  // red
+        Assert.Equal(new PlayerColorRgb(0x00, 0x42, 0xFF), PlayerColors.Color(1));  // blue
+        Assert.Equal(new PlayerColorRgb(0x1C, 0xE6, 0xB9), PlayerColors.Color(2));  // teal
+        Assert.Equal(new PlayerColorRgb(0x95, 0x96, 0x97), PlayerColors.Color(8));  // gray
+        Assert.Equal(new PlayerColorRgb(0xA4, 0x6F, 0x33), PlayerColors.Color(23)); // peanut
+    }
+
+    [Fact]
+    public void A_player_color_survives_json_serialization()
+    {
+        // Color was a ValueTuple, which System.Text.Json serializes to an EMPTY object (its
+        // components are fields, and fields are excluded by default), so player_list reported
+        // "color":{} for every slot while the value was present the whole time. As a record it must
+        // expose the three components as properties.
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(PlayerColors.Color(0)));
+        Assert.Equal(0xFF, doc.RootElement.GetProperty("R").GetByte());
+        Assert.Equal(0x03, doc.RootElement.GetProperty("G").GetByte());
+        Assert.Equal(0x03, doc.RootElement.GetProperty("B").GetByte());
     }
 
     [Fact]
