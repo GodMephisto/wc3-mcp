@@ -295,11 +295,17 @@ public static partial class TerrainCommand
         int groundTypes = env.TerrainTypes?.Count ?? 0;
         if (groundTypes == 0)
             return new(false, "map has no ground tile-types to paint with");
-        if (textureIndex < 0 || textureIndex >= groundTypes)
+        // Both fields are nibbles in the file, so the ceiling is 15 whatever the tile count. Without
+        // the cap a map declaring more than 16 ground tile-types, or a variation past 15, stored a
+        // value the writer then refused with an ArgumentOutOfRangeException on save.
+        int maxTexture = Math.Min(groundTypes - 1, TerrainEditCommand.MaxTextureIndex);
+        if (textureIndex < 0 || textureIndex > maxTexture)
             return new(false,
-                $"texture index {textureIndex} out of range (map has {groundTypes} ground tile-types; valid 0..{groundTypes - 1})");
-        if (variation.HasValue && variation.Value < 0)
-            return new(false, $"variation must be >= 0 (got {variation.Value})");
+                $"texture index {textureIndex} out of range (map has {groundTypes} ground tile-types; valid 0..{maxTexture})");
+        if (variation.HasValue
+            && (variation.Value < 0 || variation.Value > TerrainEditCommand.MaxTextureVariation))
+            return new(false,
+                $"variation {variation.Value} out of range (valid 0..{TerrainEditCommand.MaxTextureVariation})");
 
         int w = (int)env.Width + 1, h = (int)env.Height + 1;
         var tiles = env.TerrainTiles;
@@ -488,14 +494,16 @@ public static partial class TerrainCommand
                 if (!keep(x, y)) continue;
                 var tile = tiles[rowBase + x];
                 int before = tile.CliffLevel;
-                int after = op switch
+                // Clamp to the 4-bit range before writing. The brush floored at 0 but never capped,
+                // so a raise past 15 stored a level the writer then refused with an
+                // ArgumentOutOfRangeException on save.
+                int after = TerrainEditCommand.ClampCliffLevel(op switch
                 {
                     CliffOp.Raise => before + level,
                     CliffOp.Lower => before - level,
                     CliffOp.Set => level,
                     _ => before,
-                };
-                if (after < 0) after = 0;   // floor at the format's base layer
+                });
                 if (after != before) { tile.CliffLevel = after; changed++; }
             }
         }

@@ -46,6 +46,14 @@ public static class TerrainEditCommand
     /// on serialize past it).</summary>
     public const int MaxCliffLevel = 15;
 
+    /// <summary>Highest storable ground-texture index — the file keeps it in a nibble, so 15 is
+    /// the format ceiling regardless of how many tile-types the map declares.</summary>
+    public const int MaxTextureIndex = 15;
+
+    /// <summary>Highest storable ground-texture variation — the same nibble, so 15 is the
+    /// ceiling. War3Net throws on serialize past it.</summary>
+    public const int MaxTextureVariation = 15;
+
     /// <summary>Clamps a ground height to the storable range and quantizes it to the 1/512
     /// grid, so a value read back equals what a save/load preserves. The brush paths call
     /// this before writing a tile: the field is a 16-bit ushort (raw = height*512 + 8192),
@@ -59,6 +67,11 @@ public static class TerrainEditCommand
     /// out-of-range value wraps modulo 16384.</summary>
     public static float ClampWaterHeight(float waterHeight) =>
         Quantize(Math.Clamp(waterHeight, MinWaterHeight, MaxWaterHeight));
+
+    /// <summary>Clamps a cliff plateau layer to the file's 4-bit range. The cliff field is a
+    /// nibble and War3Net THROWS on serialize past <see cref="MaxCliffLevel"/>, so the brush paths
+    /// clamp rather than store a value the writer then refuses.</summary>
+    public static int ClampCliffLevel(int level) => Math.Clamp(level, 0, MaxCliffLevel);
 
     /// <summary>Terrain grid summary. <paramref name="Width"/>/<paramref name="Height"/>
     /// are corner counts (tiles + 1 per axis); the tile lists are fourCC ids in map
@@ -181,7 +194,7 @@ public static class TerrainEditCommand
         int groundTypes = env!.TerrainTypes?.Count ?? 0;
         if (groundTypes == 0)
             return new(false, "map has no ground tile-types to paint with");
-        int max = Math.Min(groundTypes - 1, 15);
+        int max = Math.Min(groundTypes - 1, MaxTextureIndex);
         if (tileIndex < 0 || tileIndex > max)
             return new(false,
                 $"texture index {tileIndex} out of range (map has {groundTypes} ground tile-types; valid 0..{max})");

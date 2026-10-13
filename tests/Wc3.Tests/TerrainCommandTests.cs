@@ -68,6 +68,35 @@ public class TerrainCommandTests
     }
 
     [Fact]
+    public void A_cliff_past_the_storable_maximum_clamps_instead_of_storing_out_of_range()
+    {
+        // The cliff level is a 4-bit nibble and War3Net refuses to serialize past 15. The brush
+        // floored at 0 but never capped, so a raise past 15 stored an out-of-range value the writer
+        // then refused. Clamp to MaxCliffLevel.
+        var doc = BlankTerrain();
+        Assert.True(TerrainCommand.Cliff(doc, 4, 4, 0, TerrainCommand.CliffOp.Set, 15).Ok);
+        var r = TerrainCommand.Cliff(doc, 4, 4, 0, TerrainCommand.CliffOp.Raise, 5);
+        Assert.True(r.Ok, r.Message);
+
+        var env = Reload(doc);   // a save+reload throws if the level is out of the 4-bit range
+        Assert.Equal(TerrainEditCommand.MaxCliffLevel, env.TerrainTiles[Idx(4, 4)].CliffLevel);
+    }
+
+    [Fact]
+    public void A_paint_variation_past_the_nibble_is_refused_cleanly()
+    {
+        // The variation field is a nibble. A value past 15 used to store and then throw
+        // ArgumentOutOfRangeException on save; it now refuses with a clear message.
+        var doc = BlankTerrain();
+        var r = TerrainCommand.Paint(doc, 4, 4, 1, 0, variation: 20);
+        Assert.False(r.Ok);
+        Assert.Contains("variation", r.Message);
+
+        // And a value inside the range still works.
+        Assert.True(TerrainCommand.Paint(doc, 4, 4, 1, 0, variation: 15).Ok);
+    }
+
+    [Fact]
     public void A_height_past_the_storable_minimum_clamps_instead_of_wrapping()
     {
         var doc = BlankTerrain();
