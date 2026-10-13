@@ -41,6 +41,15 @@ public static partial class McpExportVerifyCommand
     private static readonly HashSet<string> SkipDirectories =
         new(StringComparer.OrdinalIgnoreCase) { "bin", "obj", ".git", "node_modules" };
 
+    /// <summary>
+    /// Files the source checkout keeps locally and git ignores, so the export never copies them.
+    /// CLAUDE.md is per-checkout agent guidance under .gitignore. The filesystem walk here sees it
+    /// where the export's git ls-files does not, so without this it read as a phantom "added" file
+    /// and the verify reported the mirror out of step right after a clean export.
+    /// </summary>
+    private static readonly HashSet<string> LocalOnlyFiles =
+        new(StringComparer.OrdinalIgnoreCase) { "CLAUDE.md" };
+
     [GeneratedRegex(@"\bWc3Ctl\b")]
     private static partial Regex CliUse();
 
@@ -125,6 +134,7 @@ public static partial class McpExportVerifyCommand
             {
                 string relative = Path.GetRelativePath(root, file).Replace('\\', '/');
                 if (relative.Split('/').Any(SkipDirectories.Contains)) continue;
+                if (LocalOnlyFiles.Contains(Path.GetFileName(file))) continue;
                 yield return relative;
             }
         }
