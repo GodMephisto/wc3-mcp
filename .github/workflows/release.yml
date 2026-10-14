@@ -74,6 +74,21 @@ jobs:
           Set-Content -Path "$bundle.sha256" -Value "$hash  $bundle" -NoNewline -Encoding ascii
           "sha256=$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
+      # The release body is the mirroring commit's own message. It names the source commit and the
+      # wc3ctl version it came from and lists what changed.
+      #
+      # Not --generate-notes. GitHub builds those from merged pull requests, and this repository
+      # takes its syncs as direct commits, so every release so far carried nothing but the
+      # "Full Changelog" link. wc3ctl can generate grouped notes from its log because it ships a
+      # changelog command, and this product has no CLI to run it from.
+      - name: Generate release notes
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $body = (git log -1 --pretty=%B $tag) -join "`n"
+          if ([string]::IsNullOrWhiteSpace($body)) { $body = "wc3-mcp $tag" }
+          ("# Release notes`n`n" + $body.Trim()) | Out-File -FilePath release-notes.md -Encoding utf8
+          Get-Content release-notes.md
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -83,7 +98,7 @@ jobs:
           wc3-mcp-${{ github.ref_name }}-win-x64.zip.sha256
           wc3-mcp-${{ github.ref_name }}-win-x64.mcpb
           wc3-mcp-${{ github.ref_name }}-win-x64.mcpb.sha256
-          --generate-notes
+          --notes-file release-notes.md
 
   # Lists the release in the official MCP Registry as io.github.GodMephisto/wc3-mcp. GitHub's
   # OIDC token proves the repository owner, so no secret is stored. A registry version can be
