@@ -57,7 +57,26 @@ public class SerializerFidelitySweep
         public long WorstDelta;
         public string WorstMap = string.Empty;
         public readonly List<string> Examples = new();
+        public readonly HashSet<string> DifferMaps = new(StringComparer.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// Maps whose drift is known and documented, with the reason, so the sweep still fails on a
+    /// new one. Both were measured on this library and neither is a defect in the save path.
+    /// </summary>
+    private static readonly (Func<string, bool> Matches, string Reason)[] KnownDrift =
+    {
+        (n => n.StartsWith("GGGA_V0.07c_slk", StringComparison.OrdinalIgnoreCase),
+            "a prefix-less object group makes War3Net's writer throw, so ObjectDataSets.EnsureSetPrefixes "
+            + "seeds the Reforged v3 set prefix {0} on every such group and the file grows, a crash guard "
+            + "rather than a defect (see ObjectDataSetPrefixTests). All four GGGA_V0.07c_slk variants "
+            + "carry such a group"),
+        (n => n.Equals("FateGA_R0.2A.w3x", StringComparison.OrdinalIgnoreCase),
+            "one ability name holds a truncated UTF-8 sequence (EC 9E with no third byte), which War3Net's "
+            + "string codec decodes as U+FFFD and re-encodes as three bytes, so the file grows by one"),
+    };
+
+    private static bool IsKnownDrift(string map) => KnownDrift.Any(k => k.Matches(map));
 
     [Fact]
     [Trait("Category", "Corpus")]
@@ -107,6 +126,7 @@ public class SerializerFidelitySweep
                 if (before.AsSpan().SequenceEqual(after)) { tally.Same++; continue; }
 
                 tally.Differ++;
+                tally.DifferMaps.Add(Path.GetFileName(path));
                 long delta = after.LongLength - before.LongLength;
                 if (Math.Abs(delta) >= Math.Abs(tally.WorstDelta))
                 {
@@ -132,13 +152,28 @@ public class SerializerFidelitySweep
         _out.WriteLine(new string('-', 78));
 
         var exposed = new List<string>();
+        var known = new List<string>();
         foreach (var (type, t) in byType.OrderByDescending(kv => kv.Value.Differ)
                                         .ThenBy(kv => kv.Key, StringComparer.Ordinal))
         {
             _out.WriteLine($"{type,-26} {t.Same,6} {t.Differ,7} {t.Threw,6}  "
                          + (t.Differ == 0 ? "" : $"{t.WorstDelta:+#;-#;0} on {t.WorstMap}"));
             foreach (var e in t.Examples) _out.WriteLine($"    {e}");
-            if (t.Differ > 0) exposed.Add($"{type} ({t.Differ})");
+            if (t.Differ == 0) continue;
+            // A type only counts as clean when EVERY map it drifted on is a documented one. A
+            // single unknown map in the set makes it exposed, which is the point of the list.
+            var unknown = t.DifferMaps.Where(m => !IsKnownDrift(m)).ToList();
+            if (unknown.Count > 0)
+                exposed.Add($"{type} ({t.Differ}) on {string.Join(", ", unknown)}");
+            else
+                known.Add($"{type} ({t.Differ}) on {string.Join(", ", t.DifferMaps)}");
+        }
+
+        if (known.Count > 0)
+        {
+            _out.WriteLine("\nKnown and documented, not counted against the verdict:");
+            foreach (var k in known) _out.WriteLine($"    {k}");
+            foreach (var (_, why) in KnownDrift) _out.WriteLine($"    {why}");
         }
 
         _out.WriteLine(exposed.Count == 0

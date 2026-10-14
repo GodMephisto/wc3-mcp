@@ -241,6 +241,66 @@ public class LuaScriptCommandsTests
     }
 
     [Fact]
+    public void Lua_to_jass_inverts_the_strict_real_and_hashtable_helpers()
+    {
+        // The two helper families the forward direction adds beyond the upstream port, so a script
+        // that came through the converter comes back rather than being left as unknown calls.
+        var lua = "function F()\n"
+            + "  local h = {}\n"
+            + "  __hs_save_integer(h, 1, 2, 3)\n"
+            + "  local v = __hs_load_real(h, 1, 2, 0.0)\n"
+            + "  __hs_remove_unit(h, 1, 2)\n"
+            + "  __hs_flush_child(h, 1)\n"
+            + "  local x = __fadd(1.5, 2.5)\n"
+            + "end\n";
+        var r = LuaToJassCommand.Execute(LuaDoc(lua));
+
+        Assert.True(r.Ok, string.Join(" ", r.Diagnostics));
+        Assert.Contains("local hashtable h = CreateHashtable()", r.Jass);
+        Assert.Contains("call SaveInteger(h, 1, 2, 3)", r.Jass);
+        Assert.Contains("local real v = LoadReal(h, 1, 2)", r.Jass);
+        Assert.Contains("call RemoveSavedUnitHandle(h, 1, 2)", r.Jass);
+        Assert.Contains("call FlushChildHashtable(h, 1)", r.Jass);
+        Assert.Contains("local real x = (1.5 + 2.5)", r.Jass);
+    }
+
+    [Fact]
+    public void Lua_to_jass_leaves_a_table_that_is_not_a_hashtable()
+    {
+        // The rewrite only fires when every reference to the name is a __hs_ helper's first
+        // argument, so a plain Lua table used as an array keeps its declaration reported.
+        var lua = "function F()\n  local t = {}\n  t[1] = 2\nend\n";
+        var r = LuaToJassCommand.Execute(LuaDoc(lua));
+
+        Assert.Equal(0, r.FunctionsConverted);
+        Assert.Contains(r.Unconverted, u => u.Construct == "local");
+    }
+
+    [Fact]
+    public void A_hashtable_script_round_trips_through_lua_and_back()
+    {
+        // The whole point of the typed helpers. JASS to Lua rewrites the hashtable to a table, and
+        // Lua back to JASS has to rebuild the hashtable, or the round trip loses the function.
+        string jass = "function F takes nothing returns nothing\n"
+            + "    local hashtable h = CreateHashtable()\n"
+            + "    call SaveInteger(h, 1, 2, 3)\n"
+            + "    call FlushChildHashtable(h, 1)\n"
+            + "endfunction\n"
+            + "function main takes nothing returns nothing\nendfunction\n";
+
+        var toLua = Wc3.Commands.Lua.JassToLua.Transpile("", "", jass, hashtables: true);
+        string lua = Wc3.Commands.Lua.JassToLua.BuildScript(toLua);
+        Assert.Contains("__hs_save_integer(h, 1, 2, 3)", lua);
+
+        var back = LuaToJassCommand.Execute(LuaDoc(lua));
+
+        Assert.True(back.Ok, string.Join(" ", back.Diagnostics));
+        Assert.Contains("local hashtable h = CreateHashtable()", back.Jass);
+        Assert.Contains("SaveInteger(h, 1, 2, 3)", back.Jass);
+        Assert.Contains("FlushChildHashtable(h, 1)", back.Jass);
+    }
+
+    [Fact]
     public void Lua_to_jass_refuses_a_jass_script()
     {
         var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>

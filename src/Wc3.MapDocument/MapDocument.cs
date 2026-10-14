@@ -71,8 +71,33 @@ public sealed class MapDocument
 
         // Not disposed here on purpose, the document keeps it for deferred entry
         // reads (see _archive). Disposing it would only dispose the MemoryStream.
-        var stream = new MemoryStream(fileBytes);
-        var archive = MpqArchive.Open(stream, loadListFile: true);
+        MpqArchive archive;
+        try
+        {
+            archive = MpqArchive.Open(new MemoryStream(fileBytes), loadListFile: true);
+        }
+        catch (Exception listFileFailure)
+        {
+            // War3Net reads (listfile) inside its constructor, so a map whose listfile entry is
+            // unreadable, encrypted, or backed by a corrupt sector table throws there and the whole
+            // map becomes unloadable over one optional entry. Measured on
+            // ORDR_S2_2.323[R]_english.w3x, 119 MB, "Stream was not readable". Open without it
+            // instead, which still resolves the standard names and lets the asset sweep name more.
+            try
+            {
+                archive = MpqArchive.Open(new MemoryStream(fileBytes), loadListFile: false);
+            }
+            catch (Exception reopenFailure)
+            {
+                throw new InvalidDataException(
+                    $"the archive could not be opened. With its listfile, {listFileFailure.Message}. "
+                    + $"Without it, {reopenFailure.Message}.", reopenFailure);
+            }
+            doc._diagnostics.Add(new Diagnostic(DiagnosticSeverity.Warning, "(listfile)",
+                $"The (listfile) entry could not be read ({listFileFailure.Message}), so the map was "
+                + "opened without it. The standard file names still resolve, and a harvest or deprotect "
+                + "pass can name more."));
+        }
         doc._archive = archive;
 
         // A protected map's (listfile) is often stripped or curated down to a couple of
@@ -80,7 +105,7 @@ public sealed class MapDocument
         // standard WC3 file name still resolves without it. AddFileNames only sets
         // FileName on entries that are still unnamed, so a healthy map (everything already
         // named from its own listfile) is unaffected.
-        archive.AddFileNames(StandardMapFileNames.All);
+        doc.TryAddFileNames(archive, StandardMapFileNames.All);
 
         // The locale of the hash slot each block is reached through. Needed because a protected
         // map can point two slots at two different blocks under one name, and an edit written
@@ -315,8 +340,9 @@ public sealed class MapDocument
 
         using var stream = new MemoryStream(_originalBytes);
         using var archive = MpqArchive.Open(stream, loadListFile: true);
-        archive.AddFileNames(StandardMapFileNames.All); // keep this archive's naming in step with Load's
-        archive.AddFileNames(candidates);
+        // Keep this archive's naming in step with Load's, and name the deprotect candidates.
+        TryAddFileNames(archive, StandardMapFileNames.All);
+        TryAddFileNames(archive, candidates);
 
         // Fold newly resolved names back by BlockIndex (not position, a caller may have added
         // entries beyond the archive's own since Load, those carry no BlockIndex this archive
@@ -667,7 +693,7 @@ public sealed class MapDocument
         // Same probing as Load, kept in sync so a dirty entry on a protected map (named
         // only via the probe, never via this archive's own listfile) still shadows its
         // original by the same hashed name when the builder adds the replacement.
-        archive.AddFileNames(StandardMapFileNames.All);
+        TryAddFileNames(archive, StandardMapFileNames.All);
 
         // An archive that carries more unnamed block rows than named ones is mostly protection
         // stuffing. War3Net's builder enumerates one file per block row and re-hashes each on the
@@ -799,6 +825,29 @@ public sealed class MapDocument
                 BlockSize = blockSize,
                 HashTableSize = grown,
             }, leaveOpen: true);
+    }
+
+    /// <summary>
+    /// Names the entries the archive did not name itself, and never lets that fail the load.
+    /// War3Net's AddFileName indexes the block table with the hash entry's block index, so a
+    /// protected map whose hash table points past the block table throws there. Measured on
+    /// ORDR_S2_2.323[R]_english.w3x, 119 MB, which would not load at all over one naming pass.
+    /// Naming is a convenience, so the failure is recorded and the map loads with fewer names.
+    /// </summary>
+    private void TryAddFileNames(MpqArchive archive, IEnumerable<string> names)
+    {
+        try
+        {
+            archive.AddFileNames(names);
+        }
+        catch (Exception ex)
+        {
+            lock (_diagnostics)
+                _diagnostics.Add(new Diagnostic(DiagnosticSeverity.Warning, "(listfile)",
+                    $"Some file names could not be applied ({ex.Message}). The archive's hash table "
+                    + "points at block rows it does not have, which is a protection trick rather than "
+                    + "a defect in the map."));
+        }
     }
 
     /// <summary>

@@ -258,13 +258,22 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("target_get", "target_set", "target_list")]
     public async Task Target_tools_view_and_set_the_current_target()
     {
-        // Determine schemas directory: env override > test output > default location.
+        // Determine schemas directory: env override > test output > the repo checkout.
         string? schemasDir = Environment.GetEnvironmentVariable("WC3_SCHEMAS_DIR");
         if (string.IsNullOrWhiteSpace(schemasDir))
         {
             var schemasPath = Path.Combine(AppContext.BaseDirectory, "data", "schemas");
             if (Directory.Exists(schemasPath))
                 schemasDir = schemasPath;
+        }
+        // The schemas live beside the solution rather than in the test output, so a fresh checkout
+        // that has not exported WC3_SCHEMAS_DIR finds them by walking up to the repo root. Without
+        // this the test threw on every machine but the one that happened to set the variable.
+        if (string.IsNullOrWhiteSpace(schemasDir) && Wc3.Commands.RepoLayout.FindRoot() is { } repoRoot)
+        {
+            var inRepo = Path.Combine(repoRoot, "data", "schemas");
+            if (Directory.Exists(inRepo))
+                schemasDir = inRepo;
         }
 
         // If no schemas, this test cannot validate the feature.

@@ -2875,7 +2875,9 @@ public static class Wc3Tools
                     installBuild = Wc3.GameData.GameInstall.ReadBuildVersion(installDir);
             }
             catch { /* no game install */ }
-            return new TargetGetResult(result.Build, result.Source.ToString(), installBuild,
+            // Lowercase, because the description names the values option, environment, settings and
+            // default, and a client matching those strings got the enum's PascalCase instead.
+            return new TargetGetResult(result.Build, result.Source.ToString().ToLowerInvariant(), installBuild,
                 result.Sections ?? Array.Empty<string>());
         });
 

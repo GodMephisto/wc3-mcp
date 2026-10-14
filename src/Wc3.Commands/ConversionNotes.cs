@@ -79,12 +79,13 @@ public static class ConversionNotes
                 + "helpers give an array a metatable whose __index returns its type's default."),
             new("hashtables",
                 "CreateHashtable, SaveInteger, LoadInteger, FlushChildHashtable",
-                "the same natives, unchanged",
-                Approximated,
-                "The hashtable natives exist in Lua, so a converted call runs, and no table rewrite is "
-                + "done. A Lua table would be idiomatic and faster, but a hashtable passed to another "
-                + "function or a native still has to be a real hashtable, so the rewrite is left to "
-                + "the caller rather than guessed."),
+                "the same natives, or __hs_ helpers on a Lua table",
+                OptIn,
+                "Pass hashtables to rewrite a hashtable that is local to one function and used only "
+                + "through the hashtable natives into a plain Lua table. A hashtable passed to another "
+                + "function or a native keeps the native, because a native still has to receive one. "
+                + "Each helper carries the stored type in its name, so the Lua back to JASS direction "
+                + "names SaveInteger and SaveReal back as themselves rather than guessing."),
             new("embedded script text",
                 "EXExecuteScript, lua_load strings",
                 "__exs, __luachunk",
@@ -97,8 +98,9 @@ public static class ConversionNotes
                 Approximated,
                 "The conversion is not reversible in general, so only the constructs that map back "
                 + "without guessing are converted and every one left is reported. The runtime helper "
-                + "calls invert exactly, a table, closure, method call, generic for, repeat, goto or "
-                + "typed local does not."),
+                + "calls invert exactly, the arithmetic, string, strict-real and typed hashtable "
+                + "helpers alike, and a rewritten hashtable's empty-table declaration becomes "
+                + "CreateHashtable again. A closure, method call, generic for, repeat or goto does not."),
         };
 
         int exact = rules.Count(r => r.Status == Faithful);

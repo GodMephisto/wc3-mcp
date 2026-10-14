@@ -81,8 +81,9 @@ public class JassToLuaTests
             + "call FlushChildHashtable(h, 1)"));
 
         Assert.Contains("local h = {}", r.LuaFunctions);
-        Assert.Contains("__hs_save(h, 1, 2, 3)", r.LuaFunctions);
-        Assert.Contains("__hs_load(h, 1, 2, 0)", r.LuaFunctions);
+        // The helper carries the stored type, so the reverse direction can name the native back.
+        Assert.Contains("__hs_save_integer(h, 1, 2, 3)", r.LuaFunctions);
+        Assert.Contains("__hs_load_integer(h, 1, 2, 0)", r.LuaFunctions);
         Assert.Contains("__hs_flush_child(h, 1)", r.LuaFunctions);
         Assert.Equal(1, r.HashtablesRewritten);
         Assert.Contains("function __hs_save", JassToLua.BuildScript(r));
@@ -124,7 +125,7 @@ public class JassToLuaTests
 
         Assert.Contains(r.Rules, x => x.Area == "integer arithmetic" && x.Status == ConversionNotes.Faithful);
         Assert.Contains(r.Rules, x => x.Area == "real precision" && x.Status == ConversionNotes.OptIn);
-        Assert.Contains(r.Rules, x => x.Area == "hashtables" && x.Status == ConversionNotes.Approximated);
+        Assert.Contains(r.Rules, x => x.Area == "hashtables" && x.Status == ConversionNotes.OptIn);
         Assert.Contains(r.Rules, x => x.Area == "Lua back to JASS" && x.Status == ConversionNotes.Approximated);
         Assert.All(r.Rules, x => Assert.False(string.IsNullOrWhiteSpace(x.Detail)));
         Assert.Contains("faithful", r.Summary);

@@ -63,6 +63,25 @@ public static class JassToLua
         "integer", "real", "string", "boolean", "code", "nothing",
     };
 
+    /// <summary>The hashtable natives the rewrite understands, mapped from the native's own suffix
+    /// to the type it stores. Shared with the Lua to JASS direction, which inverts it to name the
+    /// native back, so the two stay in step by construction.</summary>
+    internal static readonly Dictionary<string, string> HashtableStore = new(StringComparer.Ordinal)
+    {
+        ["Integer"] = "integer", ["Real"] = "real", ["Boolean"] = "boolean", ["Str"] = "string",
+        ["UnitHandle"] = "unit", ["ItemHandle"] = "item", ["DestructableHandle"] = "destructable",
+        ["TimerHandle"] = "timer", ["TriggerHandle"] = "trigger", ["EffectHandle"] = "effect",
+        ["GroupHandle"] = "group", ["LocationHandle"] = "location", ["RegionHandle"] = "region",
+        ["LightningHandle"] = "lightning", ["FogModifierHandle"] = "fogmodifier",
+        ["AbilityHandle"] = "ability",
+    };
+
+    /// <summary>The suffix a hashtable helper carries for the type it stores. It is the type's own
+    /// name, so the Lua to JASS direction can name the native back. A Lua table is untyped, so
+    /// without it a rewritten SaveInteger and SaveReal would be indistinguishable, and every handle
+    /// kind would collapse to one name.</summary>
+    internal static string HashtableSuffix(string type) => type;
+
     /// <summary>
     /// Converts <paramref name="mapSource"/>. <paramref name="commonJ"/> and <paramref name="blizzardJ"/>
     /// supply the native and Blizzard.j signatures, which decide where an integer operation needs
@@ -187,10 +206,16 @@ public static class JassToLua
           if v == nil then return d end
           return v
         end
-        function __hs_has(t, k, c) local p = t[k] return p ~= nil and p[c] ~= nil end
-        function __hs_remove(t, k, c) local p = t[k] if p ~= nil then p[c] = nil end end
+        local function __hs_has(t, k, c) local p = t[k] return p ~= nil and p[c] ~= nil end
+        local function __hs_remove(t, k, c) local p = t[k] if p ~= nil then p[c] = nil end end
         function __hs_flush_child(t, k) t[k] = nil end
         function __hs_flush(t) for k in __pairs(t) do t[k] = nil end end
+        -- One alias per stored type, so the Lua to JASS direction can name the native back. The
+        -- suffix is the type's own name, integer, real, boolean, string and the handle kinds.
+        __hs_save_integer, __hs_save_real, __hs_save_boolean, __hs_save_string, __hs_save_unit, __hs_save_item, __hs_save_destructable, __hs_save_timer, __hs_save_trigger, __hs_save_effect, __hs_save_group, __hs_save_location, __hs_save_region, __hs_save_lightning, __hs_save_fogmodifier, __hs_save_ability = __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save, __hs_save
+        __hs_load_integer, __hs_load_real, __hs_load_boolean, __hs_load_string, __hs_load_unit, __hs_load_item, __hs_load_destructable, __hs_load_timer, __hs_load_trigger, __hs_load_effect, __hs_load_group, __hs_load_location, __hs_load_region, __hs_load_lightning, __hs_load_fogmodifier, __hs_load_ability = __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load, __hs_load
+        __hs_has_integer, __hs_has_real, __hs_has_boolean, __hs_has_string, __hs_has_unit, __hs_has_item, __hs_has_destructable, __hs_has_timer, __hs_has_trigger, __hs_has_effect, __hs_has_group, __hs_has_location, __hs_has_region, __hs_has_lightning, __hs_has_fogmodifier, __hs_has_ability = __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has, __hs_has
+        __hs_remove_integer, __hs_remove_real, __hs_remove_boolean, __hs_remove_string, __hs_remove_unit, __hs_remove_item, __hs_remove_destructable, __hs_remove_timer, __hs_remove_trigger, __hs_remove_effect, __hs_remove_group, __hs_remove_location, __hs_remove_region, __hs_remove_lightning, __hs_remove_fogmodifier, __hs_remove_ability = __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove, __hs_remove
         """;
 
     /// <summary>
@@ -1232,18 +1257,6 @@ public static class JassToLua
             _ => "{}",
         };
 
-        /// <summary>The hashtable natives this rewrite understands, mapped to the type each stores,
-        /// so a load supplies the default the JASS type reads from an unwritten slot.</summary>
-        private static readonly Dictionary<string, string> HashtableStore = new(StringComparer.Ordinal)
-        {
-            ["Integer"] = "integer", ["Real"] = "real", ["Boolean"] = "boolean", ["Str"] = "string",
-            ["UnitHandle"] = "unit", ["ItemHandle"] = "item", ["DestructableHandle"] = "destructable",
-            ["TimerHandle"] = "timer", ["TriggerHandle"] = "trigger", ["EffectHandle"] = "effect",
-            ["GroupHandle"] = "group", ["LocationHandle"] = "location", ["RegionHandle"] = "region",
-            ["LightningHandle"] = "lightning", ["FogModifierHandle"] = "fogmodifier",
-            ["AbilityHandle"] = "ability",
-        };
-
         /// <summary>The type a hashtable native stores or loads, read from its suffix, or null when
         /// the native is not one of the family this rewrite understands.</summary>
         private static string? HashtableType(string native)
@@ -1271,14 +1284,15 @@ public static class JassToLua
 
             string? type = HashtableType(name);
             if (type is null) return null;
+            string suffix = HashtableSuffix(type);
             if (name.StartsWith("Save", StringComparison.Ordinal) && args.Count == 4)
-                return $"__hs_save({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])}, {ExprAs(args[3], type)})";
+                return $"__hs_save_{suffix}({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])}, {ExprAs(args[3], type)})";
             if (name.StartsWith("Load", StringComparison.Ordinal) && args.Count == 3)
-                return $"__hs_load({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])}, {DefaultFor(type) ?? "nil"})";
+                return $"__hs_load_{suffix}({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])}, {DefaultFor(type) ?? "nil"})";
             if (name.StartsWith("HaveSaved", StringComparison.Ordinal) && args.Count == 3)
-                return $"__hs_has({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])})";
+                return $"__hs_has_{suffix}({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])})";
             if (name.StartsWith("RemoveSaved", StringComparison.Ordinal) && args.Count == 3)
-                return $"__hs_remove({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])})";
+                return $"__hs_remove_{suffix}({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])})";
             return null;
         }
 

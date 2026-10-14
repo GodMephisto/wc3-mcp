@@ -52,12 +52,12 @@ public static class ObjectTargetFieldsCommand
                 GamedataSupport.Era(b.Build)))
             .ToList();
 
-    /// <summary>Whether a build carries an objects section, so a form can be shown for it.</summary>
-    public static bool HasObjectData(string build, string? schemasDir = null)
-    {
-        var schema = TargetBuildSettings.LoadSchema(build, schemasDir);
-        return schema.Objects is { Count: > 0 };
-    }
+    /// <summary>Whether a build carries an objects section, so a form can be shown for it. Answered
+    /// from the cached build list rather than by parsing the build's whole schema again, which is
+    /// what the Studio's object panel asks on every ShowMap.</summary>
+    public static bool HasObjectData(string build, string? schemasDir = null) =>
+        TargetBuildSettings.List(schemasDir)
+            .Any(b => b.Build == build && b.Sections.Contains("objects"));
 
     /// <summary>
     /// The build's view of one object's fields, or a message when the build has no object data.

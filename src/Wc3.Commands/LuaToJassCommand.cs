@@ -46,7 +46,158 @@ public static class LuaToJassCommand
     private static readonly Dictionary<string, string> HelperOperators = new(StringComparer.Ordinal)
     {
         ["__iadd"] = "+", ["__isub"] = "-", ["__imul"] = "*", ["__idiv"] = "/", ["__div"] = "/",
+        // The strict-real helpers stand for the same operators. The rounding they add is what the
+        // JASS runtime does anyway, so the operator is the exact JASS spelling.
+        ["__fadd"] = "+", ["__fsub"] = "-", ["__fmul"] = "*", ["__fdiv"] = "/",
     };
+
+    /// <summary>
+    /// The native a rewritten hashtable helper names back, or null when the name is not one of
+    /// them. The JASS to Lua direction puts the stored type in the helper's suffix, so SaveInteger
+    /// and SaveReal come back as themselves rather than as a guess, and every handle kind keeps
+    /// its own name.
+    /// </summary>
+    private static string? HashtableCall(string name, List<string> args)
+    {
+        if (name == "__hs_flush_child" && args.Count == 2)
+            return $"FlushChildHashtable({args[0]}, {args[1]})";
+        if (name == "__hs_flush" && args.Count == 1)
+            return $"FlushParentHashtable({args[0]})";
+
+        (string Verb, int Arity)? shape =
+            name.StartsWith("__hs_save_", StringComparison.Ordinal) ? ("Save", 4) :
+            name.StartsWith("__hs_load_", StringComparison.Ordinal) ? ("Load", 3) :
+            name.StartsWith("__hs_has_", StringComparison.Ordinal) ? ("HaveSaved", 3) :
+            name.StartsWith("__hs_remove_", StringComparison.Ordinal) ? ("RemoveSaved", 3) :
+            null;
+        if (shape is not { } s || args.Count < s.Arity) return null;
+
+        string type = name[(name.LastIndexOf('_') + 1)..];
+        string? nativeSuffix = JassToLua.HashtableStore
+            .FirstOrDefault(kv => kv.Value == type).Key;
+        if (nativeSuffix is null) return null;
+        // A load drops its default, which the JASS native does not take.
+        return $"{s.Verb}{nativeSuffix}({string.Join(", ", args.Take(s.Arity))})";
+    }
+
+    /// <summary>
+    /// The locals in a function body that hold a hashtable. The JASS to Lua direction turns
+    /// CreateHashtable into an empty table, so the reverse has to recognise it again, and it only
+    /// does when the local is declared as an empty table and every reference to its name is the
+    /// first argument of a __hs_ helper. A real Lua table used as an array is left alone.
+    /// </summary>
+    private static HashSet<string> HashtableLocals(LuaBlock body)
+    {
+        var declared = new List<string>();
+        var refs = new Dictionary<string, int>(StringComparer.Ordinal);
+        var handleRefs = new Dictionary<string, int>(StringComparer.Ordinal);
+        Collect(body, declared, refs, handleRefs);
+
+        var result = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var name in declared)
+            if (refs.GetValueOrDefault(name) > 0 && refs.GetValueOrDefault(name) == handleRefs.GetValueOrDefault(name))
+                result.Add(name);
+        return result;
+    }
+
+    private static void Collect(LuaBlock block, List<string> declared,
+        Dictionary<string, int> refs, Dictionary<string, int> handleRefs)
+    {
+        foreach (var s in block) Collect(s, declared, refs, handleRefs);
+    }
+
+    private static void Collect(LuaStmt s, List<string> declared,
+        Dictionary<string, int> refs, Dictionary<string, int> handleRefs)
+    {
+        switch (s)
+        {
+            case LocalStmt l:
+                if (l.Names.Count == 1 && l.Values.Count == 1 && l.Values[0] is TableExpr { Fields.Count: 0 })
+                    declared.Add(l.Names[0]);
+                foreach (var v in l.Values) Collect(v, declared, refs, handleRefs);
+                break;
+            case AssignStmt a:
+                foreach (var t in a.Targets) Collect(t, declared, refs, handleRefs);
+                foreach (var v in a.Values) Collect(v, declared, refs, handleRefs);
+                break;
+            case CallStmt c: Collect(c.Call, declared, refs, handleRefs); break;
+            case FunctionStmt f: Collect(f.Body, declared, refs, handleRefs); break;
+            case IfStmt i:
+                foreach (var (cond, blk) in i.Branches)
+                {
+                    if (cond is not null) Collect(cond, declared, refs, handleRefs);
+                    Collect(blk, declared, refs, handleRefs);
+                }
+                break;
+            case WhileStmt w:
+                Collect(w.Cond, declared, refs, handleRefs);
+                Collect(w.Body, declared, refs, handleRefs);
+                break;
+            case NumericForStmt nf:
+                Collect(nf.Start, declared, refs, handleRefs);
+                Collect(nf.Stop, declared, refs, handleRefs);
+                if (nf.Step is not null) Collect(nf.Step, declared, refs, handleRefs);
+                Collect(nf.Body, declared, refs, handleRefs);
+                break;
+            case GenericForStmt gf:
+                foreach (var e in gf.Exprs) Collect(e, declared, refs, handleRefs);
+                Collect(gf.Body, declared, refs, handleRefs);
+                break;
+            case RepeatStmt r:
+                Collect(r.Body, declared, refs, handleRefs);
+                Collect(r.Cond, declared, refs, handleRefs);
+                break;
+            case DoStmt d: Collect(d.Body, declared, refs, handleRefs); break;
+            case ReturnStmt r: foreach (var v in r.Values) Collect(v, declared, refs, handleRefs); break;
+            default: break;   // break, goto and label carry no reference
+        }
+    }
+
+    private static void Collect(LuaExpr e, List<string> declared,
+        Dictionary<string, int> refs, Dictionary<string, int> handleRefs)
+    {
+        switch (e)
+        {
+            case NameExpr n:
+                refs[n.Name] = refs.GetValueOrDefault(n.Name) + 1;
+                break;
+            case CallExpr c:
+                // A __hs_ helper's first argument is a handle position, not an ordinary use, so it
+                // counts in both tallies. Every other use counts only as a plain reference, which
+                // is what makes a name that also appears elsewhere fail the check.
+                if (LuaScriptReader.CalleeName(c.Func) is { } callee
+                    && callee.StartsWith("__hs_", StringComparison.Ordinal)
+                    && c.Args.Count > 0 && c.Args[0] is NameExpr h)
+                {
+                    refs[h.Name] = refs.GetValueOrDefault(h.Name) + 1;
+                    handleRefs[h.Name] = handleRefs.GetValueOrDefault(h.Name) + 1;
+                    for (int i = 1; i < c.Args.Count; i++) Collect(c.Args[i], declared, refs, handleRefs);
+                    return;
+                }
+                Collect(c.Func, declared, refs, handleRefs);
+                foreach (var a in c.Args) Collect(a, declared, refs, handleRefs);
+                break;
+            case IndexExpr ix:
+                Collect(ix.Base, declared, refs, handleRefs);
+                Collect(ix.Key, declared, refs, handleRefs);
+                break;
+            case FunctionExpr fe: Collect(fe.Body, declared, refs, handleRefs); break;
+            case UnaryExpr u: Collect(u.Operand, declared, refs, handleRefs); break;
+            case BinaryExpr b:
+                Collect(b.Left, declared, refs, handleRefs);
+                Collect(b.Right, declared, refs, handleRefs);
+                break;
+            case ParenExpr p: Collect(p.Inner, declared, refs, handleRefs); break;
+            case TableExpr t:
+                foreach (var (k, v) in t.Fields)
+                {
+                    if (k is LuaExpr ke) Collect(ke, declared, refs, handleRefs);
+                    Collect(v, declared, refs, handleRefs);
+                }
+                break;
+            default: break;   // literals
+        }
+    }
 
     public static LuaToJassResult Execute(MapDocument doc)
     {
@@ -90,6 +241,9 @@ public static class LuaToJassCommand
         private readonly Dictionary<string, int> _funcArity = new(StringComparer.Ordinal);
         private readonly HashSet<string> _globals = new(StringComparer.Ordinal);
         private readonly Dictionary<string, string> _globalTypes = new(StringComparer.Ordinal);
+        /// <summary>The locals of the function being converted that hold a rewritten hashtable, so
+        /// its empty-table declaration is emitted as CreateHashtable. Set per function.</summary>
+        private HashSet<string> _hashtableLocals = new(StringComparer.Ordinal);
 
         public string Text = "";
         public int FunctionsConverted;
@@ -201,6 +355,7 @@ public static class LuaToJassCommand
                 return;
             }
             var locals = new HashSet<string>(StringComparer.Ordinal);
+            _hashtableLocals = HashtableLocals(fnBody);
             var converted = new StringBuilder();
             if (!ConvertBlock(fnBody, locals, converted, 1))
             {
@@ -243,6 +398,15 @@ public static class LuaToJassCommand
                 }
                 case LocalStmt l:
                     if (l.Names.Count != 1 || l.Values.Count != 1) { Report("local", s.Line, "a local with more than one name or value"); return false; }
+                    // A rewritten hashtable comes back as the CreateHashtable call it started as,
+                    // which is the only way the round trip closes for a hashtable script.
+                    if (l.Values[0] is TableExpr { Fields.Count: 0 } && _hashtableLocals.Contains(l.Names[0]))
+                    {
+                        locals.Add(l.Names[0]);
+                        output.Append(ind).Append("local hashtable ").Append(l.Names[0])
+                            .Append(" = CreateHashtable()\n");
+                        return true;
+                    }
                     var type = InferType(l.Values[0]);
                     if (type is null) { Report("local", s.Line, $"local '{l.Names[0]}' has no literal initializer, so its JASS type is unknown"); return false; }
                     var localValue = Expr(l.Values[0], locals);
@@ -343,6 +507,8 @@ public static class LuaToJassCommand
                 return $"({args[0]} {jassOp} {args[1]})";
             if (name == "__cat" && args.Count >= 2)
                 return "(" + string.Join(" + ", args) + ")";
+            if (name.StartsWith("__hs_", StringComparison.Ordinal))
+                return HashtableCall(name, args);
             if (name is "__exs" or "__luachunk")
             {
                 Diagnostics.Add($"a call to {name} at line {c.Line} needs the runtime tables it is indexed by, which were not converted");
@@ -379,6 +545,12 @@ public static class LuaToJassCommand
                     "__cat" => "string",
                     "__iadd" or "__isub" or "__imul" or "__idiv" => "integer",
                     "__div" => "real",
+                    "__fadd" or "__fsub" or "__fmul" or "__fdiv" => "real",
+                    // A typed hashtable load returns the type in its suffix, and a has returns a
+                    // boolean, so a local assigned from either keeps its JASS type.
+                    _ when name.StartsWith("__hs_load_", StringComparison.Ordinal) =>
+                        name[(name.LastIndexOf('_') + 1)..],
+                    _ when name.StartsWith("__hs_has_", StringComparison.Ordinal) => "boolean",
                     _ => null,
                 };
             return null;

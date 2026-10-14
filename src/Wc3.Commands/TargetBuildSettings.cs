@@ -317,8 +317,17 @@ public static class TargetBuildSettings
     public static IReadOnlyList<BuildInfo> List(string? schemasDir = null, bool fullOnly = false)
     {
         var resolvedSchemas = ResolveSchemasDir(schemasDir);
-        var result = new List<BuildInfo>();
+        string cacheKey = $"{resolvedSchemas}|{fullOnly}";
 
+        // Cached, because answering it parses every schema in the directory in full just to read
+        // its build name and section list. Measured at 5,256ms for 159 builds, and the Studio's
+        // object panel asks on every ShowMap, which made opening that tab hold the UI thread for
+        // five seconds. The schemas are a shipped asset, so the answer only changes with the
+        // directory, which is part of the key.
+        lock (ListCache)
+            if (ListCache.TryGetValue(cacheKey, out var cached)) return cached;
+
+        var result = new List<BuildInfo>();
         foreach (var subDir in Directory.EnumerateDirectories(resolvedSchemas))
         {
             string manifestPath = Path.Combine(subDir, "manifest.json");
@@ -336,7 +345,18 @@ public static class TargetBuildSettings
         result.Sort((a, b) => Wc3.Commands.GameBuildName.Compare(
             Wc3.Commands.GameBuildName.Parse(a.Build),
             Wc3.Commands.GameBuildName.Parse(b.Build)));
+
+        lock (ListCache) ListCache[cacheKey] = result;
         return result;
+    }
+
+    private static readonly Dictionary<string, IReadOnlyList<BuildInfo>> ListCache =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Drop the <see cref="List"/> cache. For testing only.</summary>
+    public static void ResetListCache()
+    {
+        lock (ListCache) ListCache.Clear();
     }
 
     /// <summary>

@@ -55,8 +55,13 @@ public class McpToolSweepTests
     private static bool IsReadOnly(string tool) =>
         !MutatingPrefixes.Any(p => tool.StartsWith(p, StringComparison.Ordinal));
 
+    /// <remarks>
+    /// Ten minutes, not five. The sweep calls 181 read-only tools against one map and answered 109
+    /// of them in about five, so a five minute budget passed alone and timed out as the last test
+    /// of a twenty minute corpus run, measured on a loaded machine.
+    /// </remarks>
     private static Task WithClient(Func<McpClient, CancellationToken, Task> body) =>
-        McpTestClient.WithClient(body, TimeSpan.FromMinutes(5));
+        McpTestClient.WithClient(body, TimeSpan.FromMinutes(10));
 
     [Fact]
     [Trait("Category", "Corpus")]

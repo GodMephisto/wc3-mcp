@@ -88,6 +88,12 @@ public static class ReplayCommand
             ? new[] { path }
             : Directory.Exists(path)
                 ? Directory.EnumerateFiles(path, "*.w3g", SearchOption.AllDirectories)
+                    // The client writes TempReplay.w3g while a game is live, so it is a scratch
+                    // file rather than a saved replay, and reading it reports "not a Warcraft III
+                    // replay". That is true of the bytes and wrong for the list, which is meant to
+                    // be the replays the user has. Measured on this machine's BattleNet folder.
+                    .Where(f => !Path.GetFileName(f)
+                        .Equals("TempReplay.w3g", StringComparison.OrdinalIgnoreCase))
                 : Array.Empty<string>();
         var games = files.Select(Read)
             .Where(g => mapFilter is null
