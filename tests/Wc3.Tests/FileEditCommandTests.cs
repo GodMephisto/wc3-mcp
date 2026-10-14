@@ -72,6 +72,13 @@ public class FileEditCommandTests
         Assert.Equal(bigger.Length, row.SizeBytes);
     }
 
+    /// <remarks>
+    /// This failed once in a full run and did not reproduce across thirty targeted runs or five
+    /// full ones afterwards, so the cause is unknown. It is most likely a concurrent build or a
+    /// second agent touching the tree, which the repository does see. The in-memory check and the
+    /// listing in the failure message are there so the next failure says which half broke, the add
+    /// or the save and reload, instead of leaving the same question open again.
+    /// </remarks>
     [Fact]
     public void AddOrReplace_SurvivesSaveAndReload()
     {
@@ -79,8 +86,13 @@ public class FileEditCommandTests
         var payload = Encoding.ASCII.GetBytes("persisted");
         FileEditCommand.AddOrReplace(doc, ImportName, payload);
 
+        Assert.Equal(payload, FileEditCommand.ReadBytes(doc, ImportName));
+
         var reloaded = MapDocument.Load(doc.SaveToBytes());
 
+        var listed = string.Join(", ", FileEditCommand.ListFiles(reloaded).Select(f => f.Name));
+        Assert.True(listed.Contains(ImportName, StringComparison.OrdinalIgnoreCase),
+            $"the reloaded map does not list {ImportName}. It lists: {listed}");
         Assert.Equal(payload, FileEditCommand.ReadBytes(reloaded, ImportName));
     }
 

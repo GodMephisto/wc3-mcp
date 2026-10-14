@@ -240,6 +240,10 @@ public sealed class SetupTests : IDisposable
     [Fact]
     public void Install_puts_the_exe_folder_on_the_user_path_once_and_uninstall_all_takes_it_off()
     {
+        // Windows only. The PATH writer targets the Windows user PATH, which has no equivalent
+        // here, and these assert its exact Windows separator form.
+        if (!OperatingSystem.IsWindows()) return;
+
         Directory.CreateDirectory(Path.Combine(Home, ".cursor"));
         var folder = Path.GetDirectoryName(Entry.Command)!;
 
@@ -257,6 +261,9 @@ public sealed class SetupTests : IDisposable
     [Fact]
     public void Path_entries_written_with_variables_stay_unexpanded()
     {
+        // Windows only, see above.
+        if (!OperatingSystem.IsWindows()) return;
+
         _userPath = @"%USERPROFILE%\go\bin;%SystemRoot%\system32";
         Directory.CreateDirectory(Path.Combine(Home, ".cursor"));
         var folder = Path.GetDirectoryName(Entry.Command)!;
@@ -270,6 +277,9 @@ public sealed class SetupTests : IDisposable
     [Fact]
     public void A_folder_already_on_path_through_a_variable_is_not_added_twice()
     {
+        // Windows only. USERPROFILE is unset off Windows, so the combine below would throw.
+        if (!OperatingSystem.IsWindows()) return;
+
         var profile = Environment.GetEnvironmentVariable("USERPROFILE")!;
         Assert.True(SetupEnvironment.PathContains(@"C:\x;%USERPROFILE%\Tools\", Path.Combine(profile, "Tools")));
         Assert.False(SetupEnvironment.PathContains(@"C:\x", Path.Combine(profile, "Tools")));

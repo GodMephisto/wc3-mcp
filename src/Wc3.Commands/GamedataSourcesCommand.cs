@@ -71,22 +71,10 @@ public static class GamedataSourcesCommand
             hashes, one.Schema.Inputs, one.Schema.Missing);
     }
 
-    /// <summary>
-    /// The sections the folder holds, in the same order and with the same four names
-    /// <see cref="GameSchemaCommand.Sections"/> reports, taken from the section files that exist
-    /// rather than from loaded payloads, since the manifest-only load carries none.
-    /// </summary>
-    private static IReadOnlyList<string> SectionsPresent(string dir)
-    {
-        var names = new List<string>();
-        foreach (var (section, file) in new[]
-                 {
-                     ("objects", "objects.json"), ("triggers", "triggers.json"),
-                     ("script", "script.json"), ("enums", "enums.json"),
-                 })
-            if (File.Exists(Path.Combine(dir, file))) names.Add(section);
-        return names;
-    }
+    /// <summary>The sections the folder holds, from the files present. See
+    /// <see cref="GameSchemaCommand.SectionsOnDisk"/>.</summary>
+    private static IReadOnlyList<string> SectionsPresent(string dir) =>
+        GameSchemaCommand.SectionsOnDisk(dir);
 
     /// <summary>
     /// Builds the index and writes it as sources.json to <paramref name="outFile"/>. Returns the index

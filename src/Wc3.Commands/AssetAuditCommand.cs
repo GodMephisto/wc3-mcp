@@ -72,8 +72,8 @@ public static class AssetAuditCommand
                 findings.Add(new AssetAuditFinding(name, AssetAuditKind.Oversized,
                     $"{size} bytes, over the {maxBytes}-byte threshold"));
 
-            var stem = Path.GetFileNameWithoutExtension(name);
-            var ext = Path.GetExtension(name).ToLowerInvariant();
+            var stem = Wc3Path.GetFileNameWithoutExtension(name);
+            var ext = Wc3Path.GetExtension(name).ToLowerInvariant();
             if (ext == ".blp")
             {
                 if (TryTextureSize(entry, out int width, out int height))

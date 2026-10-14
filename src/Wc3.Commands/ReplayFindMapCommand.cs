@@ -33,6 +33,20 @@ public static class ReplayFindMapCommand
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Warcraft III", "Maps");
 
     /// <summary>Pure resolution over a folder. Returns the matched file and every name match.</summary>
+    /// <summary>
+    /// True when <paramref name="tail"/> is the end of <paramref name="path"/> on a separator
+    /// boundary, so "Download/X.w3x" matches "Maps/Download/X.w3x" but not "Other/Download/X.w3x"
+    /// unless it is a real tail.
+    /// </summary>
+    private static bool IsTailOf(string tail, string path)
+    {
+        if (path.Equals(tail, StringComparison.OrdinalIgnoreCase)) return true;
+        if (path.Length <= tail.Length) return false;
+        if (!path.EndsWith(tail, StringComparison.OrdinalIgnoreCase)) return false;
+        char boundary = path[path.Length - tail.Length - 1];
+        return boundary == '/' || boundary == '\\';
+    }
+
     internal static (string? Resolved, IReadOnlyList<string> Candidates) Resolve(
         string? cleanedMap, string folder)
     {
@@ -61,8 +75,16 @@ public static class ReplayFindMapCommand
             matches.Add((file, Path.GetRelativePath(folder, file).Replace('\\', '/')));
         }
 
-        var exact = matches.FirstOrDefault(m =>
-            m.Relative.Equals(wanted, StringComparison.OrdinalIgnoreCase));
+        // The replay records the map relative to the install, "Maps\Download\X.w3x", while a
+        // candidate is relative to the search folder, "Download\X.w3x", so comparing the two
+        // directly never matched. Resolution then fell through to the first enumerated candidate,
+        // which was the right one on Windows by directory order and the wrong one on macOS. The
+        // recorded path is matched on its tail, longest tail first so the most specific wins.
+        var exact = matches
+            .Where(m => IsTailOf(m.Relative, wanted))
+            .OrderByDescending(m => m.Relative.Length)
+            .ThenBy(m => m.Relative, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault();
         string? resolved = exact.Relative is not null ? exact.Full : matches.FirstOrDefault().Full;
         var candidates = matches.Select(m => m.Relative)
             .OrderBy(r => r, StringComparer.OrdinalIgnoreCase).ToList();

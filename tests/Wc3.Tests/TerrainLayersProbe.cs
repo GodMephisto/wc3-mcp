@@ -26,6 +26,15 @@ public class TerrainLayersProbe
     {
         if (!Directory.Exists(MapsRoot)) return; // gated: only runs where local maps are present
 
+        // CASC needs the game install as well as the maps. On a machine with the map library but no
+        // install every layer comes out as a flat-colour fallback and the assertion below failed,
+        // measured on macOS.
+        if (Wc3.GameData.GameInstall.Locate() is null)
+        {
+            _out.WriteLine("[TerrainLayersProbe] no game install on this machine, skipped");
+            return;
+        }
+
         foreach (var path in Directory.EnumerateFiles(MapsRoot, "*.w3x", SearchOption.AllDirectories).Take(12))
         {
             MapDocument doc;

@@ -42,7 +42,7 @@ public static class ConvertCommand
             ?? throw new InvalidDataException(
                 $"model '{modelInternalPath}' is not in the map, only map-imported models export");
         var model = ModelParser.Parse(entry.CurrentBytes, entry.FileName!);
-        return Export(model, Path.GetFileNameWithoutExtension(entry.FileName!), doc, mtlName);
+        return Export(model, Wc3Path.GetFileNameWithoutExtension(entry.FileName), doc, mtlName);
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ public static class ConvertCommand
     {
         ArgumentNullException.ThrowIfNull(modelBytes);
         var model = ModelParser.Parse(modelBytes, fileName);
-        return Export(model, Path.GetFileNameWithoutExtension(fileName), doc: null, mtlName);
+        return Export(model, Wc3Path.GetFileNameWithoutExtension(fileName), doc: null, mtlName);
     }
 
     private static ModelExport Export(Model3D model, string baseName, MapDocument? doc, string? mtlName = null)

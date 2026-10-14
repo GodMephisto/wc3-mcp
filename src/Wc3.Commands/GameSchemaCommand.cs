@@ -223,6 +223,36 @@ public static class GameSchemaCommand
             schema.Script?.Values.Sum(a => a.Natives.Count) ?? 0, schema.Enums?.Count ?? 0, schema.Missing);
     }
 
+    /// <summary>The section files a folder may hold, with the section name each belongs to.</summary>
+    public static readonly (string Section, string File)[] SectionFiles =
+    {
+        ("objects", "objects.json"), ("triggers", "triggers.json"),
+        ("script", "script.json"), ("enums", "enums.json"),
+    };
+
+    /// <summary>
+    /// Which sections a folder holds, read from the files present rather than from loaded payloads,
+    /// for a caller that has only the manifest. A section is written as a file only when it has
+    /// content, so a present non-empty file is the same test <see cref="Sections"/> makes.
+    /// </summary>
+    public static IReadOnlyList<string> SectionsOnDisk(string dir)
+    {
+        var names = new List<string>();
+        foreach (var (section, file) in SectionFiles)
+        {
+            var path = Path.Combine(dir, file);
+            if (File.Exists(path) && new FileInfo(path).Length > 0) names.Add(section);
+        }
+        return names;
+    }
+
+    /// <summary>True when the folder carries object data, by the same file test.</summary>
+    public static bool HasObjectData(string dir)
+    {
+        var path = Path.Combine(dir, "objects.json");
+        return File.Exists(path) && new FileInfo(path).Length > 0;
+    }
+
     public static IReadOnlyList<string> Sections(GameSchema s) =>
         new[] { s.Objects is null ? null : "objects", s.Triggers is null ? null : "triggers",
                 s.Script is null ? null : "script", s.Enums is null ? null : "enums" }

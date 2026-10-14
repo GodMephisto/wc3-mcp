@@ -176,14 +176,17 @@ public static class TargetBuildSettings
         if (Directory.Exists(target) && File.Exists(Path.Combine(target, "manifest.json")))
             return GameSchemaCommand.Load(target);
 
+        // The manifest to find the match, then the one full schema. Loading every build's four
+        // sections to locate one of them parsed hundreds of MB and was most of compat explain's
+        // six seconds, measured.
         var resolvedSchemas = ResolveSchemasDir(schemasDir);
         var names = new List<string>();
         foreach (var subDir in Directory.EnumerateDirectories(resolvedSchemas))
         {
             if (!File.Exists(Path.Combine(subDir, "manifest.json"))) continue;
-            var schema = GameSchemaCommand.Load(subDir);
-            if (schema.Build == target) return schema;
-            names.Add(schema.Build);
+            var build = GameSchemaCommand.LoadManifest(subDir).Build;
+            if (build == target) return GameSchemaCommand.Load(subDir);
+            names.Add(build);
         }
 
         var close = Suggest(target, names);
@@ -200,7 +203,7 @@ public static class TargetBuildSettings
         foreach (var subDir in Directory.EnumerateDirectories(schemasDir))
         {
             if (!File.Exists(Path.Combine(subDir, "manifest.json"))) continue;
-            names.Add(GameSchemaCommand.Load(subDir).Build);
+            names.Add(GameSchemaCommand.LoadManifest(subDir).Build);
         }
         return names;
     }
@@ -333,13 +336,14 @@ public static class TargetBuildSettings
             string manifestPath = Path.Combine(subDir, "manifest.json");
             if (!File.Exists(manifestPath)) continue;
 
-            var schema = GameSchemaCommand.Load(subDir);
+            // The manifest and the section files, not the sections themselves. This loop asks only
+            // for each build's name and which sections it holds, and loading the payloads to answer
+            // that parsed 400 MB. It is the reason a fresh CLI process spent five seconds before it
+            // reached any work, measured on compat explain.
+            var manifest = GameSchemaCommand.LoadManifest(subDir);
+            if (fullOnly && !GameSchemaCommand.HasObjectData(subDir)) continue;
 
-            bool hasObjects = schema.Objects is not null && schema.Objects.Count > 0;
-            if (fullOnly && !hasObjects) continue;
-
-            var sections = GameSchemaCommand.Sections(schema);
-            result.Add(new BuildInfo(schema.Build, sections));
+            result.Add(new BuildInfo(manifest.Build, GameSchemaCommand.SectionsOnDisk(subDir)));
         }
 
         result.Sort((a, b) => Wc3.Commands.GameBuildName.Compare(
@@ -393,7 +397,8 @@ public static class TargetBuildSettings
             string manifestPath = Path.Combine(subDir, "manifest.json");
             if (!File.Exists(manifestPath)) continue;
 
-            var schema = GameSchemaCommand.Load(subDir);
+            // The build name only, so the manifest alone.
+            var schema = GameSchemaCommand.LoadManifest(subDir);
 
             if (installBuild is not null && installBuild == schema.Build)
                 defaultBuild = schema.Build;

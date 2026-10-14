@@ -58,6 +58,34 @@ public class ColdScanTimingTests
         warm.Stop();
         _out.WriteLine($"warm union scan: {warm.ElapsedMilliseconds:N0} ms");
 
+        // Drop the in-memory copy so the next call reads the on-disk cache the cold scan just
+        // wrote. That is the path a fresh CLI process takes, where the whole point is not to pay
+        // the parse again.
+        TargetCompatCommand.ResetIdentifierIndexCache();
+        var fromDisk = Stopwatch.StartNew();
+        var diskIndex = TargetCompatCommand.LoadIdentifierIndex(dir);
+        fromDisk.Stop();
+        _out.WriteLine($"union scan from the on-disk cache: {fromDisk.ElapsedMilliseconds:N0} ms, "
+            + $"{diskIndex.Kinds.Count:N0} ids");
+
+        // The two halves of compat explain, to see which one owns the wall clock.
+        TargetCompatCommand.ResetIdentifierIndexCache();
+        var explain = Stopwatch.StartNew();
+        var result = CompatExplainCommand.Execute("UnitAddAbility", "Beta-ROC-v1.00", dir);
+        explain.Stop();
+        _out.WriteLine($"CompatExplainCommand.Execute (cold index): {explain.ElapsedMilliseconds:N0} ms, "
+            + $"{result.Builds.Count} builds");
+
+        var again2 = Stopwatch.StartNew();
+        CompatExplainCommand.Execute("UnitAddAbility", "Beta-ROC-v1.00", dir);
+        again2.Stop();
+        _out.WriteLine($"CompatExplainCommand.Execute (warm index): {again2.ElapsedMilliseconds:N0} ms");
+
+        var schemaOnly = Stopwatch.StartNew();
+        TargetBuildSettings.LoadSchema("Beta-ROC-v1.00", dir);
+        schemaOnly.Stop();
+        _out.WriteLine($"TargetBuildSettings.LoadSchema: {schemaOnly.ElapsedMilliseconds:N0} ms");
+
         _out.WriteLine($"{Environment.ProcessorCount} processor(s) visible");
 
         var gam = Stopwatch.StartNew();

@@ -8,8 +8,11 @@ public static class ListCommand
     /// Lists every archive entry. With <paramref name="typeUnnamed"/> the nameless entries
     /// additionally get typed from their leading bytes, so a protected map's listing says
     /// "BLP texture" instead of nothing. That sniff reads a bounded prefix per nameless entry
-    /// (never the full decompression Load deferred) and caches on the entry, but on the worst
-    /// protected maps it is still 65,000 bounded reads, measured at about 2.5 seconds cold.
+    /// (never the full decompression Load deferred) and caches on the entry. The cache makes a
+    /// second pass free, but the first is still one bounded read per nameless entry, measured at
+    /// 22.6 seconds for 64,738 of them on ORDR_S2_2.323[R]_english.w3x. Those reads are serialized
+    /// on the document's archive lock, so it is one read at a time by construction and parallelizing
+    /// it would need a per-thread archive handle.
     /// So it is opt-in, a caller that only wants names and sizes (the Studio status line, the
     /// Files panel's first paint) stays at the 1 ms sweep, and the callers that want content
     /// types (the ls verb, list_files, the Files panel's background pass) ask for them.

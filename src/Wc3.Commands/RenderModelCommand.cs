@@ -278,7 +278,7 @@ public static class RenderModelCommand
         foreach (var p in new[] { path, path.Replace('/', '\\'), path.Replace('\\', '/') }.Distinct())
         {
             yield return p;
-            var ext = Path.GetExtension(p);
+            var ext = Wc3Path.GetExtension(p);
             bool hasTexExt = TextureExtensions.Any(e => ext.Equals(e, StringComparison.OrdinalIgnoreCase));
             if (hasTexExt)
             {
@@ -307,7 +307,7 @@ public static class RenderModelCommand
         foreach (var p in new[] { path, path.Replace('/', '\\'), path.Replace('\\', '/') }.Distinct())
         {
             if (doc.GetFile(p) is { CurrentBytes.Length: > 0 } exact) return exact;
-            var ext = Path.GetExtension(p);
+            var ext = Wc3Path.GetExtension(p);
             var stem = SoundExtensions.Any(e => ext.Equals(e, StringComparison.OrdinalIgnoreCase))
                 ? p[..^ext.Length] : p;
             foreach (var e in SoundExtensions)
@@ -342,11 +342,11 @@ public static class RenderModelCommand
         foreach (var p in new[] { path, path.Replace('/', '\\'), path.Replace('\\', '/') }.Distinct())
         {
             yield return p;
-            var ext = Path.GetExtension(p);
+            var ext = Wc3Path.GetExtension(p);
             bool hasModelExt = ext.Equals(".mdx", StringComparison.OrdinalIgnoreCase)
                 || ext.Equals(".mdl", StringComparison.OrdinalIgnoreCase);
             if (hasModelExt)
-                yield return Path.ChangeExtension(
+                yield return Wc3Path.ChangeExtension(
                     p, ext.Equals(".mdx", StringComparison.OrdinalIgnoreCase) ? ".mdl" : ".mdx");
             else
             {
@@ -395,10 +395,10 @@ public static class RenderModelCommand
     private static IEnumerable<string> CascTextureCandidates(string path)
     {
         yield return path;
-        var ext = Path.GetExtension(path);
+        var ext = Wc3Path.GetExtension(path);
         if (ext.Equals(".blp", StringComparison.OrdinalIgnoreCase)
             || ext.Equals(".tga", StringComparison.OrdinalIgnoreCase))
-            yield return Path.ChangeExtension(path, ".dds");
+            yield return Wc3Path.ChangeExtension(path, ".dds");
     }
 
     /// <summary>Sniffs the container (DDS magic, else BLP); undecodable bytes are null , 

@@ -61,8 +61,14 @@ public static class ContentTypeSniffer
     /// </summary>
     public static SniffedContentType Sniff(MapFileEntry entry)
     {
+        // A pending replacement is sniffed fresh, everything else answers from the cache. The cache
+        // used to be consulted only when assigning the result, after the prefix read, so every
+        // call re-read and re-decompressed the entry's leading sectors even when the verdict was
+        // already known. Measured on a 64,748 entry map, a reopen re-sniffed all of them, 42
+        // seconds, where the whole point of caching on the entry was that a later pass is free.
         if (entry.OverrideBytes is { } pending)
             return Sniff(pending);
+        if (entry.SniffCache is { } cached) return cached;
         if (entry.CurrentSize == 0) return entry.SniffCache ??= SniffedContentType.Empty;
 
         // A declared size with no readable bytes is not emptiness. The span overload cannot tell

@@ -69,6 +69,17 @@ public static class SoundOptimizeCommand
             throw new ArgumentOutOfRangeException(nameof(channels), channels, "channels must be null, 1 or 2");
 
         var requested = SoundConvert.FormatForPath(outPath);
+
+        // Validate the bitrate against what was ASKED for, before the encoder fallback below. A
+        // caller that requests an mp3 at an impossible bitrate has made a bad request whether or
+        // not this machine can encode mp3. Checking after the fallback let it through as a WAV on
+        // a machine with no encoder, so the same call threw on Windows and quietly succeeded on
+        // macOS.
+        int kbps = bitrateKbps ?? DefaultBitrateKbps;
+        if (requested == SoundFormat.Mp3 && kbps is < MinBitrateKbps or > MaxBitrateKbps)
+            throw new ArgumentOutOfRangeException(nameof(bitrateKbps), bitrateKbps,
+                $"an mp3 bitrate must be {MinBitrateKbps}..{MaxBitrateKbps} kbps");
+
         var format = requested;
         string target = outPath;
         string? note = null;
@@ -81,11 +92,6 @@ public static class SoundOptimizeCommand
             target = Path.ChangeExtension(outPath, ".wav");
             note = "no MP3 encoder is available on this machine, wrote a WAV instead";
         }
-
-        int kbps = bitrateKbps ?? DefaultBitrateKbps;
-        if (format == SoundFormat.Mp3 && kbps is < MinBitrateKbps or > MaxBitrateKbps)
-            throw new ArgumentOutOfRangeException(nameof(bitrateKbps), bitrateKbps,
-                $"an mp3 bitrate must be {MinBitrateKbps}..{MaxBitrateKbps} kbps");
 
         int bitsPerSecond = format == SoundFormat.Mp3 ? kbps * 1000 : 0;
         var bytes = SoundConvert.ToOptimized(path, format, targetRate, channels, bitsPerSecond,

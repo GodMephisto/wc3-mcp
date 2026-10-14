@@ -102,7 +102,7 @@ public static class AssetPathCandidates
             foreach (var q in WithIconSiblings(p))
             {
                 yield return q;
-                var ext = Path.GetExtension(q);
+                var ext = Wc3Path.GetExtension(q);
                 var family = ext.Length > 0 ? FamilyOf(ext) : null;
                 if (family is not null)
                 {
@@ -137,8 +137,8 @@ public static class AssetPathCandidates
     private static IEnumerable<string> WithIconSiblings(string p)
     {
         yield return p;
-        var name = Path.GetFileName(p);
-        var dirPrefix = p[..^name.Length]; // everything up to and including the last slash, or ""
+        var name = Wc3Path.GetFileName(p);
+        var dirPrefix = Wc3Path.GetDirectoryPrefix(p); // everything up to and including the last slash, or ""
         foreach (var prefix in IconPrefixes)
         {
             if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;

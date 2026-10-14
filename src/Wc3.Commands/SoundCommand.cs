@@ -63,7 +63,7 @@ public static class SoundCommand
     /// with underscores. Callers ensure uniqueness (Add rejects a duplicate name).</summary>
     public static string SoundNameForFile(string filePath)
     {
-        var stem = Path.GetFileNameWithoutExtension(filePath ?? "");
+        var stem = Wc3Path.GetFileNameWithoutExtension(filePath);
         var cleaned = new string((stem ?? "").Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray());
         if (cleaned.Length == 0) cleaned = "sound";
         return "gg_snd_" + cleaned;

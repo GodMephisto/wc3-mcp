@@ -159,7 +159,9 @@ public static class MapDoctorCommand
         Func<string, string?>? env = null, string? localAppData = null)
     {
         env ??= Environment.GetEnvironmentVariable;
-        localAppData ??= Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        // GetFolderPath returns null on a platform with no such folder, macOS for LocalApplicationData,
+        // and Path.Combine then throws ArgumentNullException instead of reporting a clean absence.
+        localAppData ??= Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) ?? "";
 
         string? exe = env("WC3_DOCTOR");
         if (string.IsNullOrEmpty(exe))
@@ -187,8 +189,42 @@ public static class MapDoctorCommand
             + $"({string.Join(", ", PinnedBuilds.Values)}). Set WC3_DOCTOR_UNPINNED=1 to run it anyway.");
     }
 
+    private static readonly Dictionary<string, MapDoctorResult> ResultCache = new(StringComparer.Ordinal);
+    private static readonly object ResultCacheLock = new();
+
+    /// <summary>
+    /// The doctor is a separate process and takes about five seconds to start, which measured as
+    /// the largest remaining cost in the MCP tool sweep, 16 seconds across four tools. A repeat
+    /// question about the same map should not pay it again, so a read-only answer is remembered
+    /// for the life of the process.
+    /// </summary>
+    /// <remarks>
+    /// Keyed by the command, its arguments and the timestamp and size of any argument that names
+    /// an existing file, so a map edited between two calls is not served the earlier answer.
+    /// Commands that write, which is fix, are never cached.
+    /// </remarks>
+    private static string? CacheKey(string command, List<string> args)
+    {
+        if (!ReadOnlyCommands.Contains(command)) return null;
+
+        var sb = new System.Text.StringBuilder(command);
+        foreach (var a in args)
+        {
+            sb.Append('|').Append(a);
+            if (!File.Exists(a)) continue;
+            var info = new FileInfo(a);
+            sb.Append('@').Append(info.LastWriteTimeUtc.Ticks).Append(':').Append(info.Length);
+        }
+        return sb.ToString();
+    }
+
     private static MapDoctorResult Run(string command, List<string> args, string? workDir)
     {
+        string? cacheKey = CacheKey(command, args);
+        if (cacheKey is not null)
+            lock (ResultCacheLock)
+                if (ResultCache.TryGetValue(cacheKey, out var hit)) return hit;
+
         var (exe, version, sha) = Locate();
         var psi = new ProcessStartInfo(exe)
         {
@@ -224,7 +260,11 @@ public static class MapDoctorCommand
             }
         }
         var tail = string.Join('\n', stderr.Split('\n').TakeLast(20)).Trim();
-        return new(command, p.ExitCode, json, null, $"{version} sha256:{sha[..12]}",
+        var result = new MapDoctorResult(command, p.ExitCode, json, null, $"{version} sha256:{sha[..12]}",
             tail.Length == 0 ? null : tail);
+
+        if (cacheKey is not null)
+            lock (ResultCacheLock) ResultCache[cacheKey] = result;
+        return result;
     }
 }

@@ -63,6 +63,20 @@ public sealed class McpSmokeDoctorLiveTests : McpSmokeBase
     [Fact]
     public Task Doctor_check_answers() => Answers("doctor_check", Args(("map", Fixture)));
 
+    /// <summary>
+    /// The doctor is a separate process at about five seconds a call, so a repeat read-only
+    /// question about the same map is served from the in-process cache. Same instance, not an
+    /// equal one, so this fails if the cache is removed rather than passing on a re-run.
+    /// </summary>
+    [Fact]
+    public void A_repeated_read_only_call_is_served_from_cache()
+    {
+        MapDoctorCommand.Locate();
+        var first = MapDoctorCommand.Check(Fixture);
+        var second = MapDoctorCommand.Check(Fixture);
+        Assert.Same(first, second);
+    }
+
     [Fact]
     public Task Doctor_inspect_answers() => Answers("doctor_inspect", Args(("map", Fixture), ("report", "files")));
 
