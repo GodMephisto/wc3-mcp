@@ -643,15 +643,17 @@ public static class Wc3Tools
         });
 
     [McpServerTool(Name = "script_to_lua", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
-    [Description("Convert a JASS map to a Lua map and save it to out_path. The script becomes war3map.lua, which keeps the JASS rules Lua lacks (32 bit integer wrap, integer division toward zero, division by zero gives zero, a null string concatenates as empty, unset array slots read their type default), and the w3i script language is set to Lua so the game runs it. war3map.j is left as a one line stub. Warnings name untyped calls, and custom text triggers the World Editor would regenerate as JASS. Lua maps are refused. The input map is NEVER modified.")]
+    [Description("Convert a JASS map to a Lua map and save it to out_path. The script becomes war3map.lua, which keeps the JASS rules Lua lacks (32 bit integer wrap, integer division toward zero, division by zero gives zero, a null string concatenates as empty, unset array slots read their type default), and the w3i script language is set to Lua so the game runs it. war3map.j is left as a one line stub. Warnings name untyped calls, and custom text triggers the World Editor would regenerate as JASS. Lua maps are refused. The input map is NEVER modified. Pass strict_reals to also round real arithmetic back to the 32 bit float the JASS runtime holds, since Lua numbers are 64 bit doubles and a converted real expression otherwise drifts.")]
     public static JassToLuaSummary ScriptToLua(
         [Description("Path to a .w3x/.w3m map file or map folder.")] string map,
-        [Description("Where to save the converted map.")] string out_path)
+        [Description("Where to save the converted map.")] string out_path,
+        [Description("Round real (floating point) arithmetic to the 32 bit float JASS uses, so a converted expression does not drift from the original. Off by default, which reproduces the upstream converter byte for byte.")] bool strict_reals = false,
+        [Description("Rewrite a hashtable that is local to one function and used only through the hashtable natives into a plain Lua table, which is what Lua should use. A hashtable passed to another function or a native stays a real hashtable, since a native still has to receive one. Off by default.")] bool hashtables = false)
         => Run(() =>
         {
             var full = ResolveOutPath(map, out_path);
             var doc = LoadMap(map);
-            var r = JassToLuaCommand.Convert(doc);
+            var r = JassToLuaCommand.Convert(doc, strictReals: strict_reals, hashtables: hashtables);
             doc.Save(full);
             return r;
         });
@@ -710,6 +712,10 @@ public static class Wc3Tools
             doc.Save(full);
             return new { r.ScriptFile, r.FunctionsConverted, r.FunctionsSkipped, r.GlobalsConverted, r.Unconverted, r.Diagnostics, SavedTo = full };
         });
+
+    [McpServerTool(Name = "script_conversion_notes", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("The rules the JASS to Lua converter applies and where it diverges, one row per construct, with the JASS form, the Lua it emits and whether that runs the same. Read it before editing a converted script or trusting a conversion, since two rules are approximated, real arithmetic precision and hashtables, and the first is fixed by passing strict_reals to script_to_lua. No map needed. Read-only.")]
+    public static ConversionNotesResult ScriptConversionNotes() => ConversionNotes.Rules();
 
     [McpServerTool(Name = "script_reachable", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("List the functions reachable from the map script's entry points, main and the InitTrig functions, and the dead functions nothing reaches, each with its declaration line. A function reached only through a string (ExecuteFunc) is reported dead here, which is the honest answer to what main reaches. Read-only.")]

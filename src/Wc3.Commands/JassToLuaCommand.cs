@@ -19,7 +19,9 @@ public sealed record JassToLuaSummary(
     int BytesBefore,
     int BytesAfter,
     bool UsedGameHeaders,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    bool StrictReals = false,
+    int HashtablesRewritten = 0);
 
 /// <summary>
 /// Converts a JASS map to a Lua map in memory. The caller saves the document to a new path.
@@ -40,7 +42,8 @@ public static class JassToLuaCommand
     /// since the map's own declarations type most expressions, but a call into a native is untyped
     /// and an integer operation on its result loses the 32 bit wrap.
     /// </remarks>
-    public static JassToLuaSummary Convert(MapDocument doc, string? commonJ = null, string? blizzardJ = null, string? gameDirOverride = null)
+    public static JassToLuaSummary Convert(MapDocument doc, string? commonJ = null, string? blizzardJ = null,
+        string? gameDirOverride = null, bool strictReals = false, bool hashtables = false)
     {
         var (file, source) = ScriptCommand.Read(doc);
         if (ScriptCommand.IsLua(file))
@@ -68,7 +71,8 @@ public static class JassToLuaCommand
         JassToLuaResult r;
         try
         {
-            r = JassToLua.Transpile(commonJ ?? "", blizzardJ ?? "", NormalizeLineEnds(source));
+            r = JassToLua.Transpile(commonJ ?? "", blizzardJ ?? "", NormalizeLineEnds(source),
+                strictReals: strictReals, hashtables: hashtables);
         }
         catch (JassToLuaError e)
         {
@@ -93,9 +97,14 @@ public static class JassToLuaCommand
         var w3i = doc.AddOrReplaceRawFile("war3map.w3i", MapInfoCommand.Serialize(info));
         w3i.Model = info;
 
+        if (hashtables && r.HashtablesRewritten > 0)
+            warnings.Add($"{r.HashtablesRewritten} local hashtable(s) became a Lua table. A hashtable that "
+                         + "escapes its function stayed a native, since a native still has to receive one.");
+
         return new JassToLuaSummary(
             file, r.FuncNames.Count, r.ExsLiterals.Count, r.LuaChunks.Count,
-            ScriptCommand.ScriptEncoding.GetByteCount(source), luaBytes.Length, usedHeaders, warnings);
+            ScriptCommand.ScriptEncoding.GetByteCount(source), luaBytes.Length, usedHeaders, warnings,
+            strictReals, r.HashtablesRewritten);
     }
 
     /// <summary>

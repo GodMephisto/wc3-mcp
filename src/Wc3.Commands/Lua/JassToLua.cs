@@ -25,7 +25,9 @@ public sealed record JassToLuaResult(
     IReadOnlyList<string> FuncNames,
     IReadOnlyList<string> OverridesWithoutTarget,
     IReadOnlyList<string> Warnings,
-    IReadOnlyDictionary<string, (IReadOnlyList<string> Params, string Ret)> MapNatives);
+    IReadOnlyDictionary<string, (IReadOnlyList<string> Params, string Ret)> MapNatives,
+    bool StrictReals = false,
+    int HashtablesRewritten = 0);
 
 /// <summary>
 /// Converts a JASS map script to Lua for Warcraft III 1.31 and later, keeping the JASS rules Lua
@@ -71,8 +73,10 @@ public static class JassToLua
         string commonJ, string blizzardJ, string mapSource,
         IReadOnlyDictionary<string, string>? overrides = null,
         IEnumerable<string>? dropFunctions = null,
-        IReadOnlyDictionary<string, string>? translate = null)
-        => new Transpiler(commonJ, blizzardJ, mapSource, overrides, dropFunctions, translate).Run();
+        IReadOnlyDictionary<string, string>? translate = null,
+        bool strictReals = false,
+        bool hashtables = false)
+        => new Transpiler(commonJ, blizzardJ, mapSource, overrides, dropFunctions, translate, strictReals, hashtables).Run();
 
     /// <summary>
     /// The runtime the converted functions call into. The helpers keep the JASS rules, and the
@@ -141,6 +145,55 @@ public static class JassToLua
         """;
 
     /// <summary>
+    /// The helpers a strict-real conversion adds. JASS reals are 32-bit floats and Lua numbers are
+    /// 64-bit doubles, so a converted <c>a + b</c> on reals drifts where the original did not.
+    /// Each helper rounds its result back through an IEEE single, which is what the JASS runtime
+    /// holds. Only appended when the conversion asked for it, so the default output stays byte
+    /// identical to the upstream port.
+    /// </summary>
+    public const string RealPrelude = """
+        local __pack, __unpack = string.pack, string.unpack
+        local function __f32(x)
+          if type(x) ~= "number" then return x end
+          return (__unpack("f", __pack("f", x)))
+        end
+        function __fadd(a, b) return __f32((a or 0.0) + (b or 0.0)) end
+        function __fsub(a, b) return __f32((a or 0.0) - (b or 0.0)) end
+        function __fmul(a, b) return __f32((a or 0.0) * (b or 0.0)) end
+        function __fdiv(a, b)
+          if b == 0 or b == nil or a == nil then return 0.0 end
+          return __f32(a / b)
+        end
+        """;
+
+    /// <summary>
+    /// The helpers a hashtable rewrite adds. A JASS hashtable is two level, a parent key to a child
+    /// key, and the natives exist in Lua, so leaving them alone is correct, only slow and unidiomatic.
+    /// These keep the same shape on a plain Lua table, and the default a load returns when the slot
+    /// was never written matches the JASS type.
+    /// </summary>
+    public const string HashtablePrelude = """
+        local __pairs = pairs
+        local function __hs(t, k)
+          local p = t[k]
+          if p == nil then p = {} t[k] = p end
+          return p
+        end
+        function __hs_save(t, k, c, v) __hs(t, k)[c] = v end
+        function __hs_load(t, k, c, d)
+          local p = t[k]
+          if p == nil then return d end
+          local v = p[c]
+          if v == nil then return d end
+          return v
+        end
+        function __hs_has(t, k, c) local p = t[k] return p ~= nil and p[c] ~= nil end
+        function __hs_remove(t, k, c) local p = t[k] if p ~= nil then p[c] = nil end end
+        function __hs_flush_child(t, k) t[k] = nil end
+        function __hs_flush(t) for k in __pairs(t) do t[k] = nil end end
+        """;
+
+    /// <summary>
     /// The whole war3map.lua for a conversion. The prelude, the EXExecuteScript and lua_load texts,
     /// the functions, then the globals in a function main and config run before themselves, since
     /// JASS sets its globals before either runs and a native called while the file loads may not
@@ -151,6 +204,8 @@ public static class JassToLua
         var sb = new StringBuilder();
         sb.Append("-- war3map.lua, converted from war3map.j by wc3ctl script to-lua\n");
         sb.Append(Prelude.Replace("\r\n", "\n")).Append('\n');
+        if (r.StrictReals) sb.Append(RealPrelude.Replace("\r\n", "\n")).Append('\n');
+        if (r.HashtablesRewritten > 0) sb.Append(HashtablePrelude.Replace("\r\n", "\n")).Append('\n');
         AppendTable(sb, "__exs_src", r.ExsLiterals);
         AppendTable(sb, "__luachunk_src", r.LuaChunks);
         sb.Append(r.LuaFunctions).Append('\n');
@@ -852,10 +907,16 @@ public static class JassToLua
         string commonSrc, string blizzardSrc, string mapSrc,
         IReadOnlyDictionary<string, string>? overrides,
         IEnumerable<string>? dropFunctions,
-        IReadOnlyDictionary<string, string>? translate)
+        IReadOnlyDictionary<string, string>? translate,
+        bool strictReals,
+        bool hashtables)
     {
         private const int CatMax = 50;
 
+        private readonly bool _strictReals = strictReals;
+        private readonly bool _hashtables = hashtables;
+        private HashSet<string> _rewritable = new(StringComparer.Ordinal);
+        private int _hashtablesRewritten;
         private readonly IReadOnlyDictionary<string, string> _overrides = overrides ?? new Dictionary<string, string>();
         private readonly IReadOnlyDictionary<string, string> _translate = translate ?? new Dictionary<string, string>();
         private readonly HashSet<string> _drop = new(dropFunctions ?? [], StringComparer.Ordinal);
@@ -913,7 +974,8 @@ public static class JassToLua
                 string.Join("\n", funcsOut), globalsOut, _luachunks, _exsLiterals, handleGlobals,
                 _funcNames, missing, _warnings,
                 _mapNatives.ToDictionary(kv => kv.Key,
-                    kv => ((IReadOnlyList<string>)ParamTypes(kv.Value), kv.Value.Ret), StringComparer.Ordinal));
+                    kv => ((IReadOnlyList<string>)ParamTypes(kv.Value), kv.Value.Ret), StringComparer.Ordinal),
+                _strictReals, _hashtablesRewritten);
         }
 
         private (string Type, bool IsArray) VarType(string name)
@@ -1041,6 +1103,7 @@ public static class JassToLua
                     string ta = EType(e.BN), tb = EType(e.CN);
                     if (ta == "integer" && tb == "integer" && !(SmallLit(e.BN) || SmallLit(e.CN)))
                         return Two("__iadd({0}, {1})", e);
+                    if (_strictReals && RealOperand(ta, tb)) return Two("__fadd({0}, {1})", e);
                     return Two("({0} + {1})", e);
                 }
                 case "-":
@@ -1048,17 +1111,23 @@ public static class JassToLua
                     string ta = EType(e.BN), tb = EType(e.CN);
                     if (ta == "integer" && tb == "integer" && !(SmallLit(e.BN) || SmallLit(e.CN)))
                         return Two("__isub({0}, {1})", e);
+                    if (_strictReals && RealOperand(ta, tb)) return Two("__fsub({0}, {1})", e);
                     return Two("({0} - {1})", e);
                 }
                 case "*":
                 {
                     string ta = EType(e.BN), tb = EType(e.CN);
-                    return ta == "integer" && tb == "integer" ? Two("__imul({0}, {1})", e) : Two("({0} * {1})", e);
+                    if (ta == "integer" && tb == "integer") return Two("__imul({0}, {1})", e);
+                    if (_strictReals && RealOperand(ta, tb)) return Two("__fmul({0}, {1})", e);
+                    return Two("({0} * {1})", e);
                 }
                 case "/":
                 {
                     string ta = EType(e.BN), tb = EType(e.CN);
                     if (ta == "integer" && tb == "integer") return Two("__idiv({0}, {1})", e);
+                    // Before the nonzero-literal shortcut, because that shortcut skips the rounding
+                    // a strict-real conversion needs on the result.
+                    if (_strictReals && RealOperand(ta, tb)) return Two("__fdiv({0}, {1})", e);
                     if (e.CN.K is "INT" or "REAL" && NumberValue(e.CN) != 0.0) return Two("({0} / {1})", e);
                     return Two("__div({0}, {1})", e);
                 }
@@ -1107,6 +1176,12 @@ public static class JassToLua
 
         private static bool SmallLit(Node e) => e.K == "INT" && (long)e.A! is > -1048576 and < 1048576;
 
+        /// <summary>Whether the operands make this a real (floating point) operation. JASS promotes
+        /// an integer operand to real, so one real operand is enough. Only consulted under
+        /// strict reals, where the result is rounded back to the 32-bit float the JASS runtime
+        /// would have produced.</summary>
+        private static bool RealOperand(string ta, string tb) => ta == "real" || tb == "real";
+
         private static string NullFor(string type) => type switch
         {
             "integer" => "0",
@@ -1121,6 +1196,9 @@ public static class JassToLua
         {
             string name = e.AS;
             var args = (List<Node>)e.B!;
+            if (_hashtables && args.Count > 0 && args[0].K == "ID" && _rewritable.Contains(args[0].AS)
+                && RewriteHashtableCall(name, args) is { } rewritten)
+                return rewritten;
             if (name == "EXExecuteScript" && args.Count == 1 && args[0].K == "STR")
             {
                 int idx = _exsLiterals.Count;
@@ -1154,6 +1232,121 @@ public static class JassToLua
             _ => "{}",
         };
 
+        /// <summary>The hashtable natives this rewrite understands, mapped to the type each stores,
+        /// so a load supplies the default the JASS type reads from an unwritten slot.</summary>
+        private static readonly Dictionary<string, string> HashtableStore = new(StringComparer.Ordinal)
+        {
+            ["Integer"] = "integer", ["Real"] = "real", ["Boolean"] = "boolean", ["Str"] = "string",
+            ["UnitHandle"] = "unit", ["ItemHandle"] = "item", ["DestructableHandle"] = "destructable",
+            ["TimerHandle"] = "timer", ["TriggerHandle"] = "trigger", ["EffectHandle"] = "effect",
+            ["GroupHandle"] = "group", ["LocationHandle"] = "location", ["RegionHandle"] = "region",
+            ["LightningHandle"] = "lightning", ["FogModifierHandle"] = "fogmodifier",
+            ["AbilityHandle"] = "ability",
+        };
+
+        /// <summary>The type a hashtable native stores or loads, read from its suffix, or null when
+        /// the native is not one of the family this rewrite understands.</summary>
+        private static string? HashtableType(string native)
+        {
+            string? suffix =
+                native.StartsWith("Save", StringComparison.Ordinal) ? native[4..] :
+                native.StartsWith("Load", StringComparison.Ordinal) ? native[4..] :
+                native.StartsWith("HaveSaved", StringComparison.Ordinal) ? native[9..] :
+                native.StartsWith("RemoveSaved", StringComparison.Ordinal) ? native[11..] :
+                null;
+            return suffix is not null && HashtableStore.TryGetValue(suffix, out var t) ? t : null;
+        }
+
+        private static bool IsHashtableNative(string native) =>
+            native is "FlushChildHashtable" or "FlushParentHashtable" || HashtableType(native) is not null;
+
+        /// <summary>The helper call a hashtable native becomes when its handle is a rewritten table,
+        /// or null when the call must stay a native.</summary>
+        private string? RewriteHashtableCall(string name, List<Node> args)
+        {
+            if (name == "FlushChildHashtable" && args.Count == 2)
+                return $"__hs_flush_child({Expr(args[0])}, {Expr(args[1])})";
+            if (name == "FlushParentHashtable" && args.Count == 1)
+                return $"__hs_flush({Expr(args[0])})";
+
+            string? type = HashtableType(name);
+            if (type is null) return null;
+            if (name.StartsWith("Save", StringComparison.Ordinal) && args.Count == 4)
+                return $"__hs_save({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])}, {ExprAs(args[3], type)})";
+            if (name.StartsWith("Load", StringComparison.Ordinal) && args.Count == 3)
+                return $"__hs_load({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])}, {DefaultFor(type) ?? "nil"})";
+            if (name.StartsWith("HaveSaved", StringComparison.Ordinal) && args.Count == 3)
+                return $"__hs_has({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])})";
+            if (name.StartsWith("RemoveSaved", StringComparison.Ordinal) && args.Count == 3)
+                return $"__hs_remove({Expr(args[0])}, {Expr(args[1])}, {Expr(args[2])})";
+            return null;
+        }
+
+        /// <summary>The local hashtables in this function that can become a Lua table. A local
+        /// qualifies when it is declared hashtable, initialised from CreateHashtable, and every
+        /// reference to its name is the first argument of a hashtable native. Anything else, a pass
+        /// to another function, a comparison, a reassignment, leaves it a real hashtable, because a
+        /// native still has to receive one.</summary>
+        private HashSet<string> RewritableHashtables(List<Node> body)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var s in body)
+            {
+                if (s.K != "LOCAL" || s.AS != "hashtable" || ((LocalInfo)s.C!).IsArray) continue;
+                if (((LocalInfo)s.C!).Init is { K: "CALL", AS: "CreateHashtable" }) names.Add((string)s.B!);
+            }
+            if (names.Count == 0) return names;
+
+            var safe = new HashSet<string>(names, StringComparer.Ordinal);
+            foreach (var s in body) ScanHashtableUses(s, names, safe);
+            return safe;
+        }
+
+        /// <summary>Marks a name unsafe when it is used anywhere but as a hashtable native's first
+        /// argument. An unrecognized node shape marks every name under it unsafe rather than being
+        /// assumed harmless, which is what keeps this conservative.</summary>
+        private void ScanHashtableUses(Node node, HashSet<string> names, HashSet<string> safe)
+        {
+            switch (node.K)
+            {
+                case "CALL":
+                {
+                    var args = (List<Node>)node.B!;
+                    bool native = IsHashtableNative(node.AS);
+                    for (int i = 0; i < args.Count; i++)
+                    {
+                        if (i == 0 && native && args[i].K == "ID") continue; // the handle position
+                        ScanHashtableUses(args[i], names, safe);
+                    }
+                    return;
+                }
+                case "ID":
+                    if (names.Contains(node.AS)) safe.Remove(node.AS);
+                    return;
+                case "LOCAL":
+                    return; // the declaration itself, not a use
+                case "SET":
+                    if (names.Contains(node.AS)) safe.Remove(node.AS);
+                    if (node.B is Node idx) ScanHashtableUses(idx, names, safe);
+                    if (node.CN is Node value) ScanHashtableUses(value, names, safe);
+                    return;
+                default:
+                    if (node.A is Node an) ScanHashtableUses(an, names, safe);
+                    else if (node.A is List<Node> ln) foreach (var x in ln) ScanHashtableUses(x, names, safe);
+                    else if (node.A is List<Branch> lb)
+                        foreach (var b in lb)
+                        {
+                            ScanHashtableUses(b.Cond, names, safe);
+                            foreach (var x in b.Body) ScanHashtableUses(x, names, safe);
+                        }
+                    if (node.B is Node bn) ScanHashtableUses(bn, names, safe);
+                    else if (node.B is List<Node> ln2) foreach (var x in ln2) ScanHashtableUses(x, names, safe);
+                    if (node.C is Node cn) ScanHashtableUses(cn, names, safe);
+                    else if (node.C is List<Node> ln3) foreach (var x in ln3) ScanHashtableUses(x, names, safe);
+                    return;
+            }
+        }
+
         // The spill set is deliberately left as the last function emitted it, as the Python does.
         private string EmitGlobals(List<GlobalDecl> globs)
         {
@@ -1182,6 +1375,7 @@ public static class JassToLua
             _scope = new(StringComparer.Ordinal);
             _curFunc = f;
             _spill = new(StringComparer.Ordinal);
+            _rewritable = _hashtables ? RewritableHashtables(f.Body) : new(StringComparer.Ordinal);
             foreach (var (t, n) in f.Params) _scope[n] = (t, false);
             string ps = string.Join(", ", f.Params.Select(p => Name(p.Name)));
             string head = $"function {Name(f.Name)}({ps})";
@@ -1220,7 +1414,13 @@ public static class JassToLua
                         if (info.IsArray)
                             lines.Add($"{ind}{decl}{ln} = {ArrayCtor(type)}");
                         else if (info.Init is not null)
-                            lines.Add($"{ind}{decl}{ln} = {ExprAs(info.Init, type)}");
+                        {
+                            // A rewritable hashtable is a plain Lua table from the start, so the
+                            // CreateHashtable call goes away with it.
+                            bool table = _hashtables && type == "hashtable" && _rewritable.Contains(name);
+                            if (table) _hashtablesRewritten++;
+                            lines.Add($"{ind}{decl}{ln} = {(table ? "{}" : ExprAs(info.Init, type))}");
+                        }
                         else if (DefaultFor(type) is { } d)
                             lines.Add($"{ind}{decl}{ln} = {d}");
                         else if (decl.Length > 0)

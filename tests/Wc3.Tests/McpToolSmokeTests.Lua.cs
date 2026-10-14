@@ -89,6 +89,19 @@ public sealed class McpSmokeLuaTests : McpSmokeBase
         Assert.Contains("already Lua", await CallError("script_to_lua", Args(("map", outPath), ("out_path", NewOut("to-lua-again")))));
     }
 
+    [Fact, Covers("script_conversion_notes")]
+    public async Task Script_conversion_notes_lists_the_approximations()
+    {
+        var r = await Call("script_conversion_notes", Args());
+
+        var rules = Rows(Prop(r, "rules"));
+        Assert.NotEmpty(rules);
+        var statuses = rules.Select(x => Prop(x, "status").GetString()).ToList();
+        Assert.Contains("faithful", statuses);
+        Assert.Contains("approximated", statuses);
+        Assert.Contains(rules, x => Prop(x, "area").GetString() == "real precision");
+    }
+
     [Fact, Covers("script_decompile")]
     public async Task Script_decompile_turns_bytecode_back_into_source()
     {
