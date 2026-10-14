@@ -6,20 +6,20 @@ using Wc3.Model;
 namespace Wc3.Commands;
 
 /// <summary>
-/// Per-corner terrain editing primitives over a map's <c>war3map.w3e</c> — the building
+/// Per-corner terrain editing primitives over a map's <c>war3map.w3e</c>, the building
 /// blocks a sculpting brush UI composes (read a corner, nudge its height, repaint its
 /// tile, step its cliff layer). The environment is a (Width+1)×(Height+1) grid of corner
 /// tiles (<c>env.TerrainTiles</c>, row-major from the map's south-west corner, index =
-/// row*(Width+1) + col — the same convention <see cref="TerrainCommand"/> and
+/// row*(Width+1) + col, the same convention <see cref="TerrainCommand"/> and
 /// <see cref="Wc3.Render.TerrainRenderer"/> use). Complements the area brushes in
 /// <see cref="TerrainCommand"/> with exact single-corner reads/writes plus one
 /// falloff-weighted area raise for the raise/lower brush.
 ///
-/// <para><b>Height units:</b> heights are War3Net's normalized units — 1.0 equals one
+/// <para><b>Height units:</b> heights are War3Net's normalized units, 1.0 equals one
 /// cliff step (512 raw file units, 128 world-Z units; world Z = (Height + CliffLevel)
 /// × 128). The file stores ground height as a ushort (raw = height×512 + 8192), so
 /// writes are quantized to 1/512 steps and clamped to the representable range
-/// [<see cref="MinGroundHeight"/>, <see cref="MaxGroundHeight"/>] up front — what
+/// [<see cref="MinGroundHeight"/>, <see cref="MaxGroundHeight"/>] up front, what
 /// <see cref="GetCorner"/> reports after an edit is exactly what a save/load round-trip
 /// preserves. Water level shares the encoding but keeps only 14 bits
 /// ([<see cref="MinWaterHeight"/>, <see cref="MaxWaterHeight"/>]); cliff level is the
@@ -38,19 +38,19 @@ public static class TerrainEditCommand
     /// <summary>Lowest storable water level (same raw zero-point as ground).</summary>
     public const float MinWaterHeight = -16f;
 
-    /// <summary>Highest storable water level — the file keeps water in a 14-bit field
+    /// <summary>Highest storable water level, the file keeps water in a 14-bit field
     /// (raw 0x3FFF max), the top bits being flags.</summary>
     public const float MaxWaterHeight = (16383 - 8192) / 512f;
 
-    /// <summary>Highest cliff plateau layer — a 4-bit nibble in the file (War3Net throws
+    /// <summary>Highest cliff plateau layer, a 4-bit nibble in the file (War3Net throws
     /// on serialize past it).</summary>
     public const int MaxCliffLevel = 15;
 
-    /// <summary>Highest storable ground-texture index — the file keeps it in a nibble, so 15 is
+    /// <summary>Highest storable ground-texture index, the file keeps it in a nibble, so 15 is
     /// the format ceiling regardless of how many tile-types the map declares.</summary>
     public const int MaxTextureIndex = 15;
 
-    /// <summary>Highest storable ground-texture variation — the same nibble, so 15 is the
+    /// <summary>Highest storable ground-texture variation, the same nibble, so 15 is the
     /// ceiling. War3Net throws on serialize past it.</summary>
     public const int MaxTextureVariation = 15;
 
@@ -70,7 +70,7 @@ public static class TerrainEditCommand
         Quantize(Math.Clamp(height, MinGroundHeight, MaxGroundHeight));
 
     /// <summary>Clamps a water level to the 14-bit storable range and quantizes it. Same
-    /// reasoning as <see cref="ClampGroundHeight"/> — the water field keeps 14 bits, so an
+    /// reasoning as <see cref="ClampGroundHeight"/>, the water field keeps 14 bits, so an
     /// out-of-range value wraps modulo 16384.</summary>
     public static float ClampWaterHeight(float waterHeight) =>
         Quantize(Math.Clamp(waterHeight, MinWaterHeight, MaxWaterHeight));
@@ -139,7 +139,7 @@ public static class TerrainEditCommand
     }
 
     /// <summary>Sets a corner's ground height (normalized units; quantized to 1/512 and
-    /// clamped to the storable range — see the class remarks).</summary>
+    /// clamped to the storable range, see the class remarks).</summary>
     public static TerrainEditResult SetGroundHeight(MapDocument doc, int col, int row, float height)
     {
         if (!float.IsFinite(height))
@@ -170,7 +170,7 @@ public static class TerrainEditCommand
     }
 
     /// <summary>Sets a corner's water level (normalized units, 14-bit storable range) and
-    /// flags the corner as water — the primitive a water brush calls per corner.</summary>
+    /// flags the corner as water, the primitive a water brush calls per corner.</summary>
     public static TerrainEditResult SetWaterHeight(MapDocument doc, int col, int row, float waterHeight)
     {
         if (!float.IsFinite(waterHeight))
@@ -216,7 +216,7 @@ public static class TerrainEditCommand
         return new(true, $"corner ({col},{row}) ground texture = {tileIndex}", changed);
     }
 
-    /// <summary>Sets a corner's cliff plateau layer (0..<see cref="MaxCliffLevel"/> — the
+    /// <summary>Sets a corner's cliff plateau layer (0..<see cref="MaxCliffLevel"/>, the
     /// file's 4-bit range; War3Net refuses to serialize anything past it).</summary>
     public static TerrainEditResult SetCliffLevel(MapDocument doc, int col, int row, int level)
     {
@@ -238,7 +238,7 @@ public static class TerrainEditCommand
     /// <summary>
     /// Raise/lower-brush primitive: adds <paramref name="delta"/> to every corner within
     /// <paramref name="radius"/> corners of (<paramref name="centerCol"/>,
-    /// <paramref name="centerRow"/>) — a circular footprint (dist ≤ radius; radius 0 is
+    /// <paramref name="centerRow"/>), a circular footprint (dist ≤ radius; radius 0 is
     /// just the centre). With <paramref name="falloff"/> the delta is weighted
     /// 1 − dist/(radius+1), so the centre moves by the full delta and the rim by a
     /// fraction, giving a smooth mound instead of a plateau. Corners off the grid are
@@ -284,7 +284,7 @@ public static class TerrainEditCommand
         if (changed > 0)
             doc.AddOrReplaceModelFile(TerrainFile, env);
         return new(true,
-            $"add {delta:0.###}{(falloff ? " (falloff)" : "")} over r{radius} at ({centerCol},{centerRow}) — {changed} corners changed",
+            $"add {delta:0.###}{(falloff ? " (falloff)" : "")} over r{radius} at ({centerCol},{centerRow}), {changed} corners changed",
             changed);
     }
 

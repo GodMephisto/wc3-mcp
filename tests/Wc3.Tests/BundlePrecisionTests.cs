@@ -12,7 +12,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Dependency-crawl precision: with game metadata available, only fields whose
 /// metadata TYPE is an object-reference type (abilList, unitCode, ...) may pull
-/// objects into the closure — a plain-text field whose value merely LOOKS like a
+/// objects into the closure, a plain-text field whose value merely LOOKS like a
 /// rawcode must not. Without game data the crawl keeps its historical permissive
 /// behavior. Hermetic: the metadata comes from a synthetic in-memory SLK source.
 /// </summary>
@@ -50,7 +50,7 @@ public class BundlePrecisionTests
         "C;X5;K\"string\"\n" +
         "E\n";
 
-    // Header-only abilitymetadata.slk — the ability store just needs to build.
+    // Header-only abilitymetadata.slk, the ability store just needs to build.
     private const string AbilityMetadataSlk =
         "ID;PWXL;N;E\n" +
         "C;Y1;X1;K\"ID\"\n" +

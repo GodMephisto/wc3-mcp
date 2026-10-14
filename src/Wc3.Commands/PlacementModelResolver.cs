@@ -8,13 +8,13 @@ namespace Wc3.Commands;
 /// <summary>
 /// Resolves the on-disk model path for a placed widget type (unit / doodad / destructable)
 /// so a viewport can draw the real model instead of a placeholder box. Lives in the command
-/// layer — not the GUI — so the CLI, MCP, and Studio resolve identically and the logic is
+/// layer, not the GUI, so the CLI, MCP, and Studio resolve identically and the logic is
 /// hermetically testable (Principle #3: reuse Wc3.Commands, never reimplement in the UI).
 ///
 /// Resolution order for a type:
 ///   1. the type's own model field (units <c>umdl</c>; destructables <c>bfil</c>; doodads <c>dfil</c>),
 ///   2. its Reforged skin-profile model (<see cref="RenderModelCommand.BaseModelPath"/>),
-///   3. failing both, the SAME resolution on the base object it derives from — a *custom*
+///   3. failing both, the SAME resolution on the base object it derives from, a *custom*
 ///      doodad/destructable that never overrides its art (e.g. GGGA's D00A→ARrk, D00V→LPcr)
 ///      inherits the base model rather than degrading to a placeholder box.
 /// Returns null only when the whole chain yields nothing (a genuinely model-less type).
@@ -45,7 +45,7 @@ public static class PlacementModelResolver
                     // Variation-heavy fields can list several paths comma-separated; use the first.
                     if (!string.IsNullOrWhiteSpace(field?.Value))
                         return field!.Value.Split(',')[0].Trim();
-                    // No own art here — remember a differing base to inherit from if nothing resolves.
+                    // No own art here, remember a differing base to inherit from if nothing resolves.
                     if (baseRawcode is null && merged.BaseRawcode is { Length: > 0 } b
                         && !string.Equals(b, rawcode, StringComparison.OrdinalIgnoreCase))
                         baseRawcode = b;

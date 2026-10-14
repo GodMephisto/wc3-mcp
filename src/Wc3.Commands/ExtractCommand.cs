@@ -31,7 +31,7 @@ public static class ExtractCommand
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// Selects matching entries (with their bytes) — no filesystem access here;
+    /// Selects matching entries (with their bytes), no filesystem access here;
     /// the CLI layer is responsible for writing.
     /// </summary>
     public static ExtractResult Execute(MapDocument doc, ExtractSelector selector)

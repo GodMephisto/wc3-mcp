@@ -128,7 +128,7 @@ public class ObjectSetCommandTests
 
     /// <summary>
     /// The safety gate on a real map: one field edit must change war3map.w3u and
-    /// NOTHING else — every other internal file (named or unnamed) stays
+    /// NOTHING else, every other internal file (named or unnamed) stays
     /// byte-identical, proving an edit cannot corrupt the rest of the map.
     /// </summary>
     [Fact]

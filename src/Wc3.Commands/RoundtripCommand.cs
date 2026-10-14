@@ -7,7 +7,7 @@ public static class RoundtripCommand
     // MPQ bookkeeping files handled specially by MpqArchiveBuilder on save:
     // (listfile) and (attributes) are regenerated; (signature) is not carried
     // over (the rebuilt map is unsigned). They are archive metadata, not map
-    // data, so they are excluded from the fidelity verdict — but any that were
+    // data, so they are excluded from the fidelity verdict, but any that were
     // present in the original and dropped/changed are surfaced as notes.
     // Shared with tests/Wc3.Tests/RoundtripTests.cs.
     public static readonly IReadOnlySet<string> MpqSpecialFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)

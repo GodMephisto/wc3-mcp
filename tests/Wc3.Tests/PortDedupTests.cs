@@ -11,13 +11,13 @@ namespace Wc3.Tests;
 /// <summary>
 /// Port idempotency: re-porting a unit into a target that already holds last
 /// time's port must recognize the collision as a prior port (exact content
-/// match) and reuse it — no duplicate objects under fresh rawcodes. Anything
+/// match) and reuse it, no duplicate objects under fresh rawcodes. Anything
 /// actually different remains a true collision and still remaps.
 /// </summary>
 public class PortDedupTests
 {
     // Source mirrors PortCommandTests.SourceMap: custom hero H000 (custom ability
-    // A000, an imported icon, a TRIGSTR name) — dedup must match the prior port's
+    // A000, an imported icon, a TRIGSTR name), dedup must match the prior port's
     // INLINED name against the source's raw TRIGSTR reference.
     private static MapDocument SourceMap()
     {
@@ -60,7 +60,7 @@ public class PortDedupTests
         var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
 
         var first = PortCommand.PortUnit(source, bundle, target);
-        Assert.Equal("H000", first.RootPortedTo); // clean target — no remap needed
+        Assert.Equal("H000", first.RootPortedTo); // clean target, no remap needed
 
         var second = PortCommand.PortUnit(source, bundle, target);
 

@@ -34,7 +34,7 @@ public sealed class ObjectDataStore
         _levelColumn = levelColumn;
     }
 
-    /// <summary>A store that resolves nothing — used when a type's SLKs can't be read.</summary>
+    /// <summary>A store that resolves nothing, used when a type's SLKs can't be read.</summary>
     public static ObjectDataStore Empty { get; } = new(new ObjectMetadata(), new(StringComparer.OrdinalIgnoreCase));
 
     /// <summary>Field-code metadata (display names) for consumers building lookups.</summary>
@@ -197,7 +197,7 @@ public sealed class ObjectDataStore
         _slks.Values.SelectMany(t => t.RowKeys).Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Distinct non-empty base values a single field takes across every object of
-    /// this kind — the correct-by-construction option set for an enumerated field (its
+    /// this kind, the correct-by-construction option set for an enumerated field (its
     /// tokens are exactly the ones the game already uses, so write-back can't corrupt).</summary>
     public IEnumerable<string> DistinctValues(string fieldCode)
     {

@@ -141,7 +141,7 @@ public sealed class TerrainArtCatalog
                 var full = isDds ? DdsDecoder.Decode(tex) : BlpDecoder.Decode(tex);
                 return Crop(full, Cell);
             }
-            catch { /* corrupt/unsupported — try next extension, else null */ }
+            catch { /* corrupt/unsupported, try next extension, else null */ }
         }
         return null;
     }

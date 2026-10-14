@@ -8,7 +8,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Hermetic coverage of FileEditCommand over an in-memory synthetic MPQ. The core
 /// contract under test: after a write, every read helper reflects the pending
-/// OverrideBytes payload — never the stale (immutable) RawBytes original.
+/// OverrideBytes payload, never the stale (immutable) RawBytes original.
 /// </summary>
 public class FileEditCommandTests
 {
@@ -54,7 +54,7 @@ public class FileEditCommandTests
         // Contract: an already-existing name is REPLACED (mirrors AddOrReplaceRawFile).
         Assert.True(result.Replaced);
         // Read-after-write returns the NEW payload (OverrideBytes path) while the
-        // immutable original stays untouched — the classic stale-RawBytes trap.
+        // immutable original stays untouched, the classic stale-RawBytes trap.
         Assert.Equal(newBytes, FileEditCommand.ReadBytes(doc, ScriptName));
         Assert.Equal(Encoding.ASCII.GetBytes(ScriptText), doc.GetFile(ScriptName)!.RawBytes);
     }
@@ -112,7 +112,7 @@ public class FileEditCommandTests
     public void WriteText_ThenReadText_RoundTrips_IncludingNonAscii()
     {
         var doc = LoadSynthetic();
-        const string text = "Grunt ready! Ünïcødé — züg-züg";
+        const string text = "Grunt ready! Ünïcødé, züg-züg";
 
         FileEditCommand.WriteText(doc, @"war3mapImported\readme.txt", text);
 

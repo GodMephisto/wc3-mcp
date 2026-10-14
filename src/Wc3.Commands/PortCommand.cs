@@ -9,7 +9,7 @@ namespace Wc3.Commands;
 /// <summary>
 /// Ports a unit (its custom-object closure + imported assets, with referenced strings
 /// inlined) from a source map into a target map. Rawcodes that collide with the target
-/// are auto-remapped and every in-bundle reference is rewritten to match — no manual
+/// are auto-remapped and every in-bundle reference is rewritten to match, no manual
 /// configuration. A collision with a content-identical target object (a prior port of
 /// the same object) reuses the existing code instead, so re-porting the same unit is a
 /// no-op rather than a duplicator. This is the reliable "Tier 1" port (object data +
@@ -20,7 +20,7 @@ public static class PortCommand
     /// <summary>
     /// Durability trap, surfaced whenever any script is ported: the ported JASS lands in
     /// war3map.j only, never in the GUI trigger tree (war3map.wtg/wct), and the World
-    /// Editor regenerates war3map.j from that tree on save — silently wiping the port.
+    /// Editor regenerates war3map.j from that tree on save, silently wiping the port.
     /// </summary>
     internal const string ScriptDurabilityWarning =
         "Ported trigger script was written to war3map.j only, NOT the World Editor trigger tree. " +
@@ -51,9 +51,9 @@ public static class PortCommand
             alreadyPorted: null, pendingCopies: null, includeScript, apply: true, synthDispatch, bootstrapState);
 
     /// <summary>
-    /// Computes exactly the report <see cref="PortUnit"/> would produce — the rawcode
+    /// Computes exactly the report <see cref="PortUnit"/> would produce, the rawcode
     /// remap plan, the objects, which asset files would copy vs skip, the string-inline
-    /// count and the script closure summary — WITHOUT mutating <paramref name="target"/>
+    /// count and the script closure summary, WITHOUT mutating <paramref name="target"/>
     /// or writing anything. Same code path as the real port behind a single apply switch,
     /// so preview and port cannot drift.
     /// </summary>
@@ -156,11 +156,11 @@ public static class PortCommand
 
         // 1) Rawcode remap: reassign any custom rawcode already defined in the target.
         //    A collision whose target content is exactly what this port would inject is
-        //    a prior port of the same object — reused, so re-porting stays idempotent.
+        //    a prior port of the same object, reused, so re-porting stays idempotent.
         //    Objects an earlier bundle in this batch already ported are reused as-is.
         var remap = new Dictionary<int, int>();       // source id -> target id (identity when free)
         var remapReport = new List<RawcodeRemap>();
-        var sharedIds = new HashSet<int>();           // already in the target (earlier bundle or prior port) — don't re-inject
+        var sharedIds = new HashSet<int>();           // already in the target (earlier bundle or prior port), don't re-inject
         foreach (var o in customs)
         {
             int id = o.Rawcode.FromRawcode();
@@ -171,7 +171,7 @@ public static class PortCommand
                 sharedIds.Add(id);
                 if (prior != id)
                     remapReport.Add(new RawcodeRemap(o.Kind, o.Rawcode, prior.ToRawcode()));
-                diagnostics.Add($"{o.Kind} {o.Rawcode} already ported by an earlier unit in this batch — reusing {prior.ToRawcode()}.");
+                diagnostics.Add($"{o.Kind} {o.Rawcode} already ported by an earlier unit in this batch, reusing {prior.ToRawcode()}.");
                 continue;
             }
             // A modification of a standard object (NewId==0) addresses a fixed base id and can
@@ -186,7 +186,7 @@ public static class PortCommand
                 {
                     sharedIds.Add(id);
                     warnings.Add($"{o.Kind} {o.Rawcode} modifies standard object {o.Rawcode}, which the "
-                        + "target already modifies — kept the target's version, the source's changes were not applied.");
+                        + "target already modifies, kept the target's version, the source's changes were not applied.");
                 }
                 continue;
             }
@@ -195,7 +195,7 @@ public static class PortCommand
             {
                 // Idempotency: a colliding target object that is content-identical to
                 // what this port would inject (same kind, same base, same modifications
-                // after TRIGSTR inlining) is a prior port of this very object — reuse
+                // after TRIGSTR inlining) is a prior port of this very object, reuse
                 // its code instead of duplicating it under a fresh one. Any actual
                 // difference is a true collision and falls through to the remap below.
                 // Single-port only: in a batch (alreadyPorted != null) the shared-object
@@ -204,8 +204,8 @@ public static class PortCommand
                 if (alreadyPorted is null && TargetHasIdenticalObject(source, target, o.Kind, id, srcStrings))
                 {
                     remap[id] = id;
-                    sharedIds.Add(id); // already in the target — don't re-inject
-                    diagnostics.Add($"{o.Kind} {o.Rawcode} already exists in the target with identical content — reused, not duplicated.");
+                    sharedIds.Add(id); // already in the target, don't re-inject
+                    diagnostics.Add($"{o.Kind} {o.Rawcode} already exists in the target with identical content, reused, not duplicated.");
                     continue;
                 }
                 int fresh = RawcodeAllocator.Allocate(o.Rawcode, used);
@@ -235,7 +235,7 @@ public static class PortCommand
             var kindFile = ObjectKinds.Info(kind).MapFile;
             if (target.GetFile(kindFile) is { Model: null })
             {
-                warnings.Add($"target {kindFile} is present but could not be parsed — skipped injecting "
+                warnings.Add($"target {kindFile} is present but could not be parsed, skipped injecting "
                     + $"{kind} objects so its existing objects are not overwritten.");
                 continue;
             }
@@ -258,7 +258,7 @@ public static class PortCommand
                 portedObjects.Add(new PortedObject(kind, ownId, node.Name, remapped.NewId == 0,
                     carriedByClosure.Contains(node.Rawcode)));
                 if (remapped.NewId == 0)
-                    warnings.Add($"{kind} {ownId} modifies a standard object — it will change that object in the target too.");
+                    warnings.Add($"{kind} {ownId} modifies a standard object, it will change that object in the target too.");
             }
         }
 
@@ -288,11 +288,11 @@ public static class PortCommand
             var srcEntry = ResolveEntry(source, f.Path, f.Category);
             if (srcEntry is null || srcEntry.CurrentBytes.Length == 0) { skipped.Add($"{f.Path} (unreadable in source)"); continue; }
 
-            // The real stored name (e.g. the ".mdx" backing a ".mdl" reference) — copied
+            // The real stored name (e.g. the ".mdx" backing a ".mdl" reference), copied
             // and registered under this, not the reference spelling.
             var storedName = srcEntry.FileName!;
 
-            // What the target holds for that asset — including files "copied" by an earlier
+            // What the target holds for that asset, including files "copied" by an earlier
             // bundle of a preview batch (pendingCopies simulates the real port's mutation).
             var tgtBytes = ResolveEntry(target, f.Path, f.Category)?.CurrentBytes;
             if (tgtBytes is null && pendingCopies is not null
@@ -302,7 +302,7 @@ public static class PortCommand
             if (tgtBytes is not null && tgtBytes.SequenceEqual(srcEntry.CurrentBytes))
             { skipped.Add($"{f.Path} (already in target)"); continue; }
             if (tgtBytes is not null)
-                warnings.Add($"{f.Path} already exists in target with different bytes — overwritten.");
+                warnings.Add($"{f.Path} already exists in target with different bytes, overwritten.");
 
             if (apply)
             {
@@ -326,7 +326,7 @@ public static class PortCommand
         if (apply && importsChanged && !impUnparsed)
             target.AddOrReplaceModelFile("war3map.imp", tgtImports);
         else if (importsChanged && impUnparsed)
-            warnings.Add("target war3map.imp is present but could not be parsed — copied the asset "
+            warnings.Add("target war3map.imp is present but could not be parsed, copied the asset "
                 + "files but left the import list untouched, so they may need registering manually.");
 
         // 3b) Carry the source map's hero/unit level caps (war3mapMisc.txt). A ported hero whose
@@ -336,7 +336,7 @@ public static class PortCommand
         if (apply && GameplayConstants.CarryLevelCaps(source, target) is { } capSummary)
             diagnostics.Add($"gameplay constants: {capSummary}");
 
-        // 4) Best-effort JASS script closure append (defensive — never breaks the port).
+        // 4) Best-effort JASS script closure append (defensive, never breaks the port).
         ScriptPortInfo? scriptInfo = null;
         if (includeScript)
         {
@@ -357,7 +357,7 @@ public static class PortCommand
         }
 
         // Batch bookkeeping: later bundles reuse everything this one ported (identity
-        // mappings included — a later bundle must not treat them as fresh collisions).
+        // mappings included, a later bundle must not treat them as fresh collisions).
         if (alreadyPorted is not null)
             foreach (var kv in remap)
                 alreadyPorted[kv.Key] = kv.Value;
@@ -378,7 +378,7 @@ public static class PortCommand
 
     /// <summary>
     /// True when the target already defines <paramref name="id"/> as an object of the
-    /// same kind whose content is EXACTLY what this port would inject for it — the
+    /// same kind whose content is EXACTLY what this port would inject for it, the
     /// merged map ⊕ skin group with TRIGSTR references inlined and no code rewritten.
     /// That is the signature of a prior port of this very object; a different object
     /// that merely shares the code never matches, so true collisions still remap.
@@ -388,7 +388,7 @@ public static class PortCommand
     {
         if (MergedGroup(source, kind, id) is not { } src || MergedGroup(target, kind, id) is not { } tgt)
             return false;
-        int inlined = 0; // normalization only — not part of the port's inline count
+        int inlined = 0; // normalization only, not part of the port's inline count
         // Inline BOTH sides' TRIGSTR references against their OWN string table before comparing.
         // The target commonly stores a name/tooltip as a TRIGSTR into its own war3map.wts, so
         // comparing the source's inlined literal against the target's raw TRIGSTR would never
@@ -400,7 +400,7 @@ public static class PortCommand
     }
 
     /// <summary>The document's merged (map ⊕ skin, skin wins per field) group for one
-    /// object id of a kind — the neutral form the port injects; null when undefined.</summary>
+    /// object id of a kind, the neutral form the port injects; null when undefined.</summary>
     private static PortGroup? MergedGroup(MapDocument doc, ObjectKind kind, int id)
     {
         var want = new HashSet<int> { id };
@@ -413,7 +413,7 @@ public static class PortCommand
     }
 
     /// <summary>Exact content equality: same base/custom ids and the same modification
-    /// set — every (level, field, type, value) equal, order-insensitively.</summary>
+    /// set, every (level, field, type, value) equal, order-insensitively.</summary>
     private static bool GroupsEqual(PortGroup a, PortGroup b)
     {
         if (a.OldId != b.OldId || a.NewId != b.NewId || a.Mods.Count != b.Mods.Count)
@@ -421,7 +421,7 @@ public static class PortCommand
         static IEnumerable<PortMod> Sorted(PortGroup g) => g.Mods
             .OrderBy(m => m.Level).ThenBy(m => m.Id).ThenBy(m => m.Type)
             .ThenBy(m => ObjectKinds.FormatValue(m.Value), StringComparer.Ordinal);
-        return Sorted(a).SequenceEqual(Sorted(b)); // PortMod is a record — value equality
+        return Sorted(a).SequenceEqual(Sorted(b)); // PortMod is a record, value equality
     }
 
     // ---- neutral group extraction / injection ------------------------------

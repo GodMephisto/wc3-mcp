@@ -19,7 +19,7 @@ public sealed record PathingValidateResult(
 /// HiveWE-style pathing brush over a map's war3map.wpm. The pathing map is a
 /// Width×Height grid of <see cref="PathingType"/> flag bytes (4 pathing cells per
 /// terrain tile). A <b>set</b> bit marks that capability as <i>restricted</i> for the
-/// cell — e.g. Walk set = ground units cannot walk, Build set = cannot build, Water
+/// cell, e.g. Walk set = ground units cannot walk, Build set = cannot build, Water
 /// set = the cell is water. This operates on the raw flags so there is no
 /// inverted-semantics ambiguity: callers name the exact <see cref="PathingType"/>
 /// bits to Set / Clear / Toggle.
@@ -297,6 +297,6 @@ public static class PathingCommand
         // paint doesn't force a re-serialize on Save.
         if (changed > 0)
             doc.AddOrReplaceModelFile(PathingFile, map);
-        return new(true, $"{describe} — {changed} cells changed", changed);
+        return new(true, $"{describe}, {changed} cells changed", changed);
     }
 }

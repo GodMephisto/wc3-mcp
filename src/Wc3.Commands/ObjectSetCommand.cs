@@ -37,9 +37,16 @@ public static class ObjectSetCommand
     /// </summary>
     public static ObjectSetResult Execute(
         MapDocument doc, ObjectKind kind, string rawcode, string field, string value)
+        => Execute(doc, kind, rawcode, field, value, session: null);
+
+    /// <summary>The same set, with per-map state a caller that sets many fields reuses. Pass one
+    /// <see cref="Session"/> for a whole import so each set does not re-walk the object files.</summary>
+    internal static ObjectSetResult Execute(
+        MapDocument doc, ObjectKind kind, string rawcode, string field, string value, Session? session)
     {
+        session ??= new Session(doc, kind);
         if (rawcode.Length != 4)
-            return new(false, $"invalid rawcode '{rawcode}' — expected 4 characters");
+            return new(false, $"invalid rawcode '{rawcode}', expected 4 characters");
 
         var (code, level, fieldError) = ParseFieldToken(field);
         if (fieldError is not null)
@@ -55,14 +62,12 @@ public static class ObjectSetCommand
 
         // The object must already be defined by the map (either layer); the merged
         // entry also supplies the base id when the group must be mirrored from skin.
-        var merged = ObjectKinds.MergedEntries(doc, info).FirstOrDefault(e => e.Id == id);
-        if (merged is null)
+        if (!session.Merged.TryGetValue(id, out var merged))
             return new(false, $"{kindName} {rawcode} not found in map");
 
-        var layer = ResolveLayer(doc, kind, id, code);
+        var layer = ResolveLayer(session, id, code);
         var file = ObjectDataWriter.FileFor(kind, layer);
-        var model = ObjectDataWriter.GetOrCreateModel(doc, kind, layer);
-        var access = model is null ? null : ObjectDataWriter.AccessFor(model);
+        var (model, access) = session.Layer(layer);
         if (access is null)
             return new(false, $"map has no parseable {file} ({kindName} object data)");
 
@@ -98,7 +103,7 @@ public static class ObjectSetCommand
             // Nothing on this object yet, so fall back to how the map stores the same
             // field on other objects. Defaulting to 1 writes a whole-object field where
             // the game never looks, and still reports success.
-            var used = ObjectDataWriter.SlotsUsedFor(model!, fieldId);
+            var used = session.SlotsUsed(model!, fieldId);
             slot = used.Count > 0 && used.All(s => s == 0) ? 0 : 1;
         }
         else // Variation with a bare code → variation 0
@@ -122,7 +127,7 @@ public static class ObjectSetCommand
             // shape, which is not authoritative. Int vs Real are not byte-compatible, so
             // a wrong guess stores a wrong in-game value (structure stays valid).
             warning = $"field {field} was newly added with inferred type {type} (guessed from the value); "
-                    + "verify that matches the field's real type — an Int written where the game expects Real "
+                    + "verify that matches the field's real type, an Int written where the game expects Real "
                     + "(or vice-versa) stores a wrong value.";
         }
 
@@ -135,9 +140,9 @@ public static class ObjectSetCommand
     /// (so the edit lands on the value that actually takes effect), otherwise the layer this
     /// map keeps the field code in.
     /// </summary>
-    private static ObjectLayer ResolveLayer(MapDocument doc, ObjectKind kind, int id, string code)
+    private static ObjectLayer ResolveLayer(Session session, int id, string code)
     {
-        var skinModel = doc.GetFile(ObjectKinds.Info(kind).SkinFile)?.Model;
+        var skinModel = session.SkinModel;
         if (skinModel is null) return ObjectLayer.Map;   // classic map, one layer only
 
         if (ObjectDataWriter.AccessFor(skinModel) is { } skinAccess
@@ -145,7 +150,63 @@ public static class ObjectSetCommand
             && HasField(skinGroup, code.FromRawcode()))
             return ObjectLayer.Skin;
 
-        return SkinFieldPartition.Learn(doc, kind).LayerFor(code);
+        return session.Partition.LayerFor(code);
+    }
+
+    /// <summary>
+    /// Per-map state a caller that sets many fields reuses. The import sets one field per CSV cell,
+    /// and every set used to re-walk the merged object entries, re-learn the skin field partition
+    /// and re-open the layer model, which is what made a 2265-object import run for minutes. One
+    /// session per import turns each set into a dictionary lookup plus the group edit itself.
+    /// </summary>
+    internal sealed class Session
+    {
+        private readonly MapDocument _doc;
+        private readonly ObjectKind _kind;
+        private readonly Dictionary<ObjectLayer, (object? Model, ObjectDataAccess? Access)> _layers = new();
+        private readonly Dictionary<(object Model, int Field), IReadOnlyCollection<int>> _slots = new();
+        private SkinFieldPartition? _partition;
+        private object? _skinModel;
+
+        private readonly Dictionary<int, MapObjectEntry> _merged = new();
+
+        internal Session(MapDocument doc, ObjectKind kind)
+        {
+            _doc = doc;
+            _kind = kind;
+            foreach (var e in ObjectKinds.MergedEntries(doc, ObjectKinds.Info(kind)))
+                _merged.TryAdd(e.Id, e);
+        }
+
+        internal IReadOnlyDictionary<int, MapObjectEntry> Merged => _merged;
+
+        /// <summary>Register an object this session's caller just created, so the fields it sets
+        /// straight afterwards resolve. The entry only needs its base id, which is the id itself
+        /// for a modified standard and 0 for a custom.</summary>
+        internal void Remember(int id, int oldId) =>
+            _merged.TryAdd(id, new MapObjectEntry(id, oldId, Array.Empty<KeyValuePair<string, string>>()));
+
+        internal object? SkinModel =>
+            _skinModel ??= _doc.GetFile(ObjectKinds.Info(_kind).SkinFile)?.Model;
+
+        internal SkinFieldPartition Partition =>
+            _partition ??= SkinFieldPartition.Learn(_doc, _kind);
+
+        /// <summary>The layer's model and access, opened once per layer. GetOrCreateModel is what
+        /// creates the file's model on a map that has none, so the cached pair is the one written.</summary>
+        internal (object? Model, ObjectDataAccess? Access) Layer(ObjectLayer layer)
+        {
+            if (_layers.TryGetValue(layer, out var cached)) return cached;
+            var model = ObjectDataWriter.GetOrCreateModel(_doc, _kind, layer);
+            var access = model is null ? null : ObjectDataWriter.AccessFor(model);
+            return _layers[layer] = (model, access);
+        }
+
+        internal IReadOnlyCollection<int> SlotsUsed(object model, int fieldId)
+        {
+            if (_slots.TryGetValue((model, fieldId), out var cached)) return cached;
+            return _slots[(model, fieldId)] = ObjectDataWriter.SlotsUsedFor(model, fieldId);
+        }
     }
 
     /// <summary>Whether a modification group carries this field code at any level/variation.</summary>
@@ -164,12 +225,12 @@ public static class ObjectSetCommand
         if (colon < 0)
             return field.Length == 4
                 ? (field, null, null)
-                : (field, null, $"invalid field code '{field}' — expected 4 characters");
+                : (field, null, $"invalid field code '{field}', expected 4 characters");
         var code = field[..colon];
         return code.Length == 4
             && int.TryParse(field[(colon + 1)..], NumberStyles.None, CultureInfo.InvariantCulture, out var n)
             ? (code, n, null)
-            : (code, null, $"invalid field '{field}' — expected a 4-character code or code:N");
+            : (code, null, $"invalid field '{field}', expected a 4-character code or code:N");
     }
 
     private static bool TryParseAs(string value, ObjectDataType type, out object typed)

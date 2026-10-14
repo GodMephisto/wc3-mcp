@@ -8,7 +8,7 @@ namespace Wc3.Modeling;
 /// <summary>
 /// Reader for the binary MDX format ("MDLX" chunked). Extracts per-geoset
 /// positions/normals/uvs/triangles plus the material→texture mapping a static
-/// render needs, and — best effort — the animation data a posed render needs:
+/// render needs, and, best effort, the animation data a posed render needs:
 /// sequences (SEQS), the bone/helper hierarchy with keyframe tracks
 /// (BONE/HELP + KGTR/KGRT/KGSC), pivots (PIVT) and per-vertex bone attachments
 /// (GNDX/MTGC/MATS, or the v900+ SKIN weights). Animation parsing is strictly
@@ -42,7 +42,7 @@ internal static class MdxParser
             int payload = pos + 8;
             int end = payload + size;
             if (size < 0 || end > bytes.Length)
-                break; // truncated trailing chunk — keep what we already have
+                break; // truncated trailing chunk, keep what we already have
 
             switch (tag)
             {
@@ -127,7 +127,7 @@ internal static class MdxParser
     }
 
     /// <summary>
-    /// BONE/HELP: repeated generic node structs — inclusiveSize, char[80] name,
+    /// BONE/HELP: repeated generic node structs, inclusiveSize, char[80] name,
     /// u32 objectId, i32 parentId, u32 flags, then KG** tracks up to inclusiveSize.
     /// BONE trails each node with u32 geosetId + u32 geosetAnimId
     /// (<paramref name="trailingBytes"/> = 8), which we skip.
@@ -139,12 +139,12 @@ internal static class MdxParser
             int inclusiveSize = checked((int)ReadU32(b, pos));
             int nodeEnd = pos + inclusiveSize;
             if (inclusiveSize < 96 || nodeEnd > end)
-                break; // malformed node — keep the ones already parsed
+                break; // malformed node, keep the ones already parsed
 
             string name = ReadFixedString(b, pos + 4, 80);
             int objectId = checked((int)ReadU32(b, pos + 84));
             int parentId = unchecked((int)ReadU32(b, pos + 88));
-            // flags at pos + 92 — not needed for posing
+            // flags at pos + 92, not needed for posing
 
             AnimTrack<Vector3>? translation = null, scaling = null;
             AnimTrack<Quaternion>? rotation = null;
@@ -156,7 +156,7 @@ internal static class MdxParser
                     ? ReadTrack(b, ref p, nodeEnd, floatsPerValue: tag == "KGRT" ? 4 : 3)
                     : null;
                 if (track is null)
-                    break; // unknown/overrunning sub-chunk: its size is unknowable — stop tracks, node still usable
+                    break; // unknown/overrunning sub-chunk: its size is unknowable, stop tracks, node still usable
 
                 switch (tag)
                 {
@@ -176,7 +176,7 @@ internal static class MdxParser
     /// <summary>
     /// KG** track: tag, u32 numKeys, u32 interpolation (0 none, 1 linear, 2 hermite,
     /// 3 bezier), i32 globalSeqId, then per key: i32 frame + value floats
-    /// (+ inTan/outTan of the same width when interpolation &gt; 1 — read past, unused:
+    /// (+ inTan/outTan of the same width when interpolation &gt; 1, read past, unused:
     /// the poser approximates everything linearly). Null when the track overruns.
     /// </summary>
     private static RawTrack? ReadTrack(byte[] b, ref int p, int limit, int floatsPerValue)
@@ -226,7 +226,7 @@ internal static class MdxParser
     /// Prefers v900+ SKIN (true blend weights: 4 node ids + 4 byte weights per
     /// vertex); classic GNDX/MTGC/MATS matrix groups become a rigid average over
     /// the group's first ≤4 bones (classic MDX stores no per-vertex weights).
-    /// Returns (null, null) when the data is absent or inconsistent — bind pose.
+    /// Returns (null, null) when the data is absent or inconsistent, bind pose.
     /// </summary>
     private static (int[]?, float[]?) BuildSkin(RawGeoset g)
     {
@@ -268,7 +268,7 @@ internal static class MdxParser
             for (int v = 0; v < vertexCount; v++)
             {
                 int group = groups[v];
-                if (group >= counts.Length) return (null, null); // corrupt grouping — whole geoset to bind
+                if (group >= counts.Length) return (null, null); // corrupt grouping, whole geoset to bind
                 int take = Math.Min(counts[group], 4);
                 for (int s = 0; s < take; s++)
                 {
@@ -296,7 +296,7 @@ internal static class MdxParser
 
     /// <summary>
     /// MTLS: per-material inclusiveSize records; we only want each material's base
-    /// (first) layer — its texture id and filter mode. Layer 0 is the surface the
+    /// (first) layer, its texture id and filter mode. Layer 0 is the surface the
     /// game draws first; overlay layers (team glow etc.) don't decide the geoset's
     /// blend mode.
     /// </summary>
@@ -410,7 +410,7 @@ internal static class MdxParser
                     p = gEnd; // nothing after the UV sets that we need
                     break;
                 default:
-                    p = gEnd; // unknown tag — stop rather than misparse
+                    p = gEnd; // unknown tag, stop rather than misparse
                     break;
             }
         }

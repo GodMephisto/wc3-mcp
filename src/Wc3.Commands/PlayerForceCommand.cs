@@ -6,7 +6,7 @@ using Wc3.Model;
 namespace Wc3.Commands;
 
 /// <summary>One player slot from war3map.w3i. Name is display-resolved (TRIGSTR_ refs
-/// via war3map.wts); Color always comes from <see cref="PlayerColors"/> by slot id —
+/// via war3map.wts); Color always comes from <see cref="PlayerColors"/> by slot id , 
 /// the w3i model this War3Net version parses carries no per-player custom color.</summary>
 public sealed record PlayerInfo(
     int Id,
@@ -37,7 +37,7 @@ public sealed record PlayerForceEditResult(bool Ok, string Message);
 /// <see cref="MapInfo"/>), the World Editor's Scenario → Players / Forces dialogs.
 /// Edits mutate the parsed MapInfo and re-serialize the WHOLE file exactly the way
 /// <see cref="MapInfoCommand.Set"/> does (raw bytes + restored Model, dirty on Save),
-/// so untouched fields — including the Unk* unknowns — survive byte-for-byte.
+/// so untouched fields, including the Unk* unknowns, survive byte-for-byte.
 /// </summary>
 public static class PlayerForceCommand
 {
@@ -89,10 +89,10 @@ public static class PlayerForceCommand
             return new(false, $"map has no player with id {playerId}");
         if (info.Forces is null || forceIndex < 0 || forceIndex >= info.Forces.Count)
             return new(false,
-                $"invalid force index {forceIndex} — map has {info.Forces?.Count ?? 0} force(s)");
+                $"invalid force index {forceIndex}, map has {info.Forces?.Count ?? 0} force(s)");
         // Bitmask32 addresses bits 0..31.
         if (playerId is < 0 or > 31)
-            return new(false, $"invalid player id {playerId} — must be 0..31");
+            return new(false, $"invalid player id {playerId}, must be 0..31");
 
         for (int i = 0; i < info.Forces.Count; i++)
         {
@@ -120,7 +120,7 @@ public static class PlayerForceCommand
             return new(false, $"map has no parseable {MapInfoCommand.FileName}");
         if (info.Forces is null || forceIndex < 0 || forceIndex >= info.Forces.Count)
             return new(false,
-                $"invalid force index {forceIndex} — map has {info.Forces?.Count ?? 0} force(s)");
+                $"invalid force index {forceIndex}, map has {info.Forces?.Count ?? 0} force(s)");
 
         const ForceFlags managed = ForceFlags.Allied | ForceFlags.AlliedVictory
             | ForceFlags.ShareVision | ForceFlags.ShareUnitControl
@@ -175,7 +175,7 @@ public static class PlayerForceCommand
         mask is not null && playerId is >= 0 and <= 31 && mask[playerId];
 
     /// <summary>Re-serializes the mutated MapInfo through War3Net's writer and stores it
-    /// as the entry's raw payload + parsed model — the MapInfoCommand.Set write path.</summary>
+    /// as the entry's raw payload + parsed model, the MapInfoCommand.Set write path.</summary>
     private static void WriteBack(MapDocument doc, MapInfo info)
     {
         var entry = doc.AddOrReplaceRawFile(MapInfoCommand.FileName, MapInfoCommand.Serialize(info));

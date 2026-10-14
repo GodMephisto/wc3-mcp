@@ -14,7 +14,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Hermetic coverage of MapInfoCommand: the war3map.w3i is constructed
 /// programmatically (a complete v25 MapInfo), serialized with the same War3Net
-/// writer the command uses, and wrapped in an in-memory synthetic MPQ — no
+/// writer the command uses, and wrapped in an in-memory synthetic MPQ, no
 /// corpus map or game install required.
 /// </summary>
 public class MapInfoCommandTests

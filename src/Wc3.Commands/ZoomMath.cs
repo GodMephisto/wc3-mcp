@@ -11,7 +11,7 @@ public static class ZoomMath
     ///
     /// <para><b>Convention (matches TerrainView):</b> the content is laid out at <c>contentPoint * zoom</c>
     /// layout pixels (TerrainView sizes its Image to <c>bitmapPixelSize * zoom</c>), and
-    /// <paramref name="offsetX"/>/<paramref name="offsetY"/> are ScrollViewer <b>scroll offsets</b> — the
+    /// <paramref name="offsetX"/>/<paramref name="offsetY"/> are ScrollViewer <b>scroll offsets</b>, the
     /// layout-pixel distance the viewport has been scrolled right/down. A content point <c>p</c> is visible
     /// at viewport position <c>p * zoom - offset</c>, so the content point under the cursor is
     /// <c>(offset + cursor) / zoom</c> and the invariant-preserving new offset is
@@ -22,7 +22,7 @@ public static class ZoomMath
     /// (a scroll offset is the negated translation). If the clamped zoom equals the current zoom the
     /// offsets are returned unchanged.</para>
     ///
-    /// <para>Offsets are not clamped to the content extent — the ScrollViewer coerces its own Offset.</para>
+    /// <para>Offsets are not clamped to the content extent, the ScrollViewer coerces its own Offset.</para>
     /// </summary>
     /// <param name="offsetX">Current horizontal scroll offset in layout pixels.</param>
     /// <param name="offsetY">Current vertical scroll offset in layout pixels.</param>

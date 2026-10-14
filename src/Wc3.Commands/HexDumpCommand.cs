@@ -6,7 +6,7 @@ namespace Wc3.Commands;
 /// <summary>
 /// Pure, windowed hex-dump formatter for a virtualized binary viewer. A UI sizes its
 /// scrollbar with <see cref="RowCount"/> and calls <see cref="Format(byte[], int, int, int)"/>
-/// for just the visible rows on scroll — nothing here ever formats more than the
+/// for just the visible rows on scroll, nothing here ever formats more than the
 /// requested window.
 /// </summary>
 public static class HexDumpCommand
@@ -15,7 +15,7 @@ public static class HexDumpCommand
 
     /// <summary>
     /// Number of dump rows a whole file of <paramref name="totalBytes"/> bytes produces at
-    /// <paramref name="bytesPerRow"/> — lets a UI size a virtualized scrollbar without
+    /// <paramref name="bytesPerRow"/>, lets a UI size a virtualized scrollbar without
     /// formatting anything. Non-positive <paramref name="totalBytes"/> yields 0;
     /// <paramref name="bytesPerRow"/> below 1 is clamped to 1.
     /// </summary>
@@ -37,13 +37,13 @@ public static class HexDumpCommand
     /// the line's first byte), <paramref name="bytesPerRow"/> bytes as 2-hex-digit
     /// space-separated uppercase pairs (a partial last row is space-padded to full column
     /// width so the ASCII gutter starts in the same column on every line), then the ASCII
-    /// gutter between pipes — printable bytes 0x20–0x7E as-is, everything else '.'.
+    /// gutter between pipes, printable bytes 0x20, 0x7E as-is, everything else '.'.
     /// Lines start exactly at the (clamped) offset; a caller wanting conventional
     /// row-aligned labels passes a multiple of <paramref name="bytesPerRow"/>
     /// (e.g. firstVisibleRow * bytesPerRow).
-    /// Never throws: the window is intersected with [0, data.Length) — note the window end
+    /// Never throws: the window is intersected with [0, data.Length), note the window end
     /// stays offset+length, so a negative offset shrinks the window rather than shifting
-    /// it — and an empty intersection (offset past EOF, non-positive length, ...) yields an
+    /// it, and an empty intersection (offset past EOF, non-positive length, ...) yields an
     /// empty list. offset+length is computed in 64-bit, so int.MaxValue cannot overflow.
     /// <paramref name="bytesPerRow"/> below 1 is clamped to 1.
     /// </summary>

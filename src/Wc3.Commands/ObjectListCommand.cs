@@ -13,7 +13,7 @@ public static class ObjectListCommand
     /// <summary>
     /// Enumerate the map's entries of one Object Editor kind from war3map.* overlaid
     /// by the Reforged war3mapSkin.* twin: modified standard objects (Base*, identified
-    /// by OldId — their own base) and custom objects (New*, identified by NewId; OldId 0
+    /// by OldId, their own base) and custom objects (New*, identified by NewId; OldId 0
     /// = base-less). No file → empty list. Names resolve from the map's name-field
     /// delta (TRIGSTR_ refs via war3map.wts), else the base game's name (null when
     /// unavailable); the game data is only opened when the map actually has entries.

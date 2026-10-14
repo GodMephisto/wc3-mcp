@@ -37,7 +37,7 @@ internal static class ObjectDataBinaryProbe
 
     internal sealed record Parsed(int Version, IReadOnlyList<Obj> Objects, int Consumed, int Length)
     {
-        /// <summary>Bytes the declared structure never accounted for. Must always be 0 —
+        /// <summary>Bytes the declared structure never accounted for. Must always be 0 , 
         /// a real map's object data ends exactly where its object tables end.</summary>
         internal int Trailing => Length - Consumed;
     }

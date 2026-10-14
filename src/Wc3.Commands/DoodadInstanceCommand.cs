@@ -7,9 +7,9 @@ namespace Wc3.Commands;
 
 /// <summary>One placed doodad/destructable from war3map.doo. Scale is per-axis;
 /// LifePercent is the World Editor's 0..100 health override (the .doo stores it as a
-/// byte). Name is the map's object-data name delta for the type when one exists —
+/// byte). Name is the map's object-data name delta for the type when one exists , 
 /// war3map.doo holds both destructables (w3b deltas) and doodads (w3d deltas), so both
-/// are consulted — else null; base-game names need a game-data context which this
+/// are consulted, else null; base-game names need a game-data context which this
 /// hermetic read deliberately does not open.</summary>
 public sealed record DoodadInstanceInfo(
     int CreationNumber,
@@ -68,7 +68,7 @@ public static class DoodadInstanceCommand
     public static DoodadEditResult SetScale(MapDocument doc, int creationNumber, float sx, float sy, float sz)
     {
         if (sx <= 0f || sy <= 0f || sz <= 0f)
-            return new(false, $"invalid scale ({sx}, {sy}, {sz}) — all axes must be > 0");
+            return new(false, $"invalid scale ({sx}, {sy}, {sz}), all axes must be > 0");
         return Mutate(doc, creationNumber,
             d => d.Scale = new System.Numerics.Vector3(sx, sy, sz),
             $"scale set to ({sx}, {sy}, {sz})");
@@ -79,7 +79,7 @@ public static class DoodadInstanceCommand
     public static DoodadEditResult SetVariation(MapDocument doc, int creationNumber, int variation)
     {
         if (variation < 0)
-            return new(false, $"invalid variation {variation} — must be >= 0");
+            return new(false, $"invalid variation {variation}, must be >= 0");
         return Mutate(doc, creationNumber, d => d.Variation = variation, $"variation set to {variation}");
     }
 
@@ -88,7 +88,7 @@ public static class DoodadInstanceCommand
     public static DoodadEditResult SetLifePercent(MapDocument doc, int creationNumber, int percent)
     {
         if (percent is < 0 or > 100)
-            return new(false, $"invalid life percent {percent} — must be 0..100");
+            return new(false, $"invalid life percent {percent}, must be 0..100");
         return Mutate(doc, creationNumber, d => d.Life = (byte)percent, $"life set to {percent}%");
     }
 
@@ -96,7 +96,7 @@ public static class DoodadInstanceCommand
     public static DoodadEditResult Delete(MapDocument doc, int creationNumber)
     {
         if (doc.GetFile(PlacementCommand.DoodadsFile)?.Model is not MapDoodads doodads)
-            return new(false, $"map has no {PlacementCommand.DoodadsFile} — nothing is placed");
+            return new(false, $"map has no {PlacementCommand.DoodadsFile}, nothing is placed");
         var doodad = doodads.Doodads.FirstOrDefault(d => d.CreationNumber == creationNumber);
         if (doodad is null)
             return new(false, $"no placed doodad with creation number {creationNumber}");
@@ -112,7 +112,7 @@ public static class DoodadInstanceCommand
         MapDocument doc, int creationNumber, Action<DoodadData> edit, string appliedMessage)
     {
         if (doc.GetFile(PlacementCommand.DoodadsFile)?.Model is not MapDoodads doodads)
-            return new(false, $"map has no {PlacementCommand.DoodadsFile} — nothing is placed");
+            return new(false, $"map has no {PlacementCommand.DoodadsFile}, nothing is placed");
         var doodad = doodads.Doodads.FirstOrDefault(d => d.CreationNumber == creationNumber);
         if (doodad is null)
             return new(false, $"no placed doodad with creation number {creationNumber}");
@@ -135,7 +135,7 @@ public static class DoodadInstanceCommand
         LifePercent: d.Life);
 
     /// <summary>TypeId → display name from the map's destructable (w3b) and doodad (w3d)
-    /// object-data name deltas — war3map.doo mixes both kinds — with TRIGSTR_ refs
+    /// object-data name deltas, war3map.doo mixes both kinds, with TRIGSTR_ refs
     /// resolved against war3map.wts.</summary>
     private static IReadOnlyDictionary<int, string> BuildNameLookup(MapDocument doc)
     {

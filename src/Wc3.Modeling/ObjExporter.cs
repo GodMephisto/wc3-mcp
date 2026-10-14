@@ -6,7 +6,7 @@ namespace Wc3.Modeling;
 
 /// <summary>
 /// Exports a parsed <see cref="Model3D"/> to Wavefront OBJ/MTL text.
-/// Coordinates stay in WC3's Z-up convention — tell the importer "Z up"
+/// Coordinates stay in WC3's Z-up convention, tell the importer "Z up"
 /// (e.g. Blender's OBJ import axis setting) if the model lies on its side.
 /// WC3 UVs have V running top-down, so V is flipped to OBJ's bottom-up.
 /// </summary>
@@ -16,7 +16,7 @@ public static class ObjExporter
     {
         ArgumentNullException.ThrowIfNull(model);
         var sb = new StringBuilder();
-        sb.AppendLine("# exported by wc3ctl — WC3 coordinate system (Z-up, 1 unit ≈ 1/128 cell)");
+        sb.AppendLine("# exported by wc3ctl, WC3 coordinate system (Z-up, 1 unit ≈ 1/128 cell)");
         if (mtlFileName is not null)
             sb.Append("mtllib ").Append(mtlFileName).AppendLine();
 

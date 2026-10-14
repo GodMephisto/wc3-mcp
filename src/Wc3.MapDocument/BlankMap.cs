@@ -60,8 +60,8 @@ public sealed record BlankMapOptions
 /// them straight through <see cref="MapDocument.Load(byte[])"/>. The resulting document
 /// then Saves, parses and renders through every existing code path unchanged.</para>
 ///
-/// <para>The recipe — a war3map.w3i (info) file plus a war3map.w3e (terrain) file packed
-/// into an MPQ with a generated listfile — was verified empirically against the pinned
+/// <para>The recipe, a war3map.w3i (info) file plus a war3map.w3e (terrain) file packed
+/// into an MPQ with a generated listfile, was verified empirically against the pinned
 /// War3Net build by tests/Wc3.Tests/War3NetApiProbe.cs. A war3map.j carrying the
 /// standard GUI-map skeleton (globals / InitCustomTriggers / RunInitializationTriggers /
 /// main / config) rides along so ScriptPorter can splice + hook ported trigger code into
@@ -457,7 +457,7 @@ public static class BlankMap
         // Width/Height are the map size in TILES; the terrain grid the serializer
         // writes (and the reader expects) is (Width+1) x (Height+1) corner points.
         // Setting Width=verts here would make the reader expect (verts+1)^2 points and
-        // overrun the stream — the count must be tileEdge, with (tileEdge+1)^2 tiles.
+        // overrun the stream, the count must be tileEdge, with (tileEdge+1)^2 tiles.
         uint verts = (uint)(tileEdge + 1);
         var env = new MapEnvironment(version)
         {
@@ -474,7 +474,7 @@ public static class BlankMap
         // Ground-texture palette so the map renders REAL textured ground (grass/dirt/rock),
         // not a flat gray placeholder: TerrainArtCatalog.BuildLayersForMap reads
         // env.TerrainTypes and each tile's Texture index points into it. Without this the
-        // list is empty and every tile falls back to a solid gray fill — the map looks like
+        // list is empty and every tile falls back to a solid gray fill, the map looks like
         // it "has no ground". The default TerrainTile.Texture is 0 → the first entry (grass).
         // Standard Lordaeron Summer ('L') ground tiles; cliff list stays empty (flat map).
         foreach (var tileId in new[] { "Lgrs", "Lgrd", "Ldrt", "Ldro", "Lrok" })
@@ -524,7 +524,7 @@ public static class BlankMap
                 using var ms = new MemoryStream();
                 using (var w = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true))
                     w.Write(info); // War3Net.Build.Extensions serializer
-                return;            // serialized cleanly — all required members present
+                return;            // serialized cleanly, all required members present
             }
             catch (InvalidOperationException ex) when (TryExtractNullMember(ex.Message, out var member))
             {

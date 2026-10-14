@@ -5,7 +5,7 @@ namespace Wc3.GameData;
 
 /// <summary>
 /// One-call facade: locate the install, open CASC, build the base-game resolvers.
-/// Never throws — callers degrade gracefully on false + diagnostic.
+/// Never throws, callers degrade gracefully on false + diagnostic.
 /// </summary>
 public static class GameData
 {
@@ -51,7 +51,7 @@ public static class GameData
         if (!CascGameDataSource.TryOpen(dir, out var src, out var err))
         { diagnostic = $"could not open game data at {dir}: {err}"; return false; }
         // The builders copy all bytes into parsed tables, so the source is safe to
-        // dispose as soon as they return — success or failure.
+        // dispose as soon as they return, success or failure.
         try
         {
             // The five newer types degrade individually: a missing/corrupt SLK leaves

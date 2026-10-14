@@ -8,8 +8,8 @@ namespace Wc3.Modeling;
 /// vertex/normal arrays (CPU skinning). Deliberately approximate where the format
 /// allows it: linear interpolation stands in for hermite/bezier tracks, and classic
 /// matrix-group skinning is a rigid average over the group's bones (classic MDX
-/// stores no per-vertex weights). Every unexpected condition — missing bones,
-/// parent cycles, zero weights — degrades toward bind pose rather than throwing.
+/// stores no per-vertex weights). Every unexpected condition, missing bones,
+/// parent cycles, zero weights, degrades toward bind pose rather than throwing.
 /// </summary>
 internal static class ModelPoser
 {
@@ -71,7 +71,7 @@ internal static class ModelPoser
         if (vertexCount == 0
             || geoset.SkinBones is not { } bones || geoset.SkinWeights is not { } weights
             || bones.Length != vertexCount * 4 || weights.Length != vertexCount * 4)
-            return geoset; // no usable skinning data — bind pose
+            return geoset; // no usable skinning data, bind pose
 
         var vertices = new float[geoset.Vertices.Length];
         var normals = new float[geoset.Normals.Length];
@@ -172,7 +172,7 @@ internal static class ModelPoser
     /// Samples a track at a frame, restricted to keys inside the sequence interval
     /// (MDX keys live on a global timeline; other sequences' keys must not bleed in).
     /// Clamps to the nearest in-interval key at the edges and interpolates linearly
-    /// between the bracketing pair — a deliberate simplification of hermite/bezier.
+    /// between the bracketing pair, a deliberate simplification of hermite/bezier.
     /// Global-sequence tracks (independent looping timelines) sample their start.
     /// </summary>
     private static T Sample<T>(

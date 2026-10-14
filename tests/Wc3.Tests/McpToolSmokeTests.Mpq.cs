@@ -10,6 +10,26 @@ public sealed class McpSmokeMpqTests : McpSmokeBase
 {
     public McpSmokeMpqTests(SmokeFixture f) : base(f) { }
 
+    [Fact]
+    public void An_unnamed_entry_serializes_a_null_name()
+    {
+        // The tool descriptions promise a null name for an unnamed entry, and a client reading
+        // name off an omitted key gets undefined. The MCP serializer omits nulls, so the record
+        // carries an attribute that forces this one out.
+        var options = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        };
+        string fileList = System.Text.Json.JsonSerializer.Serialize(
+            new Wc3.Commands.FileState(null, 10, false, false), options);
+        string listFiles = System.Text.Json.JsonSerializer.Serialize(
+            new Wc3.Commands.FileEntryInfo(null, 10, false, false), options);
+
+        Assert.Contains("\"name\":null", fileList);
+        Assert.Contains("\"name\":null", listFiles);
+    }
+
     [Fact, Covers("mpq_verify")]
     public async Task Mpq_verify_reports_the_fixture_as_readable()
     {

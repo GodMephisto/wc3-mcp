@@ -41,7 +41,7 @@ public class ObjectDataStoreTests
         var store = BuildStore();
         Assert.True(store.TryGet("ATtr", out var fields));
         Assert.Equal("50", fields["bhps"]);
-        // "bnam" lives in Profile (a TXT, not an SLK) — not resolvable in v1.
+        // "bnam" lives in Profile (a TXT, not an SLK), not resolvable in v1.
         Assert.False(fields.ContainsKey("bnam"));
     }
 

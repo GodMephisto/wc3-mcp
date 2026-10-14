@@ -61,7 +61,7 @@ public class ZoomMathTests
     [Fact]
     public void ZoomAtPoint_PartialClamp_StillKeepsPointUnderCursor()
     {
-        // 8 * 2 would be 16; clamped to 10 — the invariant must hold for the clamped zoom.
+        // 8 * 2 would be 16; clamped to 10, the invariant must hold for the clamped zoom.
         const double offsetX = 500, offsetY = 250, zoom = 8.0;
         const double cursorX = 64, cursorY = 32;
 

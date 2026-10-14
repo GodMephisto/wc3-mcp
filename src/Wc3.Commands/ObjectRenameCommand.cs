@@ -70,7 +70,8 @@ public static class ObjectRenameCommand
         if (rewriteRefs)
         {
             fields = RewriteObjectReferences(doc, oldRawcode, newRawcode);
-            literals = RewriteScriptLiterals(doc, oldRawcode, newRawcode);
+            literals = RewriteScriptLiterals(doc, oldRawcode, newRawcode)
+                     + RewriteCustomTextTriggers(doc, oldRawcode, newRawcode);
         }
 
         string refs = rewriteRefs
@@ -192,6 +193,44 @@ public static class ObjectRenameCommand
 
         if (literals > 0) doc.AddOrReplaceRawFile(scriptName, ScriptText.GetBytes(output));
         return literals;
+    }
+
+    /// <summary>
+    /// Rewrites the old rawcode inside the custom-text trigger bodies (war3map.wct), whose bytes
+    /// carry the code as plain ASCII. The replacement is byte-level rather than through the model,
+    /// because the wct decoder loses bytes it cannot interpret and a re-serialize would drop them.
+    /// The code is four characters either way, so the length-prefixed entries stay intact. Without
+    /// this a rename left the tree naming the old code while the script and the object fields named
+    /// the new one, measured on GGGA where a renamed hero's trigger attribution fell from 1 to 0.
+    /// </summary>
+    private static int RewriteCustomTextTriggers(MapDocument doc, string oldRawcode, string newRawcode)
+    {
+        if (doc.GetFile(TriggerCommand.CustomTextFileName) is not { } entry) return 0;
+        // Latin1 round-trips every byte, which ScriptText does not promise for a wct body.
+        string text = System.Text.Encoding.Latin1.GetString(entry.CurrentBytes);
+        int hits = CountTokens(text, oldRawcode);
+        if (hits == 0) return 0;
+
+        var rewritten = ReplaceToken(text, oldRawcode, newRawcode);
+        doc.AddOrReplaceRawFile(TriggerCommand.CustomTextFileName,
+            System.Text.Encoding.Latin1.GetBytes(rewritten));
+        return hits;
+    }
+
+    /// <summary>The number of times the rawcode appears in the text as a standalone token, the
+    /// same boundary rule <see cref="ReplaceToken"/> uses.</summary>
+    private static int CountTokens(string text, string rawcode)
+    {
+        int count = 0, i = 0;
+        while ((i = text.IndexOf(rawcode, i, StringComparison.OrdinalIgnoreCase)) >= 0)
+        {
+            bool left = i == 0 || !char.IsLetterOrDigit(text[i - 1]);
+            bool right = i + rawcode.Length == text.Length
+                         || !char.IsLetterOrDigit(text[i + rawcode.Length]);
+            if (left && right) count++;
+            i += rawcode.Length;
+        }
+        return count;
     }
 
     /// <summary>Replaces the old rawcode where it appears delimited by anything that is not a

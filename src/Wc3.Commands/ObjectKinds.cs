@@ -47,7 +47,7 @@ public static class ObjectKinds
         && Enum.TryParse<ObjectKind>(token, ignoreCase: true, out var kind)
             ? kind
             : throw new ArgumentException(
-                $"unknown object kind '{token}' — expected one of: " +
+                $"unknown object kind '{token}', expected one of: " +
                 string.Join("|", All.Select(k => k.ToString().ToLowerInvariant())));
 
     /// <summary>
@@ -232,7 +232,7 @@ public static class ObjectKinds
     /// <summary>
     /// A field's editor type token (from the kind's metadata SLK) plus the enumerated
     /// option set, generalized over every kind. Options are the distinct base-data values
-    /// the field takes across all objects of the kind — correct-by-construction, so a
+    /// the field takes across all objects of the kind, correct-by-construction, so a
     /// dropdown/multiselect can only ever write a token the game already uses. For list
     /// types ("*List") the options are the individual comma-separated tokens; otherwise
     /// the whole values. Empty options ⇒ caller should fall back to free text. Leveled

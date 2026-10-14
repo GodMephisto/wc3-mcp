@@ -10,8 +10,8 @@ namespace Wc3.Commands.Editing;
 /// <see cref="PlacementCommand.PlaceDoodad"/> so the World-Editor default fields
 /// live in one place, then captures the created <see cref="DoodadData"/>.
 /// <see cref="Revert"/> removes that exact instance; a later Apply (redo) re-adds
-/// the very same instance, so the CreationNumber — and any trigger reference keyed
-/// off it — is stable across undo/redo.
+/// the very same instance, so the CreationNumber, and any trigger reference keyed
+/// off it, is stable across undo/redo.
 /// </summary>
 public sealed class PlaceDoodadEdit : IMapEdit
 {

@@ -68,6 +68,11 @@ public static class ObjectImportCommand
         if (ctx is null)
             notes.Add("no game install, field codes were checked for shape only");
 
+        // One session for the whole file. Every set used to re-walk the merged entries, re-learn the
+        // skin partition and re-open the layer model, which is what made a 2265-object import run
+        // for minutes rather than seconds.
+        var session = new ObjectSetCommand.Session(doc, kind);
+
         int added = 0, updated = 0, fields = 0;
         for (int r = 1; r < rows.Count; r++)
         {
@@ -81,11 +86,10 @@ public static class ObjectImportCommand
                 continue;
             }
 
-            bool exists = ObjectKinds.MergedEntries(doc, info)
-                .Any(e => e.Id == rawcode.FromRawcode());
+            bool exists = session.Merged.ContainsKey(rawcode.FromRawcode());
             if (!exists)
             {
-                if (!CreateObject(doc, kind, ctx, rawcode.FromRawcode(), out var error))
+                if (!CreateObject(doc, kind, ctx, session, rawcode.FromRawcode(), out var error))
                 {
                     notes.Add($"row {r + 1}: {error}");
                     continue;
@@ -103,7 +107,7 @@ public static class ObjectImportCommand
                 if (cell >= row.Count) break;
                 string value = row[cell];
                 if (value.Length == 0) continue; // blank leaves the field untouched
-                var set = ObjectSetCommand.Execute(doc, kind, rawcode, known[c]!, value);
+                var set = ObjectSetCommand.Execute(doc, kind, rawcode, known[c]!, value, session);
                 if (set.Ok) fields++;
                 else notes.Add($"row {r + 1} {rawcode} {known[c]}: {set.Message}");
             }
@@ -124,11 +128,11 @@ public static class ObjectImportCommand
     /// with no base, both in the kind's war3map.* file exactly as object_new does for a custom.
     /// </summary>
     private static bool CreateObject(
-        MapDocument doc, ObjectKind kind, GameDataContext? ctx, int id, out string error)
+        MapDocument doc, ObjectKind kind, GameDataContext? ctx,
+        ObjectSetCommand.Session session, int id, out string error)
     {
         var info = ObjectKinds.Info(kind);
-        var model = ObjectDataWriter.GetOrCreateModel(doc, kind, ObjectLayer.Map);
-        var access = model is null ? null : ObjectDataWriter.AccessFor(model);
+        var (model, access) = session.Layer(ObjectLayer.Map);
         if (access is null)
         {
             error = $"map has no parseable {info.MapFile} for a new {kind} object";
@@ -137,8 +141,8 @@ public static class ObjectImportCommand
 
         string rawcode = id.ToRawcode();
         bool standard = ctx is not null && ObjectKinds.TryGetBaseFields(ctx, kind, rawcode, out _);
-        if (standard) access.CreateGroup(id, 0);   // modified standard
-        else access.CreateGroup(0, id);            // custom with no base
+        if (standard) { access.CreateGroup(id, 0); session.Remember(id, id); }  // modified standard
+        else { access.CreateGroup(0, id); session.Remember(id, 0); }           // custom with no base
         doc.AddOrReplaceModelFile(info.MapFile, model!);
         error = "";
         return true;

@@ -39,6 +39,30 @@ public class HeroRosterTests
     }
 
     [Fact]
+    public void A_map_with_no_custom_units_refuses_instead_of_returning_item_codes()
+    {
+        // With no custom unit to score against, the count tiebreak alone picked the most-called
+        // rawcode-taking native, so 12331 reported 27 "heroes" that were item codes and Otaku
+        // Defense reported one that was an ability code. A registry only counts when one of its
+        // rawcodes is a unit the map defines.
+        var doc = BlankMap.Create();
+        FileEditCommand.WriteText(doc, "war3map.j",
+            "function main takes nothing returns nothing\n"
+            + "    call SetUnitAbilityLevelSwapped('A000', GetTriggerUnit(), 1)\n"
+            + "    call AddItemToStockBJ('I000', GetTriggerUnit(), 1, 1)\n"
+            + "endfunction\n");
+
+        var r = HeroRosterCommand.Run(doc);
+
+        Assert.False(r.Ok);
+        Assert.Empty(r.Heroes);
+        // The registration call was found, and refused for resolving to no unit, rather than the
+        // map having no call at all. That is the difference the fix makes.
+        Assert.Contains("resolve to a unit", r.Message);
+        _out.WriteLine(r.Message);
+    }
+
+    [Fact]
     [Trait("Category", "Corpus")]
     public void The_roster_comes_from_a_call_whose_rawcodes_are_actually_units()
     {

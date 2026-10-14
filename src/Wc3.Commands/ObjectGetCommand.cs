@@ -8,7 +8,7 @@ public static class ObjectGetCommand
 {
     /// <summary>
     /// Kind-agnostic pipeline (backward compatible): probes every Object Editor kind's
-    /// map deltas, then every base store — first hit wins. Use the kind-aware overload
+    /// map deltas, then every base store, first hit wins. Use the kind-aware overload
     /// to disambiguate rawcodes shared across kinds.
     /// </summary>
     public static MergedObjectResult Execute(MapDocument doc, string rawcode, string? gameDirOverride)
@@ -98,7 +98,7 @@ public static class ObjectGetCommand
         GameDataContext? ctx, IReadOnlyList<string> diagnostics)
     {
         // A modified standard object is its own base; a from-scratch custom
-        // object (OldId=0) has none — never rawcode-ify the zero id.
+        // object (OldId=0) has none, never rawcode-ify the zero id.
         string? baseRawcode = entry.OldId == 0 ? null : entry.OldId.ToRawcode();
 
         var deltaFields = ObjectKinds.ModsToDict(entry.Mods);

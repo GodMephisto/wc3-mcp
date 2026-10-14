@@ -38,7 +38,7 @@ public class BaseUnitStoreTests
         var store = BuildStore();
         Assert.True(store.TryGetUnit("hfoo", out var fields));
         Assert.Equal("420", fields["uhpm"]);
-        // "unam" lives in Profile (a TXT, not one of the unit SLKs) — not resolvable in v1.
+        // "unam" lives in Profile (a TXT, not one of the unit SLKs), not resolvable in v1.
         Assert.False(fields.ContainsKey("unam"));
     }
 

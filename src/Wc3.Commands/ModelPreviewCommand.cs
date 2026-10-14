@@ -7,10 +7,10 @@ namespace Wc3.Commands;
 
 /// <summary>
 /// Lightweight static model preview: MDX/MDL bytes → orthographic wireframe PNG.
-/// This is explicitly a first cut, NOT a full render — no textures, no skeleton or
+/// This is explicitly a first cut, NOT a full render, no textures, no skeleton or
 /// animation (bind pose only), no lighting, no perspective, no hidden-line removal.
 /// The bind-pose triangle edges are projected with a fixed 3/4 orthographic view
-/// (45° yaw around +Z — WC3 models are Z-up — then a 30° downward pitch), uniformly
+/// (45° yaw around +Z, WC3 models are Z-up, then a 30° downward pitch), uniformly
 /// scaled to fit the canvas with padding, and drawn as a wireframe on a solid
 /// background. Empty, degenerate, or unparseable input degrades to a small
 /// placeholder PNG (background + diagonal cross); <see cref="RenderPreview(byte[], int, int)"/>
@@ -203,7 +203,7 @@ public static class ModelPreviewCommand
         return true;
     }
 
-    /// <summary>Solid background plus a diagonal cross — the "no geometry" marker.</summary>
+    /// <summary>Solid background plus a diagonal cross, the "no geometry" marker.</summary>
     private static byte[] PlaceholderPng(int width, int height)
     {
         using var image = new Image<Rgba32>(width, height, Background);

@@ -12,7 +12,7 @@ namespace Wc3.Mcp;
 /// <summary>
 /// The MCP tool surface: one thin wrapper per Wc3.Commands handler. Each tool
 /// loads the map(s), calls the shared command layer and returns its result POCO
-/// (the SDK serializes it to JSON) — no map parsing or logic lives here.
+/// (the SDK serializes it to JSON), no map parsing or logic lives here.
 /// </summary>
 [McpServerToolType]
 public static class Wc3Tools
@@ -501,7 +501,7 @@ public static class Wc3Tools
         });
 
     [McpServerTool(Name = "map_optimize", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
-    [Description("Shrink every imported model and texture inside a map in one pass and write a new map to out_path with only those files replaced, everything else byte for byte. Each model is decimated at ratio (the target fraction of faces to keep) and each texture is scaled to fit max_texture on its longest side, reusing the model and texture optimisers. A file whose optimised bytes are not smaller is left untouched. Reports the per-file before and after sizes, the per-kind counts and the total byte saving. The input map is NEVER modified.")]
+    [Description("Shrink every imported model and texture inside a map in one pass and write a new map to out_path with only those files replaced, everything else byte for byte. Each model is decimated at ratio (the target fraction of faces to keep) and each texture is scaled to fit max_texture on its longest side, reusing the model and texture optimisers. A file whose optimised bytes are not smaller is left untouched. Reports the per-file before and after sizes, the per-kind counts, bytesSaved (the output size subtracted from the input's) and contentBytesSaved (the per-file sum, which is larger when the archive was patched in place rather than rebuilt). The input map is NEVER modified.")]
     public static MapOptimizeResult MapOptimize(
         [Description("Path to a .w3x/.w3m map file. Read-only; the edited copy is written to out_path.")] string map,
         [Description("Output map path. The input is never modified.")] string out_path,
@@ -1731,13 +1731,16 @@ public static class Wc3Tools
             return (r.Ok, r.Message, r.TilesChanged);
         }));
 
-    [McpServerTool(Name = "deprotect_map", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    // Not ReadOnly, because passing out_path writes a copy. The annotation is per tool, not per
+    // call, so a tool that can write must not claim to be read-only.
+    [McpServerTool(Name = "deprotect_map", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Recover the file names a protected map stripped. A protected map ships no "
         + "(listfile), so most entries have no name and cannot be looked up by name at all. "
         + "Measured on one real map, 793 of 851 entries were nameless and recovery reached 832. "
         + "Names come from the map's own object data, its script literals, the texture paths its "
         + "models declare, any listfiles supplied, and an asset-name sweep of every block. "
-        + "Read-only. Pass out_path to write a copy whose listfile carries the recovered names.")]
+        + "Without out_path nothing is written. With it, the recovered names go into a copy at "
+        + "out_path and the input map is never modified in place.")]
     public static NameRecoveryResult DeprotectMap(
         [Description("Path to a .w3x/.w3m map file.")] string map,
         [Description("Optional output map path. When given, the recovered names are written into a copy; the input map is NEVER modified in place. Named entries are recompressed, every other entry stays byte-faithful.")] string? out_path = null,

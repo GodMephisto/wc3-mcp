@@ -17,9 +17,9 @@ namespace Wc3.Commands;
 /// that resolve as objects become nodes, path-like tokens become file deps, and
 /// map-imported models contribute their textures. With game data available, only
 /// fields whose metadata TYPE is an object-reference type (unitCode, abilList, ...)
-/// may add object nodes — a value that merely looks like a rawcode elsewhere is a
+/// may add object nodes, a value that merely looks like a rawcode elsewhere is a
 /// false positive; without game data the crawl stays permissive (any 4-char token
-/// is a candidate). Only map-defined (custom) objects are recursed — base-game
+/// is a candidate). Only map-defined (custom) objects are recursed, base-game
 /// objects are recorded as leaf nodes since they already exist in any target map.
 /// </summary>
 public static class BundleCommand
@@ -40,7 +40,7 @@ public static class BundleCommand
         ResolveObject(doc, ObjectKind.Unit, rootRawcode, ctx, preDiagnostics);
 
     /// <summary>Closure rooted at an object of the given kind. The result is a
-    /// <see cref="UnitBundle"/> for historical reasons — it is a generic object
+    /// <see cref="UnitBundle"/> for historical reasons, it is a generic object
     /// bundle and covers any root kind.</summary>
     public static UnitBundle ResolveObject(
         MapDocument doc, ObjectKind rootKind, string rootRawcode, string? gameDirOverride)
@@ -59,7 +59,7 @@ public static class BundleCommand
         var diagnostics = new List<string>(preDiagnostics);
         var strings = MapStrings.From(doc);
 
-        // Per-kind rawcode ids the map itself defines/modifies — the "custom to
+        // Per-kind rawcode ids the map itself defines/modifies, the "custom to
         // this map" test (custom objects need porting; base ones exist anywhere).
         var mapIds = new Dictionary<ObjectKind, HashSet<int>>();
         foreach (var kind in ObjectKinds.All)
@@ -75,7 +75,7 @@ public static class BundleCommand
 
         bool IsCustom(ObjectKind kind, string rawcode) => mapIds[kind].Contains(rawcode.FromRawcode());
 
-        // Per (kind, field-code) "may this field's value reference objects?" — memoized
+        // Per (kind, field-code) "may this field's value reference objects?", memoized
         // because the metadata probe also enumerates the store's distinct field values.
         var refFieldCache = new Dictionary<(ObjectKind Kind, string Code), bool>();
         bool IsReferenceField(ObjectKind kind, string fieldCode)
@@ -114,7 +114,7 @@ public static class BundleCommand
         {
             if (nodes.ContainsKey(token)) { AddEdge(from, token, via); return; }
             if (nodes.Count >= MaxNodes) { capped = true; return; }
-            if (Resolve(token) is not { } hit) return; // not an object — a false-positive token
+            if (Resolve(token) is not { } hit) return; // not an object, a false-positive token
             bool custom = IsCustom(hit.Kind, token);
             nodes[token] = new BundleNode(token, hit.Kind, hit.Merged.Name, custom);
             AddEdge(from, token, via);
@@ -183,7 +183,7 @@ public static class BundleCommand
                 }
             }
 
-            // Cross-references are 4-char rawcodes or comma-separated lists of them —
+            // Cross-references are 4-char rawcodes or comma-separated lists of them , 
             // but only in fields whose metadata type says they hold object references;
             // asset references are file-path strings (variation fields may list several).
             // The field code rides on every edge as its Via (the WHY of the inclusion).
@@ -204,7 +204,7 @@ public static class BundleCommand
         if (!root.Found)
         {
             diagnostics.Add($"root {kindWord} '{rootRawcode}' not found in the map"
-                + (ctx is null ? " (game data unavailable — base objects unresolvable)" : " or game data"));
+                + (ctx is null ? " (game data unavailable, base objects unresolvable)" : " or game data"));
             return new UnitBundle(rootRawcode, null, Array.Empty<BundleNode>(), Array.Empty<BundleFile>(),
                 Array.Empty<string>(), Array.Empty<BundleEdge>(), diagnostics, Array.Empty<BundleFunction>());
         }
@@ -212,7 +212,7 @@ public static class BundleCommand
         bool rootCustom = rootRawcode.Length == 4 && IsCustom(rootKind, rootRawcode);
         nodes[rootRawcode] = new BundleNode(rootRawcode, rootKind, root.Name, rootCustom);
         if (rootCustom) queue.Enqueue((rootRawcode, root));
-        else diagnostics.Add($"root {kindWord} '{rootRawcode}' is a base-game {kindWord} — nothing custom to port");
+        else diagnostics.Add($"root {kindWord} '{rootRawcode}' is a base-game {kindWord}, nothing custom to port");
 
         void Drain()
         {
@@ -226,10 +226,10 @@ public static class BundleCommand
         }
         Drain();
 
-        if (capped) diagnostics.Add($"node cap ({MaxNodes}) reached — dependency closure truncated");
+        if (capped) diagnostics.Add($"node cap ({MaxNodes}) reached, dependency closure truncated");
 
         // Script closure: the war3map.j functions that implement the bundle's custom
-        // skills. Seeded by every rawcode being ported (root + custom objects) — those
+        // skills. Seeded by every rawcode being ported (root + custom objects), those
         // appear in JASS as 'XXXX' literals in spell-handler conditions and the like.
         var seedRawcodes = nodes.Values.Where(n => n.CustomToMap).Select(n => n.Rawcode)
             .Where(rc => rc != rootRawcode)
@@ -261,7 +261,7 @@ public static class BundleCommand
     }
 
     /// <summary>Safety cap on script-closure functions (a real war3map.j tops out around
-    /// a few thousand — beyond that the seed heuristic has almost certainly run away).</summary>
+    /// a few thousand, beyond that the seed heuristic has almost certainly run away).</summary>
     private const int MaxFunctions = 4000;
 
     /// <summary>Safety cap on objects carried because a handler spawns or grants them. A hero's kit
@@ -323,10 +323,10 @@ public static class BundleCommand
 
     /// <summary>
     /// JASS call-graph closure seeded by rawcode literals: every war3map.j function whose
-    /// body mentions '&lt;seed rawcode&gt;' — directly, or through a global initialized
-    /// with one (integer Raiden_ID= 'H000' makes any Raiden_ID reference a hit) — plus
+    /// body mentions '&lt;seed rawcode&gt;', directly, or through a global initialized
+    /// with one (integer Raiden_ID= 'H000' makes any Raiden_ID reference a hit), plus
     /// everything those functions transitively call. Best-effort text analysis on top of
-    /// <see cref="JassFunctionIndex"/> — line comments are stripped, but /* */ block
+    /// <see cref="JassFunctionIndex"/>, line comments are stripped, but /* */ block
     /// comments and string literals are not understood, so a rawcode or function name
     /// inside either still matches (over-inclusion, never under-inclusion). Lua maps
     /// are not analyzed.
@@ -347,8 +347,8 @@ public static class BundleCommand
         if (entry is null)
         {
             diagnostics.Add(doc.GetFile("war3map.lua") is not null
-                ? "Lua scripts not analyzed (JASS only) — script closure skipped"
-                : "map has no war3map.j — script closure skipped");
+                ? "Lua scripts not analyzed (JASS only), script closure skipped"
+                : "map has no war3map.j, script closure skipped");
             return Array.Empty<BundleFunction>();
         }
 
@@ -422,7 +422,7 @@ public static class BundleCommand
 
         // One line-by-line pass per function fills both the call graph and the alias mentions.
         // A call counts when the identifier names another indexed function and is either invoked
-        // ("Foo(") or passed by reference ("function Foo" — TriggerAddAction/TimerStart/Condition
+        // ("Foo(") or passed by reference ("function Foo", TriggerAddAction/TimerStart/Condition
         // and friends). Calls that appear ONLY inside a foreign-hero dispatch branch are dropped
         // (guardStack tracks the open if/elseif branches; a call is followed only when no active
         // branch is foreign). Alias mentions, which drive SEEDING, are collected regardless of
@@ -432,7 +432,7 @@ public static class BundleCommand
         // named after the hero (DarkShiki_ID, DarkShikiQ_ID, DarkShikiQ2_ID, ...). From the root's own
         // id-global take the hero stem, then carry every custom sibling id-global's object. Scoped to
         // the hero's own naming group, so it never pulls another hero's abilities (a closure-wide
-        // rawcode scan does — shared dispatchers name every hero, and each carried unit cascades).
+        // rawcode scan does, shared dispatchers name every hero, and each carried unit cascades).
         if (seedRawcodes.Count > 0)
         {
             int rootId = seedRawcodes[0].FromRawcode();
@@ -547,7 +547,7 @@ public static class BundleCommand
             spawnRefs[f.Name] = spawns;
         }
 
-        // Seeds: functions referencing any ported rawcode — as a literal or via an alias.
+        // Seeds: functions referencing any ported rawcode, as a literal or via an alias.
         var reasons = new Dictionary<string, string>(StringComparer.Ordinal);
         var queue = new Queue<string>();
         bool capped = false;
@@ -574,7 +574,7 @@ public static class BundleCommand
                 queue.Enqueue(callee);
             }
         }
-        if (capped) diagnostics.Add($"function cap ({MaxFunctions}) reached — script closure truncated");
+        if (capped) diagnostics.Add($"function cap ({MaxFunctions}) reached, script closure truncated");
 
         // Doer-dummy recovery. A carried handler often READS a per-player unit array (unit array
         // udg_X, indexed by a player slot) whose units are created in a SETUP function the closure
@@ -751,7 +751,7 @@ public static class BundleCommand
             if (allAliases.TryGetValue(id.Value, out var rc)) yield return rc;
     }
 
-    /// <summary>True when the matched identifier is a "function Foo" code reference —
+    /// <summary>True when the matched identifier is a "function Foo" code reference , 
     /// the "function" keyword immediately precedes it with only whitespace between.</summary>
     private static bool IsFunctionReference(string body, Match? prev, Match m)
     {
@@ -763,7 +763,7 @@ public static class BundleCommand
 
     /// <summary>Metadata type tokens whose values are object rawcodes: a known object
     /// stem + "Code" (single) or "List" (comma-separated). Non-object lists like
-    /// "targetList"/"stringList" stay out — the stem whitelist (the same one the
+    /// "targetList"/"stringList" stay out, the stem whitelist (the same one the
     /// Studio object editor uses) keeps this conservative.</summary>
     private static bool IsObjectReferenceType(string type)
     {

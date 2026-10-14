@@ -8,7 +8,7 @@ namespace Wc3.Commands;
 /// <summary>One placed unit from war3mapUnits.doo. Scale is per-axis; HpPercent /
 /// ManaPercent are the World Editor's percent overrides where -1 means "use the
 /// object's default". Name is the map's object-data name delta for the type when one
-/// exists ("Start Location" for sloc), else null — base-game names need a game-data
+/// exists ("Start Location" for sloc), else null, base-game names need a game-data
 /// context which this hermetic read deliberately does not open.</summary>
 public sealed record UnitInstanceInfo(
     int CreationNumber,
@@ -70,7 +70,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetOwner(MapDocument doc, int creationNumber, int ownerId)
     {
         if (ownerId < 0)
-            return new(false, $"invalid owner id {ownerId} — must be >= 0");
+            return new(false, $"invalid owner id {ownerId}, must be >= 0");
         return Mutate(doc, creationNumber, u => u.OwnerId = ownerId,
             $"owner set to {ownerId} ({PlayerColors.DisplayName(ownerId)})");
     }
@@ -78,7 +78,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetHeroLevel(MapDocument doc, int creationNumber, int level)
     {
         if (level < 1)
-            return new(false, $"invalid hero level {level} — must be >= 1");
+            return new(false, $"invalid hero level {level}, must be >= 1");
         return Mutate(doc, creationNumber, u => u.HeroLevel = level, $"hero level set to {level}");
     }
 
@@ -86,7 +86,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetHeroStrength(MapDocument doc, int creationNumber, int value)
     {
         if (value < 0)
-            return new(false, $"invalid strength {value} — must be >= 0");
+            return new(false, $"invalid strength {value}, must be >= 0");
         return Mutate(doc, creationNumber, u => u.HeroStrength = value, $"strength set to {value}");
     }
 
@@ -94,7 +94,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetHeroAgility(MapDocument doc, int creationNumber, int value)
     {
         if (value < 0)
-            return new(false, $"invalid agility {value} — must be >= 0");
+            return new(false, $"invalid agility {value}, must be >= 0");
         return Mutate(doc, creationNumber, u => u.HeroAgility = value, $"agility set to {value}");
     }
 
@@ -102,7 +102,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetHeroIntelligence(MapDocument doc, int creationNumber, int value)
     {
         if (value < 0)
-            return new(false, $"invalid intelligence {value} — must be >= 0");
+            return new(false, $"invalid intelligence {value}, must be >= 0");
         return Mutate(doc, creationNumber, u => u.HeroIntelligence = value, $"intelligence set to {value}");
     }
 
@@ -110,7 +110,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetTargetAcquisition(MapDocument doc, int creationNumber, float range)
     {
         if (range < 0f && range != -1f)
-            return new(false, $"invalid target acquisition {range} — must be >= 0 (or -1 for default)");
+            return new(false, $"invalid target acquisition {range}, must be >= 0 (or -1 for default)");
         return Mutate(doc, creationNumber, u => u.TargetAcquisition = range,
             $"target acquisition set to {(range == -1f ? "default" : range.ToString("0.##"))}");
     }
@@ -119,7 +119,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetHpPercent(MapDocument doc, int creationNumber, int percent)
     {
         if (percent is not (-1) and (< 0 or > 100))
-            return new(false, $"invalid HP percent {percent} — must be 0..100 (or -1 for default)");
+            return new(false, $"invalid HP percent {percent}, must be 0..100 (or -1 for default)");
         return Mutate(doc, creationNumber, u => u.HP = percent, $"HP set to {Pct(percent)}");
     }
 
@@ -127,14 +127,14 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetManaPercent(MapDocument doc, int creationNumber, int percent)
     {
         if (percent is not (-1) and (< 0 or > 100))
-            return new(false, $"invalid mana percent {percent} — must be 0..100 (or -1 for default)");
+            return new(false, $"invalid mana percent {percent}, must be 0..100 (or -1 for default)");
         return Mutate(doc, creationNumber, u => u.MP = percent, $"mana set to {Pct(percent)}");
     }
 
     public static UnitEditResult SetScale(MapDocument doc, int creationNumber, float sx, float sy, float sz)
     {
         if (sx <= 0f || sy <= 0f || sz <= 0f)
-            return new(false, $"invalid scale ({sx}, {sy}, {sz}) — all axes must be > 0");
+            return new(false, $"invalid scale ({sx}, {sy}, {sz}), all axes must be > 0");
         return Mutate(doc, creationNumber,
             u => u.Scale = new System.Numerics.Vector3(sx, sy, sz),
             $"scale set to ({sx}, {sy}, {sz})");
@@ -154,7 +154,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetGold(MapDocument doc, int creationNumber, int amount)
     {
         if (amount < 0)
-            return new(false, $"invalid gold amount {amount} — must be >= 0");
+            return new(false, $"invalid gold amount {amount}, must be >= 0");
         return Mutate(doc, creationNumber, u => u.GoldAmount = amount, $"gold set to {amount}");
     }
 
@@ -167,7 +167,7 @@ public static class UnitInstanceCommand
     public static UnitEditResult DeleteMany(MapDocument doc, IEnumerable<int> creationNumbers)
     {
         if (doc.GetFile(PlacementCommand.UnitsFile)?.Model is not MapUnits units)
-            return new(false, $"map has no {PlacementCommand.UnitsFile} — nothing is placed");
+            return new(false, $"map has no {PlacementCommand.UnitsFile}, nothing is placed");
         var set = new HashSet<int>(creationNumbers);
         if (set.Count == 0)
             return new(false, "no units selected");
@@ -183,9 +183,9 @@ public static class UnitInstanceCommand
     public static UnitEditResult SetOwnerMany(MapDocument doc, IEnumerable<int> creationNumbers, int ownerId)
     {
         if (ownerId < 0)
-            return new(false, $"invalid owner id {ownerId} — must be >= 0");
+            return new(false, $"invalid owner id {ownerId}, must be >= 0");
         if (doc.GetFile(PlacementCommand.UnitsFile)?.Model is not MapUnits units)
-            return new(false, $"map has no {PlacementCommand.UnitsFile} — nothing is placed");
+            return new(false, $"map has no {PlacementCommand.UnitsFile}, nothing is placed");
         var set = new HashSet<int>(creationNumbers);
         int changed = 0;
         foreach (var u in units.Units)
@@ -202,7 +202,7 @@ public static class UnitInstanceCommand
         MapDocument doc, int creationNumber, Action<UnitData> edit, string appliedMessage)
     {
         if (doc.GetFile(PlacementCommand.UnitsFile)?.Model is not MapUnits units)
-            return new(false, $"map has no {PlacementCommand.UnitsFile} — nothing is placed");
+            return new(false, $"map has no {PlacementCommand.UnitsFile}, nothing is placed");
         var unit = units.Units.FirstOrDefault(u => u.CreationNumber == creationNumber);
         if (unit is null)
             return new(false, $"no placed unit with creation number {creationNumber}");

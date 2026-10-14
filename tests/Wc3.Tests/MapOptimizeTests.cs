@@ -43,7 +43,12 @@ public sealed class MapOptimizeTests
             Assert.Equal(1, r.ModelsOptimized);
             Assert.Equal(1, r.TexturesOptimized);
             Assert.Equal(2, r.Changed);
+            // BytesSaved is the on-disk delta, not the per-file sum. The two agree on a rebuilt
+            // archive and part company on one patched in place, where the file can grow.
             Assert.True(r.BytesSaved > 0);
+            Assert.Equal(r.BytesBefore - r.BytesAfter, r.BytesSaved);
+            Assert.Equal(2, r.Files.Count);
+            Assert.True(r.ContentBytesSaved > 0);
 
             var outDoc = MapDocument.Load(outPath);
 

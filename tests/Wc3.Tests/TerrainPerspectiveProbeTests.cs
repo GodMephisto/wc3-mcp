@@ -10,7 +10,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// The 3D perspective terrain renderer (the "rendered in game" view) must produce a
 /// valid, non-degenerate PNG: correct dimensions, PNG signature, actual lit terrain
-/// pixels (not pure sky), and a genuine perspective camera — tilting the pitch must
+/// pixels (not pure sky), and a genuine perspective camera, tilting the pitch must
 /// change the projection (a flat 2D blit would be pitch-invariant).
 /// </summary>
 public class TerrainPerspectiveProbeTests
@@ -31,7 +31,7 @@ public class TerrainPerspectiveProbeTests
         Assert.Equal(320, img.Width);
         Assert.Equal(240, img.Height);
 
-        // The mesh must actually fill pixels — count ones that aren't the sky clear colour.
+        // The mesh must actually fill pixels, count ones that aren't the sky clear colour.
         int nonSky = 0;
         var seen = new HashSet<int>();
         img.ProcessPixelRows(rows =>

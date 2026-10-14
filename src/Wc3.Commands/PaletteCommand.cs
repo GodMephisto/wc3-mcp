@@ -9,13 +9,13 @@ using Wc3.Render;
 namespace Wc3.Commands;
 
 /// <summary>
-/// Enumerates the doodad types placeable on a map — the "palette" a caller consults
+/// Enumerates the doodad types placeable on a map, the "palette" a caller consults
 /// before <see cref="PlacementCommand.PlaceDoodad"/>. The base-game doodad catalog
 /// (installed GameData) is unioned with the map's own object-data (war3map.w3d overlaid
 /// by war3mapSkin.w3d): custom doodads (New*) and modified base doodads (Base*). Each
 /// entry carries its four-char rawcode, a resolved display name (the map's name-field
 /// delta wins over the base game's name; null when unresolvable), its source, the base
-/// it derives from, and — for units — its icon art path (the map's 'uico' delta wins
+/// it derives from, and, for units, its icon art path (the map's 'uico' delta wins
 /// over the base skin profile; decode via <see cref="IconPng(MapDocument, string,
 /// string?)"/>). Deterministic order: base catalog by rawcode, then map-only
 /// customs by rawcode. Without a WC3 install the base catalog is unavailable, so the
@@ -30,7 +30,7 @@ public static class PaletteCommand
         return DoodadPalette(doc, ctx, string.IsNullOrEmpty(diag) ? null : diag);
     }
 
-    /// <summary>Core with an explicit (optionally null) game-data context — null = map-only,
+    /// <summary>Core with an explicit (optionally null) game-data context, null = map-only,
     /// no base catalog and no base-name fallback. Reused by Studio, which holds an open ctx.</summary>
     internal static DoodadPaletteResult DoodadPalette(MapDocument doc, GameDataContext? ctx, string? openDiag = null)
     {
@@ -39,14 +39,14 @@ public static class PaletteCommand
         return new DoodadPaletteResult(true, msg, entries, diagnostics);
     }
 
-    /// <summary>CLI default overload for the unit palette — locates the install (or override).</summary>
+    /// <summary>CLI default overload for the unit palette, locates the install (or override).</summary>
     public static UnitPaletteResult UnitPalette(MapDocument doc, string? gameDirOverride)
     {
         GameData.GameData.TryOpen(gameDirOverride, out var ctx, out var diag);
         return UnitPalette(doc, ctx, string.IsNullOrEmpty(diag) ? null : diag);
     }
 
-    /// <summary>Unit palette — same union semantics as <see cref="DoodadPalette(MapDocument,
+    /// <summary>Unit palette, same union semantics as <see cref="DoodadPalette(MapDocument,
     /// GameDataContext?, string?)"/> over the unit catalog (war3map.w3u overlaid by
     /// war3mapSkin.w3u), with base names via the localized unit name table.</summary>
     internal static UnitPaletteResult UnitPalette(MapDocument doc, GameDataContext? ctx, string? openDiag = null)
@@ -108,8 +108,8 @@ public static class PaletteCommand
         if (openDiag != null) diagnostics.Add(openDiag);
 
         // Icon art (units only for now): base icon art lives in Reforged's skin-profile
-        // TXT, not the SLK stores — same story as the model-file field in
-        // RenderModelCommand — so the profile is parsed once for the whole catalog.
+        // TXT, not the SLK stores, same story as the model-file field in
+        // RenderModelCommand, so the profile is parsed once for the whole catalog.
         var iconField = kind == ObjectKind.Unit ? UnitIconField : null;
         var skinIcons = iconField is null ? null : LoadSkinIcons(ctx);
         var mapIcon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -169,7 +169,7 @@ public static class PaletteCommand
         }
 
         var msg = baseCodes.Count == 0
-            ? $"{entries.Count} placeable {noun} type(s) — map only (base catalog unavailable)"
+            ? $"{entries.Count} placeable {noun} type(s), map only (base catalog unavailable)"
             : $"{entries.Count} placeable {noun} type(s): {baseCodes.Count} base-game, {mapSource.Count} defined/overridden by map";
         return (entries, diagnostics, msg);
     }
@@ -177,7 +177,7 @@ public static class PaletteCommand
     /// <summary>Object-data field that names a unit's command-button icon ("Interface Icon").</summary>
     private const string UnitIconField = "uico";
 
-    /// <summary>Reforged's home for base unit icon art (the SLK stores never carry it —
+    /// <summary>Reforged's home for base unit icon art (the SLK stores never carry it , 
     /// 'uico' is a Profile-backed field, see <see cref="BaseUnitStore"/>).</summary>
     private const string UnitSkinProfile = @"units\unitskin.txt";
 
@@ -213,16 +213,16 @@ public static class PaletteCommand
         return icons;
     }
 
-    /// <summary>Art fields can list several paths comma-separated — take the first.</summary>
+    /// <summary>Art fields can list several paths comma-separated, take the first.</summary>
     private static string FirstArtPath(string value) => value.Split(',')[0].Trim().Trim('"');
 
     /// <summary>
     /// Front-end hook: decodes a palette entry's icon art path (see
     /// <see cref="PaletteEntry.IconPath"/>) to PNG bytes for display. The map's own files
-    /// win (imported icons override base art), then the base game via CASC — Reforged
+    /// win (imported icons override base art), then the base game via CASC, Reforged
     /// repacks classic .blp/.tga icons as .dds at the same path, so both are tried and
     /// the container is sniffed. Null when the path resolves nowhere or the bytes don't
-    /// decode — never throws (a palette without icons must still render).
+    /// decode, never throws (a palette without icons must still render).
     /// </summary>
     public static byte[]? IconPng(MapDocument doc, string iconPath, string? gameDirOverride)
     {
@@ -253,7 +253,7 @@ public static class PaletteCommand
             }
             catch
             {
-                // Not BLP/DDS — .tga (and friends) go through the ImageSharp-based converter.
+                // Not BLP/DDS, .tga (and friends) go through the ImageSharp-based converter.
                 return TextureConvert.Convert(bytes, Path.GetExtension(iconPath), ".png");
             }
         }
@@ -264,7 +264,7 @@ public static class PaletteCommand
     }
 
     /// <summary>Icon references keep classic .blp/.tga names, but Reforged's CASC stores
-    /// those files repacked as .dds at the same path — try both (as model textures do).</summary>
+    /// those files repacked as .dds at the same path, try both (as model textures do).</summary>
     private static IEnumerable<string> IconCandidates(string path)
     {
         yield return path;

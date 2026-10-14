@@ -10,7 +10,7 @@ public static class SyntheticMap
 
     /// <summary>
     /// Builds a map that additionally contains <paramref name="unnamedFiles"/> as
-    /// entries present in the archive but absent from the (listfile) — the shape a
+    /// entries present in the archive but absent from the (listfile), the shape a
     /// protected map presents on load (FileName == null).
     /// </summary>
     public static byte[] Build(IReadOnlyDictionary<string, byte[]> files, IReadOnlyList<byte[]> unnamedFiles)

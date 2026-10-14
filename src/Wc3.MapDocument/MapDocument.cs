@@ -273,7 +273,7 @@ public sealed class MapDocument
 
         // Source 1: string literals in the script. Whichever of the two script languages, and
         // whichever spelling the archive stores it under (see StandardMapFileNames), only the
-        // text matters here — deliberately unscoped (every literal, not one hero's reachable
+        // text matters here, deliberately unscoped (every literal, not one hero's reachable
         // code, the way Wc3.Commands.BundleCommand's closure-scoped scan must be to avoid
         // mis-attributing an asset to the wrong hero). Over-collecting a candidate here costs
         // nothing worse than a failed hash lookup below.
@@ -318,7 +318,7 @@ public sealed class MapDocument
         archive.AddFileNames(StandardMapFileNames.All); // keep this archive's naming in step with Load's
         archive.AddFileNames(candidates);
 
-        // Fold newly resolved names back by BlockIndex (not position — a caller may have added
+        // Fold newly resolved names back by BlockIndex (not position, a caller may have added
         // entries beyond the archive's own since Load, those carry no BlockIndex this archive
         // enumerates and are correctly left alone).
         var byBlock = _files.Where(f => f.BlockIndex < archive.Count).ToDictionary(f => f.BlockIndex);
@@ -669,6 +669,28 @@ public sealed class MapDocument
         // original by the same hashed name when the builder adds the replacement.
         archive.AddFileNames(StandardMapFileNames.All);
 
+        // An archive that carries more unnamed block rows than named ones is mostly protection
+        // stuffing. War3Net's builder enumerates one file per block row and re-hashes each on the
+        // way out, so a rebuild re-emits the stuffing as real files and grows the table. Measured
+        // on Naruto Autobattle ENGv3ch11, 1530 unnamed rows against 93 named, whose save grew 1623
+        // rows to 3146 and dropped the stuffing bytes the game's hash probe chains walk to resolve
+        // the real files. The rebuild reads, but it is not the archive the author shipped and the
+        // reported savings are false, so take the in-place patch, which keeps every row.
+        int named = _files.Count(f => f.FileName is not null || f.RecoveredFileName is not null);
+        if (_files.Count - named > named)
+        {
+            return SalvageSaveToBytes(new InvalidOperationException(
+                $"the archive carries {_files.Count - named:N0} unnamed block row(s) against "
+                + $"{named:N0} named, so a rebuild would re-emit the stuffing as files"));
+        }
+
+        // How many rows the rebuild can legitimately add. Only a dirty entry with a name counts,
+        // because a deprotect pass recovers a name FROM the row's hash, so the recovered file
+        // shadows that row rather than adding one. A faithful rebuild stays within the original
+        // count plus this plus the bookkeeping files, so growth beyond it is the stuffing coming
+        // back, which the named-vs-unnamed check above misses once deprotect has named the files.
+        int builderAdds = _files.Count(f => f.IsDirty && f.FileName is not null);
+
         MpqArchiveBuilder builder;
         try
         {
@@ -715,7 +737,7 @@ public sealed class MapDocument
         var grown = GrownHashTableSize(OriginalHashTableSize(), _files.Count);
 
         using var mpq = new MemoryStream();
-        // SaveTo disposes the target stream unless leaveOpen — we still need to read it back.
+        // SaveTo disposes the target stream unless leaveOpen, we still need to read it back.
         // The two overloads do NOT agree on their bookkeeping defaults: passing an options
         // object changes the emitted (listfile)/(attributes) even when only HashTableSize
         // is set on it. So take the plain overload untouched whenever the inherited table
@@ -737,6 +759,18 @@ public sealed class MapDocument
                 "This map is protected so that its archive files overlap each other and the header. "
                 + "It reads normally but cannot be rebuilt, so it cannot be saved or round-tripped. "
                 + "Unprotect a copy first (doctor_fix, or wc3ctl doctor fix), then edit that copy.", ex);
+        }
+
+        // A rebuild that grew the table by more than its own edits explain has re-emitted the
+        // stuffing as files, which War3Net does one block row at a time. Measured on Naruto
+        // Autobattle after a deprotect pass named the real files, 1623 rows became 1853 on a save
+        // that added 1293 names and changed nothing else. Take the in-place patch instead.
+        if (BlockTableSize(mpq.GetBuffer(), (int)mpq.Length) is int rebuilt
+            && rebuilt > _archive.Count + builderAdds + 4)
+        {
+            return SalvageSaveToBytes(new InvalidOperationException(
+                $"the rebuild grew the block table from {_archive.Count:N0} row(s) to {rebuilt:N0}, "
+                + $"more than the {builderAdds:N0} edited file(s) explain"));
         }
 
         using var outStream = new MemoryStream();
@@ -796,6 +830,19 @@ public sealed class MapDocument
     }
 
     /// <summary>
+    /// The block-table row count an archive declares in its own MPQ header, or -1 when the header
+    /// cannot be read. The block-table size is a uint32 at 0x1C past the magic. Used to tell a
+    /// faithful rebuild from one that re-emitted the archive's stuffing, which War3Net's builder
+    /// does one block row at a time.
+    /// </summary>
+    private static int BlockTableSize(byte[] bytes, int length)
+    {
+        int at = MpqHeader.FindArchiveOffset(bytes);
+        if (at < 0 || at + 0x20 > length) return -1;
+        return (int)BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(at + 0x1C, 4));
+    }
+
+    /// <summary>
     /// The fallback save for an archive the rebuild cannot even open. The original bytes
     /// are kept whole, protection stuffing included, and only the edited entries' block
     /// rows change, with their payloads appended after the archive's current end. Nothing
@@ -808,9 +855,41 @@ public sealed class MapDocument
         // Serialize first, outside the patch try. A dirty entry without a byte-faithful
         // writer must fail with SerializeEntry's own message on this map exactly as it
         // does on a healthy one, not be re-attributed to protection.
-        var dirty = _files.Where(f => f.IsDirty)
-            .Select(f => (f.BlockIndex, f.FileName, SerializeEntry(f)))
+        //
+        // A recovered name is carried too, with a null payload, because the patch names an
+        // existing block row rather than appending anything. Without this a deprotect pass on a
+        // stuffed archive, which takes this path, wrote a byte-identical copy and dropped every
+        // name it had recovered. Measured on PumpkinTD, 1529 recovered names and an output with
+        // the same 26 names as the input.
+        var dirty = new List<(int BlockIndex, string? FileName, byte[]? Payload)>();
+        foreach (var f in _files)
+        {
+            if (f.IsDirty)
+                dirty.Add((f.BlockIndex, f.RecoveredFileName ?? f.FileName, SerializeEntry(f)));
+            else if (f.RecoveredFileName is not null)
+                dirty.Add((f.BlockIndex, f.RecoveredFileName, null));
+        }
+
+        // A recovered name lives in (listfile), not in the hash table, so a deprotect pass that
+        // wrote only the entry hashes changed nothing for a reader that needs the name. The rebuild
+        // path regenerates the listfile from the names it knows, and this path cannot, so write one
+        // carrying every name we hold. A map that already has a listfile has it replaced, which is
+        // what deprotect means. Measured on PumpkinTD, 1529 names recovered and an output that
+        // still resolved only the 26 standard ones.
+        var recovered = _files.Where(f => f.RecoveredFileName is not null)
+            .Select(f => f.RecoveredFileName!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
             .ToList();
+        if (recovered.Count > 0)
+        {
+            var names = _files.Select(f => f.RecoveredFileName ?? f.FileName)
+                .Where(n => n is not null)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase);
+            dirty.Add((-1, "(listfile)",
+                System.Text.Encoding.UTF8.GetBytes(string.Join("\r\n", names) + "\r\n")));
+        }
 
         MpqSalvagePatcher.Result result;
         try
@@ -828,7 +907,7 @@ public sealed class MapDocument
                 $"The archive could not be rebuilt ({rebuildFailure.Message}), so it was saved "
                 + $"by patching the original bytes in place. All {_files.Count:N0} entries were "
                 + $"kept, {result.ReplacedEntries:N0} replaced, {result.AddedEntries:N0} added, "
-                + $"{result.AppendedBytes:N0} bytes appended."));
+                + $"{result.NamedEntries:N0} named, {result.AppendedBytes:N0} bytes appended."));
 
         return result.Bytes;
     }
@@ -1036,7 +1115,7 @@ public sealed class MapDocument
     /// <summary>
     /// Adds a file backed by a typed model, or replaces an existing file's model.
     /// Serialized on Save via <see cref="SerializeEntry"/> (only byte-faithful formats
-    /// are supported — see that method). Used to inject/replace object-data files, etc.
+    /// are supported, see that method). Used to inject/replace object-data files, etc.
     /// </summary>
     public MapFileEntry AddOrReplaceModelFile(string fileName, object model)
     {
@@ -1065,7 +1144,7 @@ public sealed class MapDocument
 
     // Serialization by model type. A raw OverrideBytes payload always wins; otherwise
     // the model's War3Net writer is used. Only formats with a byte-faithful writer are
-    // handled — anything else must stay non-dirty (raw) so Save preserves original bytes.
+    // handled, anything else must stay non-dirty (raw) so Save preserves original bytes.
     // Internal rather than private so SerializerFidelitySweep can measure the REAL save
     // path across the map library. A test holding its own copy of this dispatch would
     // drift from it, and the drift would look like the maps changing.
@@ -1164,7 +1243,7 @@ public sealed class MapDocument
         }
 
         // A dirty entry with no override and no supported model would silently lose
-        // the caller's intent if we passed the original bytes through — fail loudly.
+        // the caller's intent if we passed the original bytes through, fail loudly.
         // Formats without a byte-faithful model writer (e.g. war3map.wts) must be
         // written via AddOrReplaceRawFile instead.
         throw new NotSupportedException(

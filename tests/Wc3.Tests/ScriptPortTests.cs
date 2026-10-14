@@ -206,7 +206,7 @@ endfunction
         Assert.True(result.Script.InitHooked);
 
         // A ported script only lives in war3map.j (not the wtg/wct trigger tree), so the
-        // World Editor would wipe it on save — the result must carry the loud warning.
+        // World Editor would wipe it on save, the result must carry the loud warning.
         Assert.Contains(PortCommand.ScriptDurabilityWarning, result.Warnings);
 
         var reloaded = MapDocument.Load(target.SaveToBytes());
@@ -235,7 +235,7 @@ endfunction
     // handler adds 'A001', and a second trigger fires when 'A001' is cast. The data-driven closure
     // reaches the learn handler (it tests the hero's own ability 'A000') but cannot reach the combo
     // handler or its InitTrig, because nothing in the hero's data names 'A001'. The port must still
-    // carry the combo handler AND both InitTrig_* and wire them, or the spell is defined but dead —
+    // carry the combo handler AND both InitTrig_* and wire them, or the spell is defined but dead , 
     // the exact break seen porting Nanaya Shiki (QShikiOne fires on 'A1BP', granted by the learn).
     private const string ComboSource = @"globals
     integer udg_Learn_ID= 'A000'
@@ -942,7 +942,7 @@ endfunction
         Assert.Contains("if id == 'A000' then", j);
         Assert.Contains("elseif id == 'A001' then", j);
         // The combo handler's call is LIVE, and its definition was seeded in even though the
-        // ordinary carried set excluded it — the whole point of the feature.
+        // ordinary carried set excluded it, the whole point of the feature.
         Assert.True(HasActiveCall(j, "HeroQ2_Start"), "the combo ability's call must not be trimmed");
         Assert.Contains("function HeroQ2_Start takes", j);
 
@@ -958,7 +958,7 @@ endfunction
 
         // None of the shared dispatcher's gates or its hero-id check appear in the SYNTHESIZED
         // function itself (the source's own CastHero_Conditions still exists elsewhere, carried
-        // whole like any other carried body — only the fresh function must be gate-free).
+        // whole like any other carried body, only the fresh function must be gate-free).
         var body = FunctionBody(j, dispatchFn.Name);
         Assert.DoesNotContain("DisableMoveRoot", body);
         Assert.DoesNotContain("GetUnitTypeId", body);

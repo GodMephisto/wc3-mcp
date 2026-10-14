@@ -83,6 +83,28 @@ public class TerrainCommandTests
     }
 
     [Fact]
+    public void A_clamped_set_reports_the_value_it_wrote()
+    {
+        // The message used to echo the requested value while the tile held the clamped one, and
+        // terrain_corner_set reported the effective one, so the two disagreed about one edit.
+        var cliff = BlankTerrain();
+        var cr = TerrainCommand.Cliff(cliff, 4, 4, 1, TerrainCommand.CliffOp.Set, 20);
+        Assert.Contains($"cliff set {TerrainEditCommand.MaxCliffLevel} ", cr.Message);
+        Assert.Equal(TerrainEditCommand.MaxCliffLevel, Env(cliff).TerrainTiles[Idx(4, 4)].CliffLevel);
+
+        var height = BlankTerrain();
+        var hr = TerrainCommand.Deform(height, 4, 4, 0, TerrainCommand.HeightOp.Set, 99999f,
+            TerrainCommand.BrushShape.Square);
+        Assert.Contains($"{TerrainEditCommand.MaxGroundHeight:0.###}", hr.Message);
+        Assert.Equal(TerrainEditCommand.MaxGroundHeight, Env(height).TerrainTiles[Idx(4, 4)].Height);
+
+        var water = BlankTerrain();
+        var wr = TerrainCommand.Water(water, 4, 4, 0, TerrainCommand.WaterOp.Set, 50f,
+            TerrainCommand.BrushShape.Square);
+        Assert.Contains($"{TerrainEditCommand.MaxWaterHeight:0.###}", wr.Message);
+    }
+
+    [Fact]
     public void A_paint_variation_past_the_nibble_is_refused_cleanly()
     {
         // The variation field is a nibble. A value past 15 used to store and then throw

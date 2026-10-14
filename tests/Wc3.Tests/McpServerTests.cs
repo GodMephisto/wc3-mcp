@@ -1,7 +1,7 @@
 // tests/Wc3.Tests/McpServerTests.cs
 // Hermetic MCP protocol tests: the real server wiring (Wc3McpServer.CreateOptions,
 // exactly what the stdio exe serves) driven by the SDK's own client over in-memory
-// pipes — no processes, no network, no WC3 install.
+// pipes, no processes, no network, no WC3 install.
 using System.IO.Pipelines;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;

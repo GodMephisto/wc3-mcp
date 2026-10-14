@@ -55,6 +55,30 @@ public class ObjectNewCommandTests
     }
 
     [Fact]
+    public void An_unconfirmable_base_is_created_but_flagged()
+    {
+        // A base the map does not define may still be a base-game object, so the create succeeds,
+        // but when nothing can confirm the code the result says the new object inherits nothing
+        // rather than reporting a silent success. Measured on a port of a rawcode that does not
+        // exist, which reported ok:true with base zzzz and no fields.
+        var doc = MapDocument.Load(Sample());
+        var r = ObjectNewCommand.Execute(doc, ObjectKind.Unit, "zzzz");
+
+        Assert.True(r.Ok, r.Message);
+        Assert.Contains("no game data", r.Message);
+    }
+
+    [Fact]
+    public void A_base_the_map_defines_is_not_flagged()
+    {
+        var doc = MapDocument.Load(Sample());
+        var r = ObjectNewCommand.Execute(doc, ObjectKind.Unit, "H000");
+
+        Assert.True(r.Ok, r.Message);
+        Assert.DoesNotContain("no game data", r.Message);
+    }
+
+    [Fact]
     public void New_object_survives_reload_and_lists_as_a_custom_of_its_kind()
     {
         var doc = MapDocument.Load(Sample());

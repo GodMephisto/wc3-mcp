@@ -43,7 +43,7 @@ internal static class SynthDispatchBuilder
     /// "GetUnitTypeId(...) == HeroId" guard(s), anywhere in <paramref name="sourceJass"/>, merged
     /// and de-duplicated by ability rawcode (first occurrence wins). Null when the script has no
     /// such guard for this hero at all (an unsupported dispatch shape, or the hero casts through
-    /// something other than a shared id-comparison dispatcher) — the caller must not synthesize
+    /// something other than a shared id-comparison dispatcher), the caller must not synthesize
     /// anything in that case, not guess. An empty (non-null) result never happens; a guard with
     /// zero resolvable ability branches is treated the same as "no guard found".
     /// </summary>
@@ -331,7 +331,7 @@ internal static class SynthDispatchBuilder
     /// <summary>Every ability sub-branch inside a hero's own guard body: every depth-0 if/elseif
     /// chain whose OWN condition resolves an ability rawcode, merged and de-duplicated. Depth-0
     /// here means relative to the branch body (an "if" nested one level deeper, inside an ability's
-    /// own branch, is not split further — its calls are read as part of that ability's body by
+    /// own branch, is not split further, its calls are read as part of that ability's body by
     /// <see cref="ExtractCalls"/>, which scans the whole range flatly).</summary>
     private static List<CastBranch> ExtractAbilityBranches(
         IReadOnlyList<string> lines, int bodyStart, int bodyEnd, IReadOnlyDictionary<string, string> aliases)
@@ -418,7 +418,7 @@ internal static class SynthDispatchBuilder
     /// inside the range is not split further, every call in it still counts). Revives a line this
     /// tool itself commented out on some EARLIER port (its own <see cref="JassScriptCheck.TrimMarker"/>
     /// prefix, which only ever wraps the exact original statement, never deletes it), but leaves a
-    /// genuinely author-commented line alone — reviving the map author's own intentionally disabled
+    /// genuinely author-commented line alone, reviving the map author's own intentionally disabled
     /// code would not be ours to do.</summary>
     private static List<string> ExtractCalls(IReadOnlyList<string> lines, int start, int end)
     {

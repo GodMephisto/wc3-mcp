@@ -16,7 +16,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Coverage for <see cref="TriggerReadCommand.GetTriggers"/>: the empty-map contract
 /// (never throws, carries the script language), the wtg/wct parser path for the tree +
-/// custom-text pairing, and the ECA function/parameter rendering (model-injected — the
+/// custom-text pairing, and the ECA function/parameter rendering (model-injected, the
 /// binary function format needs TriggerData-driven parameter counts, which the corpus
 /// test exercises against a real map).
 /// </summary>
@@ -26,7 +26,7 @@ public class TriggerReadCommandTests
     public TriggerReadCommandTests(ITestOutputHelper output) => _output = output;
 
     // Newest format/sub versions (highest enum value = TFT), same recipe as
-    // TriggerCommandTests — the round-trip probe proved this combination serializes.
+    // TriggerCommandTests, the round-trip probe proved this combination serializes.
     private static readonly MapTriggersFormatVersion Fmt =
         Enum.GetValues<MapTriggersFormatVersion>()[^1];
     private static readonly MapTriggersSubVersion Sub =

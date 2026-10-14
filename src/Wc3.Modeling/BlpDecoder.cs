@@ -19,7 +19,7 @@ public static class BlpDecoder
         using var file = new BlpFile(stream);
         var rgba = file.GetPixels(0, out int width, out int height, bgra: false);
         // GetPixels' bgra flag only applies to Direct (palettized/DXT) content; for
-        // JPEG-content BLP0/BLP1 the raw JPEG channel order comes back untouched —
+        // JPEG-content BLP0/BLP1 the raw JPEG channel order comes back untouched , 
         // and WC3 stores those channels as BGRA. Swap to true RGBA here (verified
         // against real map assets: skin tones decode blue without this).
         if (IsJpegContent(blp))

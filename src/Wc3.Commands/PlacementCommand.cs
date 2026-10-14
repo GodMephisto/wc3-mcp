@@ -1,5 +1,5 @@
 // src/Wc3.Commands/PlacementCommand.cs
-using Color = System.Drawing.Color; // alias only Color — avoids Region clash with War3Net.Build.Environment.Region
+using Color = System.Drawing.Color; // alias only Color, avoids Region clash with War3Net.Build.Environment.Region
 using System.Numerics;
 using War3Net.Build.Common;      // RandomItemSet lives here (not in .Widget)
 using War3Net.Build.Environment; // MapRegions, Region, WeatherType, MapRegionsFormatVersion
@@ -13,7 +13,7 @@ namespace Wc3.Commands;
 /// Programmatic unit placement onto a map's war3mapUnits.doo. Built primarily so
 /// automated tests can seed a map with known units and assert the load/edit/save
 /// round-trip, but it is a general placement API. The war3mapUnits.doo file is
-/// created (as a modern v8/subversion-11 widget file) when the map has none — a
+/// created (as a modern v8/subversion-11 widget file) when the map has none, a
 /// blank map has no placement file at all.
 /// </summary>
 public static class PlacementCommand
@@ -46,9 +46,9 @@ public static class PlacementCommand
         float scale = 1f)
     {
         if (typeRawcode is null || typeRawcode.Length != 4)
-            return new(false, $"invalid unit rawcode '{typeRawcode}' — expected 4 characters");
+            return new(false, $"invalid unit rawcode '{typeRawcode}', expected 4 characters");
         if (ownerId < 0)
-            return new(false, $"invalid owner id {ownerId} — must be >= 0");
+            return new(false, $"invalid owner id {ownerId}, must be >= 0");
 
         var units = GetOrCreateUnits(doc);
         int creationNumber = NextCreationNumber(units);
@@ -83,7 +83,7 @@ public static class PlacementCommand
         float scale = 1f)
     {
         if (itemRawcode is null || itemRawcode.Length != 4)
-            return new(false, $"invalid item rawcode '{itemRawcode}' — expected 4 characters");
+            return new(false, $"invalid item rawcode '{itemRawcode}', expected 4 characters");
 
         var units = GetOrCreateUnits(doc);
         int creationNumber = NextCreationNumber(units);
@@ -142,7 +142,7 @@ public static class PlacementCommand
     public static PlaceUnitResult PlaceStartLocation(MapDocument doc, int player, float x, float y)
     {
         if (player < 0)
-            return new(false, $"invalid player {player} — must be >= 0");
+            return new(false, $"invalid player {player}, must be >= 0");
 
         var units = GetOrCreateUnits(doc);
         int slocType = StartLocationRawcode.FromRawcode();
@@ -212,9 +212,9 @@ public static class PlacementCommand
         int variation = 0)
     {
         if (typeRawcode is null || typeRawcode.Length != 4)
-            return new(false, $"invalid doodad rawcode '{typeRawcode}' — expected 4 characters");
+            return new(false, $"invalid doodad rawcode '{typeRawcode}', expected 4 characters");
         if (variation < 0)
-            return new(false, $"invalid variation {variation} — must be >= 0");
+            return new(false, $"invalid variation {variation}, must be >= 0");
 
         var doodads = GetOrCreateDoodads(doc);
 
@@ -271,9 +271,9 @@ public static class PlacementCommand
         float top)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return new(false, "invalid region name — must be non-empty");
+            return new(false, "invalid region name, must be non-empty");
         if (right <= left || top <= bottom)
-            return new(false, $"invalid region bounds — need right>left and top>bottom, got L={left} B={bottom} R={right} T={top}");
+            return new(false, $"invalid region bounds, need right>left and top>bottom, got L={left} B={bottom} R={right} T={top}");
 
         var regions = GetOrCreateRegions(doc);
         int creationNumber = NextRegionCreationNumber(regions);

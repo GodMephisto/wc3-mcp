@@ -99,7 +99,7 @@ public class PlacementPickTests
     public void BuildModelMesh_UndecodedReplaceableSection_IsTeamColor_TexturedIsNot()
     {
         // One team-color geoset (ReplaceableId, undecoded) alongside one real textured
-        // geoset — a normal unit with team-colored trim, NOT a skipped effect plane.
+        // geoset, a normal unit with team-colored trim, NOT a skipped effect plane.
         var tex = new TextureImage(1, 1, new byte[] { 255, 255, 255, 255 });
         var pm = new PlacementModel(
             new Model3D(
@@ -114,7 +114,7 @@ public class PlacementPickTests
 
         var teamColor = mesh.Sections[0];
         Assert.True(teamColor.IsTeamColor);
-        Assert.Equal(-1, teamColor.TextureSlot); // undecoded — no texture bound
+        Assert.Equal(-1, teamColor.TextureSlot); // undecoded, no texture bound
 
         var textured = mesh.Sections[1];
         Assert.False(textured.IsTeamColor);

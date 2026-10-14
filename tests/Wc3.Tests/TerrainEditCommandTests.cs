@@ -120,7 +120,7 @@ public class TerrainEditCommandTests
         TerrainEditCommand.SetGroundHeight(doc, 2, 2, 0.3f);   // not a 1/512 multiple
 
         // The in-memory value is already on the 1/512 lattice, so it equals the
-        // reloaded value exactly — no surprise drift between edit and save.
+        // reloaded value exactly, no surprise drift between edit and save.
         float inMemory = TerrainEditCommand.GetCorner(doc, 2, 2)!.GroundHeight;
         Assert.Equal(MathF.Round(0.3f * 512f) / 512f, inMemory);
         Assert.Equal(inMemory, Reload(doc).TerrainTiles[Idx(2, 2)].Height);
@@ -299,7 +299,7 @@ public class TerrainEditCommandTests
         var doc = BlankTerrain();
         var r = TerrainEditCommand.AddGroundHeightArea(doc, 0, 0, 1, 1f, falloff: false);
         Assert.True(r.Ok, r.Message);
-        Assert.Equal(3, r.CornersChanged);   // (0,0), (1,0), (0,1) — the rest is off-grid
+        Assert.Equal(3, r.CornersChanged);   // (0,0), (1,0), (0,1), the rest is off-grid
     }
 
     [Fact]

@@ -101,7 +101,7 @@ public sealed class TerrainHeightField
             float f = p.Z - Sample(p.X, p.Y);
             if (f <= 0f && fPrev > 0f)
             {
-                // Sign change between tPrev..t — bisect for a tighter surface hit.
+                // Sign change between tPrev..t, bisect for a tighter surface hit.
                 float lo = tPrev, hi = t;
                 for (int bi = 0; bi < 12; bi++)
                 {

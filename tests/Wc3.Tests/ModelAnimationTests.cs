@@ -59,7 +59,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
 
         var posed = model.PosedAt();
         Assert.NotSame(model, posed);
-        Assert.Null(posed.Skeleton); // posed output is static — re-posing must be a no-op
+        Assert.Null(posed.Skeleton); // posed output is static, re-posing must be a no-op
         Assert.Same(posed, posed.PosedAt());
 
         // The bone's only key (at Stand's first frame) is a 90° rotation about Z:
@@ -79,7 +79,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
     [Fact]
     public void Model_without_skeleton_renders_in_bind_pose()
     {
-        // No SEQS/BONE/PIVT chunks at all — the pre-animation shape of every model.
+        // No SEQS/BONE/PIVT chunks at all, the pre-animation shape of every model.
         var vertices = new float[] { 0f, 0f, 1f, 1f, 0f, -1f, -1f, 0f, -1f };
         var normals = new float[] { 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f, 0f };
         var uvs = new float[] { 0f, 0f, 1f, 0f, 0f, 1f };
@@ -87,7 +87,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
             new[] { new Geoset(vertices, normals, uvs, new[] { 0, 1, 2 }, -1) },
             Array.Empty<string>());
 
-        Assert.Same(model, model.PosedAt()); // nothing to pose — identical instance back
+        Assert.Same(model, model.PosedAt()); // nothing to pose, identical instance back
 
         var png = ModelRenderer.RenderPng(model, NoTextures, 64, 64);
         Assert.Equal(PngSignature, png[..8]);
@@ -100,7 +100,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
         var bindGeoset = parsed.Geosets[0] with { SkinBones = null, SkinWeights = null };
         var model = new Model3D(new[] { bindGeoset }, parsed.Textures, parsed.Skeleton);
 
-        Assert.Same(model, model.PosedAt()); // no skinnable geoset — bind pose, no throw
+        Assert.Same(model, model.PosedAt()); // no skinnable geoset, bind pose, no throw
         var png = ModelRenderer.RenderPng(model, NoTextures, 64, 64);
         Assert.Equal(PngSignature, png[..8]);
     }
@@ -175,7 +175,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
 
         // skinnable < withSkeleton counts emitter-only models (no geosets) and geosets
         // without matrix groups; posed < skinnable additionally covers models whose
-        // bones simply hold still at Stand's first frame — both are bind-pose renders.
+        // bones simply hold still at Stand's first frame, both are bind-pose renders.
         output.WriteLine(
             $"mdx files: {mdxFiles.Count}, parsed: {parsed}, renderable: {renderable}, " +
             $"skeleton: {withSkeleton}, skinnable: {skinnable}, stand-posed (vertices moved): {posed}");
@@ -207,7 +207,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
         WriteTag(w, "SEQS");
         w.Write(132);
         WriteFixedString(w, "Stand", 80);
-        w.Write(100u); // interval start — the frame PosedAt samples
+        w.Write(100u); // interval start, the frame PosedAt samples
         w.Write(200u);
         w.Write(0f);   // moveSpeed
         w.Write(0u);   // flags

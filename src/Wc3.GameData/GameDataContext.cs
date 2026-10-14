@@ -6,7 +6,7 @@ namespace Wc3.GameData;
 /// CASC open: field stores for all seven Object Editor types, localized editor
 /// strings (WESTRING keys), and localized unit display names. Also the door to
 /// arbitrary base-game files (<see cref="TryReadFile"/>) for callers that need
-/// raw assets — base models and their textures.
+/// raw assets, base models and their textures.
 /// </summary>
 public sealed class GameDataContext
 {
@@ -32,7 +32,7 @@ public sealed class GameDataContext
     public EditorCatalogData EditorCatalogs { get; init; } = EditorCatalogData.Empty;
 
     /// <summary>Per-type build failures: that type's store is left Empty and the reason
-    /// recorded here — a missing type never fails the whole open.</summary>
+    /// recorded here, a missing type never fails the whole open.</summary>
     public IReadOnlyList<string> Diagnostics { get; init; } = Array.Empty<string>();
 
     /// <summary>Install directory this context was built from; null for synthetic/test
@@ -49,10 +49,10 @@ public sealed class GameDataContext
 
     /// <summary>
     /// Reads an arbitrary base-game file. Plain game paths (e.g.
-    /// "units\human\footman\footman.mdx") are addressed the way the SLK stores do —
+    /// "units\human\footman\footman.mdx") are addressed the way the SLK stores do , 
     /// under the "war3.w3mod:" prefix; a path that already names a w3mod (contains
     /// ':') is used as given. Returns false when the install/CASC or the file is
-    /// unavailable — never throws.
+    /// unavailable, never throws.
     /// </summary>
     public bool TryReadFile(string cascPath, out byte[] bytes)
     {
@@ -81,7 +81,7 @@ public sealed class GameDataContext
             {
                 byte[]? read = null;
                 try { read = _casc!.ReadFile(candidate); }
-                catch { /* unreadable entry — treat as absent */ }
+                catch { /* unreadable entry, treat as absent */ }
                 if (read is { Length: > 0 }) { bytes = read; return true; }
             }
             return false;
@@ -91,9 +91,9 @@ public sealed class GameDataContext
     /// <summary>
     /// Searches the install's CASC listfile for entries whose full storage path contains
     /// <paramref name="substring"/> (ordinal, case-insensitive). Returns up to
-    /// <paramref name="max"/> full storage paths, w3mod-layer prefixes included — the
+    /// <paramref name="max"/> full storage paths, w3mod-layer prefixes included, the
     /// discovery tool for "where does this asset actually live?" when a read misses.
-    /// Empty when the install/CASC is unavailable — never throws.
+    /// Empty when the install/CASC is unavailable, never throws.
     /// </summary>
     public IReadOnlyList<string> FindFiles(string substring, int max = 100)
     {
@@ -124,7 +124,7 @@ public sealed class GameDataContext
                     if (hits.Count >= max) break;
                 }
             }
-            catch { /* enumeration unsupported/failed — report what we have */ }
+            catch { /* enumeration unsupported/failed, report what we have */ }
             return hits;
         }
     }

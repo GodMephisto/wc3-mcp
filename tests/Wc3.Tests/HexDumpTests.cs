@@ -5,7 +5,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Pure-logic tests for HexDumpCommand.Format / RowCount, the windowed hex-dump
 /// formatting a virtualized binary viewer relies on to show just the visible rows
-/// of a large file. Hermetic — known byte arrays, exact expected lines.
+/// of a large file. Hermetic, known byte arrays, exact expected lines.
 /// </summary>
 public class HexDumpTests
 {

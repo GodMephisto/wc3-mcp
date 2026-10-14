@@ -167,6 +167,106 @@ public class ProtectedMapSalvageSaveTests
     }
 
     [Fact]
+    public void An_archive_that_is_mostly_stuffing_is_patched_not_rebuilt()
+    {
+        // More unnamed block rows than named ones is the shape a protected map has, and War3Net's
+        // builder enumerates one file per block row and re-emits each on save, which doubled the
+        // row count on the real Naruto map (1623 rows over 93 names became 3146). This archive
+        // builds cleanly, so the rebuild path would be taken, and the save must recognise the
+        // stuffing and patch in place instead, keeping the row count.
+        var fixture = BuildStuffed();
+
+        var doc = MapDocument.Load(fixture);
+        int rowsBefore = doc.Files.Count;
+        int unnamedBefore = doc.Files.Count(f => f.FileName is null);
+        Assert.True(unnamedBefore > doc.Files.Count - unnamedBefore, "fixture must be mostly stuffing");
+
+        var edited = Encoding.UTF8.GetBytes("// edited through the stuffing route\n");
+        doc.AddOrReplaceRawFile("war3map.j", edited);
+        var saved = doc.SaveToBytes();
+
+        var reloaded = MapDocument.Load(saved);
+        Assert.Equal(rowsBefore, reloaded.Files.Count);   // no re-emitted stuffing
+        Assert.True(reloaded.GetFile("war3map.j")!.RawBytes.SequenceEqual(edited));
+        Assert.Equal(unnamedBefore, reloaded.Files.Count(f => f.FileName is null));
+        Assert.Contains(doc.Diagnostics,
+            d => d.FileName == "(archive)" && d.Severity == DiagnosticSeverity.Info);
+    }
+
+    [Fact]
+    public void A_recovered_name_survives_a_salvage_save()
+    {
+        // A deprotect pass sets RecoveredFileName without marking the entry dirty, and the salvage
+        // path wrote only dirty entries, so the name was dropped and the output came back byte
+        // identical to the input. Measured on PumpkinTD, 1529 recovered names lost that way.
+        var fixture = CorruptBlockRow(BuildWithoutListFile(), "war3map.wts");
+        var doc = MapDocument.Load(fixture);
+        var entry = doc.Files.First(f => f.FileName is null && f.RawSize > 0);
+        int size = entry.RawSize;
+        entry.RecoveredFileName = "war3mapImported\\recovered.bin";
+
+        var saved = doc.SaveToBytes();
+
+        Assert.False(saved.AsSpan().SequenceEqual(fixture));
+        Assert.Equal(size, ReadArchiveFile(saved, "war3mapImported\\recovered.bin").Length);
+        Assert.Contains(doc.Diagnostics, d => d.Message.Contains("1 named"));
+    }
+
+    [Fact]
+    public void Naming_the_stuffing_does_not_re_enable_the_rebuild()
+    {
+        // The named-vs-unnamed check alone is defeated by a deprotect pass, which names the real
+        // files and leaves the balance looking healthy, so the rebuild ran and re-emitted the rest.
+        // Measured on Naruto Autobattle after a deprotect pass, 1623 rows became 1853 on a save
+        // that added names and changed nothing else.
+        var doc = MapDocument.Load(BuildStuffed());
+        int rowsBefore = doc.Files.Count;
+        foreach (var f in doc.Files.Where(f => f.FileName is null))
+            f.RecoveredFileName = $"war3mapImported\\recovered_{f.BlockIndex}.bin";
+
+        var saved = doc.SaveToBytes();
+
+        // One row more, the (listfile) carrying the recovered names, not the twelve stuffing rows
+        // re-emitted again.
+        Assert.Equal(rowsBefore + 1, MapDocument.Load(saved).Files.Count);
+    }
+
+    /// <summary>An archive written with no listfile, so every non-standard name loads unnamed.</summary>
+    private static byte[] BuildWithoutListFile()
+    {
+        var builder = new MpqArchiveBuilder();
+        foreach (var (name, data) in SampleFiles)
+            builder.AddFile(MpqFile.New(new MemoryStream(data), name));
+        using var mpq = new MemoryStream();
+        builder.SaveTo(mpq, new MpqArchiveCreateOptions
+        {
+            ListFileCreateMode = MpqFileCreateMode.None,
+            AttributesCreateMode = MpqFileCreateMode.None,
+        }, leaveOpen: true);
+        return mpq.ToArray();
+    }
+
+    /// <summary>Four named files against eight stuffing rows, the shape a protected map has. The
+    /// stuffing carries distinct names written with no listfile, so it survives War3Net's
+    /// name-keyed dedup, unlike MpqFile.New(stream), whose every file hashes to 0.</summary>
+    private static byte[] BuildStuffed()
+    {
+        var builder = new MpqArchiveBuilder();
+        foreach (var (name, data) in SampleFiles)
+            builder.AddFile(MpqFile.New(new MemoryStream(data), name));
+        for (int i = 0; i < 8; i++)
+            builder.AddFile(MpqFile.New(
+                new MemoryStream(new byte[] { (byte)i, 0, 0, 0 }), $"stuff{i}.bin"));
+        using var mpq = new MemoryStream();
+        builder.SaveTo(mpq, new MpqArchiveCreateOptions
+        {
+            ListFileCreateMode = MpqFileCreateMode.None,
+            AttributesCreateMode = MpqFileCreateMode.None,
+        }, leaveOpen: true);
+        return mpq.ToArray();
+    }
+
+    [Fact]
     public void An_unserializable_dirty_model_keeps_its_own_error_on_a_corrupted_archive()
     {
         // SerializeEntry's loud refusal must survive the salvage path unchanged. Blaming
@@ -264,6 +364,9 @@ public class ProtectedMapSalvageSaveTests
     private static int FindBlockIndex(byte[] mapBytes, string fileName)
     {
         using var archive = MpqArchive.Open(new MemoryStream(mapBytes), loadListFile: true);
+        // A standard name resolves without a listfile, which is how MapDocument.Load sees it, so a
+        // fixture written with no listfile still finds war3map.j and friends here.
+        archive.AddFileNames(Wc3.Model.StandardMapFileNames.All);
         int i = 0;
         foreach (var entry in archive)
         {

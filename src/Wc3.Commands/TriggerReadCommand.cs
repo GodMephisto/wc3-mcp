@@ -15,7 +15,7 @@ public sealed record TriggerModel(
     string ScriptLanguage);
 
 /// <summary>One folder node of the trigger tree. <see cref="Kind"/> is the raw item type
-/// ("RootCategory" or "Category" — the formats that distinguish more kinds surface them
+/// ("RootCategory" or "Category", the formats that distinguish more kinds surface them
 /// verbatim).</summary>
 public sealed record TriggerCategoryInfo(int Id, string Name, string Kind);
 
@@ -35,7 +35,7 @@ public sealed record TriggerInfo(
 
 /// <summary>One ECA node. <see cref="Kind"/> = Event/Condition/Action (nested calls show
 /// as Call). <see cref="Parameters"/> are best-effort readable renderings of the raw wtg
-/// parameters (no TriggerData.txt localization — presets/functions keep their raw names).
+/// parameters (no TriggerData.txt localization, presets/functions keep their raw names).
 /// <see cref="Children"/> holds nested blocks (if/then/else, loops, and/or).</summary>
 public sealed record TriggerFunctionInfo(
     string Kind,
@@ -49,12 +49,12 @@ public sealed record TriggerFunctionInfo(
 public sealed record TriggerVariableInfo(string Name, string Type, bool IsArray, string? InitialValue);
 
 /// <summary>
-/// Read-only projection of the map's triggers into plain POCOs — the model a trigger
+/// Read-only projection of the map's triggers into plain POCOs, the model a trigger
 /// editor UI consumes. Sources: war3map.wtg (tree + variables, War3Net
 /// <see cref="MapTriggers"/>), war3map.wct (custom-text bodies,
 /// <see cref="MapCustomTextTriggers"/>) and war3map.w3i (script language). Unlike
 /// <see cref="TriggerCommand"/> (flat item listing + flag edits) this walks the full ECA
-/// function tree. No write-back — mutation stays in <see cref="TriggerCommand"/>.
+/// function tree. No write-back, mutation stays in <see cref="TriggerCommand"/>.
 /// </summary>
 public static class TriggerReadCommand
 {
@@ -104,7 +104,7 @@ public static class TriggerReadCommand
                     break;
                 // DeletedTriggerItem stubs and TriggerVariableDefinition tree entries
                 // (the sub-version format mirrors variables into the tree) carry no
-                // trigger content — variables come from wtg.Variables below.
+                // trigger content, variables come from wtg.Variables below.
             }
         }
 

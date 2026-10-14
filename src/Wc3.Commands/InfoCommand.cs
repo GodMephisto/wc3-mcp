@@ -19,7 +19,7 @@ public static class InfoCommand
             throw new InvalidOperationException($"war3map.w3i could not be parsed{(why is null ? "" : $" ({why})")}, so the map info is unknown.");
         }
         var strings = BuildTriggerStringTable(doc);
-        var diags = doc.Diagnostics.Select(d => $"{d.Severity}: {d.FileName} — {d.Message}").ToList();
+        var diags = doc.Diagnostics.Select(d => $"{d.Severity}: {d.FileName}, {d.Message}").ToList();
         return new MapInfoResult(
             Name: TriggerStringResolver.Resolve(info?.MapName ?? "(unknown)", strings),
             Author: TriggerStringResolver.Resolve(info?.MapAuthor ?? "(unknown)", strings),

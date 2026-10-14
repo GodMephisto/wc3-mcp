@@ -117,7 +117,7 @@ public static class TextureConvert
         catch (UnknownImageFormatException ex)
         {
             throw new NotSupportedException(
-                $"unsupported source image format '{fromExt}' — use .blp, .dds, .png, .jpg, .jpeg, .bmp, .tga or .gif", ex);
+                $"unsupported source image format '{fromExt}', use .blp, .dds, .png, .jpg, .jpeg, .bmp, .tga or .gif", ex);
         }
     }
 
@@ -134,7 +134,7 @@ public static class TextureConvert
             case ".blp": EncodeBlp(image, ms); break;
             default:
                 throw new NotSupportedException(
-                    $"unsupported target image format '{toExt}' — use .png, .jpg, .jpeg, .bmp, .tga, .gif or .blp");
+                    $"unsupported target image format '{toExt}', use .png, .jpg, .jpeg, .bmp, .tga, .gif or .blp");
         }
         return ms.ToArray();
     }
@@ -143,7 +143,7 @@ public static class TextureConvert
     {
         var pixels = new byte[image.Width * image.Height * 4];
         image.CopyPixelDataTo(pixels);
-        // BLP1 JPEG content stores BGRA (verified against real WC3 assets) — swap from RGBA.
+        // BLP1 JPEG content stores BGRA (verified against real WC3 assets), swap from RGBA.
         for (int i = 0; i < pixels.Length; i += 4)
             (pixels[i], pixels[i + 2]) = (pixels[i + 2], pixels[i]);
         new BlpEncoder(new Blp1EncodingOptions { GenerateMipmaps = true, JpegQuality = 90 })

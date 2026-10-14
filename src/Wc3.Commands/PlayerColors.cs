@@ -12,12 +12,12 @@ public sealed record PlayerColorRgb(byte R, byte G, byte B);
 
 /// <summary>
 /// The Reforged 28-slot player-color table: ids 0..23 are the playable slots
-/// (TeamColor00..TeamColor23 — classic 12 plus the twelve added in patch 1.29),
+/// (TeamColor00..TeamColor23, classic 12 plus the twelve added in patch 1.29),
 /// ids 24..27 are the neutral slots (24 Neutral Hostile, 25 Neutral Victim,
-/// 26 Neutral Extra, 27 Neutral Passive — the JASS PLAYER_NEUTRAL_* ids).
+/// 26 Neutral Extra, 27 Neutral Passive, the JASS PLAYER_NEUTRAL_* ids).
 /// The game tints all four neutral slots with the black team color; we give them
 /// slightly separated near-black shades so UI swatches stay distinguishable
-/// (approximation — the neutrals have no distinct canonical colors).
+/// (approximation, the neutrals have no distinct canonical colors).
 /// </summary>
 public static class PlayerColors
 {
@@ -73,7 +73,7 @@ public static class PlayerColors
     };
 
     /// <summary>The slot's team color. Out-of-range ids fall back to the gray
-    /// slot's color rather than throwing — safe for rendering weird owner ids.</summary>
+    /// slot's color rather than throwing, safe for rendering weird owner ids.</summary>
     public static PlayerColorRgb Color(int id)
     {
         var t = id >= 0 && id < SlotCount ? Table[id] : Table[8];

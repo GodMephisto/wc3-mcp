@@ -8,7 +8,7 @@ namespace Wc3.Render;
 
 /// <summary>
 /// Headless CPU rasterizer for models: z-buffered triangle fill with
-/// directional-light shading and nearest-neighbour texturing. No GPU/OpenGL —
+/// directional-light shading and nearest-neighbour texturing. No GPU/OpenGL , 
 /// runs anywhere the CLI does. Models with a parsed skeleton render posed at
 /// the first frame of their "Stand" sequence (bind pose when there is no usable
 /// skeleton), from an orbit camera with WC3's Z-up convention (models stand
@@ -161,7 +161,7 @@ public static class ModelRenderer
                     for (int px = pxMin; px <= pxMax; px++)
                     {
                         float px5 = px + 0.5f;
-                        // Screen-space barycentric weights (winding-independent inside test —
+                        // Screen-space barycentric weights (winding-independent inside test , 
                         // no backface culling, WC3 materials are frequently two-sided).
                         float w0 = ((bx - px5) * (cy - py5) - (by - py5) * (cx - px5)) / areaFull;
                         float w1 = ((cx - px5) * (ay - py5) - (cy - py5) * (ax - px5)) / areaFull;

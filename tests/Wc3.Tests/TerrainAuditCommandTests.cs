@@ -42,6 +42,22 @@ public class TerrainAuditCommandTests
     }
 
     [Fact]
+    public void The_no_cliff_sentinel_is_not_a_distinct_cliff_texture()
+    {
+        // 0xF means "no cliff" and is not an index, so a map whose uncliffed corners carry it must
+        // not report one more distinct cliff texture than it uses. Every real map reported one
+        // extra, the field's own docstring promising the indices actually referenced.
+        var doc = BlankTerrain();
+        var tiles = Env(doc).TerrainTiles;
+        foreach (var t in tiles) t.CliffTexture = TerrainEditCommand.CliffTextureNone;
+        tiles[Idx(2, 2)].CliffTexture = 1;
+
+        var r = Audit(doc);
+
+        Assert.Equal(1, r.DistinctCliffTextures);   // index 1 alone, the sentinel excluded
+    }
+
+    [Fact]
     public void Terrain_file_bytes_matches_the_entry_size()
     {
         var doc = BlankTerrain();

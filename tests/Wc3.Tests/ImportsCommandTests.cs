@@ -3,7 +3,7 @@ using Wc3.Commands;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Pure-logic tests for ImportsCommand.BuildEntries — the manifest/archive merge behind
+/// Pure-logic tests for ImportsCommand.BuildEntries, the manifest/archive merge behind
 /// the read-only imports listing (Execute only adds MapDocument plumbing on top).
 /// </summary>
 public class ImportsCommandTests

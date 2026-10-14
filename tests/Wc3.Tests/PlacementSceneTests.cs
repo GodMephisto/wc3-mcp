@@ -157,7 +157,7 @@ public class PlacementSceneTests
         Assert.True(PlacementCommand.PlaceDoodad(doc, "LTlt", x: 0f, y: 0f).Ok);
 
         // A glow plane like GeneralHeroGlow: one geoset referencing a ReplaceableId
-        // (team-color) texture, none decoded — nothing we can draw but a white quad, so skip.
+        // (team-color) texture, none decoded, nothing we can draw but a white quad, so skip.
         var geoset = new Wc3.Modeling.Geoset(
             Vertices: new float[] { 0f, 0f, 0f, 32f, 0f, 0f, 0f, 0f, 64f },
             Normals: new float[] { 0f, 0f, 1f, 0f, 0f, 1f, 0f, 0f, 1f },
@@ -197,7 +197,7 @@ public class PlacementSceneTests
             new Dictionary<int, Wc3.Modeling.TextureImage> { [0] = tex });
         Assert.False(PlacementScene.IsTeamColorEffect(mixed));
 
-        // No textures at all (flat model) is not a team-color effect — it renders gray.
+        // No textures at all (flat model) is not a team-color effect, it renders gray.
         var flat = new PlacementModel(
             new Wc3.Modeling.Model3D(new[] { Geo(-1) }, Array.Empty<string>()),
             new Dictionary<int, Wc3.Modeling.TextureImage>());
@@ -226,7 +226,7 @@ public class PlacementSceneTests
         Assert.True(PlacementCommand.PlaceUnit(doc, "hfoo", ownerId: 0, x: 0f, y: 0f).Ok);
 
         // A "model" with no triangles has nothing to draw (a particle/light-only widget like
-        // a bubble geyser). With a real resolver supplied, it is SKIPPED — not boxed — so the
+        // a bubble geyser). With a real resolver supplied, it is SKIPPED, not boxed, so the
         // viewport never shows a placeholder where a model was actually resolved.
         var empty = new PlacementModel(
             new Wc3.Modeling.Model3D(

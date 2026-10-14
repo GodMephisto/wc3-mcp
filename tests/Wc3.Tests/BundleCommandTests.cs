@@ -182,7 +182,7 @@ public class BundleCommandTests
     public void Unresolvable_and_numeric_tokens_are_skipped()
     {
         // Without game data "AHbz" cannot resolve (base store unavailable) and
-        // "1200" is a 4-char numeric value, not an object — neither becomes a node.
+        // "1200" is a 4-char numeric value, not an object, neither becomes a node.
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
         var unit = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = "H000".FromRawcode() };
         unit.Modifications.Add(new SimpleObjectDataModification
@@ -223,7 +223,7 @@ public class BundleCommandTests
     [Fact]
     public void Modified_standard_unit_counts_as_custom_root()
     {
-        // A base-list entry (NewId=0) modifies the standard Hpal — the map defines
+        // A base-list entry (NewId=0) modifies the standard Hpal, the map defines
         // deltas for it, so porting must carry it: CustomToMap and recursed.
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
         var unit = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = 0 };
@@ -254,7 +254,7 @@ public class BundleCommandTests
     public void Extensionless_model_ref_captures_the_model_file_and_its_textures()
     {
         // Real-map convention (e.g. Nanaya Shiki H05Y): the unit's model field stores an
-        // EXTENSIONLESS path — the game appends .mdx/.mdl at load — while the import is
+        // EXTENSIONLESS path, the game appends .mdx/.mdl at load, while the import is
         // keyed WITH the extension. The resolver must still treat it as a model so the
         // model file AND its textures are captured, not dropped as an unknown "other" file.
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);

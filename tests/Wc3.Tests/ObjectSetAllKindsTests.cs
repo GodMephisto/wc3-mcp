@@ -9,7 +9,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// ObjectSetCommand across the non-unit kinds and the three modification shapes:
-/// item/buff (Simple), ability (Level), doodad (Variation) — the unit path keeps
+/// item/buff (Simple), ability (Level), doodad (Variation), the unit path keeps
 /// its own suite in ObjectSetCommandTests.
 /// </summary>
 public class ObjectSetAllKindsTests

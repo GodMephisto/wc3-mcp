@@ -31,7 +31,7 @@ public class BundleScriptClosureTests
             "endfunction\n" +
             "\n" +
             "function Trig_Spell_Actions takes nothing returns nothing\n" +
-            "    // call Unrelated() — commented out, must not count\n" +
+            "    // call Unrelated(), commented out, must not count\n" +
             "    if GetSpellAbilityId() == 'A000' then\n" +
             "        call Helper()\n" +
             "        call TimerStart(CreateTimer(), 1.0, false, function Timer_Cb)\n" +
@@ -41,7 +41,7 @@ public class BundleScriptClosureTests
         var bundle = ResolveH000WithAbility(jass);
 
         // Ordered by StartLine; the seed's reason names the literal, the callees
-        // name their discoverer — including the "function Timer_Cb" reference form.
+        // name their discoverer, including the "function Timer_Cb" reference form.
         Assert.Equal(new[]
         {
             new BundleFunction("Helper", 1, 2, "called by Trig_Spell_Actions"),
@@ -243,7 +243,7 @@ public class BundleScriptClosureTests
         // A hero's ability ids sit in globals named after the hero (MyHero_ID, MyHeroQ_ID,
         // MyHeroQ2_ID). A000 (MyHeroQ_ID) is on the unit's ability list and seeds normally. A001
         // (MyHeroQ2_ID) is a dash-back added at runtime by UnitAddAbility, on no ability list and
-        // reachable only through the script — it must be carried by the sibling-global rule. A foreign
+        // reachable only through the script, it must be carried by the sibling-global rule. A foreign
         // hero's sibling (NatsuQ2_ID -> A002) shares no stem with our hero and must NOT be carried.
         const string jass =
             "globals\n" +
@@ -315,7 +315,7 @@ public class BundleScriptClosureTests
         return BundleCommand.ResolveUnit(doc, "H000", ctx: null, preDiagnostics: Array.Empty<string>());
     }
 
-    /// <summary>H000 (custom hero, uabi=A000) + A000 (custom ability) + the given script —
+    /// <summary>H000 (custom hero, uabi=A000) + A000 (custom ability) + the given script , 
     /// the seed rawcodes the closure sees are therefore H000 and A000.</summary>
     private static UnitBundle ResolveH000WithAbility(string jass)
     {

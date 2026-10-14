@@ -14,7 +14,7 @@ namespace Wc3.Render;
 /// <paramref name="FilterMode"/> is the source geoset's material blend mode so the
 /// viewport can blend glows/cutouts correctly. <paramref name="IsTeamColor"/> marks a
 /// section whose geoset samples an undecoded <c>ReplaceableId</c> (team-color) texture
-/// inside an otherwise-textured model — the shader tints it by the owning player's
+/// inside an otherwise-textured model, the shader tints it by the owning player's
 /// color instead of drawing it gray (its vertex color is white so the tint lands pure).</summary>
 public sealed record PlacementMeshSection(
     int IndexOffset,
@@ -31,7 +31,7 @@ public sealed record PlacementMeshSection(
 /// mesh is drawn once per placement with a per-instance world transform, so a map with
 /// hundreds of Footmen uploads the Footman (geometry and textures) exactly once.
 /// <paramref name="BoundsMin"/>/<paramref name="BoundsMax"/> is the LOCAL-space
-/// axis-aligned bounding box of the vertex positions (both zero for an empty mesh) —
+/// axis-aligned bounding box of the vertex positions (both zero for an empty mesh) , 
 /// transform by an instance's <see cref="PlacementInstance.World"/> to ray-pick it.
 /// </summary>
 public sealed record PlacementMesh(
@@ -94,7 +94,7 @@ public static class PlacementScene
     /// <summary>Fallback-box color for doodads (orange).</summary>
     public static readonly Vector3 DoodadColor = new(1.00f, 0.62f, 0.15f);
 
-    /// <summary>Flat lit color for geosets without a resolvable texture — the same
+    /// <summary>Flat lit color for geosets without a resolvable texture, the same
     /// neutral gray the CPU <see cref="ModelRenderer"/> uses (190/255).</summary>
     public static readonly Vector3 UntexturedColor = new(0.745f, 0.745f, 0.745f);
 
@@ -110,13 +110,13 @@ public static class PlacementScene
     private const float BoxHalf = 28f;
     private const float BoxHeight = 112f;
 
-    /// <summary>Boxes only (no model resolution) — units blue, doodads orange.</summary>
+    /// <summary>Boxes only (no model resolution), units blue, doodads orange.</summary>
     public static PlacementSceneData Build(Wc3.Model.MapDocument doc)
         => Build(doc, resolveModel: null);
 
     /// <summary>
     /// Builds the scene. <paramref name="resolveModel"/> maps a type (rawcode, isUnit)
-    /// to its render model — return null for "no model, use the box". It is invoked at
+    /// to its render model, return null for "no model, use the box". It is invoked at
     /// most once per unique type per call, and the resulting mesh is shared by every
     /// placement of that type.
     /// </summary>
@@ -150,7 +150,7 @@ public static class PlacementScene
             string? key;
             var model = resolveModel?.Invoke(rawcode, isUnit);
             if (model is not null && IsTeamColorEffect(model))
-                model = null; // glow/effect plane (all ReplaceableId, e.g. GeneralHeroGlow) —
+                model = null; // glow/effect plane (all ReplaceableId, e.g. GeneralHeroGlow) , 
                               // renders as an opaque white/gray box without additive blend, so skip
             var mesh = model is null ? null : BuildModelMesh($"{(isUnit ? "unit" : "doodad")}:{rawcode}", model);
             if (mesh is not null)
@@ -181,7 +181,7 @@ public static class PlacementScene
             {
                 var rawcode = u.TypeId.ToRawcode();
                 if (string.Equals(rawcode, StartLocationRawcode, StringComparison.OrdinalIgnoreCase))
-                    continue; // model-less editor marker — don't box it
+                    continue; // model-less editor marker, don't box it
                 if (MeshKeyFor(rawcode, isUnit: true) is { } key)
                     instances.Add(new PlacementInstance(
                         key, WorldOf(u.Position, u.Rotation, u.Scale, heights),
@@ -200,7 +200,7 @@ public static class PlacementScene
     /// <summary>
     /// True when a model's whole surface is team-color/effect texturing (every geoset either
     /// references a <c>ReplaceableId</c> texture or has none) with no real diffuse texture
-    /// anywhere — a glow/effect plane such as <c>GeneralHeroGlow</c>. We don't decode
+    /// anywhere, a glow/effect plane such as <c>GeneralHeroGlow</c>. We don't decode
     /// replaceable textures or additive blending, so such a model would render as an opaque
     /// white/gray quad ("white box"); it is skipped instead. A model with even one resolved
     /// texture (a normal unit/doodad, including one with team-colored trim) is NOT an effect
@@ -318,7 +318,7 @@ public static class PlacementScene
             {
                 int a = g.Indices[t], b = g.Indices[t + 1], c = g.Indices[t + 2];
                 if ((uint)a >= (uint)n || (uint)b >= (uint)n || (uint)c >= (uint)n)
-                    continue; // malformed triangle — skip it whole
+                    continue; // malformed triangle, skip it whole
                 indices.Add(baseV + (uint)a);
                 indices.Add(baseV + (uint)b);
                 indices.Add(baseV + (uint)c);
@@ -352,7 +352,7 @@ public static class PlacementScene
         return (min, max);
     }
 
-    /// <summary>Upright unit-sized box with its base on the local Z=0 plane — the shared
+    /// <summary>Upright unit-sized box with its base on the local Z=0 plane, the shared
     /// fallback mesh for types whose model cannot be resolved. Flat per-face normals
     /// (24 verts / 36 indices), untextured single section, kind-colored.</summary>
     public static PlacementMesh BuildBoxMesh(string key, Vector3 color)
@@ -367,7 +367,7 @@ public static class PlacementScene
             {
                 verts.Add(p.X); verts.Add(p.Y); verts.Add(p.Z);
                 verts.Add(normal.X); verts.Add(normal.Y); verts.Add(normal.Z);
-                verts.Add(0f); verts.Add(0f); // untextured — UV unused
+                verts.Add(0f); verts.Add(0f); // untextured, UV unused
                 verts.Add(color.X); verts.Add(color.Y); verts.Add(color.Z);
             }
             indices.Add(baseV); indices.Add(baseV + 1); indices.Add(baseV + 2);

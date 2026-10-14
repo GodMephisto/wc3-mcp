@@ -25,7 +25,8 @@ namespace Wc3.Model;
 /// </remarks>
 internal static class MpqSalvagePatcher
 {
-    internal sealed record Result(byte[] Bytes, int ReplacedEntries, int AddedEntries, long AppendedBytes);
+    internal sealed record Result(
+        byte[] Bytes, int ReplacedEntries, int AddedEntries, int NamedEntries, long AppendedBytes);
 
     // MPQ v0 header field offsets, relative to the archive header start.
     private const int HashTablePosOffset = 0x10;
@@ -61,7 +62,7 @@ internal static class MpqSalvagePatcher
     internal static Result PatchSave(
         byte[] originalBytes,
         int headerOffset,
-        IReadOnlyList<(int BlockIndex, string? FileName, byte[] Payload)> dirtyEntries)
+        IReadOnlyList<(int BlockIndex, string? FileName, byte[]? Payload)> dirtyEntries)
     {
         var header = ReadHeader(originalBytes, headerOffset);
 
@@ -71,11 +72,28 @@ internal static class MpqSalvagePatcher
 
         var replacements = new List<(int BlockIndex, byte[] Payload)>();
         var additions = new List<(string FileName, byte[] Payload)>();
+        // A recovered name for an entry that already has a block row, a deprotect pass naming a
+        // file the archive lists without one. The payload is null because the bytes do not change,
+        // only the hash slot that resolves the name to the existing row. Rewriting the payload
+        // instead would append the whole file again for every recovered name.
+        var nameOnly = new List<(int BlockIndex, string FileName)>();
         foreach (var (blockIndex, fileName, payload) in dirtyEntries)
         {
             if (blockIndex >= 0 && blockIndex < header.BlockTableSize)
-                replacements.Add((blockIndex, payload));
-            else if (fileName is not null)
+            {
+                if (payload is null)
+                {
+                    if (fileName is null)
+                        throw new NotSupportedException(
+                            "A name-only entry carries no name to write into the hash table.");
+                    nameOnly.Add((blockIndex, fileName));
+                }
+                else
+                {
+                    replacements.Add((blockIndex, payload));
+                }
+            }
+            else if (fileName is not null && payload is not null)
                 additions.Add((fileName, payload));
             else
                 throw new NotSupportedException(
@@ -90,7 +108,7 @@ internal static class MpqSalvagePatcher
         byte[]? hashTable = null;
         uint newBlockCount = header.BlockTableSize;
         var resolvedAdditions = new List<(uint HashSlotOffset, ulong HashedName, uint BlockIndex, byte[] Payload)>();
-        if (additions.Count > 0)
+        if (additions.Count > 0 || nameOnly.Count > 0)
         {
             if (header.BlockTableSize + (uint)additions.Count > MaxTableSize)
                 throw new NotSupportedException(
@@ -101,6 +119,15 @@ internal static class MpqSalvagePatcher
             hashTable = new byte[header.HashTableSize * TableRowSize];
             Array.Copy(originalBytes, header.HashTableAbsolute, hashTable, 0, hashTable.Length);
             DecryptBlock(hashTable, HashTableKey);
+
+            // Name an existing row. The name may already resolve, from a curated listfile or a
+            // second deprotect pass, in which case the slot is left alone.
+            foreach (var (blockIndex, fileName) in nameOnly)
+            {
+                var slot = FindHashSlot(hashTable, header.HashTableSize, fileName);
+                if (slot.ExistingBlockIndex is null)
+                    WriteHashSlot(hashTable, slot.SlotOffset, HashedFileName(fileName), (uint)blockIndex);
+            }
 
             foreach (var (fileName, payload) in additions)
             {
@@ -143,9 +170,7 @@ internal static class MpqSalvagePatcher
         {
             WriteBlockRow(blockTable, (int)blockIndex, (uint)(cursor - headerOffset), payload);
             cursor += payload.Length;
-            BinaryPrimitives.WriteUInt64LittleEndian(hashTable!.AsSpan((int)slotOffset, 8), hashedName);
-            BinaryPrimitives.WriteUInt32LittleEndian(hashTable.AsSpan((int)slotOffset + 8, 4), 0); // neutral locale
-            BinaryPrimitives.WriteUInt32LittleEndian(hashTable.AsSpan((int)slotOffset + 12, 4), blockIndex);
+            WriteHashSlot(hashTable!, slotOffset, hashedName, blockIndex);
         }
 
         EncryptBlock(blockTable, BlockTableKey);
@@ -189,7 +214,17 @@ internal static class MpqSalvagePatcher
             hashTable.CopyTo(output, header.HashTableAbsolute);
         }
 
-        return new Result(output, replacements.Count, resolvedAdditions.Count, appended + tail);
+        return new Result(output, replacements.Count, resolvedAdditions.Count, nameOnly.Count, appended + tail);
+    }
+
+    /// <summary>Writes one hash-table row, the hash of a name and the block row it resolves to,
+    /// under a neutral locale.</summary>
+    private static void WriteHashSlot(byte[] hashTable, uint slotOffset, ulong hashedName, uint blockIndex)
+    {
+        var slot = hashTable.AsSpan((int)slotOffset, TableRowSize);
+        BinaryPrimitives.WriteUInt64LittleEndian(slot, hashedName);
+        BinaryPrimitives.WriteUInt32LittleEndian(slot[8..], 0); // neutral locale
+        BinaryPrimitives.WriteUInt32LittleEndian(slot[12..], blockIndex);
     }
 
     private static void WriteBlockRow(byte[] blockTable, int blockIndex, uint relativeOffset, byte[] payload)

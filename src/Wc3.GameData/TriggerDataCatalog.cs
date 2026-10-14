@@ -20,7 +20,7 @@ public sealed record TriggerType(
 public sealed record TriggerCategory(string Name, string DisplayNameKey, string IconPath, bool Selectable);
 
 /// <summary>
-/// A preset parameter value (<c>[TriggerParams]</c>) — a named constant of a given
+/// A preset parameter value (<c>[TriggerParams]</c>), a named constant of a given
 /// <see cref="TypeName"/> whose in-script form is <see cref="ScriptText"/>
 /// (e.g. <c>OperatorAdd</c> → type <c>ArithmeticOperator</c>, script <c>+</c>).
 /// </summary>
@@ -36,7 +36,7 @@ public enum TriggerFunctionKind { Event, Condition, Action, Call }
 
 /// <summary>
 /// A GUI-trigger function: an event, condition, action, or call. <see cref="ArgumentTypes"/>
-/// lists the parameter types (the sentinel <c>nothing</c> is dropped — an empty list means
+/// lists the parameter types (the sentinel <c>nothing</c> is dropped, an empty list means
 /// no parameters). <see cref="ReturnType"/> is set for <see cref="TriggerFunctionKind.Call"/>
 /// entries; conditions implicitly return <c>boolean</c>. Metadata (<see cref="DisplayName"/>,
 /// <see cref="ParametersLayout"/>, <see cref="Defaults"/>, <see cref="Category"/>) comes from
@@ -189,7 +189,7 @@ public static class TriggerDataParser
                 }
                 case Section.TypeDefaults:
                 {
-                    // "value[,WESTRING_key]" — the westring is the trailing field; the value
+                    // "value[,WESTRING_key]", the westring is the trailing field; the value
                     // may itself contain commas, so keep everything before a trailing WESTRING_.
                     var p = SplitCsv(val);
                     string value = val;

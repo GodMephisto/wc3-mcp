@@ -41,7 +41,7 @@ internal static class ObjectDataWriter
     /// <summary>
     /// The kind's war3map.* model, or a fresh empty one when the map has no such file
     /// yet (format version mirrored from the skin twin when present, else v2). Null
-    /// when the file exists but has no parsed model — rebuilding it blind would drop
+    /// when the file exists but has no parsed model, rebuilding it blind would drop
     /// the original data, so callers must refuse to edit.
     /// </summary>
     internal static object? GetOrCreateMapModel(MapDocument doc, ObjectKind kind) =>

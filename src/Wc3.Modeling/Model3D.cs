@@ -2,8 +2,8 @@
 namespace Wc3.Modeling;
 
 /// <summary>
-/// Renderer-neutral model: geometry plus the texture paths it references, and —
-/// when the source file carried parseable animation data — a skeleton
+/// Renderer-neutral model: geometry plus the texture paths it references, and , 
+/// when the source file carried parseable animation data, a skeleton
 /// (sequences + bone hierarchy) that <see cref="PosedAt"/> can apply.
 /// </summary>
 public sealed record Model3D(
@@ -15,7 +15,7 @@ public sealed record Model3D(
     /// Returns a copy of the model with vertices/normals transformed to the first
     /// frame of the named sequence ("Stand" by default: exact match preferred, then
     /// any Stand* variant, then the model's first sequence). Returns <c>this</c>
-    /// unchanged when there is no skeleton, no sequences, or no skinnable geometry —
+    /// unchanged when there is no skeleton, no sequences, or no skinnable geometry , 
     /// the bind pose is always the safe fallback and this method never throws.
     /// The returned model has no skeleton (its geometry is already posed).
     /// </summary>
@@ -56,7 +56,7 @@ public sealed record Geoset(
 /// <summary>
 /// WC3 material-layer blend mode, as stored in MDX layer records (u32 0-6) and MDL
 /// <c>FilterMode</c> keywords. <see cref="None"/> renders opaque (a texture's alpha
-/// channel is utility data — team colour, reflections — not transparency);
+/// channel is utility data, team colour, reflections, not transparency);
 /// <see cref="Transparent"/> is an alpha-tested cutout; the rest blend against the
 /// frame buffer (<see cref="Additive"/> glows being the common case).
 /// </summary>

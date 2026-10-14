@@ -42,13 +42,13 @@ public static class RenderModelCommand
     }
 
     /// <summary>Parses the model at an internal map path and resolves its textures
-    /// (map-imported only — no base-game fallback without a game-data context).</summary>
+    /// (map-imported only, no base-game fallback without a game-data context).</summary>
     public static PreparedModel Prepare(MapDocument doc, string modelInternalPath)
         => Prepare(doc, modelInternalPath, ctx: null);
 
     /// <summary>
-    /// Parses the model and resolves its textures: the map's own files first, then —
-    /// when <paramref name="ctx"/> is available — the base game via CASC, so units whose
+    /// Parses the model and resolves its textures: the map's own files first, then , 
+    /// when <paramref name="ctx"/> is available, the base game via CASC, so units whose
     /// model was never imported (a plain Footman) render too. Both lookups try the usual
     /// slash and .mdx/.mdl variants; texture paths missing on both sides shade flat.
     /// </summary>
@@ -155,8 +155,8 @@ public static class RenderModelCommand
 
     /// <summary>
     /// The object's model path: its merged model-file field first (a map delta always
-    /// wins), then — for untouched base objects, whose art fields Reforged moved out of
-    /// the SLKs into skin-profile TXTs the stores don't resolve — the "file" key of the
+    /// wins), then, for untouched base objects, whose art fields Reforged moved out of
+    /// the SLKs into skin-profile TXTs the stores don't resolve, the "file" key of the
     /// kind's skin profile via CASC.
     /// </summary>
     private static string ResolveModelPath(
@@ -243,7 +243,7 @@ public static class RenderModelCommand
     /// conventions and the .mdx/.mdl extension swap (maps routinely reference a model as
     /// ".mdl" while storing the binary under ".mdx", and vice versa). Returns null when
     /// no in-map file backs the path (e.g. a base-game/CASC model). Public so every
-    /// front-end resolves models identically — do not reimplement this lookup.
+    /// front-end resolves models identically, do not reimplement this lookup.
     /// </summary>
     public static MapFileEntry? FindModelEntry(MapDocument doc, string path)
     {
@@ -261,7 +261,7 @@ public static class RenderModelCommand
     /// "...\BTNFoo" and the game appends .blp at load), the .blp/.tga/.dds it really lives
     /// under, plus the sibling texture extensions when a wrong one is given. Returns null when
     /// no in-map file backs the path (a base-game texture). Public so discovery and the port
-    /// resolve icons identically — do not reimplement this lookup.
+    /// resolve icons identically, do not reimplement this lookup.
     /// </summary>
     public static MapFileEntry? FindTextureEntry(MapDocument doc, string path)
     {
@@ -335,7 +335,7 @@ public static class RenderModelCommand
     /// variation-0 + either}. The variation-0 forms come last so they can never shadow an
     /// exact hit: classic doodads with variations store one model file per variation and no
     /// bare file (dfil says ...\Ruins_Flower; CASC only has ruins_flower0.mdx..ruins_flower4.mdx),
-    /// so once the plain forms miss we try the "&lt;name&gt;0" file — variation 0 always exists
+    /// so once the plain forms miss we try the "&lt;name&gt;0" file, variation 0 always exists
     /// when variations do, and is what the World Editor previews.</summary>
     private static IEnumerable<string> PathCandidates(string path)
     {
@@ -363,7 +363,7 @@ public static class RenderModelCommand
     /// Decodes every resolvable model texture, keyed by texture index: the map's own
     /// files win (imports can override base textures), then the base game via CASC when
     /// a context is available. ReplaceableId entries (team colour etc.), unresolvable
-    /// paths and undecodable formats are simply absent — the renderer shades those
+    /// paths and undecodable formats are simply absent, the renderer shades those
     /// geosets flat.
     /// </summary>
     private static IReadOnlyDictionary<int, TextureImage> ResolveTextures(
@@ -391,7 +391,7 @@ public static class RenderModelCommand
     }
 
     /// <summary>Model texture references keep classic .blp/.tga names, but Reforged's
-    /// CASC stores those files repacked as .dds at the same path — try both.</summary>
+    /// CASC stores those files repacked as .dds at the same path, try both.</summary>
     private static IEnumerable<string> CascTextureCandidates(string path)
     {
         yield return path;
@@ -401,7 +401,7 @@ public static class RenderModelCommand
             yield return Path.ChangeExtension(path, ".dds");
     }
 
-    /// <summary>Sniffs the container (DDS magic, else BLP); undecodable bytes are null —
+    /// <summary>Sniffs the container (DDS magic, else BLP); undecodable bytes are null , 
     /// the caller shades those geosets flat. Internal so the folder thumbnail renderer
     /// decodes a texture exactly the way the map renderer does.</summary>
     internal static TextureImage? TryDecodeTexture(byte[] bytes)

@@ -11,7 +11,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// End-to-end placement rendering: with the shared <see cref="PlacementModelResolver"/> and
-/// a real CASC context, every placed widget in a real map must render as its actual model —
+/// a real CASC context, every placed widget in a real map must render as its actual model , 
 /// no orange/blue fallback boxes. The two ways a box appeared for a real map were (a) classic
 /// doodads with variation-suffixed model files (fixed by RenderModelCommand's variation-0
 /// candidate) and (b) custom doodads that inherit their art from a base object without an own
@@ -81,7 +81,7 @@ public class PlacementResolveTests
         int boxInstances = scene.Instances.Count(i =>
             i.MeshKey is PlacementScene.UnitBoxKey or PlacementScene.DoodadBoxKey);
 
-        // A mesh whose every section is untextured renders as a solid gray/white shape — the
+        // A mesh whose every section is untextured renders as a solid gray/white shape, the
         // "white box" symptom (e.g. GeneralHeroGlow's team-color glow plane). None should remain:
         // effect-only models are skipped, everything else is textured.
         var fullyUntextured = scene.Meshes

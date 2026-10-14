@@ -5,7 +5,7 @@ using System.Text;
 namespace Wc3.Modeling;
 
 /// <summary>
-/// Decodes .dds textures to RGBA8 — Reforged repacked the classic .blp textures as DDS
+/// Decodes .dds textures to RGBA8, Reforged repacked the classic .blp textures as DDS
 /// under the same CASC paths, so base-game model previews need it. Supports the formats
 /// those files actually use: BC1/DXT1, BC2/DXT3, BC3/DXT5 (fourCC or DX10 header) and
 /// uncompressed 32-bit RGBA/BGRA. Top mip only.

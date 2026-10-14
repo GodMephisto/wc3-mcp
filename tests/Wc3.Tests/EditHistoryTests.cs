@@ -123,7 +123,7 @@ public class EditHistoryTests
     [Fact]
     public void Undo_RestoresByteIdenticalDocument()
     {
-        // Seed one unit directly so the units file already exists — this isolates
+        // Seed one unit directly so the units file already exists, this isolates
         // the undo assertion from the "created an empty file" edge and lets us
         // compare raw bytes.
         var doc = BlankMap.Create();

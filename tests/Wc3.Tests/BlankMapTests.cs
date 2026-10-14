@@ -159,7 +159,7 @@ public class BlankMapTests
         var j = doc.GetFile("war3map.j");
         Assert.NotNull(j);
         Assert.NotEmpty(j!.RawBytes);
-        // No UTF-8 BOM — WC3's JASS parser never sees one from real WE-saved maps.
+        // No UTF-8 BOM, WC3's JASS parser never sees one from real WE-saved maps.
         Assert.NotEqual(0xEF, j.RawBytes[0]);
 
         var text = Encoding.UTF8.GetString(j.RawBytes);
@@ -224,7 +224,7 @@ public class BlankMapTests
     /// <summary>
     /// The reason the blank map carries a war3map.j at all: porting a unit whose source
     /// closure includes trigger functions must splice them in and hook InitTrig_* into
-    /// the skeleton's InitCustomTriggers — not bail with "target has no war3map.j".
+    /// the skeleton's InitCustomTriggers, not bail with "target has no war3map.j".
     /// </summary>
     [Fact]
     public void Port_IntoBlankMap_SplicesAndHooksTheScript()

@@ -235,8 +235,8 @@ public static class ScriptCommand
     /// <summary>
     /// Returns the full <paramref name="source"/> with the 1-based line range
     /// [fn.StartLine, fn.EndLine] replaced by <paramref name="newFunctionText"/>.
-    /// Byte-faithful everywhere else: bytes before StartLine and after EndLine — including
-    /// EndLine's own line terminator, or its absence when the last line runs to EOF — are
+    /// Byte-faithful everywhere else: bytes before StartLine and after EndLine, including
+    /// EndLine's own line terminator, or its absence when the last line runs to EOF, are
     /// untouched, so the file keeps its original trailing-newline state. The replacement
     /// text's newlines are converted to the source's convention (CRLF when the source
     /// contains any CRLF, else LF), and a single trailing newline on

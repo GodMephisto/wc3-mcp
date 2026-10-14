@@ -5,8 +5,8 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// The typed-editor option resolver derives a field's editor shape — type token, list-ness,
-/// and the enumerated option set — from live base data, so a picker can only ever write a
+/// The typed-editor option resolver derives a field's editor shape, type token, list-ness,
+/// and the enumerated option set, from live base data, so a picker can only ever write a
 /// token the game already uses (correct-by-construction). These lock the invariants the UI
 /// relies on: no context degrades to free text, scalar enums are distinct + sorted, and
 /// *List types are split on commas. Install-backed cases skip when the game is absent.
@@ -16,7 +16,7 @@ public class ObjectFieldOptionsTests
     private const string Install = @"C:\Warcraft III";
 
     // Pure unit test (no install needed): a null context can resolve nothing, so the caller
-    // must be told to fall back to a plain text editor — empty options, not a crash.
+    // must be told to fall back to a plain text editor, empty options, not a crash.
     [Fact]
     public void Null_context_yields_free_text_fallback()
     {
@@ -53,7 +53,7 @@ public class ObjectFieldOptionsTests
     }
 
     // btar (destructable "Targeted As") is a targetList: IsList must be reported true, and
-    // every returned option is a single token from the split — never a comma-joined value.
+    // every returned option is a single token from the split, never a comma-joined value.
     [Fact]
     [Trait("Category", "GameData")]
     public void Destructable_targeted_as_reports_split_list()

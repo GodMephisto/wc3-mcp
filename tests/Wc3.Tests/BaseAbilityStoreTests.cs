@@ -49,7 +49,7 @@ public class BaseAbilityStoreTests
         var store = BuildStore();
         Assert.True(store.TryGetAbility("AHbz", out var fields));
         Assert.Equal("1", fields["aher"]);
-        // "anam" lives in Profile (a TXT, not one of the ability SLKs) — not resolvable in v1.
+        // "anam" lives in Profile (a TXT, not one of the ability SLKs), not resolvable in v1.
         Assert.False(fields.ContainsKey("anam"));
     }
 

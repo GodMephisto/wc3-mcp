@@ -10,7 +10,7 @@ public class TriggerDataCatalogTests
     // return type, an Event with a "nothing" (void) arg list, and meta lines (incl. one whose
     // name is a prefix of another, to prove exact-name association).
     private const string Sample = """
-        // leading comment — ignored
+        // leading comment, ignored
         [TriggerCategories]
         TC_NOTHING=WESTRING_TRIGCAT_NOTHING,ReplaceableTextures\WorldEditUI\Actions-Nothing,1
         TC_UNSEL=WESTRING_X,icon\path,0
@@ -148,7 +148,7 @@ public class TriggerDataCatalogTests
     [Fact]
     public void Malformed_lines_are_skipped_not_thrown()
     {
-        // No '=', stray bracket, empty key — all tolerated.
+        // No '=', stray bracket, empty key, all tolerated.
         var c = TriggerDataParser.Parse("[TriggerActions]\nno equals here\n=orphan\nGood=0,unit\n");
         Assert.NotNull(c.FindFunction("Good"));
         Assert.Single(c.Functions);
@@ -158,7 +158,7 @@ public class TriggerDataCatalogTests
     public void Real_install_triggerdata_parses_into_a_rich_catalog()
     {
         if (!Wc3.GameData.GameData.TryOpen(null, out var ctx, out _) || ctx is null)
-            return; // no install on this machine — integration check skipped
+            return; // no install on this machine, integration check skipped
         if (!ctx.TryReadFile(@"ui\triggerdata.txt", out var bytes))
             return;
 

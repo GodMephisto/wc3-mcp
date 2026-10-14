@@ -115,13 +115,13 @@ public static class TerrainRenderer
     }
 
     /// <summary>
-    /// Renders the terrain heightmap in 3D perspective (WC3 Z-up) — the
+    /// Renders the terrain heightmap in 3D perspective (WC3 Z-up), the
     /// "rendered in game" look versus the flat top-down <see cref="RenderTerrainPng"/>
     /// minimap. The tilepoint grid becomes a directional-lit, per-terrain-type
     /// coloured mesh at real ground+cliff heights; water tiles get a translucent
     /// plane. Orbit camera: <paramref name="yawDegrees"/> spins around Z (up),
     /// <paramref name="pitchDegrees"/> tilts down, <paramref name="zoom"/> scales
-    /// camera distance (larger = closer). Pure software rasterizer — no GPU.
+    /// camera distance (larger = closer). Pure software rasterizer, no GPU.
     /// </summary>
     public static byte[] RenderPerspectivePng(
         Wc3.Model.MapDocument doc, int width, int height,
@@ -328,7 +328,7 @@ public static class TerrainRenderer
         float originX = -(int)env.Width * (TileWorld / 2f);
         float originY = -(int)env.Height * (TileWorld / 2f);
 
-        // Height grid (world Z per tilepoint) — identical to the render's vertex Z.
+        // Height grid (world Z per tilepoint), identical to the render's vertex Z.
         var hz = new float[w * h];
         float minZ = float.MaxValue, maxZ = float.MinValue;
         for (int k = 0; k < w * h; k++)
@@ -398,7 +398,7 @@ public static class TerrainRenderer
             float f = p.Z - HeightAt(p.X, p.Y);
             if (f <= 0f && fPrev > 0f)
             {
-                // Sign change between tPrev..t — bisect for a tighter surface hit.
+                // Sign change between tPrev..t, bisect for a tighter surface hit.
                 float lo = tPrev, hi = t;
                 for (int bi = 0; bi < 12; bi++)
                 {

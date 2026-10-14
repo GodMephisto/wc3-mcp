@@ -60,7 +60,7 @@ public static class FilePreviewCommand
             }
             catch
             {
-                // Not a decodable BLP after all — fall through to hex.
+                // Not a decodable BLP after all, fall through to hex.
             }
         }
 

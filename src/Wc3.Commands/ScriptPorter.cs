@@ -14,7 +14,7 @@ namespace Wc3.Commands;
 /// any symbol that collides with the target, rewriting rawcode literals to follow the
 /// object remap, and hooking carried InitTrig_* functions into the target's init.
 ///
-/// This is text surgery over an untyped, Turing-complete language — it is deliberately
+/// This is text surgery over an untyped, Turing-complete language, it is deliberately
 /// conservative and always reports what it did. Tightly-coupled maps (a shared spell
 /// dispatcher) produce very large closures; the mechanism still applies but the notes
 /// flag that a large fraction of the source script was carried.
@@ -79,7 +79,7 @@ internal static class ScriptPorter
 
     /// <summary>
     /// Splices the function closure into <paramref name="target"/> (mutated via
-    /// AddOrReplaceRawFile) — or, with <paramref name="apply"/> false, computes the exact
+    /// AddOrReplaceRawFile), or, with <paramref name="apply"/> false, computes the exact
     /// same <see cref="ScriptPortInfo"/> without touching the target (dry-run preview;
     /// one code path so preview and port cannot drift). <paramref name="codeRemap"/> maps
     /// source rawcode → target rawcode (as 4-char strings) for the objects that were
@@ -118,8 +118,8 @@ internal static class ScriptPorter
 
         var srcEntry = ScriptEntry(source);
         var tgtEntry = ScriptEntry(target);
-        if (srcEntry is null) { notes.Add("source has no war3map.j — script not ported."); return new ScriptPortInfo(0, 0, 0, false, notes); }
-        if (tgtEntry is null) { notes.Add("target has no war3map.j — script not ported."); return new ScriptPortInfo(0, 0, 0, false, notes); }
+        if (srcEntry is null) { notes.Add("source has no war3map.j, script not ported."); return new ScriptPortInfo(0, 0, 0, false, notes); }
+        if (tgtEntry is null) { notes.Add("target has no war3map.j, script not ported."); return new ScriptPortInfo(0, 0, 0, false, notes); }
 
         // Byte-faithful codec: war3map.j is often authored in a legacy codepage (GBK/Big5 on
         // Chinese maps, exactly this corpus). UTF8 with its replacement fallback would turn every
@@ -139,7 +139,7 @@ internal static class ScriptPorter
         string marker = $"wc3ctl ported: {markerLabel}";
         if (tgtJ.Contains($"BEGIN {marker} ====", StringComparison.Ordinal))
         {
-            notes.Add("target already carries this port (marker present) — script left unchanged to stay idempotent.");
+            notes.Add("target already carries this port (marker present), script left unchanged to stay idempotent.");
             return new ScriptPortInfo(0, 0, 0, false, notes);
         }
 
@@ -180,14 +180,14 @@ internal static class ScriptPorter
                         carried.Add(callee);
             else
                 notes.Add("--synth-dispatch requested but no per-hero cast branch was found in the "
-                    + "source's shared dispatcher (unsupported script shape) — no synthesized "
+                    + "source's shared dispatcher (unsupported script shape), no synthesized "
                     + "dispatcher was added, the ordinary carried closure (if any) is unaffected.");
         }
 
         // Also carry each InitTrig_* that turns on one of the hero's spells, plus the handlers it wires.
         // The closure only reaches functions the hero's DATA references; a spell's InitTrig (CreateTrigger
         // + TriggerAddAction of the handler) is reached only from the source's InitCustomTriggers, never
-        // from the hero, so without this the spell comes across but is never registered — defined and dead
+        // from the hero, so without this the spell comes across but is never registered, defined and dead
         // in the target, exactly the "abilities do nothing" break. An init counts as the hero's when it
         // wires a carried function, OR its handler tests a rawcode a carried function uses (an on-cast
         // trigger for a combo ability the hero adds at runtime, e.g. QShikiOne firing on 'A1BP' which the
@@ -262,7 +262,7 @@ internal static class ScriptPorter
             notes.Add($"carried {pulledForStructure} extra helper function(s) that the closure referenced from a "
                 + "condition or return, so no call is left dangling.");
         if (srcFns.Count > 400)
-            notes.Add($"{srcFns.Count} functions carried — the source script is highly coupled (likely a shared " +
+            notes.Add($"{srcFns.Count} functions carried, the source script is highly coupled (likely a shared " +
                       "spell dispatcher), so a large fraction of it came along. Verify the ported map in-game.");
 
         // Globals referenced by the carried (trimmed) functions.
@@ -321,7 +321,7 @@ internal static class ScriptPorter
                     + "groups, and other non-default globals are set up before they run."
                 : $"wired {string.Join(", ", globalInitBodies.Keys)} but it carried 0 assignments for "
                     + "any global the closure needs (nothing there sets one up, or it was already "
-                    + "carried whole by the ordinary closure) — verify the ported map in-game.");
+                    + "carried whole by the ordinary closure), verify the ported map in-game.");
         if (residualGlobalRefs.Count > 0)
             notes.Add($"{residualGlobalRefs.Count} reference(s) to a non-carried global remain in a "
                 + "condition or return inside the map's own global initializer and were left in "
@@ -422,7 +422,7 @@ internal static class ScriptPorter
 
         // The synthesized dispatcher's function bodies: built from the hero's own extracted
         // branches, run through the exact same Trim discipline as every other carried body (so a
-        // callee this port could not actually carry — for any reason — is commented out here too,
+        // callee this port could not actually carry, for any reason, is commented out here too,
         // rather than left calling into the void), then through the SAME Rewrite every other
         // carried body gets, so a renamed callee or a remapped ability rawcode is picked up
         // consistently.
@@ -441,7 +441,7 @@ internal static class ScriptPorter
                 + "cooldown hashtable, any placed-hero registration array).");
             if (synthTrimmed > 0)
                 notes.Add($"{synthTrimmed} call(s) inside the synthesized dispatcher named a function this "
-                    + "port could not carry and were commented out — those ability branch(es) will not "
+                    + "port could not carry and were commented out, those ability branch(es) will not "
                     + "cast, verify the ported map.");
             synthInitToHook = synthInitFn;
         }
@@ -631,12 +631,12 @@ internal static class ScriptPorter
             merged = HookInit(merged, initFns, marker, out hooked);
             notes.Add(hooked
                 ? $"wired {initFns.Count} InitTrig_* function(s) into the target's InitCustomTriggers."
-                : "carried InitTrig_* functions but could not find InitCustomTriggers in the target — " +
+                : "carried InitTrig_* functions but could not find InitCustomTriggers in the target, " +
                   "trigger registration may need to be wired manually.");
         }
         else if (initTrigCandidates.Count == 0)
         {
-            notes.Add("no InitTrig_* init functions in the closure — if the spells register via a custom " +
+            notes.Add("no InitTrig_* init functions in the closure, if the spells register via a custom " +
                       "init path, verify it runs in the target.");
         }
         // else, every InitTrig_* candidate was the source map's own framework (see the note above),
@@ -650,7 +650,7 @@ internal static class ScriptPorter
             notes.Add(synthHooked
                 ? $"wired {synthInitToHook}() into the target's InitCustomTriggers, registering the "
                   + "synthesized dispatcher's trigger."
-                : "synthesized a cast dispatcher but could not find InitCustomTriggers in the target — " +
+                : "synthesized a cast dispatcher but could not find InitCustomTriggers in the target, " +
                   "its trigger registration may need to be wired manually.");
         }
 
@@ -665,7 +665,7 @@ internal static class ScriptPorter
             merged = HookMain(merged, fn, marker, out bool hookedMain);
             notes.Add(hookedMain
                 ? $"wired {fn}() into the target's main, before InitCustomTriggers."
-                : "carried InitGlobals but could not find the target's main — call it manually.");
+                : "carried InitGlobals but could not find the target's main, call it manually.");
         }
         var otherInitHelperCandidates = globalInitBodies.Keys.Where(nm => nm != "InitGlobals").ToList();
         // Same --synth-dispatch filter as the InitTrig_* one above (wires something reachable, OR
@@ -689,7 +689,7 @@ internal static class ScriptPorter
                 ? $"wired {otherInitHelpers.Count} global-initializer helper(s) into the front of the "
                   + "target's InitCustomTriggers, ahead of the trigger wiring above."
                 : "carried a global-initializer helper but could not find InitCustomTriggers in the " +
-                  "target — call it manually, before any trigger registration.");
+                  "target, call it manually, before any trigger registration.");
         }
 
         // The synthesized bootstrap function, same call site as InitGlobals (before
@@ -1490,7 +1490,7 @@ internal static class ScriptPorter
     }
 
     /// <summary>A name not already in <paramref name="taken"/>, reserving it there (numbered
-    /// suffixes, same convention as the ordinary collision rename above) — used for the synthesized
+    /// suffixes, same convention as the ordinary collision rename above), used for the synthesized
     /// dispatcher's own function names, which have no source name to collide under, only a freshly
     /// chosen one that must not collide with anything already spoken for.</summary>
     private static string UniqueName(string baseName, HashSet<string> taken)
@@ -1508,7 +1508,7 @@ internal static class ScriptPorter
     }
 
     /// <summary>A JASS local (or a function's own parameter) may not share a name with any global
-    /// variable or function already declared in the FINAL merged script — a plain language rule
+    /// variable or function already declared in the FINAL merged script, a plain language rule
     /// that never bites on the source map itself (a local obviously never collides with its OWN
     /// map's globals) but can bite the moment the same carried body lands next to an unrelated
     /// target map's own, independently authored globals. Common short local names (s, txt, i, id)
@@ -1571,7 +1571,7 @@ internal static class ScriptPorter
         {
             // No globals block in target: prepend one.
             text = $"globals\n{portedGlobals}endglobals\n" + text;
-            notes.Add("target had no globals block — one was created for the ported globals.");
+            notes.Add("target had no globals block, one was created for the ported globals.");
             endGlobals = FindLine(text, "endglobals");
         }
 

@@ -15,7 +15,7 @@ public sealed record SoundFields(
 
 /// <summary>
 /// Edits the map's sound catalog (war3map.w3s → <see cref="MapSounds"/>). Sounds are keyed
-/// by <see cref="Sound.Name"/> — the label triggers/UI reference. Mutations persist through
+/// by <see cref="Sound.Name"/>, the label triggers/UI reference. Mutations persist through
 /// <see cref="MapDocument.AddOrReplaceModelFile"/>; the byte-faithful War3Net writer is
 /// pinned by MapWriteTests.Sounds_writer_is_byte_faithful_on_real_map.
 /// </summary>
@@ -197,7 +197,7 @@ public static class SoundCommand
 
     /// <summary>
     /// Builds a serializable blank sound. War3Net's <c>Write(BinaryWriter, Sound, ...)</c>
-    /// writes every string member, so all 11 must be non-null or the writer NREs on Save —
+    /// writes every string member, so all 11 must be non-null or the writer NREs on Save , 
     /// leave the ancillary ones empty and let the caller tune them with <see cref="Set"/>.
     /// </summary>
     private static Sound NewSound(string name, string? file) => new()

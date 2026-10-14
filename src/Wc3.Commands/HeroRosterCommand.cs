@@ -84,16 +84,26 @@ public static class HeroRosterCommand
         // rawcodes against RPB_AddHero's 170 and wins by two, except that its rawcodes are
         // ABILITY codes and not one of them resolves to a unit. Scoring by unit resolution
         // separates them 170 to 0 rather than 172 to 170.
+        // A registry only counts when at least one of its rawcodes resolves to a unit the map
+        // actually defines. With no custom units, or a map whose registrations name only
+        // base-game codes, every registry scores zero and the count tiebreak alone then picks the
+        // most-called rawcode-taking native. Measured on 12331, which has no custom units and
+        // reported 27 "heroes" that were item codes, and on Otaku Defense, which reported one
+        // ability code. A roster of non-units is worse than no roster.
         var registry = contract.Registries
-            .OrderByDescending(r => units.Count == 0 ? 0 : r.RegisteredRawcodes.Count(units.Contains))
-            .ThenByDescending(r => r.RegisteredRawcodes.Count)
+            .Select(r => (Registry: r, UnitHits: r.RegisteredRawcodes.Count(units.Contains)))
+            .Where(x => x.UnitHits > 0)
+            .OrderByDescending(x => x.UnitHits)
+            .ThenByDescending(x => x.Registry.RegisteredRawcodes.Count)
+            .Select(x => x.Registry)
             .FirstOrDefault();
 
         if (registry is null || registry.RegisteredRawcodes.Count == 0)
             return new(false,
-                "no roster registration call was found in this map's script, so there is no "
-                + "list of playable heroes to read. Maps that create heroes inline rather than "
-                + "registering them have no roster to find.",
+                "no roster registration call was found whose rawcodes resolve to a unit this map "
+                + "defines, so there is no list of playable heroes to read. Maps that create heroes "
+                + "inline rather than registering them, and maps with no custom units, have no "
+                + "roster to find.",
                 string.Empty, Array.Empty<RosterHero>());
 
         // Each custom-text body, so a rawcode can be attributed to the trigger that mentions it.

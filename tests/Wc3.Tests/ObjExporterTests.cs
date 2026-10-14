@@ -109,6 +109,9 @@ public class ObjExporterTests
         var obj = ObjExporter.ToObj(new Model3D(new[] { g }, Array.Empty<string>()), null);
         Assert.Contains("v 1.5 -2.25 0.000001", obj);
         Assert.DoesNotContain("E-", obj); // no scientific notation
-        Assert.DoesNotContain(",", obj.Replace(", 1 unit", "")); // no comma decimal separators (header aside)
+        // No comma decimal separators, checked on the data lines only, since the comment header
+        // is prose and carries its own commas.
+        var data = string.Join("\n", obj.Split('\n').Where(l => !l.StartsWith('#')));
+        Assert.DoesNotContain(",", data);
     }
 }

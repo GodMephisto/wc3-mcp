@@ -5,8 +5,13 @@ namespace Wc3.Commands;
 // ContentType is the sniffed kind of a NAMELESS entry ("BLP texture", "empty", ...),
 // null for named entries whose name already answers the question. NameFromHarvest marks
 // a name recovered from the map's own script or object data rather than stored.
+/// <summary>One listed entry. The name is null for an unnamed entry, and the attribute forces that
+/// null to be written rather than omitted, because the tool description promises a null name and a
+/// client reading <c>name</c> off an omitted key gets undefined.</summary>
 public sealed record FileEntryInfo(
-    string? Name, int SizeBytes, bool Known, bool Parsed,
+    [property: System.Text.Json.Serialization.JsonIgnore(
+        Condition = System.Text.Json.Serialization.JsonIgnoreCondition.Never)] string? Name,
+    int SizeBytes, bool Known, bool Parsed,
     string? ContentType = null, bool NameFromHarvest = false);
 public sealed record FileListResult(IReadOnlyList<FileEntryInfo> Files);
 public sealed record MapInfoResult(
@@ -86,7 +91,7 @@ public sealed record PortResult(
     // them are not the root's own, so a report can count them instead of listing them.
     IReadOnlyList<string>? CarriedFiles = null);
 // Combined outcome of porting several units into one target: per-unit results in input
-// order (their Script is always null — the batch splices the merged closure once), the
+// order (their Script is always null, the batch splices the merged closure once), the
 // single merged script summary, and batch-level warnings.
 public sealed record BatchPortResult(
     IReadOnlyList<PortResult> Units,

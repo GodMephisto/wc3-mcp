@@ -11,7 +11,7 @@ namespace Wc3.Tests;
 /// content stores BGRA, our encoder swaps RGBA→BGRA on write and BlpDecoder
 /// swaps back on read, so colors survive a full round-trip (JPEG-lossy, hence
 /// tolerance). A channel swap bug would show as a ~255 error on the red/blue
-/// quadrants — far outside tolerance.
+/// quadrants, far outside tolerance.
 /// </summary>
 public class TextureConvertTests
 {
@@ -62,7 +62,7 @@ public class TextureConvertTests
         Assert.Equal(h, tex.Height);
 
         // Quadrant centers, away from JPEG block edges.
-        AssertPixelNear(tex, 8, 8, 255, 0, 0, Tolerance);    // red — a R/B swap would read ~(0,0,255)
+        AssertPixelNear(tex, 8, 8, 255, 0, 0, Tolerance);    // red, a R/B swap would read ~(0,0,255)
         AssertPixelNear(tex, 24, 8, 0, 255, 0, Tolerance);   // green
         AssertPixelNear(tex, 8, 24, 0, 0, 255, Tolerance);   // blue
         AssertPixelNear(tex, 24, 24, 255, 255, 255, Tolerance); // white

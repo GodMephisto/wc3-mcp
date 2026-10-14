@@ -50,7 +50,7 @@ public class ClassicDoodadResolveTests
     [InlineData(@"Doodads\LordaeronSummer\Props\LanternPost\LanternPost")]
     [InlineData(@"Doodads\Ashenvale\Structures\AshenRubble\AshenRubble")]
     [InlineData(@"Doodads\LordaeronSummer\Plants\RiverRushes\RiverRushes")]
-    [InlineData(@"Doodads\Terrain\LOSBlocker\LOSBlocker")] // bare losblocker.mdx exists — no suffix needed
+    [InlineData(@"Doodads\Terrain\LOSBlocker\LOSBlocker")] // bare losblocker.mdx exists, no suffix needed
     public void Classic_doodad_dfil_paths_prepare_from_casc(string dfil)
     {
         if (!Directory.Exists(Install)) return;
@@ -63,7 +63,7 @@ public class ClassicDoodadResolveTests
     /// <summary>
     /// Aggregate: every doodad/destructable type placed in the GGGA corpus map either
     /// resolves a model through Prepare or has no model path at all (a handful of types
-    /// have an empty dfil/bfil — nothing to draw is correct for those, not a bug).
+    /// have an empty dfil/bfil, nothing to draw is correct for those, not a bug).
     /// Before the variation-0 fallback this map measured 103/125 with 18 Prepare failures.
     /// </summary>
     [Fact]

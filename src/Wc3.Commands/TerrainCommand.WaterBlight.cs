@@ -100,8 +100,14 @@ public static partial class TerrainCommand
             describe: $"water {DescribeWater(op, amount)} over rect [{lx},{ly}]-[{hx},{hy}]");
     }
 
-    private static string DescribeWater(WaterOp op, float amount) =>
-        op == WaterOp.Remove ? "remove" : $"{op.ToString().ToLowerInvariant()} {amount:0.###}";
+    private static string DescribeWater(WaterOp op, float amount) => op switch
+    {
+        WaterOp.Remove => "remove",
+        // The level the tile will hold, not the requested one. A set past the 16-bit field's
+        // ceiling is clamped, and the message used to claim the requested value.
+        WaterOp.Set => $"set {TerrainEditCommand.ClampWaterHeight(amount):0.###}",
+        _ => $"{op.ToString().ToLowerInvariant()} {amount:0.###}",
+    };
 
     private static DeformResult ApplyWater(
         MapDocument doc,
@@ -124,7 +130,7 @@ public static partial class TerrainCommand
         int loX = Math.Max(0, x0), hiX = Math.Min(w - 1, x1);
         int loY = Math.Max(0, y0), hiY = Math.Min(h - 1, y1);
         if (loX > hiX || loY > hiY)
-            return new(true, $"{describe} — 0 tiles changed (region off-grid)", 0);
+            return new(true, $"{describe}, 0 tiles changed (region off-grid)", 0);
 
         int changed = 0;
         for (int y = loY; y <= hiY; y++)
@@ -161,7 +167,7 @@ public static partial class TerrainCommand
 
         if (changed > 0)
             doc.AddOrReplaceModelFile(TerrainFile, env);
-        return new(true, $"{describe} — {changed} tiles changed", changed);
+        return new(true, $"{describe}, {changed} tiles changed", changed);
     }
 
     // ---- Blight -------------------------------------------------------------
@@ -231,7 +237,7 @@ public static partial class TerrainCommand
         int loX = Math.Max(0, x0), hiX = Math.Min(w - 1, x1);
         int loY = Math.Max(0, y0), hiY = Math.Min(h - 1, y1);
         if (loX > hiX || loY > hiY)
-            return new(true, $"{describe} — 0 tiles changed (region off-grid)", 0);
+            return new(true, $"{describe}, 0 tiles changed (region off-grid)", 0);
 
         int changed = 0;
         for (int y = loY; y <= hiY; y++)
@@ -247,6 +253,6 @@ public static partial class TerrainCommand
 
         if (changed > 0)
             doc.AddOrReplaceModelFile(TerrainFile, env);
-        return new(true, $"{describe} — {changed} tiles changed", changed);
+        return new(true, $"{describe}, {changed} tiles changed", changed);
     }
 }

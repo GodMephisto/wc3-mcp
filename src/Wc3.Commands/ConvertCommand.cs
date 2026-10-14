@@ -8,7 +8,7 @@ namespace Wc3.Commands;
 /// <summary>
 /// A model exported to OBJ: the .obj text, the .mtl text it references (as
 /// "&lt;model basename&gt;.mtl"), and the referenced textures converted to PNG,
-/// keyed by the file name the MTL's map_Kd lines use. Pure data — the
+/// keyed by the file name the MTL's map_Kd lines use. Pure data, the
 /// front-end decides where (and whether) files land on disk.
 /// </summary>
 public sealed record ModelExport(string Obj, string Mtl, IReadOnlyDictionary<string, byte[]> Textures);
@@ -40,7 +40,7 @@ public static class ConvertCommand
         ArgumentNullException.ThrowIfNull(doc);
         var entry = RenderModelCommand.FindModelEntry(doc, modelInternalPath)
             ?? throw new InvalidDataException(
-                $"model '{modelInternalPath}' is not in the map — only map-imported models export");
+                $"model '{modelInternalPath}' is not in the map, only map-imported models export");
         var model = ModelParser.Parse(entry.CurrentBytes, entry.FileName!);
         return Export(model, Path.GetFileNameWithoutExtension(entry.FileName!), doc, mtlName);
     }
@@ -79,7 +79,7 @@ public static class ConvertCommand
 
             var entry = FindFile(doc, path);
             if (entry is null || entry.CurrentBytes.Length == 0)
-                continue; // base-game/CASC texture — material stays plain
+                continue; // base-game/CASC texture, material stays plain
             try
             {
                 textures[pngName] = TextureConvert.Convert(

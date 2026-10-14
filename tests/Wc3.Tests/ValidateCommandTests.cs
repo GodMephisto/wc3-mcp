@@ -11,7 +11,7 @@ namespace Wc3.Tests;
 public class ValidateCommandTests
 {
     // Non-empty placeholder bytes: present (so not "missing") but they won't parse
-    // into real models — good enough to exercise presence/absence checks.
+    // into real models, good enough to exercise presence/absence checks.
     private static readonly byte[] Blob = { 1, 2, 3, 4 };
 
     [Fact]
@@ -204,7 +204,7 @@ public class ValidateCommandTests
     };
 
     /// <summary>Complete v25 MapInfo (every field the writer emits is set) so
-    /// serialization never trips over a null — mirrors MapInfoCommandTests.</summary>
+    /// serialization never trips over a null, mirrors MapInfoCommandTests.</summary>
     private static MapInfo BuildInfo()
     {
         var info = new MapInfo(MapInfoFormatVersion.v25)

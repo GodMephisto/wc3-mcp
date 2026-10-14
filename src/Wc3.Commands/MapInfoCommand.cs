@@ -75,8 +75,8 @@ public sealed record FieldChoice(string Name, string Id);
 /// <summary>
 /// Read/write access to the map-info file (war3map.w3i). The write side mutates the
 /// already-parsed War3Net <see cref="MapInfo"/> model and re-serializes the WHOLE file
-/// via War3Net's writer, so every field the parser captured — including the Unk*
-/// unknowns — is re-emitted; untouched fields survive byte-for-byte
+/// via War3Net's writer, so every field the parser captured, including the Unk*
+/// unknowns, is re-emitted; untouched fields survive byte-for-byte
 /// (<c>MapInfoCommandTests.Unchanged_reserialize_is_byte_identical</c> pins this).
 /// MapDocument.SerializeEntry has no MapInfo case, so the bytes go back through
 /// <see cref="MapDocument.AddOrReplaceRawFile"/> (raw payloads are written verbatim on Save).
@@ -151,7 +151,7 @@ public static class MapInfoCommand
         var entry = doc.AddOrReplaceRawFile(FileName, Serialize(info));
         // AddOrReplaceRawFile drops the parsed model (raw payload wins on Save); restore
         // it so in-memory readers keep seeing the mutated MapInfo. The two stay
-        // consistent — the override bytes were serialized from this very model.
+        // consistent, the override bytes were serialized from this very model.
         entry.Model = info;
         return ToFields(info, MapStrings.From(doc));
     }

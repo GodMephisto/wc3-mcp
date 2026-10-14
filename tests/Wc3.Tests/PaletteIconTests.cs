@@ -7,8 +7,8 @@ namespace Wc3.Tests;
 /// <summary>
 /// Icon-art resolution on palette entries (PaletteEntry.IconPath) and the IconPng
 /// decode hook. Hermetic tests cover the map-only path (a 'uico' delta wins with no
-/// install at all); the base-catalog path — icons from Reforged's units\unitskin.txt
-/// via CASC — soft-skips without a WC3 install, like the other GameData tests.
+/// install at all); the base-catalog path, icons from Reforged's units\unitskin.txt
+/// via CASC, soft-skips without a WC3 install, like the other GameData tests.
 /// </summary>
 public class PaletteIconTests
 {
@@ -52,7 +52,7 @@ public class PaletteIconTests
 
         var res = PaletteCommand.DoodadPalette(doc, ctx: null);
         var entry = Assert.Single(res.Entries);
-        Assert.Null(entry.IconPath);   // doodads have no icon art — null by design
+        Assert.Null(entry.IconPath);   // doodads have no icon art, null by design
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class PaletteIconTests
         var res = PaletteCommand.UnitPalette(doc, ctx);
         Assert.True(res.Ok);
 
-        // Everyday units: Footman, Peasant, Grunt — all base rows with skin-profile art.
+        // Everyday units: Footman, Peasant, Grunt, all base rows with skin-profile art.
         foreach (var code in new[] { "hfoo", "hpea", "ogru" })
         {
             var entry = res.Entries.FirstOrDefault(e => e.Rawcode == code);

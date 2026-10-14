@@ -187,7 +187,10 @@ public static class TerrainAuditCommand
             if (t.IsEdgeTile) edge++;
 
             groundIndices.Add(t.Texture);
-            cliffIndices.Add(t.CliffTexture);
+            // The 0xF sentinel means "no cliff" and is not an index, so it is not one of the
+            // distinct cliff textures in use. Counting it made a map declaring two cliff tiles
+            // report three, on every map whose uncliffed corners carry it.
+            if (t.CliffTexture != TerrainEditCommand.CliffTextureNone) cliffIndices.Add(t.CliffTexture);
 
             if (h != 0f || cl != 0) allZero = false;
             signatures.Add(new TileSignature(h, cl, t.Texture, t.CliffTexture, t.Flags));

@@ -4,7 +4,7 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Pure-logic tests for StringsCommand.Parse/Get/SetEntry — the war3map.wts text splicing
+/// Pure-logic tests for StringsCommand.Parse/Get/SetEntry, the war3map.wts text splicing
 /// that StringImportView relies on. Byte-faithfulness is the core contract: SetEntry must
 /// touch ONLY the target entry's body and leave every other character verbatim.
 /// </summary>
@@ -136,7 +136,7 @@ public class StringsCommandTests
     [Fact]
     public void SetEntry_EmptyBlock_GetsTerminatorMatchingFile()
     {
-        // STRING 12's body is empty — the terminator must be inferred from the '{' line.
+        // STRING 12's body is empty, the terminator must be inferred from the '{' line.
         var result = StringsCommand.SetEntry(Crlf, 12, "filled");
         Assert.EndsWith("STRING 12\r\n{\r\nfilled\r\n}\r\n", result);
     }

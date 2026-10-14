@@ -7,7 +7,7 @@ namespace Wc3.Commands;
 /// Static, read-only sanity check ("lint") over a loaded map. Surfaces the loader's
 /// own diagnostics plus missing/empty required files and obviously-wrong map-info
 /// values. A map is "valid" when it has zero Error-severity issues; warnings never
-/// flip the verdict. Pure over <see cref="MapDocument"/> — writes nothing.
+/// flip the verdict. Pure over <see cref="MapDocument"/>, writes nothing.
 /// </summary>
 public static class ValidateCommand
 {
@@ -19,7 +19,7 @@ public static class ValidateCommand
     // A map needs at least one of these to run at all.
     private static readonly string[] ScriptFiles = { "war3map.j", "war3map.lua" };
 
-    // Files the map cannot run without — an empty one of these is fatal, not cosmetic.
+    // Files the map cannot run without, an empty one of these is fatal, not cosmetic.
     private static bool IsCritical(string fileName) =>
         RequiredFiles.Contains(fileName, StringComparer.OrdinalIgnoreCase)
         || ScriptFiles.Contains(fileName, StringComparer.OrdinalIgnoreCase);
@@ -44,7 +44,7 @@ public static class ValidateCommand
                 DiagnosticSeverity.Error, "missing-file", "war3map.j",
                 "map has no script file (war3map.j or war3map.lua); it cannot run"));
 
-        // 4. Empty named files are almost always a packaging mistake — and fatal when the
+        // 4. Empty named files are almost always a packaging mistake, and fatal when the
         //    empty entry is one the map needs to run (a required file or its only script).
         // RawSize rather than RawBytes.Length. "Is this entry empty" is a question the archive's
         // block table already answers, and reading the bytes to find out decompresses every entry

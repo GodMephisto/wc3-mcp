@@ -225,7 +225,7 @@ public static class StringsCommand
                 if (bodyLine == "}") { closeLineStart = lineStart; scan = afterLine; break; }
                 scan = afterLine;
             }
-            if (closeLineStart < 0) { pos = next; continue; }   // unterminated — skip entry
+            if (closeLineStart < 0) { pos = next; continue; }   // unterminated, skip entry
 
             spans.Add(new EntrySpan(id, bodyStart, closeLineStart));
             pos = scan;

@@ -35,7 +35,7 @@ internal static class RawcodeAllocator
                     int code = new string(new[] { c0, a, b, d }).FromRawcode();
                     if (!used.Contains(code)) return code;
                 }
-        // Exhausted (astronomically unlikely) — vary the first char too.
+        // Exhausted (astronomically unlikely), vary the first char too.
         foreach (var w in alphabet)
             foreach (var a in alphabet)
                 foreach (var b in alphabet)

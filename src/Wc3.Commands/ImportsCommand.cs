@@ -10,7 +10,7 @@ namespace Wc3.Commands;
 public sealed record ImportEntry(string Path, bool InManifest, bool InArchive, int? SizeBytes);
 
 /// <summary>Read-only imports listing. HasManifest is false when war3map.imp is absent
-/// (or failed to parse — the listing then degrades to archive files only).</summary>
+/// (or failed to parse, the listing then degrades to archive files only).</summary>
 public sealed record ImportsListResult(bool HasManifest, IReadOnlyList<ImportEntry> Entries);
 
 /// <summary>

@@ -50,7 +50,7 @@ public class RoundtripTests
 
         var original = MapDocument.Load(bytes);
 
-        // Fixture sanity: the unnamed entries must be present AND readable —
+        // Fixture sanity: the unnamed entries must be present AND readable , 
         // an empty-placeholder entry would make the comparison below vacuous.
         var origUnnamed = UnnamedContents(original);
         Assert.Equal(AsMultiset(unnamedPayloads), AsMultiset(origUnnamed));

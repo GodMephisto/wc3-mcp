@@ -5,7 +5,7 @@ namespace Wc3.Modeling;
 
 /// <summary>
 /// Skeletal animation data parsed from a model: named sequences (Stand, Walk, ...)
-/// and the node hierarchy (bones + helpers) with their keyframe tracks. Optional —
+/// and the node hierarchy (bones + helpers) with their keyframe tracks. Optional , 
 /// models whose animation data is absent or unparseable simply have no skeleton
 /// and render in bind pose.
 /// </summary>

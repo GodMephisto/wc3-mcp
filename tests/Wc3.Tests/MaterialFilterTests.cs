@@ -63,7 +63,7 @@ public class MaterialFilterTests
     [Fact]
     public void Mdl_geoset_without_material_stays_none()
     {
-        // No Materials block, no MaterialID — the round-trip default is opaque.
+        // No Materials block, no MaterialID, the round-trip default is opaque.
         var mdl = """
             Geoset {
                 Vertices 3 { { 0, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 }, },
@@ -113,7 +113,7 @@ public class MaterialFilterTests
     [Fact]
     public void Posing_preserves_the_geoset_filter_mode()
     {
-        // One bone, 90° about Z at Stand's first frame — enough for the poser to
+        // One bone, 90° about Z at Stand's first frame, enough for the poser to
         // actually rebuild the geoset rather than hand back the same instance.
         var rotation = new AnimTrack<Quaternion>(
             new[] { new AnimKey<Quaternion>(0, Quaternion.CreateFromAxisAngle(Vector3.UnitZ, MathF.PI / 2)) }, -1);

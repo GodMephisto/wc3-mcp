@@ -7,7 +7,7 @@ namespace Wc3.Commands;
 /// <summary>
 /// HiveWE-style terrain height brush over a map's war3map.w3e. The environment is a
 /// (Width+1)×(Height+1) grid of corner tiles (<c>env.TerrainTiles</c>, row-major from the
-/// map's south-west corner, index = y*(Width+1) + x — the same convention
+/// map's south-west corner, index = y*(Width+1) + x, the same convention
 /// <see cref="Wc3.Render.TerrainRenderer"/> reads). Each tile's <c>Height</c> is its
 /// ground elevation excluding cliff level; <b>raise</b>/<b>lower</b> shift it, <b>set</b>
 /// assigns an absolute value, <b>flatten</b> levels a region to its own mean, and
@@ -28,7 +28,7 @@ public static partial class TerrainCommand
     /// <summary>Brush footprint.</summary>
     public enum BrushShape { Square, Circle }
 
-    /// <summary>How a brush changes each affected tile's integer <c>CliffLevel</c> — the
+    /// <summary>How a brush changes each affected tile's integer <c>CliffLevel</c>, the
     /// discrete plateau layer Warcraft III renders vertical cliff faces between (added to
     /// <c>Height</c> for elevation; a blank map's base layer is 0).</summary>
     public enum CliffOp { Raise, Lower, Set }
@@ -195,9 +195,18 @@ public static partial class TerrainCommand
     private static string FmtAmount(HeightOp op, float amount) => op switch
     {
         HeightOp.Raise or HeightOp.Lower => $"{amount:0.###} ",
-        HeightOp.Set => $"{amount:0.###} ",
+        // Report the height the tile will actually hold. A set past the 16-bit field's ceiling is
+        // clamped, and the message used to claim the requested value while terrain_corner_set
+        // reported the effective one.
+        HeightOp.Set => $"{TerrainEditCommand.ClampGroundHeight(amount):0.###} ",
         _ => "",
     };
+
+    /// <summary>The cliff level the brush will actually write. A set past the 0 to 15 the field
+    /// holds is clamped, and the message used to echo the requested value while
+    /// terrain_corner_set reported the effective one.</summary>
+    private static int EffectiveCliffLevel(CliffOp op, int level) =>
+        op == CliffOp.Set ? TerrainEditCommand.ClampCliffLevel(level) : level;
 
     private static DeformResult Apply(
         MapDocument doc,
@@ -228,7 +237,7 @@ public static partial class TerrainCommand
         int loX = Math.Max(0, x0), hiX = Math.Min(w - 1, x1);
         int loY = Math.Max(0, y0), hiY = Math.Min(h - 1, y1);
         if (loX > hiX || loY > hiY)
-            return new(true, $"{describe} — 0 tiles changed (region off-grid)", 0);
+            return new(true, $"{describe}, 0 tiles changed (region off-grid)", 0);
 
         // Flatten needs the region mean before writing anything.
         float flattenTarget = 0f;
@@ -239,7 +248,7 @@ public static partial class TerrainCommand
                 for (int x = loX; x <= hiX; x++)
                     if (keep(x, y)) { s += src[y * w + x]; n++; }
             if (n == 0)
-                return new(true, $"{describe} — 0 tiles changed (empty footprint)", 0);
+                return new(true, $"{describe}, 0 tiles changed (empty footprint)", 0);
             flattenTarget = (float)(s / n);
         }
 
@@ -277,7 +286,7 @@ public static partial class TerrainCommand
         // doesn't force a re-serialize on Save.
         if (changed > 0)
             doc.AddOrReplaceModelFile(TerrainFile, env);
-        return new(true, $"{describe} — {changed} tiles changed", changed);
+        return new(true, $"{describe}, {changed} tiles changed", changed);
     }
 
     private static PaintResult ApplyPaint(
@@ -317,7 +326,7 @@ public static partial class TerrainCommand
         int loX = Math.Max(0, x0), hiX = Math.Min(w - 1, x1);
         int loY = Math.Max(0, y0), hiY = Math.Min(h - 1, y1);
         if (loX > hiX || loY > hiY)
-            return new(true, $"{describe} — 0 tiles changed (region off-grid)", 0);
+            return new(true, $"{describe}, 0 tiles changed (region off-grid)", 0);
 
         int changed = 0;
         for (int y = loY; y <= hiY; y++)
@@ -344,7 +353,7 @@ public static partial class TerrainCommand
         // doesn't force a re-serialize on Save.
         if (changed > 0)
             doc.AddOrReplaceModelFile(TerrainFile, env);
-        return new(true, $"{describe} — {changed} tiles changed", changed);
+        return new(true, $"{describe}, {changed} tiles changed", changed);
     }
 
     // --- cliff level / ramp geometry ----------------------------------------
@@ -383,7 +392,7 @@ public static partial class TerrainCommand
                 return dx * dx + dy * dy <= r2;
             },
             op, level,
-            describe: $"cliff {op.ToString().ToLowerInvariant()} {level} over {shape.ToString().ToLowerInvariant()} r{radius} at ({centerX},{centerY})");
+            describe: $"cliff {op.ToString().ToLowerInvariant()} {EffectiveCliffLevel(op, level)} over {shape.ToString().ToLowerInvariant()} r{radius} at ({centerX},{centerY})");
     }
 
     /// <summary>
@@ -403,7 +412,7 @@ public static partial class TerrainCommand
             x0: minX, y0: minY, x1: maxX, y1: maxY,
             keep: static (_, _) => true,
             op, level,
-            describe: $"cliff {op.ToString().ToLowerInvariant()} {level} over rect ({minX},{minY})-({maxX},{maxY})");
+            describe: $"cliff {op.ToString().ToLowerInvariant()} {EffectiveCliffLevel(op, level)} over rect ({minX},{minY})-({maxX},{maxY})");
     }
 
     /// <summary>
@@ -483,7 +492,7 @@ public static partial class TerrainCommand
         int loX = Math.Max(0, x0), hiX = Math.Min(w - 1, x1);
         int loY = Math.Max(0, y0), hiY = Math.Min(h - 1, y1);
         if (loX > hiX || loY > hiY)
-            return new(true, $"{describe} — 0 tiles changed (region off-grid)", 0);
+            return new(true, $"{describe}, 0 tiles changed (region off-grid)", 0);
 
         int changed = 0;
         for (int y = loY; y <= hiY; y++)
@@ -510,7 +519,7 @@ public static partial class TerrainCommand
 
         if (changed > 0)
             doc.AddOrReplaceModelFile(TerrainFile, env);
-        return new(true, $"{describe} — {changed} tiles changed", changed);
+        return new(true, $"{describe}, {changed} tiles changed", changed);
     }
 
     private static DeformResult ApplyRamp(
@@ -533,7 +542,7 @@ public static partial class TerrainCommand
         int loX = Math.Max(0, x0), hiX = Math.Min(w - 1, x1);
         int loY = Math.Max(0, y0), hiY = Math.Min(h - 1, y1);
         if (loX > hiX || loY > hiY)
-            return new(true, $"{describe} — 0 tiles changed (region off-grid)", 0);
+            return new(true, $"{describe}, 0 tiles changed (region off-grid)", 0);
 
         int changed = 0;
         for (int y = loY; y <= hiY; y++)
@@ -549,7 +558,7 @@ public static partial class TerrainCommand
 
         if (changed > 0)
             doc.AddOrReplaceModelFile(TerrainFile, env);
-        return new(true, $"{describe} — {changed} tiles changed", changed);
+        return new(true, $"{describe}, {changed} tiles changed", changed);
     }
 
     /// <summary>Mean of a tile and its in-grid 4-neighbours, read from the snapshot.

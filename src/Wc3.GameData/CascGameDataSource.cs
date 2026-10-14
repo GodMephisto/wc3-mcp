@@ -39,7 +39,7 @@ public sealed class CascGameDataSource : IGameDataSource
     /// <summary>
     /// Every file name the storage's root/listfile knows, as full storage paths including
     /// the w3mod-layer prefixes (e.g. "war3.w3mod:doodads\...\ruins_flower0.mdx"). This is
-    /// the discovery tool for "where does this asset actually live?" — names come from the
+    /// the discovery tool for "where does this asset actually live?", names come from the
     /// listfile, so on a partial install an enumerated name may still fail to open.
     /// </summary>
     public IEnumerable<string> EnumerateFileNames()
