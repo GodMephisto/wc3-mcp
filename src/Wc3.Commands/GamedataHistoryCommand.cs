@@ -35,7 +35,7 @@ public static class GamedataHistoryCommand
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("a name is required", nameof(name));
 
-        var schemas = GamedataSupport.LoadAll(schemasDir);
+        var schemas = GamedataSupport.LoadAll(schemasDir, GameSchemaCommand.SchemaPart.Objects | GameSchemaCommand.SchemaPart.Script);
         var kindBuilds = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         var objectFiles = new List<string>();
         var buildsWithName = new List<string>();

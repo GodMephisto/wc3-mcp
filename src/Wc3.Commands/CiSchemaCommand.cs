@@ -49,7 +49,7 @@ public static class CiSchemaCommand
             if (!File.Exists(Path.Combine(sub, "manifest.json"))) continue;
             try
             {
-                var schema = GameSchemaCommand.Load(sub);
+                var schema = GameSchemaCommand.Load(sub, GameSchemaCommand.SchemaPart.Objects);
                 loaded.Add(new LoadedSchema(sub, schema.Build, schema));
                 builds.Add(new CiSchemaBuildResult(schema.Build, sub, true, null));
             }

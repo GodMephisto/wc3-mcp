@@ -246,22 +246,66 @@ public static class GameSchemaCommand
         Write("enums.json", schema.Enums);
     }
 
-    public static GameSchema Load(string dir)
+    /// <summary>
+    /// Which sections of a schema folder to read. The four payloads are about 2.5 MB per build and
+    /// a command usually reads one of them, so reading all four to answer a question about objects
+    /// parses more than twice what it needs. A section not asked for stays null, exactly as an
+    /// absent file does.
+    /// </summary>
+    [Flags]
+    public enum SchemaPart
+    {
+        None = 0,
+        Objects = 1,
+        Triggers = 2,
+        Script = 4,
+        Enums = 8,
+        All = Objects | Triggers | Script | Enums,
+    }
+
+    public static GameSchema Load(string dir) => Load(dir, SchemaPart.All);
+
+    /// <summary>Read the named sections. Omit a section and its payload is not read at all.</summary>
+    public static GameSchema Load(string dir, SchemaPart want)
     {
         var manifestPath = Path.Combine(dir, "manifest.json");
         if (!File.Exists(manifestPath)) throw new FileNotFoundException(manifestPath, $"not a schema folder, no manifest.json in {dir}");
         T? Read<T>(string file) where T : class =>
             File.Exists(Path.Combine(dir, file)) ? JsonSerializer.Deserialize<T>(File.ReadAllText(Path.Combine(dir, file)), Json) : null;
+        bool has(SchemaPart p) => (want & p) != 0;
+
         var manifest = Read<GameSchema>("manifest.json")!;
         return manifest with
         {
-            Objects = Read<Dictionary<string, List<SchemaField>>>("objects.json")?
-                .ToDictionary(kv => kv.Key, kv => (IReadOnlyList<SchemaField>)kv.Value),
-            Triggers = Read<SchemaTriggers>("triggers.json"),
-            Script = Read<Dictionary<string, JassApi>>("script.json"),
-            Enums = Read<Dictionary<string, List<SchemaEnumValue>>>("enums.json")?
-                .ToDictionary(kv => kv.Key, kv => (IReadOnlyList<SchemaEnumValue>)kv.Value),
+            Objects = has(SchemaPart.Objects)
+                ? Read<Dictionary<string, List<SchemaField>>>("objects.json")?
+                    .ToDictionary(kv => kv.Key, kv => (IReadOnlyList<SchemaField>)kv.Value)
+                : null,
+            Triggers = has(SchemaPart.Triggers) ? Read<SchemaTriggers>("triggers.json") : null,
+            Script = has(SchemaPart.Script) ? Read<Dictionary<string, JassApi>>("script.json") : null,
+            Enums = has(SchemaPart.Enums)
+                ? Read<Dictionary<string, List<SchemaEnumValue>>>("enums.json")?
+                    .ToDictionary(kv => kv.Key, kv => (IReadOnlyList<SchemaEnumValue>)kv.Value)
+                : null,
         };
+    }
+
+    /// <summary>
+    /// The manifest alone, without objects, triggers, script or enums. The manifest carries the
+    /// build name, era, section list, inputs and missing list, which is everything a command that
+    /// reports what a build IS needs. It is a few KB where the four sections are a few MB.
+    /// </summary>
+    public static GameSchema LoadManifest(string dir) => Load(dir, SchemaPart.None);
+
+    /// <summary>
+    /// The manifest and the script section only, skipping objects, triggers and enums.
+    /// The identifier union scan reads every build's script.json and nothing else, and objects.json
+    /// is larger than script.json, so loading the whole schema there parses 60% it never looks at.
+    /// </summary>
+    public static (string Build, IReadOnlyDictionary<string, JassApi>? Script) LoadScript(string dir)
+    {
+        var schema = Load(dir, SchemaPart.Script);
+        return (schema.Build, schema.Script);
     }
 
     public static SchemaDiffResult Diff(string dirA, string dirB) => Diff(Load(dirA), Load(dirB));

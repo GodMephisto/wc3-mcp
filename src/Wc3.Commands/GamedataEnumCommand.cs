@@ -33,7 +33,7 @@ public static class GamedataEnumCommand
             throw new ArgumentException("a field type is required", nameof(type));
 
         var schemas = target is null
-            ? GamedataSupport.LoadAll(schemasDir)
+            ? GamedataSupport.LoadAll(schemasDir, GameSchemaCommand.SchemaPart.Enums)
             : new[] { GamedataSupport.Find(schemasDir, target) };
 
         var entries = new List<GamedataEnumEntry>();
@@ -52,7 +52,7 @@ public static class GamedataEnumCommand
     public static IReadOnlyList<string> Types(string? target = null, string? schemasDir = null)
     {
         var schemas = target is null
-            ? GamedataSupport.LoadAll(schemasDir)
+            ? GamedataSupport.LoadAll(schemasDir, GameSchemaCommand.SchemaPart.Enums)
             : new[] { GamedataSupport.Find(schemasDir, target) };
 
         var set = new SortedSet<string>(StringComparer.Ordinal);

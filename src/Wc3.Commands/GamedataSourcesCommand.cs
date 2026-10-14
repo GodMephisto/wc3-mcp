@@ -48,7 +48,9 @@ public static class GamedataSourcesCommand
     /// <summary>The provenance index, without writing it, so a caller can render or return it directly.</summary>
     public static GamedataSourcesResult Build(string? schemasDir = null)
     {
-        var schemas = GamedataSupport.LoadAll(schemasDir);
+        // Manifests, not full schemas. This command reports what each build is and hashes its
+        // section files for provenance, and never reads the parsed objects or script.
+        var schemas = GamedataSupport.LoadAllManifests(schemasDir);
         return new GamedataSourcesResult(
             GameSchemaCommand.SchemaVersion, schemas.Select(BuildEntry).ToList());
     }
@@ -65,8 +67,25 @@ public static class GamedataSourcesCommand
                 Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()));
         }
         return new GamedataSourceEntry(
-            one.Build, GamedataSupport.Era(one.Build), GameSchemaCommand.Sections(one.Schema),
+            one.Build, GamedataSupport.Era(one.Build), SectionsPresent(one.Dir),
             hashes, one.Schema.Inputs, one.Schema.Missing);
+    }
+
+    /// <summary>
+    /// The sections the folder holds, in the same order and with the same four names
+    /// <see cref="GameSchemaCommand.Sections"/> reports, taken from the section files that exist
+    /// rather than from loaded payloads, since the manifest-only load carries none.
+    /// </summary>
+    private static IReadOnlyList<string> SectionsPresent(string dir)
+    {
+        var names = new List<string>();
+        foreach (var (section, file) in new[]
+                 {
+                     ("objects", "objects.json"), ("triggers", "triggers.json"),
+                     ("script", "script.json"), ("enums", "enums.json"),
+                 })
+            if (File.Exists(Path.Combine(dir, file))) names.Add(section);
+        return names;
     }
 
     /// <summary>

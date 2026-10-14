@@ -58,23 +58,17 @@ public static class TargetCompatCommand
         // Resolve schemasDir.
         var resolvedSchemas = ResolveSchemasDir(schemasDir);
 
-        // Build a single identifier-to-builds index across all schemas.
-        var allNatives = new Dictionary<string, JassNativeDecl>(StringComparer.Ordinal);
-        var allGlobals = new Dictionary<string, JassGlobalDecl>(StringComparer.Ordinal);
-        var allTypes = new Dictionary<string, JassTypeDecl>(StringComparer.Ordinal);
-        var allFunctions = new Dictionary<string, JassFunctionDecl>(StringComparer.Ordinal);
-        var identifierBuilds = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-
-        BuildUnionIndex(resolvedSchemas, allNatives, allGlobals, allTypes, allFunctions,
-            identifierBuilds);
+        // The union scan over every schema folder, cached, so a second compat call in the same
+        // process does not re-read the 203 MB of script.json it just read.
+        var scan = LoadUnion(resolvedSchemas);
 
         // Load the map.
         MapDocument doc = MapDocument.Load(mapPath);
 
         // 1. Script check (Compile).
         CheckScript(doc, target, resolvedSchemas,
-            allNatives, allGlobals, allTypes, allFunctions,
-            identifierBuilds, findings, notChecked);
+            scan.Natives, scan.Globals, scan.Types, scan.Functions,
+            scan.Builds, findings, notChecked);
 
         // 2. Display check (object fields).
         CheckObjects(doc, target, resolvedSchemas, findings, notChecked);
@@ -110,17 +104,22 @@ public static class TargetCompatCommand
         Dictionary<string, JassFunctionDecl> allFunctions,
         Dictionary<string, HashSet<string>> identifierBuilds)
     {
-        foreach (var subDir in Directory.EnumerateDirectories(schemasDir))
+        // Parse each build independently, in parallel, then merge in folder order so the
+        // first-declaration-wins rule is deterministic. The parse is the whole cost, 170 MB of
+        // script.json across the shipped 159 builds, and it was serial.
+        var parts = Directory.EnumerateDirectories(schemasDir)
+            .Where(subDir => File.Exists(Path.Combine(subDir, "manifest.json")))
+            .OrderBy(d => d, StringComparer.Ordinal)
+            .AsParallel().AsOrdered()
+            .Select(ReadUnionPart)
+            .ToList();
+
+        foreach (var part in parts)
         {
-            string manifestPath = Path.Combine(subDir, "manifest.json");
-            if (!File.Exists(manifestPath)) continue;
+            if (part is null) continue;
+            var (build, script) = part.Value;
 
-            GameSchema schema = GameSchemaCommand.Load(subDir);
-            string build = schema.Build;
-
-            if (schema.Script is null) continue;
-
-            foreach (var kv in schema.Script)
+            foreach (var kv in script)
             {
                 // Only common.j and blizzard.j for the compile check. Skip AI scripts.
                 string scriptKey = kv.Key;
@@ -160,6 +159,13 @@ public static class TargetCompatCommand
         }
     }
 
+    /// <summary>One build's contribution to the union, read independently for a parallel scan.</summary>
+    private static (string Build, IReadOnlyDictionary<string, JassApi> Script)? ReadUnionPart(string subDir)
+    {
+        var (build, script) = GameSchemaCommand.LoadScript(subDir);
+        return script is null ? null : (build, script);
+    }
+
     /// <summary>
     /// Every identifier any schema under a schemas directory declares, with the kind it is and
     /// every build that declares it, oldest build first. Kind is inferred the way a compat finding
@@ -176,23 +182,95 @@ public static class TargetCompatCommand
     public static IdentifierIndex LoadIdentifierIndex(string? schemasDir = null)
     {
         var resolved = ResolveSchemasDir(schemasDir);
+        string key = IndexKey(resolved);
+        lock (IndexLock)
+            if (_indexCache is { } hit && hit.Key == key) return hit.Index;
+
+        var scan = LoadUnion(resolved);
+
+        // Parse each build name once. Gbn.Parse runs a regex, and the comparer used to call it on
+        // both sides of every comparison, which over 157 builds and 5,393 identifiers is millions
+        // of regex passes. Measured, this alone was most of the cold scan's 16 seconds.
+        var parsed = new Dictionary<string, Gbn>(StringComparer.Ordinal);
+        foreach (var build in scan.Builds.Values.SelectMany(v => v).Distinct(StringComparer.Ordinal))
+            parsed[build] = Gbn.Parse(build);
+        var byVersion = Comparer<string>.Create((a, b) => Gbn.Compare(parsed[a], parsed[b]));
+
+        var kinds = new Dictionary<string, string>(StringComparer.Ordinal);
+        var byBuild = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        foreach (var kv in scan.Builds)
+        {
+            kinds[kv.Key] = InferKind(kv.Key, scan.Natives, scan.Globals, scan.Types, scan.Functions);
+            byBuild[kv.Key] = kv.Value.OrderBy(b => b, byVersion).ToList();
+        }
+        var built = new IdentifierIndex(kinds, byBuild);
+        lock (IndexLock) _indexCache = (key, built);
+        return built;
+    }
+
+    private static readonly object IndexLock = new();
+    private static (string Key, IdentifierIndex Index)? _indexCache;
+    private static (string Key, UnionScan Scan)? _unionCache;
+
+    /// <summary>
+    /// Every native, global, type, function and build membership across all schema folders. Held
+    /// rather than re-derived, because deriving it reads and parses every build's script.json.
+    /// </summary>
+    private sealed record UnionScan(
+        Dictionary<string, JassNativeDecl> Natives,
+        Dictionary<string, JassGlobalDecl> Globals,
+        Dictionary<string, JassTypeDecl> Types,
+        Dictionary<string, JassFunctionDecl> Functions,
+        Dictionary<string, HashSet<string>> Builds);
+
+    /// <summary>The union scan, cached under the same freshness key as the identifier index.</summary>
+    private static UnionScan LoadUnion(string resolvedSchemas)
+    {
+        string key = IndexKey(resolvedSchemas);
+        lock (IndexLock)
+            if (_unionCache is { } hit && hit.Key == key) return hit.Scan;
+
         var natives = new Dictionary<string, JassNativeDecl>(StringComparer.Ordinal);
         var globals = new Dictionary<string, JassGlobalDecl>(StringComparer.Ordinal);
         var types = new Dictionary<string, JassTypeDecl>(StringComparer.Ordinal);
         var functions = new Dictionary<string, JassFunctionDecl>(StringComparer.Ordinal);
         var builds = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        BuildUnionIndex(resolved, natives, globals, types, functions, builds);
+        BuildUnionIndex(resolvedSchemas, natives, globals, types, functions, builds);
 
-        var kinds = new Dictionary<string, string>(StringComparer.Ordinal);
-        var byBuild = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
-        foreach (var kv in builds)
+        var scan = new UnionScan(natives, globals, types, functions, builds);
+        lock (IndexLock) _unionCache = (key, scan);
+        return scan;
+    }
+
+    /// <summary>
+    /// A cheap key that changes when the schema set does, so the cache cannot go stale. Building
+    /// the index reads and parses every build's script.json, 203 MB across 159 folders, which cost
+    /// 19 seconds inside compat_explain. A build folder added, removed or regenerated changes the
+    /// key, and only then is the JSON parsed again.
+    /// </summary>
+    private static string IndexKey(string schemasDir)
+    {
+        var sb = new StringBuilder(schemasDir);
+        foreach (var sub in Directory.EnumerateDirectories(schemasDir)
+                     .OrderBy(d => d, StringComparer.Ordinal))
         {
-            kinds[kv.Key] = InferKind(kv.Key, natives, globals, types, functions);
-            byBuild[kv.Key] = kv.Value
-                .OrderBy(b => b, Comparer<string>.Create((a, b) => Gbn.Compare(Gbn.Parse(a), Gbn.Parse(b))))
-                .ToList();
+            var manifest = Path.Combine(sub, "manifest.json");
+            if (!File.Exists(manifest)) continue;
+            sb.Append('|').Append(Path.GetFileName(sub))
+              .Append('@').Append(File.GetLastWriteTimeUtc(manifest).Ticks);
         }
-        return new IdentifierIndex(kinds, byBuild);
+        return sb.ToString();
+    }
+
+    /// <summary>Drop the cached union scan and index. For a caller that regenerates schemas
+    /// in-process, where the key would not change because the folder names stay the same.</summary>
+    public static void ResetIdentifierIndexCache()
+    {
+        lock (IndexLock)
+        {
+            _indexCache = null;
+            _unionCache = null;
+        }
     }
 
     /// <summary>

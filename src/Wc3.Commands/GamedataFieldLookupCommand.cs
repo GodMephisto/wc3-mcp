@@ -26,7 +26,7 @@ public static class GamedataFieldLookupCommand
             throw new ArgumentException("a query is required", nameof(query));
 
         var schemas = target is null
-            ? GamedataSupport.LoadAll(schemasDir)
+            ? GamedataSupport.LoadAll(schemasDir, GameSchemaCommand.SchemaPart.Objects)
             : new[] { GamedataSupport.Find(schemasDir, target) };
 
         var matches = new List<GamedataFieldMatch>();

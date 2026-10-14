@@ -74,4 +74,38 @@ public sealed class CompatExplainTests : IDisposable
         Assert.False(r.DeclaredInTarget);
         Assert.Empty(r.Builds);
     }
+
+    /// <summary>
+    /// The union scan reads and parses every build's script.json, which across the shipped 159
+    /// builds is 203 MB and cost 19 seconds inside compat_explain. Two calls in one process must
+    /// reuse it.
+    /// </summary>
+    [Fact]
+    public void The_identifier_index_is_reused_across_calls()
+    {
+        Schema("TFT-v1.30.1.10211", "NewTargetNative");
+
+        var a = TargetCompatCommand.LoadIdentifierIndex(_dir);
+        var b = TargetCompatCommand.LoadIdentifierIndex(_dir);
+        Assert.Same(a, b);
+
+        // A schema regenerated in place keeps its folder name and its timestamp can be the same
+        // second, so the reset is the route a caller uses when the key alone would not change.
+        TargetCompatCommand.ResetIdentifierIndexCache();
+        Assert.NotSame(a, TargetCompatCommand.LoadIdentifierIndex(_dir));
+    }
+
+    /// <summary>A build folder added or regenerated changes the freshness key on its own.</summary>
+    [Fact]
+    public void A_new_build_folder_invalidates_the_index_without_a_reset()
+    {
+        Schema("TFT-v1.30.1.10211", "NewTargetNative");
+        var a = TargetCompatCommand.LoadIdentifierIndex(_dir);
+
+        Schema("TFT-v1.31.0.10420", "NewTargetNative", "ExtraNative");
+        var b = TargetCompatCommand.LoadIdentifierIndex(_dir);
+
+        Assert.NotSame(a, b);
+        Assert.Contains("ExtraNative", b.Kinds.Keys);
+    }
 }

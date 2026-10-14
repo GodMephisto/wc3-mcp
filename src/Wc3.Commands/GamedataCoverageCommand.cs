@@ -17,7 +17,7 @@ public static class GamedataCoverageCommand
 {
     public static GamedataCoverageResult Execute(string? schemasDir = null)
     {
-        var schemas = GamedataSupport.LoadAll(schemasDir);
+        var schemas = GamedataSupport.LoadAll(schemasDir, GameSchemaCommand.SchemaPart.Objects | GameSchemaCommand.SchemaPart.Script);
         var rows = schemas.Select(one => new GamedataCoverageRow(
             one.Build,
             GamedataSupport.Era(one.Build),

@@ -27,7 +27,7 @@ public static class GamedataBoundsCommand
             throw new ArgumentException("a field code is required", nameof(code));
 
         var schemas = target is null
-            ? GamedataSupport.LoadAll(schemasDir)
+            ? GamedataSupport.LoadAll(schemasDir, GameSchemaCommand.SchemaPart.Objects)
             : new[] { GamedataSupport.Find(schemasDir, target) };
 
         var entries = new List<GamedataBoundsEntry>();

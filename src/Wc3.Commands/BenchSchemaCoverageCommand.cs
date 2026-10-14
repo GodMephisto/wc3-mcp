@@ -36,7 +36,7 @@ public static class BenchSchemaCoverageCommand
 
     /// <summary>Resolve the schemas directory and measure every schema folder in it.</summary>
     public static SchemaCoverageResult Execute(string? schemasDir = null) =>
-        Analyze(GamedataSupport.LoadAll(schemasDir));
+        Analyze(GamedataSupport.LoadAll(schemasDir, GameSchemaCommand.SchemaPart.Objects));
 
     /// <summary>
     /// Classify and total a set of loaded schemas. An era is object-covered when any schema in it

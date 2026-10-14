@@ -1,4 +1,5 @@
 // tests/Wc3.Tests/McpToolSweepTests.cs
+using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Text.Json;
 using ModelContextProtocol.Client;
@@ -85,6 +86,7 @@ public class McpToolSweepTests
             _out.WriteLine($"fixtures: rawcode={fx.Rawcode}, creation={fx.CreationNumber}");
 
             var broke = new List<string>();
+            var timings = new Dictionary<string, long>(StringComparer.Ordinal);
             int answered = 0, refused = 0;
 
             foreach (var tool in readOnly)
@@ -99,6 +101,7 @@ public class McpToolSweepTests
                 }
 
                 CallToolResult result;
+                var sw = Stopwatch.StartNew();
                 try
                 {
                     result = await client.CallToolAsync(tool.Name, args, cancellationToken: ct);
@@ -109,6 +112,8 @@ public class McpToolSweepTests
                     broke.Add($"{tool.Name}: threw {ex.GetType().Name} {ex.Message}");
                     continue;
                 }
+                sw.Stop();
+                timings[tool.Name] = sw.ElapsedMilliseconds;
 
                 var text = string.Concat(result.Content.OfType<TextContentBlock>().Select(c => c.Text));
                 bool isError = result.IsError == true;
@@ -126,10 +131,20 @@ public class McpToolSweepTests
                 answered++;
                 if (string.IsNullOrWhiteSpace(text))
                     broke.Add($"{tool.Name}: answered with nothing at all");
-                _out.WriteLine($"  {tool.Name,-24} ok, {text.Length,7:N0} chars  {Trim(text)}");
+                _out.WriteLine($"  {tool.Name,-24} ok, {text.Length,7:N0} chars {sw.ElapsedMilliseconds,6:N0} ms");
             }
 
             _out.WriteLine($"\n{answered} answered, {refused} clean refusal(s), {broke.Count} broken");
+
+            // The ranking. A sweep that only reports pass or fail hides that one tool took most of
+            // the wall clock, which is the whole reason to run it against a real map.
+            var ranked = timings.OrderByDescending(kv => kv.Value).ToList();
+            var total = ranked.Sum(kv => kv.Value);
+            long median = ranked.Count == 0 ? 0 : ranked[ranked.Count / 2].Value;
+            _out.WriteLine($"\n{ranked.Count} timed, {total:N0} ms total, median {median:N0} ms");
+            foreach (var (name, ms) in ranked.Take(20))
+                _out.WriteLine($"  {name,-24} {ms,7:N0} ms");
+
             Assert.True(broke.Count == 0, string.Join("\n", broke));
         });
     }
