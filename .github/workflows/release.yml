@@ -7,13 +7,11 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   release:
     runs-on: windows-latest
-    # Job level, because a secret cannot be read in a step's own if. The publish step checks it.
-    env:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     outputs:
       mcpb_sha256: ${{ steps.mcpb.outputs.sha256 }}
 
@@ -28,7 +26,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: https://registry.npmjs.org
 
       - name: Publish
@@ -109,14 +107,12 @@ jobs:
           wc3-mcp-${{ github.ref_name }}-win-x64.mcpb.sha256
           --notes-file release-notes.md
 
-      # Publishes the zero-dependency npm launcher. The launcher downloads the matching
-      # release asset at run time, so the package itself stays tiny. Skipped when
-      # NPM_TOKEN is absent, which keeps forks and reruns green.
+      # Publishes the zero-dependency npm launcher through OIDC trusted publishing, so no
+      # long-lived token is stored. The launcher downloads the matching release asset at run
+      # time, so the package itself stays tiny. The id-token permission above proves the
+      # repository to npm, and npm attaches provenance automatically.
       - name: Publish the npm launcher
-        if: env.NPM_TOKEN != ''
         working-directory: npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           $version = "${{ github.ref_name }}".TrimStart('v')
           node -e "const f=require('fs');const p=JSON.parse(f.readFileSync('package.json','utf8'));p.version=process.argv[1];f.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')" $version
