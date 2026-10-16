@@ -1,5 +1,8 @@
 bin/
 obj/
+# The npm launcher keeps its entry point in a bin folder, which is source here.
+!npm/bin/
+!npm/bin/**
 *.user
 .vs/
 dist*/
