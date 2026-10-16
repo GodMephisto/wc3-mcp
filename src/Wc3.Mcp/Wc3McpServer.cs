@@ -37,10 +37,15 @@ public static class Wc3McpServer
         var resources = new McpServerResourceCollection();
         resources.Add(McpToolCatalog.CreateCatalogResource());
 
+        var prompts = new McpServerPrimitiveCollection<McpServerPrompt>();
+        foreach (var prompt in CreatePrompts())
+            prompts.Add(prompt);
+
         return new McpServerOptions
         {
             ServerInfo = new Implementation { Name = ServerIdentity.ProductId, Version = ServerIdentity.Version },
             ToolCollection = tools,
+            PromptCollection = prompts,
             ResourceCollection = resources,
             ServerInstructions = Instructions.Value,
         };
@@ -93,6 +98,15 @@ public static class Wc3McpServer
                 new McpServerToolCreateOptions { SerializerOptions = JsonOptions }))
             .ToList();
 
+    /// <summary>Every [McpServerPrompt] method on <see cref="Wc3Prompts"/>, bound with our JSON options.</summary>
+    public static IReadOnlyList<McpServerPrompt> CreatePrompts() =>
+        typeof(Wc3Prompts)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(m => m.GetCustomAttribute<McpServerPromptAttribute>() is not null)
+            .Select(m => McpServerPrompt.Create(m, target: null,
+                new McpServerPromptCreateOptions { SerializerOptions = JsonOptions }))
+            .ToList();
+
     /// <summary>
     /// Populates a host's options from <see cref="CreateOptions"/>. Both the stdio entry point and
     /// the in-memory protocol tests call this one method, so what the tests verify is exactly what a
@@ -107,6 +121,7 @@ public static class Wc3McpServer
         options.Capabilities = configured.Capabilities;
         options.ServerInstructions = configured.ServerInstructions;
         options.ToolCollection = configured.ToolCollection;
+        options.PromptCollection = configured.PromptCollection;
         options.ResourceCollection = configured.ResourceCollection;
     }
 }

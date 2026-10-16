@@ -98,8 +98,10 @@ public static class McpToolAudit
         "terrain_fill", "terrain_import_heightmap", "terrain_paint", "terrain_ramp",
         "terrain_smooth", "terrain_water",
         "trigger_add", "trigger_recover_from_script", "trigger_remove", "trigger_rename",
-        "trigger_set_eca_enabled", "trigger_set_enabled", "trigger_set_initially_on",
+        "trigger_set_code", "trigger_set_eca_enabled", "trigger_set_enabled",
+        "trigger_set_initially_on",
         "trigger_set_run_on_map_init",
+        "trigger_var_add", "trigger_var_remove", "trigger_var_set",
     };
 
     /// <summary>Audit the live server surface.</summary>

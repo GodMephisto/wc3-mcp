@@ -58,7 +58,7 @@ public class McpServerTests
         "placed_unit_get", "placed_unit_remove", "placed_unit_set", "placed_units_list",
         "player_list", "player_set_color", "player_set_force", "player_set_name", "player_set_race",
         "port_deps", "port_into_version", "port_preview",
-        "port_unit", "region_create", "region_list", "region_remove", "region_to_rect",
+        "port_unit", "quickstart", "region_create", "region_list", "region_remove", "region_to_rect",
         "region_validate",
         "render_model", "repair_generated", "replay_diff", "replay_find_map", "replay_players",
         "replay_stats", "replay_summary", "replay_timeline", "roundtrip",
@@ -80,8 +80,9 @@ public class McpServerTests
         "trigger_add_eca", "trigger_catalog_describe", "trigger_catalog_list", "trigger_dead",
         "trigger_diff", "trigger_export", "trigger_lint", "trigger_recover_from_script",
         "trigger_remove", "trigger_remove_eca", "trigger_rename",
-        "trigger_set_eca_enabled", "trigger_set_enabled", "trigger_set_initially_on",
-        "trigger_set_run_on_map_init", "trigger_to_script", "triggers_read", "uabi_profile",
+        "trigger_set_code", "trigger_set_eca_enabled", "trigger_set_enabled", "trigger_set_initially_on",
+        "trigger_set_run_on_map_init", "trigger_to_script", "trigger_var_add", "trigger_var_list",
+        "trigger_var_remove", "trigger_var_set", "triggers_read", "uabi_profile",
         "unit_abilities",
         "validate", "validate_strict", "version_info",
     };
@@ -183,6 +184,29 @@ public class McpServerTests
             var text = Assert.IsType<TextContentBlock>(Assert.Single(result.Content)).Text;
             Assert.Contains("map not found", text);
             Assert.DoesNotContain(" at ", text); // no stack frames leak to the client
+        });
+    }
+
+    [Fact]
+    public async Task Built_in_prompts_are_served_and_one_round_trips_through_the_protocol()
+    {
+        await WithClient(async (client, ct) =>
+        {
+            var prompts = await client.ListPromptsAsync(cancellationToken: ct);
+            var names = prompts.Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToArray();
+            Assert.Equal(
+                new[]
+                {
+                    "audit_hero_spells", "inspect_map", "optimize_map_size",
+                    "port_hero", "repair_reforged_map",
+                },
+                names);
+
+            var result = await client.GetPromptAsync("inspect_map",
+                new Dictionary<string, object?> { ["map"] = "sample.w3x" }, cancellationToken: ct);
+            var text = Assert.IsType<TextContentBlock>(Assert.Single(result.Messages).Content).Text;
+            Assert.Contains("map_overview", text);
+            Assert.Contains("sample.w3x", text);
         });
     }
 }

@@ -1,4 +1,5 @@
 // src/Wc3.Mcp/Setup/SetupCli.cs
+using Wc3.Commands;
 using Wc3.GameData;
 
 namespace Wc3.Mcp.Setup;
@@ -12,6 +13,7 @@ public static class SetupCli
     public static readonly IReadOnlySet<string> Verbs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "install", "uninstall", "config", "doctor", "clients", "help", "--help", "-h", "/?", "version", "--version",
+        "update",
     };
 
     /// <summary>Runs a setup command. Exit 0 succeeded, 1 something was refused or failed, 2 bad usage.</summary>
@@ -24,6 +26,9 @@ public static class SetupCli
         string? gameDir = TakeOption(rest, "--game-dir");
         bool all = rest.Remove("--all");
         bool noPath = rest.Remove("--no-path");
+        // Set by the npm launcher so 'npx -y wc3-mcp@latest install --all' registers the
+        // auto-updating npx command in every client, which upgrades on every launch.
+        bool useNpx = rest.Remove("--npx") || Environment.GetEnvironmentVariable("WC3_MCP_NPX") == "1";
         if (gameDir is not null) gameDir = Path.GetFullPath(gameDir);
 
         switch (verb)
@@ -38,6 +43,8 @@ public static class SetupCli
                 return Clients(env, output, name);
             case "doctor":
                 return Doctor(env, output, name, product);
+            case "update":
+                return Update(rest, output, product);
         }
 
         if (rest.Any(r => r.StartsWith('-')))
@@ -46,9 +53,11 @@ public static class SetupCli
             return 2;
         }
 
-        var entry = entryOverride is null
-            ? ServerEntry.ForThisProcess(name, gameDir, product.ServeArgs)
-            : entryOverride with { Name = name, GameDir = gameDir ?? entryOverride.GameDir };
+        var entry = entryOverride is not null
+            ? entryOverride with { Name = name, GameDir = gameDir ?? entryOverride.GameDir }
+            : useNpx
+                ? new ServerEntry(name, "npx", new[] { "-y", "wc3-mcp@latest" }, gameDir)
+                : ServerEntry.ForThisProcess(name, gameDir, product.ServeArgs);
 
         List<ClientTarget> targets;
         if (all)
@@ -103,11 +112,17 @@ public static class SetupCli
         return failures == 0 ? 0 : 1;
     }
 
-    /// <summary>The folder to put on PATH, or null when this runs under dotnet rather than as the exe.</summary>
-    private static string? ExeFolder(ServerEntry entry) =>
-        Path.GetFileNameWithoutExtension(entry.Command).Equals("dotnet", StringComparison.OrdinalIgnoreCase)
-            ? null
-            : Path.GetDirectoryName(entry.Command);
+    /// <summary>
+    /// The folder to put on PATH, or null when this runs under dotnet rather than as the exe,
+    /// and null for a bare command like the npm launcher's npx, which has no folder of its own.
+    /// </summary>
+    private static string? ExeFolder(ServerEntry entry)
+    {
+        if (Path.GetFileNameWithoutExtension(entry.Command).Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+            return null;
+        var folder = Path.GetDirectoryName(entry.Command);
+        return string.IsNullOrEmpty(folder) ? null : folder;
+    }
 
     private static void AddToPath(ServerEntry entry, SetupEnvironment env, TextWriter output, SetupProduct product)
     {
@@ -247,6 +262,39 @@ public static class SetupCli
         return problems == 0 ? 0 : 1;
     }
 
+    /// <summary>
+    /// Replaces the running program from its GitHub release. The standalone server reads the
+    /// wc3-mcp repository, and the same command reached through 'wc3ctl mcp update' reads the
+    /// wc3ctl one, so each program updates the project it came from. With --check it only reports.
+    /// </summary>
+    private static int Update(List<string> rest, TextWriter output, SetupProduct product)
+    {
+        bool check = rest.Remove("--check");
+        // An empty ServeArgs means the standalone server, which ships from the wc3-mcp repository.
+        bool standalone = product.ServeArgs.Count == 0;
+        string repo = standalone ? "GodMephisto/wc3-mcp" : SelfUpdateCommand.DefaultRepo;
+        string prefix = standalone ? "wc3-mcp" : "wc3ctl-v";
+        try
+        {
+            if (check)
+            {
+                var r = SelfUpdateCommand.CheckAsync(repo, product.Version, prefix).GetAwaiter().GetResult();
+                output.WriteLine(r.Message);
+                if (r.ReleaseUrl is not null) output.WriteLine(r.ReleaseUrl);
+                return r.Ok ? 0 : 1;
+            }
+            var u = SelfUpdateCommand.UpdateFromReleaseAsync(
+                repo, product.Version, AppContext.BaseDirectory, prefix).GetAwaiter().GetResult();
+            output.WriteLine(u.Message);
+            return u.Ok ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            output.WriteLine($"update failed, {ex.Message}");
+            return 1;
+        }
+    }
+
     private static bool IsRegistered(ClientTarget t, SetupEnvironment env, string name) => t.Style switch
     {
         ConfigStyle.CodexToml => t.PresentFiles(env).Any(f => CodexToml.Contains(f, name)),
@@ -297,6 +345,7 @@ public static class SetupCli
           {p.Command} config <app>             print the settings to paste by hand
           {p.Command} clients                  list supported apps and whether each is set up
           {p.Command} doctor                   check the install, the game folder and the apps
+          {p.Command} update                   update to the latest release, add --check to only report
 
         Options
           --game-dir <folder>   the Warcraft III folder, when it is not found automatically

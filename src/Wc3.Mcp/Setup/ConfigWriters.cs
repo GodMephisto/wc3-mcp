@@ -46,11 +46,14 @@ public sealed record WriteResult(WriteOutcome Outcome, string Path, string Messa
 
 /// <summary>
 /// Adds or removes one server in a JSON config without disturbing anything else in the file.
-/// A file holding comments is never rewritten, because a JSON round trip would delete them.
-/// The caller gets the snippet to paste instead.
+/// A commented file has only the one entry span spliced at its byte offset, so every comment
+/// and every other byte survives. When the file cannot be scanned or the splice would break it,
+/// the file is left alone and the caller gets the snippet to paste instead.
 /// </summary>
 public static class JsonConfig
 {
+    private const string CommentRefusal = "this file has comments, which rewriting would delete, so add the snippet by hand";
+
     private static readonly JsonSerializerOptions Pretty = new()
     {
         WriteIndented = true,
@@ -90,13 +93,26 @@ public static class JsonConfig
     /// <summary>Adds or replaces the entry under <paramref name="serversKey"/>.</summary>
     public static WriteResult Upsert(string path, string serversKey, ServerEntry entry, bool writeType)
     {
+        var wanted = entry.ToJson(writeType);
+        if (File.Exists(path))
+        {
+            var text = File.ReadAllText(path);
+            if (!string.IsNullOrWhiteSpace(text) && HasComments(text))
+            {
+                if (!TrySpliceCommentedJson(text, serversKey, entry.Name, wanted, out var spliced))
+                    return new WriteResult(WriteOutcome.Refused, path, CommentRefusal);
+                if (spliced == text) return new WriteResult(WriteOutcome.Unchanged, path, "already set up");
+                ConfigFile.ReplaceWithBackup(path, spliced);
+                return new WriteResult(WriteOutcome.Written, path, "added");
+            }
+        }
+
         if (!TryLoad(path, out var root, out var refusal)) return refusal!;
         var servers = root![serversKey] as JsonObject;
         if (root[serversKey] is not null && servers is null)
             return new WriteResult(WriteOutcome.Refused, path, $"\"{serversKey}\" in this file is not an object, so it was left alone");
         if (servers is null) { servers = new JsonObject(); root[serversKey] = servers; }
 
-        var wanted = entry.ToJson(writeType);
         if (servers[entry.Name] is JsonNode existing && JsonNode.DeepEquals(existing, wanted))
             return new WriteResult(WriteOutcome.Unchanged, path, "already set up");
         servers[entry.Name] = wanted;
@@ -108,6 +124,16 @@ public static class JsonConfig
     public static WriteResult Remove(string path, string serversKey, string name)
     {
         if (!File.Exists(path)) return new WriteResult(WriteOutcome.NotPresent, path, "no config file");
+        var text = File.ReadAllText(path);
+        if (HasComments(text))
+        {
+            if (!TrySpliceCommentedJson(text, serversKey, name, null, out var spliced))
+                return new WriteResult(WriteOutcome.Refused, path, CommentRefusal);
+            if (spliced == text) return new WriteResult(WriteOutcome.NotPresent, path, "was not set up");
+            ConfigFile.ReplaceWithBackup(path, spliced);
+            return new WriteResult(WriteOutcome.Removed, path, "removed");
+        }
+
         if (!TryLoad(path, out var root, out var refusal)) return refusal!;
         if (root![serversKey] is not JsonObject servers || !servers.ContainsKey(name))
             return new WriteResult(WriteOutcome.NotPresent, path, "was not set up");
@@ -136,7 +162,7 @@ public static class JsonConfig
         if (string.IsNullOrWhiteSpace(text)) { root = new JsonObject(); return true; }
         if (HasComments(text))
         {
-            refusal = new WriteResult(WriteOutcome.Refused, path, "this file has comments, which rewriting would delete, so add the snippet by hand");
+            refusal = new WriteResult(WriteOutcome.Refused, path, CommentRefusal);
             return false;
         }
         try
@@ -154,6 +180,208 @@ public static class JsonConfig
             return false;
         }
         return true;
+    }
+
+    /// <summary>
+    /// Splices one entry into a file that holds comments, changing only the byte range of that
+    /// entry so every comment and every other byte survives. Returns false when the text cannot
+    /// be scanned or the result would not parse, so the caller can refuse instead.
+    /// </summary>
+    private static bool TrySpliceCommentedJson(string text, string serversKey, string entryName, JsonObject? newEntry, out string spliced)
+    {
+        spliced = text;
+        byte[] bytes;
+        var tokens = new List<JsonToken>();
+        try
+        {
+            bytes = Encoding.UTF8.GetBytes(text);
+            var reader = new Utf8JsonReader(bytes, new JsonReaderOptions
+            {
+                CommentHandling = JsonCommentHandling.Allow,
+                AllowTrailingCommas = true,
+            });
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonTokenType.Comment) continue;
+                tokens.Add(new JsonToken
+                {
+                    Type = reader.TokenType,
+                    Start = (int)reader.TokenStartIndex,
+                    End = (int)reader.BytesConsumed,
+                    Depth = reader.CurrentDepth,
+                    Name = reader.TokenType == JsonTokenType.PropertyName ? reader.GetString() : null,
+                });
+            }
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+
+        if (tokens.Count == 0 || tokens[0].Type != JsonTokenType.StartObject || tokens[0].Depth != 0)
+            return false;
+
+        int rootCloseIdx = -1;
+        for (int i = tokens.Count - 1; i >= 0; i--)
+        {
+            if (tokens[i].Type == JsonTokenType.EndObject && tokens[i].Depth == 0) { rootCloseIdx = i; break; }
+        }
+        if (rootCloseIdx < 0) return false;
+
+        int MatchEnd(int i)
+        {
+            int d = tokens[i].Depth;
+            for (int j = i + 1; j < tokens.Count; j++)
+                if ((tokens[j].Type == JsonTokenType.EndObject || tokens[j].Type == JsonTokenType.EndArray) && tokens[j].Depth == d)
+                    return j;
+            return -1;
+        }
+
+        int ValueEnd(int i)
+        {
+            var t = tokens[i];
+            if (t.Type == JsonTokenType.StartObject || t.Type == JsonTokenType.StartArray)
+            {
+                int m = MatchEnd(i);
+                return m < 0 ? -1 : tokens[m].End;
+            }
+            return t.End;
+        }
+
+        bool CommaAfter(int pos)
+        {
+            int p = pos;
+            while (p < bytes.Length && IsJsonSpace(bytes[p])) p++;
+            return p < bytes.Length && bytes[p] == (byte)',';
+        }
+
+        int serversNameIdx = -1;
+        bool rootHasChild = false, rootLastComma = false;
+        for (int i = 1; i < rootCloseIdx; i++)
+        {
+            if (tokens[i].Type != JsonTokenType.PropertyName || tokens[i].Depth != 1) continue;
+            rootHasChild = true;
+            int vend = ValueEnd(i + 1);
+            rootLastComma = vend >= 0 && CommaAfter(vend);
+            if (tokens[i].Name == serversKey) serversNameIdx = i;
+        }
+
+        if (serversNameIdx >= 0)
+        {
+            int sv = serversNameIdx + 1;
+            if (tokens[sv].Type != JsonTokenType.StartObject || tokens[sv].Depth != 1) return false;
+            int serversCloseIdx = MatchEnd(sv);
+            if (serversCloseIdx < 0) return false;
+            int serversClose = tokens[serversCloseIdx].Start;
+
+            int entryNameIdx = -1;
+            bool serversHasChild = false, serversLastComma = false;
+            for (int i = sv + 1; i < serversCloseIdx; i++)
+            {
+                if (tokens[i].Type != JsonTokenType.PropertyName || tokens[i].Depth != 2) continue;
+                serversHasChild = true;
+                int vend = ValueEnd(i + 1);
+                serversLastComma = vend >= 0 && CommaAfter(vend);
+                if (tokens[i].Name == entryName) entryNameIdx = i;
+            }
+
+            if (entryNameIdx >= 0)
+            {
+                int ev = entryNameIdx + 1;
+                int valueEnd = ValueEnd(ev);
+                if (valueEnd < 0) return false;
+                if (newEntry is null)
+                {
+                    int start = tokens[entryNameIdx].Start;
+                    if (CommaAfter(valueEnd))
+                    {
+                        int end = valueEnd;
+                        while (end < bytes.Length && IsJsonSpace(bytes[end])) end++;
+                        end++;
+                        spliced = Splice(bytes, start, end, Array.Empty<byte>());
+                    }
+                    else
+                    {
+                        // No comma follows, so this is the last entry. Remove the comma that
+                        // precedes it too, or the object would be left with a trailing comma that
+                        // a strict client rejects and the whole config stops loading.
+                        int lead = start;
+                        while (lead > 0 && IsJsonSpace(bytes[lead - 1])) lead--;
+                        if (lead > 0 && bytes[lead - 1] == (byte)',') lead--;
+                        spliced = Splice(bytes, lead, valueEnd, Array.Empty<byte>());
+                    }
+                }
+                else
+                {
+                    if (NodesEqual(bytes, tokens[ev].Start, valueEnd, newEntry)) return true;
+                    spliced = Splice(bytes, tokens[ev].Start, valueEnd, Encoding.UTF8.GetBytes(newEntry.ToJsonString(Pretty)));
+                }
+            }
+            else if (newEntry is null)
+            {
+                return true;
+            }
+            else
+            {
+                var insert = (serversHasChild && !serversLastComma ? "," : "")
+                    + JsonSerializer.Serialize(entryName, Pretty) + ": " + newEntry.ToJsonString(Pretty);
+                spliced = Splice(bytes, serversClose, serversClose, Encoding.UTF8.GetBytes(insert));
+            }
+        }
+        else if (newEntry is null)
+        {
+            return true;
+        }
+        else
+        {
+            var value = new JsonObject { [entryName] = newEntry }.ToJsonString(Pretty);
+            var insert = (rootHasChild && !rootLastComma ? "," : "")
+                + JsonSerializer.Serialize(serversKey, Pretty) + ": " + value;
+            spliced = Splice(bytes, tokens[rootCloseIdx].Start, tokens[rootCloseIdx].Start, Encoding.UTF8.GetBytes(insert));
+        }
+
+        try
+        {
+            return JsonNode.Parse(spliced, documentOptions: Lenient) is not null;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsJsonSpace(byte b) =>
+        b == (byte)' ' || b == (byte)'\t' || b == (byte)'\r' || b == (byte)'\n';
+
+    private static bool NodesEqual(byte[] bytes, int start, int end, JsonObject expected)
+    {
+        try
+        {
+            var existing = JsonNode.Parse(Encoding.UTF8.GetString(bytes, start, end - start));
+            return existing is not null && JsonNode.DeepEquals(existing, expected);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static string Splice(byte[] bytes, int start, int end, byte[] replacement)
+    {
+        var result = new byte[bytes.Length - (end - start) + replacement.Length];
+        Array.Copy(bytes, 0, result, 0, start);
+        Array.Copy(replacement, 0, result, start, replacement.Length);
+        Array.Copy(bytes, end, result, start + replacement.Length, bytes.Length - end);
+        return Encoding.UTF8.GetString(result);
+    }
+
+    private readonly struct JsonToken
+    {
+        public JsonTokenType Type { get; init; }
+        public int Start { get; init; }
+        public int End { get; init; }
+        public int Depth { get; init; }
+        public string? Name { get; init; }
     }
 
     private static void Save(string path, JsonObject root) =>

@@ -154,4 +154,43 @@ public sealed class McpSmokeTriggersTests : McpSmokeBase
         var diff = await Call("trigger_diff", Args(("map_a", Fixture), ("map_b", map)));
         Assert.Contains(Rows(Prop(diff, "added")), n => n.GetString() == "Hello");
     }
+
+    [Fact, Covers("trigger_var_list", "trigger_var_add", "trigger_var_set", "trigger_var_remove")]
+    public async Task Global_variables_are_added_listed_updated_and_removed()
+    {
+        var (map, _, _) = await TriggerMap();
+
+        var withVar = await Write("trigger_var_add",
+            Args(("name", "Wave"), ("type", "integer"), ("initial_value", "1")), map);
+        var listed = Rows(await Call("trigger_var_list", Args(("map", withVar))));
+        var wave = listed.Single(v => Prop(v, "name").GetString() == "Wave");
+        Assert.Equal("integer", Prop(wave, "type").GetString());
+        Assert.Equal("1", Prop(wave, "initialValue").GetString());
+
+        var updated = await Write("trigger_var_set",
+            Args(("name", "Wave"), ("initial_value", "7")), withVar);
+        var afterSet = Rows(await Call("trigger_var_list", Args(("map", updated))))
+            .Single(v => Prop(v, "name").GetString() == "Wave");
+        Assert.Equal("7", Prop(afterSet, "initialValue").GetString());
+
+        // A duplicate name is refused, because the wtg keys variables by name.
+        var duplicate = await CallError("trigger_var_add",
+            Args(("map", withVar), ("out_path", NewOut("dup")), ("name", "Wave"), ("type", "integer")));
+        Assert.Contains("Wave", duplicate);
+
+        var removed = await Write("trigger_var_remove", Args(("name", "Wave")), updated);
+        Assert.DoesNotContain(Rows(await Call("trigger_var_list", Args(("map", removed)))),
+            v => Prop(v, "name").GetString() == "Wave");
+    }
+
+    [Fact, Covers("trigger_set_code")]
+    public async Task Custom_text_body_is_refused_for_a_gui_trigger()
+    {
+        // The recovered Hello trigger carries events and actions, so it is a GUI trigger and the
+        // custom-text writer refuses it rather than re-encoding war3map.wct for one with no slot.
+        var (map, _, id) = await TriggerMap();
+        var refusal = await CallError("trigger_set_code",
+            Args(("map", map), ("out_path", NewOut("code")), ("id", id), ("code", "call DoNothing()")));
+        Assert.Contains("war3map.wct", refusal);
+    }
 }

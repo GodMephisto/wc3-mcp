@@ -54,6 +54,211 @@ public static class TriggerCommand
     public static IReadOnlyList<TriggerVariableFields> ListVariables(MapDocument doc) =>
         GetTriggers(doc).Variables.Select(ToVarFields).ToList();
 
+    /// <summary>
+    /// Adds a new map variable (a global in the .wtg Variables list) and writes the re-serialized
+    /// wtg back into the in-memory document.
+    ///
+    /// On a map with the trigger sub-version the World Editor also mirrors every variable as a
+    /// Variable item in the trigger tree, so the mirror is added here too. Without it the file
+    /// pairs a variable in the list against no tree entry and the next World Editor save
+    /// reconciles them, which is a change nobody asked for.
+    ///
+    /// Rejects a blank name or type and a name already present, because the .wtg keys variables by
+    /// name and two with one name cannot be told apart on read.
+    /// </summary>
+    public static TriggerOpResult AddVariable(
+        MapDocument doc, string name, string type,
+        bool isArray = false, int arraySize = 1, string? initialValue = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return new TriggerOpResult(false, "Variable name must not be blank.");
+        if (string.IsNullOrWhiteSpace(type))
+            return new TriggerOpResult(false, "Variable type must not be blank.");
+
+        var triggers = GetTriggers(doc);
+        if (triggers.Variables.Any(v => string.Equals(v.Name, name, StringComparison.Ordinal)))
+            return new TriggerOpResult(false, $"A variable named '{name}' already exists.");
+
+        int id = triggers.Variables.Count == 0 ? 0 : triggers.Variables.Max(v => v.Id) + 1;
+        var variable = new VariableDefinition
+        {
+            Id = id,
+            ParentId = -1,
+            Name = name,
+            Type = type,
+            IsArray = isArray,
+            ArraySize = Math.Max(1, arraySize),
+            IsInitialized = initialValue is not null,
+            InitialValue = initialValue ?? string.Empty,
+        };
+        triggers.Variables.Add(variable);
+        AddVariableMirror(triggers, id, name);
+
+        string shown = isArray ? $" (array of {variable.ArraySize})" : string.Empty;
+        return Persist(doc, triggers, $"Added {type} variable '{name}'{shown}.");
+    }
+
+    /// <summary>
+    /// Updates the map variable with the given name. Any argument left null keeps its current
+    /// value, so a caller changes one field without restating the rest. A rename here changes only
+    /// the variable's own name, not any reference to it in a trigger body.
+    /// </summary>
+    public static TriggerOpResult SetVariable(
+        MapDocument doc, string name, string? type = null, bool? isArray = null,
+        int? arraySize = null, string? initialValue = null)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return new TriggerOpResult(false, "Variable name must not be blank.");
+
+        var triggers = GetTriggers(doc);
+        var variable = triggers.Variables.FirstOrDefault(
+            v => string.Equals(v.Name, name, StringComparison.Ordinal));
+        if (variable is null)
+            return new TriggerOpResult(false, $"No variable named '{name}'.");
+
+        if (type is not null)
+        {
+            if (string.IsNullOrWhiteSpace(type))
+                return new TriggerOpResult(false, "Variable type must not be blank.");
+            variable.Type = type;
+        }
+        if (isArray is not null) variable.IsArray = isArray.Value;
+        if (arraySize is not null) variable.ArraySize = Math.Max(1, arraySize.Value);
+        if (initialValue is not null)
+        {
+            variable.IsInitialized = true;
+            variable.InitialValue = initialValue;
+        }
+
+        return Persist(doc, triggers, $"Updated variable '{name}'.");
+    }
+
+    /// <summary>
+    /// Removes the map variable with the given name and its tree mirror on a sub-version map. Any
+    /// reference to the variable in a trigger body is left as written, which the World Editor
+    /// treats as an undefined global, so the caller is told to check references.
+    /// </summary>
+    public static TriggerOpResult RemoveVariable(MapDocument doc, string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return new TriggerOpResult(false, "Variable name must not be blank.");
+
+        var triggers = GetTriggers(doc);
+        var variable = triggers.Variables.FirstOrDefault(
+            v => string.Equals(v.Name, name, StringComparison.Ordinal));
+        if (variable is null)
+            return new TriggerOpResult(false, $"No variable named '{name}'.");
+
+        triggers.Variables.Remove(variable);
+        RemoveVariableMirror(triggers, name);
+
+        return Persist(doc, triggers,
+            $"Removed variable '{name}'. Any trigger that referenced it now points at nothing.");
+    }
+
+    /// <summary>Adds the Variable tree item the World Editor keeps beside each variable, on the
+    /// sub-version formats that mirror one.</summary>
+    private static void AddVariableMirror(MapTriggers triggers, int id, string name)
+    {
+        if (triggers.SubVersion is null) return;
+        triggers.TriggerItems.Add(new TriggerVariableDefinition
+        {
+            Id = id,
+            Name = name,
+            ParentId = -1,
+        });
+        BumpCount(triggers, TriggerItemType.Variable);
+    }
+
+    /// <summary>Removes the Variable tree mirror for a variable, on the sub-version formats.</summary>
+    private static void RemoveVariableMirror(MapTriggers triggers, string name)
+    {
+        if (triggers.SubVersion is null) return;
+        var mirror = triggers.TriggerItems.FirstOrDefault(
+            i => i is TriggerVariableDefinition && string.Equals(i.Name, name, StringComparison.Ordinal));
+        if (mirror is null) return;
+        triggers.TriggerItems.Remove(mirror);
+        DropCount(triggers, TriggerItemType.Variable);
+    }
+
+    /// <summary>
+    /// Sets the custom-text (JASS) body of the custom-text trigger with the given id, writing
+    /// war3map.wct at the byte level so every other slot's bytes survive verbatim.
+    ///
+    /// This resolves the trigger's slot through <see cref="WctPairing"/>, splices only that slot,
+    /// and re-parses the result so in-memory readers see the new body too. A GUI trigger is refused
+    /// (its body is not text in wct), as is a map with no wct or a trigger that holds no slot.
+    /// </summary>
+    public static TriggerOpResult SetCustomText(MapDocument doc, int id, string code)
+    {
+        var triggers = GetTriggers(doc);
+        var item = triggers.TriggerItems.FirstOrDefault(i => i.Id == id);
+        if (item is null)
+            return new TriggerOpResult(false, $"No trigger item with id {id}.");
+
+        int sharing = triggers.TriggerItems.Count(i => i.Id == id);
+        if (sharing > 1)
+            return new TriggerOpResult(false,
+                $"{sharing} trigger items share id {id}, so it does not identify one item. "
+                + "This map numbers items per type rather than uniquely.");
+
+        if (item is not TriggerDefinition td)
+            return new TriggerOpResult(false, $"Trigger item {id} is a {item.Type}, not a trigger.");
+
+        if (!WctPairing.IsCustomText(td))
+            return new TriggerOpResult(false,
+                $"'{td.Name}' is a GUI trigger, not a custom-text trigger. Its body is a list of "
+                + "events, conditions and actions rather than JASS text in " + CustomTextFileName + ".");
+
+        var entry = doc.GetFile(CustomTextFileName);
+        if (entry is null)
+            return new TriggerOpResult(false,
+                $"This map has no {CustomTextFileName}, so it holds no custom-text bodies.");
+
+        var slots = WctPairing.SlotIndices(triggers);
+        if (!slots.TryGetValue(td, out int slot) || slot < 0)
+            return new TriggerOpResult(false,
+                $"'{td.Name}' holds no {CustomTextFileName} slot on this map.");
+
+        byte[] current = entry.OverrideBytes ?? entry.RawBytes;
+        if (!WctPairing.TryReplaceSlotBytes(current, slot, code, out var updated))
+            return new TriggerOpResult(false,
+                $"{CustomTextFileName} could not be walked or slot {slot} is out of range.");
+
+        var written = doc.AddOrReplaceRawFile(CustomTextFileName, updated);
+        if (TryReparseWct(updated, out var model)) written.Model = model;
+
+        return new TriggerOpResult(true,
+            $"Set the {CustomTextFileName} body for '{td.Name}' (slot {slot}), "
+            + $"{updated.Length} byte(s)." + NotCompiledNote,
+            triggers.TriggerItems.Count);
+    }
+
+    /// <summary>Re-parses a war3map.wct payload with the same parser the loader uses, so the model
+    /// kept in memory matches the bytes on disk. Returns false when the payload will not parse, in
+    /// which case the raw bytes still win on save.</summary>
+    private static bool TryReparseWct(byte[] bytes, out MapCustomTextTriggers model)
+    {
+        model = null!;
+        if (!MapFormatRegistry.TryGetParser(CustomTextFileName, out var parse)) return false;
+        try
+        {
+            object parsed = parse(bytes);
+            if (parsed is MapFormatRegistry.ParsedModel withTail) parsed = withTail.Model;
+            if (parsed is MapCustomTextTriggers m)
+            {
+                model = m;
+                return true;
+            }
+        }
+        catch
+        {
+            // A payload that no longer parses is not a reason to lose the edit. The raw bytes are
+            // already installed and win on save, so the in-memory model stays as it was.
+        }
+        return false;
+    }
+
     /// <summary>Renames the trigger item with the given id (any kind: category, trigger or
     /// deleted stub) and writes the re-serialized wtg back into the in-memory document.
     /// Rejects a blank name or an id that no item carries.</summary>

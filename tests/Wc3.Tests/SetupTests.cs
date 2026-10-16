@@ -1,6 +1,7 @@
 // tests/Wc3.Tests/SetupTests.cs
 // The client setup commands, run against a fake user profile in a temp folder so no real
 // client config is read or written.
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Wc3.Mcp.Setup;
 
@@ -14,6 +15,11 @@ public sealed class SetupTests : IDisposable
     private static readonly SetupProduct Product = SetupProduct.Standalone;
     private static readonly string N = Product.DefaultServerName;
     private static readonly ServerEntry Entry = new(N, @"C:\Tools\wc3ctl\Wc3.Mcp.exe", Array.Empty<string>(), null);
+    private static readonly JsonDocumentOptions Lenient = new()
+    {
+        CommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true,
+    };
 
     public SetupTests() => Directory.CreateDirectory(_root);
 
@@ -84,19 +90,103 @@ public sealed class SetupTests : IDisposable
     }
 
     [Fact]
-    public void A_file_with_comments_is_left_byte_for_byte_and_the_snippet_is_printed()
+    public void A_file_with_line_comments_is_updated_in_place_and_keeps_them()
     {
         var text = "{\n  // my servers\n  \"context_servers\": {}\n}\n";
         var file = Write(Path.Combine(AppData, "Zed", "settings.json"), text);
 
         var (code, output) = Cli("install", "zed");
 
+        Assert.Equal(0, code);
+        Assert.Contains("added", output);
+        var after = File.ReadAllText(file);
+        Assert.Contains("// my servers", after);
+        Assert.True(File.Exists(file + ConfigFile.BackupSuffix), "the original was not backed up");
+        var server = JsonNode.Parse(after, documentOptions: Lenient)!.AsObject()["context_servers"]![N]!;
+        Assert.Equal(Entry.Command, (string?)server["command"]);
+    }
+
+    [Fact]
+    public void A_file_with_line_and_block_comments_is_spliced_and_keeps_every_comment()
+    {
+        var text = """
+            {
+              // our servers
+              "mcpServers": {
+                /* other tool */
+                "other": { "command": "other.exe" }
+              }
+            }
+            """;
+        var file = Write(Path.Combine(Home, ".cursor", "mcp.json"), text);
+
+        var (code, output) = Cli("install", "cursor");
+
+        Assert.Equal(0, code);
+        Assert.Contains("added", output);
+        var after = File.ReadAllText(file);
+        Assert.Contains("// our servers", after);
+        Assert.Contains("/* other tool */", after);
+        var root = JsonNode.Parse(after, documentOptions: Lenient)!.AsObject();
+        Assert.Equal("other.exe", (string?)root["mcpServers"]!["other"]!["command"]);
+        Assert.Equal(Entry.Command, (string?)root["mcpServers"]![N]!["command"]);
+        Assert.Equal("stdio", (string?)root["mcpServers"]![N]!["type"]);
+
+        var (removeCode, _) = Cli("uninstall", "cursor");
+
+        Assert.Equal(0, removeCode);
+        var removed = File.ReadAllText(file);
+        Assert.Contains("// our servers", removed);
+        Assert.Contains("/* other tool */", removed);
+        var afterRemove = JsonNode.Parse(removed, documentOptions: Lenient)!.AsObject();
+        Assert.False(afterRemove["mcpServers"]!.AsObject().ContainsKey(N));
+        Assert.Equal("other.exe", (string?)afterRemove["mcpServers"]!["other"]!["command"]);
+    }
+
+    [Fact]
+    public void Removing_the_last_entry_from_a_commented_file_leaves_no_trailing_comma()
+    {
+        var text = $$"""
+            {
+              // our servers
+              "mcpServers": {
+                "other": { "command": "other.exe" },
+                "{{N}}": { "command": "wc3ctl.exe" }
+              }
+            }
+            """;
+        var file = Write(Path.Combine(Home, ".cursor", "mcp.json"), text);
+
+        var (code, _) = Cli("uninstall", "cursor");
+
+        Assert.Equal(0, code);
+        var after = File.ReadAllText(file);
+        Assert.Contains("// our servers", after);
+        // The removed entry was last, so dropping only it would leave a trailing comma. A client
+        // that rejects trailing commas would then refuse the whole file, losing every other entry.
+        var strict = new JsonDocumentOptions
+        {
+            CommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = false,
+        };
+        var parsed = JsonNode.Parse(after, documentOptions: strict);
+        Assert.NotNull(parsed);
+        Assert.Equal("other.exe", (string?)parsed!.AsObject()["mcpServers"]!["other"]!["command"]);
+        Assert.False(parsed["mcpServers"]!.AsObject().ContainsKey(N));
+    }
+
+    [Fact]
+    public void A_broken_json_file_with_comments_is_left_alone()
+    {
+        var text = "{ // start\n  \"mcpServers\": ";
+        var file = Write(Path.Combine(Home, ".cursor", "mcp.json"), text);
+
+        var (code, output) = Cli("install", "cursor");
+
         Assert.Equal(1, code);
         Assert.Equal(text, File.ReadAllText(file));
         Assert.False(File.Exists(file + ConfigFile.BackupSuffix));
         Assert.Contains("comments", output);
-        Assert.Contains("\"context_servers\"", output);
-        Assert.Contains(Entry.Command.Replace(@"\", @"\\"), output);
     }
 
     [Fact]
@@ -299,6 +389,22 @@ public sealed class SetupTests : IDisposable
         var entry = ServerEntry.ForThisProcess(N, null, SetupProduct.Wc3ctl.ServeArgs);
         Assert.Equal(new[] { "mcp", "serve" }, entry.Args.TakeLast(2));
         Assert.Empty(ServerEntry.ForThisProcess(N, null).Args.Where(a => a == "serve"));
+    }
+
+    [Fact]
+    public void Npx_option_registers_the_auto_updating_npx_launcher()
+    {
+        Directory.CreateDirectory(Path.Combine(Home, ".cursor"));
+        var sw = new StringWriter();
+
+        int code = SetupCli.Run(new[] { "install", "cursor", "--npx" }, Env, sw, Product, entryOverride: null);
+
+        Assert.Equal(0, code);
+        var server = JsonNode.Parse(File.ReadAllText(Path.Combine(Home, ".cursor", "mcp.json")))!["mcpServers"]![N]!;
+        Assert.Equal("npx", (string?)server["command"]);
+        Assert.Equal(new[] { "-y", "wc3-mcp@latest" }, server["args"]!.AsArray().Select(a => (string?)a).ToArray());
+        // The npx command has no folder of its own, so install must not touch the user PATH.
+        Assert.Equal(@"C:\Existing;C:\Other", _userPath);
     }
 
     [Fact]

@@ -304,7 +304,7 @@ public static partial class Reforged3RepairCommand
         return count;
     }
 
-    private sealed class SlkDocument
+    internal sealed class SlkDocument
     {
         private readonly List<string> _lines;
         private readonly List<SlkCell> _cells;
@@ -367,6 +367,17 @@ public static partial class Reforged3RepairCommand
                         values[header] = Unquote(cell.RawK!);
                 yield return values;
             }
+        }
+
+        /// <summary>
+        /// Every value in the table's leading column, X1, which is the object id column in
+        /// every object SLK (alias, unitID, itemID, upgradeid and the rest). Lets a caller ask
+        /// "which rawcodes does this table define" without knowing the column's display name.
+        /// </summary>
+        public IEnumerable<string> FirstColumnValues()
+        {
+            foreach (var cell in _cells.Where(c => c.Y is > 1 && c.X == 1 && c.RawK is not null))
+                yield return Unquote(cell.RawK!);
         }
 
         public void DropColumn(string name)

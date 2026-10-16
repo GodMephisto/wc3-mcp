@@ -1,0 +1,28 @@
+{
+  "name": "wc3-mcp",
+  "version": "0.5.8",
+  "description": "MCP server that lets AI assistants read, audit and edit Warcraft III (.w3x and .w3m) maps byte-faithfully",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GodMephisto/wc3-mcp.git"
+  },
+  "bin": {
+    "wc3-mcp": "./bin/wc3-mcp.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "postinstall": "node ./bin/wc3-mcp.js --preload-binary"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "os": ["win32"],
+  "cpu": ["x64"],
+  "keywords": ["mcp", "model-context-protocol", "warcraft-3", "wc3", "w3x", "world-editor", "claude", "cursor"]
+}

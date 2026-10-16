@@ -152,4 +152,106 @@ public class WctPairingTests
         string hay = new(code.Where(char.IsLetterOrDigit).ToArray());
         return hay.Contains(needle, StringComparison.OrdinalIgnoreCase);
     }
+
+    // ---- byte level war3map.wct surgery ---------------------------------------------------------
+
+    // Builds a version 1 wct: int32 version, a null-terminated comment, an empty global block,
+    // an int32 slot count, then one int32 length plus bytes per slot. A non-empty body carries the
+    // trailing null the World Editor writes.
+    private static byte[] Wct(string comment, params string[] codes)
+    {
+        using var ms = new MemoryStream();
+        void I32(int v)
+        {
+            ms.WriteByte((byte)v);
+            ms.WriteByte((byte)(v >> 8));
+            ms.WriteByte((byte)(v >> 16));
+            ms.WriteByte((byte)(v >> 24));
+        }
+
+        I32(1);
+        foreach (byte b in System.Text.Encoding.UTF8.GetBytes(comment)) ms.WriteByte(b);
+        ms.WriteByte(0);
+        I32(0);
+        I32(codes.Length);
+        foreach (string c in codes)
+        {
+            if (string.IsNullOrEmpty(c)) { I32(0); continue; }
+            byte[] raw = System.Text.Encoding.UTF8.GetBytes(c);
+            I32(raw.Length + 1);
+            ms.Write(raw, 0, raw.Length);
+            ms.WriteByte(0);
+        }
+        return ms.ToArray();
+    }
+
+    // Reads one slot back through the same layout, trimming the terminator, so a test asserts on
+    // what a reader would see rather than on an offset arithmetic it re-derived.
+    private static string Slot(byte[] wct, int index)
+    {
+        int pos = 4;
+        while (wct[pos] != 0) pos++;
+        pos++;
+        int globalLength = BitConverter.ToInt32(wct, pos);
+        pos += 4 + globalLength;
+        int count = BitConverter.ToInt32(wct, pos);
+        pos += 4;
+        for (int i = 0; i < count; i++)
+        {
+            int length = BitConverter.ToInt32(wct, pos);
+            pos += 4;
+            if (i == index) return System.Text.Encoding.UTF8.GetString(wct, pos, length).TrimEnd('\0');
+            pos += length;
+        }
+        return string.Empty;
+    }
+
+    [Fact]
+    public void Byte_splice_replaces_one_slot_and_keeps_the_others_readable()
+    {
+        byte[] original = Wct("a comment", "// first", "// second", "// third");
+        Assert.True(WctPairing.TryReplaceSlotBytes(original, 1, "// changed", out var updated));
+
+        Assert.Equal("// first", Slot(updated, 0));
+        Assert.Equal("// changed", Slot(updated, 1));
+        Assert.Equal("// third", Slot(updated, 2));
+    }
+
+    [Fact]
+    public void Byte_splice_with_the_same_text_is_byte_identical()
+    {
+        // The load-bearing claim is that untouched bytes are copied verbatim, not re-encoded. If the
+        // splice is exact, replacing a slot with the text it already holds returns the same bytes.
+        byte[] original = Wct("c", "// first", "// second", "// third");
+        Assert.True(WctPairing.TryReplaceSlotBytes(original, 1, "// second", out var updated));
+        Assert.Equal(original, updated);
+    }
+
+    [Fact]
+    public void Byte_remove_drops_one_slot_and_keeps_the_others()
+    {
+        byte[] original = Wct("note", "// alpha", "// beta", "// gamma");
+        Assert.True(WctPairing.TryRemoveSlotBytes(original, 1, out var updated));
+
+        Assert.Equal("// alpha", Slot(updated, 0));
+        Assert.Equal("// gamma", Slot(updated, 1));
+    }
+
+    [Fact]
+    public void A_truncated_wct_refuses_rather_than_splicing()
+    {
+        byte[] original = Wct("c", "// first", "// second");
+        byte[] truncated = original[..^1];
+        Assert.False(WctPairing.TryReplaceSlotBytes(truncated, 0, "// x", out _));
+        Assert.False(WctPairing.TryRemoveSlotBytes(truncated, 0, out _));
+    }
+
+    [Fact]
+    public void A_hostile_slot_count_refuses_without_preallocating_for_it()
+    {
+        // A version 1 wct whose slot count is int.MaxValue with no slots present. Pre-sizing a list
+        // to the raw count would allocate gigabytes before the loop's own bound check ever runs.
+        byte[] hostile = { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0x7F };
+        Assert.False(WctPairing.TryReplaceSlotBytes(hostile, 0, "// x", out _));
+    }
 }
