@@ -1,5 +1,6 @@
 {
   "name": "wc3-mcp",
+  "mcpName": "io.github.GodMephisto/wc3-mcp",
   "version": "0.5.8",
   "description": "MCP server that lets AI assistants read, audit and edit Warcraft III (.w3x and .w3m) maps byte-faithfully",
   "license": "Apache-2.0",
