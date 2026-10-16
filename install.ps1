@@ -35,6 +35,34 @@ function Test-Checksum([string]$zipPath, [string]$sumPath) {
     Write-Host 'checksum ok'
 }
 
+# Deletes leftover *.old files under a folder. A file still held open by a running process is
+# skipped, because that is the expected case and not an error.
+function Remove-OldFiles([string]$dir) {
+    if (-not (Test-Path $dir)) { return }
+    Get-ChildItem -Path $dir -Recurse -File -Filter '*.old' -ErrorAction SilentlyContinue | ForEach-Object {
+        try { Remove-Item -Path $_.FullName -Force -ErrorAction Stop } catch { }
+    }
+}
+
+# Copies a tree file by file. When a target file is locked by a running process, the old copy is
+# renamed to *.old and the new one takes its place, so an update never has to abort for a lock.
+function Copy-TreeLockSafe([string]$source, [string]$dest) {
+    New-Item -ItemType Directory -Path $dest -Force | Out-Null
+    Get-ChildItem -Path $source -Recurse -File | ForEach-Object {
+        $rel = [IO.Path]::GetRelativePath($source, $_.FullName)
+        $target = Join-Path $dest $rel
+        $targetDir = Split-Path -Parent $target
+        if ($targetDir -and -not (Test-Path $targetDir)) { New-Item -ItemType Directory -Path $targetDir -Force | Out-Null }
+        try {
+            Copy-Item -Path $_.FullName -Destination $target -Force -ErrorAction Stop
+        } catch {
+            $old = "$target.$([guid]::NewGuid().ToString('N').Substring(0,6)).old"
+            try { Move-Item -Path $target -Destination $old -Force -ErrorAction Stop } catch { }
+            Copy-Item -Path $_.FullName -Destination $target -Force
+        }
+    }
+}
+
 $work = Join-Path ([IO.Path]::GetTempPath()) ("wc3-mcp-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work | Out-Null
 try {
@@ -67,14 +95,10 @@ try {
     Expand-Archive -Path $zipPath -DestinationPath $unpacked
     if (-not (Test-Path (Join-Path $unpacked 'wc3-mcp.exe'))) { throw 'The zip does not contain wc3-mcp.exe.' }
 
-    # Replace the old copy. A running server holds its files open, so say which app to close.
-    if (Test-Path $InstallDir) {
-        try { Remove-Item -Path (Join-Path $InstallDir '*') -Recurse -Force }
-        catch { throw "Could not replace $InstallDir. Close any AI app that is running wc3-mcp, then run this again." }
-    } else {
-        New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-    }
-    Copy-Item -Path (Join-Path $unpacked '*') -Destination $InstallDir -Recurse -Force
+    # Replace the old copy. A running server holds its files open, so any file that cannot be
+    # overwritten is renamed to *.old and the new one takes its place, no close needed.
+    Remove-OldFiles $InstallDir
+    Copy-TreeLockSafe $unpacked $InstallDir
 } finally {
     Remove-Item -Path $work -Recurse -Force -ErrorAction SilentlyContinue
 }

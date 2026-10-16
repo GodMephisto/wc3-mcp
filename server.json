@@ -16,6 +16,14 @@
       "transport": {
         "type": "stdio"
       }
+    },
+    {
+      "registryType": "npm",
+      "identifier": "wc3-mcp",
+      "version": "0.5.8",
+      "transport": {
+        "type": "stdio"
+      }
     }
   ]
 }

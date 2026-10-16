@@ -11,6 +11,9 @@ permissions:
 jobs:
   release:
     runs-on: windows-latest
+    # Job level, because a secret cannot be read in a step's own if. The publish step checks it.
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     outputs:
       mcpb_sha256: ${{ steps.mcpb.outputs.sha256 }}
 
@@ -21,6 +24,12 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
 
       - name: Publish
         run: >
@@ -100,6 +109,21 @@ jobs:
           wc3-mcp-${{ github.ref_name }}-win-x64.mcpb.sha256
           --notes-file release-notes.md
 
+      # Publishes the zero-dependency npm launcher. The launcher downloads the matching
+      # release asset at run time, so the package itself stays tiny. Skipped when
+      # NPM_TOKEN is absent, which keeps forks and reruns green.
+      - name: Publish the npm launcher
+        if: env.NPM_TOKEN != ''
+        working-directory: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          node -e "const f=require('fs');const p=JSON.parse(f.readFileSync('package.json','utf8'));p.version=process.argv[1];f.writeFileSync('package.json',JSON.stringify(p,null,2)+'\n')" $version
+          node bin/wc3-mcp.js version
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          npm publish --access public
+
   # Lists the release in the official MCP Registry as io.github.GodMephisto/wc3-mcp. GitHub's
   # OIDC token proves the repository owner, so no secret is stored. A registry version can be
   # published once only, so a rerun of the same tag fails here without touching the release.
@@ -121,7 +145,7 @@ jobs:
           VERSION="${TAG#v}"
           URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/wc3-mcp-${TAG}-win-x64.mcpb"
           jq --arg v "$VERSION" --arg u "$URL" --arg s "$SHA" \
-            '.version = $v | .packages[0].identifier = $u | .packages[0].fileSha256 = $s' \
+            '.version = $v | .packages[0].identifier = $u | .packages[0].fileSha256 = $s | .packages[1].version = $v' \
             server.json > server.tmp && mv server.tmp server.json
           test "${#SHA}" -eq 64
           cat server.json
