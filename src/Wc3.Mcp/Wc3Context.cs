@@ -1,0 +1,165 @@
+// src/Wc3.Mcp/Wc3Context.cs
+using System.ComponentModel;
+using System.Text;
+using System.Text.RegularExpressions;
+using ModelContextProtocol.Server;
+using ModelContextProtocol.Protocol;
+using Wc3.Commands.Rag;
+
+namespace Wc3.Mcp;
+
+/// <summary>
+/// Serves the Warcraft III reference documents under `context/` as MCP resources, and a
+/// read-only search tool over them. The resources are the context injector. Per the MCP
+/// specification a knowledge server is Resources and Prompts, so a client reads a whole
+/// document deterministically rather than hoping a similarity search returns the right chunk.
+/// The search tool is the convenience over the same text, for a client that wants a passage
+/// instead of 320KB.
+/// </summary>
+[McpServerToolType]
+public static class Wc3Context
+{
+    private static string Root => Path.Combine(AppContext.BaseDirectory, "context");
+
+    // A heading is a markdown # line, or the "-Ability Name" convention the Ability Insight
+    // document uses, or a rule of dashes. Kept short so a bulleted sentence is not one.
+    private static readonly Regex HeadingRx = new(@"^\s*(?:#{1,6}\s+(?<h>.*)|-{1,2}(?<h>[A-Z(][^\n]{0,80})|={3,})$", RegexOptions.Compiled);
+
+    // The optional local retrieval index, built by `wc3ctl rag install`. Loaded once and kept, so
+    // a search does not pay the model load again. When it is absent, docs_search is lexical only.
+    private static readonly Lazy<RagIndex?> Index = new(() => RagIndex.Load(RagPaths.IndexFile));
+    private static readonly Lazy<RagEmbedder?> Embedder = new(() =>
+    {
+        try { return File.Exists(RagPaths.ModelOnnx) ? new RagEmbedder(RagPaths.ModelOnnx, RagPaths.VocabTxt) : null; }
+        catch { return null; }
+    });
+
+    /// <summary>One resource per document folder under `context/`, the markdown read whole.</summary>
+    public static IReadOnlyList<McpServerResource> CreateResources()
+    {
+        var list = new List<McpServerResource>();
+        if (!Directory.Exists(Root)) return list;
+        foreach (var dir in Directory.GetDirectories(Root).OrderBy(d => d, StringComparer.Ordinal))
+        {
+            string id = Path.GetFileName(dir);
+            string? md = Directory.GetFiles(dir, "*.md").FirstOrDefault();
+            if (md is null) continue;
+            string path = md;
+            list.Add(McpServerResource.Create(
+                () => File.ReadAllText(path),
+                new McpServerResourceCreateOptions
+                {
+                    UriTemplate = "wc3://context/" + id,
+                    Name = id.Replace('-', '_'),
+                    Description = Describe(id),
+                    MimeType = "text/markdown",
+                }));
+        }
+        return list;
+    }
+
+    private static string Describe(string id) => id switch
+    {
+        "ui-frames" => "The Big UI-Frame Tutorial by Tasyen, in full. Frame creation, frame natives, positioning and the 4:3 limitation, FDF and TOC, every frame type and the SimpleFrame set. Use it for any UI, frame or FDF work, and for the frame errors it catalogues.",
+        "abilities" => "The Warcraft 3 Editor Ability Insight reference, in full. Every ability id with its field behaviour, quirks, stacking rules and bugs, the reference for picking a dummy ability or explaining a field. Use it before guessing how an ability field behaves.",
+        _ => "A Warcraft III reference document, read whole.",
+    };
+
+    [McpServerTool(Name = "docs_search", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Search the bundled Warcraft III reference documents and return the matching passages with their document and nearest heading. Use this to find the exact rule, field or warning in the UI-Frame tutorial or the Ability Insight reference without loading the whole file. Terms are matched on word boundaries and ranked by how many the passage carries, with a bonus when the section heading names a term, so an ability name finds that ability's section.")]
+    public static object DocsSearch(
+        [Description("Words to search for.")] string query,
+        [Description("Restrict to one document. ui-frames or abilities. Omit to search every document.")] string? doc = null,
+        [Description("Maximum passages to return. Default 8.")] int max = 8)
+    {
+        var terms = Regex.Matches(query.ToLowerInvariant(), "[a-z0-9_]+")
+            .Select(m => m.Value).Where(t => t.Length >= 3).Distinct().ToArray();
+        if (terms.Length == 0) return new { error = "no searchable terms in the query (need words of 3 or more letters)" };
+
+        // Semantic when the local index is installed, lexical otherwise. The index is built by
+        // `wc3ctl rag install` and auto-connects here, so a client needs no configuration.
+        if (Index.Value is { } idx && Embedder.Value is { } semantic)
+        {
+            var semanticHits = idx.Search(semantic, query, max)
+                .Where(h => doc is null || h.chunk.Document.Equals(doc, StringComparison.OrdinalIgnoreCase))
+                .Select(h => new { document = h.chunk.Document, section = h.chunk.Heading, score = Math.Round(h.score, 3), passage = Truncate(h.chunk.Text, 1600) })
+                .ToArray();
+            return new { query, mode = "semantic", documents = Documents().Select(d => d.id).ToArray(), matches = semanticHits.Length, results = semanticHits };
+        }
+
+        var termRx = terms.Select(t => new Regex(@"\b" + Regex.Escape(t), RegexOptions.Compiled)).ToArray();
+
+        var hits = new List<(double score, string doc, string heading, string text)>();
+
+        foreach (var (id, path) in Documents())
+        {
+            if (doc is not null && !id.Equals(doc, StringComparison.OrdinalIgnoreCase)) continue;
+            string text = File.ReadAllText(path).Replace("\r\n", "\n").TrimStart('\uFEFF');
+            string heading = "";
+            var buf = new StringBuilder();
+            foreach (var line in text.Split('\n'))
+            {
+                var m = HeadingRx.Match(line);
+                if (m.Success)
+                {
+                    Score(buf, heading, id);
+                    buf.Clear();
+                    heading = (m.Groups["h"].Success ? m.Groups["h"].Value : "").Trim();
+                }
+                buf.Append(line).Append('\n');
+                if (buf.Length >= 1500) Score(buf, heading, id);
+            }
+            Score(buf, heading, id);
+        }
+
+        void Score(StringBuilder block, string section, string docId)
+        {
+            if (block.Length == 0) return;
+            string para = block.ToString().Trim();
+            block.Clear();
+            if (para.Length < 20) return;
+            string lower = para.ToLowerInvariant();
+            int carried = 0;
+            for (int i = 0; i < termRx.Length; i++) if (termRx[i].IsMatch(lower)) carried++;
+            if (carried == 0) return;
+            int inHeading = 0;
+            string lowHead = section.ToLowerInvariant();
+            for (int i = 0; i < termRx.Length; i++) if (termRx[i].IsMatch(lowHead)) inHeading++;
+            double score = carried * 10.0 + inHeading * 15.0 + Math.Min(para.Length, 2000) / 500.0;
+            hits.Add((score, docId, section, para));
+        }
+
+        var top = hits.OrderByDescending(h => h.score).Take(Math.Clamp(max, 1, 40))
+            .Select(h => new { document = h.doc, section = h.heading, score = Math.Round(h.score, 2), passage = Truncate(h.text, 1600) })
+            .ToArray();
+        return new { query, mode = "lexical", documents = Documents().Select(d => d.id).ToArray(), matches = top.Length, results = top };
+    }
+
+    private static IEnumerable<(string id, string path)> Documents()
+    {
+        if (!Directory.Exists(Root)) yield break;
+        foreach (var dir in Directory.GetDirectories(Root).OrderBy(d => d, StringComparer.Ordinal))
+        {
+            string? md = Directory.GetFiles(dir, "*.md").FirstOrDefault();
+            if (md is not null) yield return (Path.GetFileName(dir), md);
+        }
+    }
+
+    private static string Truncate(string s, int n) =>
+        s.Length <= n ? s : s[..n] + "\n... (truncated, read the whole document with the resource wc3://context/)";
+
+    [McpServerTool(Name = "rag_status", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Report whether the local semantic retrieval index is installed, with its chunk count, corpus and the embedding model. docs_search uses the index automatically once it is installed.")]
+    public static object RagStatus() => RagCommand.Status();
+
+    [McpServerTool(Name = "rag_install", ReadOnly = false, Idempotent = true, OpenWorld = true)]
+    [Description("Install the local semantic retrieval index. Fetches the embedding model once (about 130 MB, needs network) and builds the index over the bundled Warcraft III documents, after which docs_search is semantic and needs nothing else. Run by a user, not per query.")]
+    public static object RagInstall(
+        [Description("Folder of .md documents to index. Omit for the bundled context folder.")] string? corpus = null,
+        [Description("CPU threads for embedding. Default min(cores/2, 4), the low CPU setting. Raise it to build faster.")] int? threads = null,
+        [Description("Chunks per inference, default 16. Larger batches finish sooner and use more memory.")] int? batch = null)
+    {
+        var r = RagCommand.Install(corpus, threads, batch);
+        return new { r.Root, r.Corpus, r.Chunks, r.IndexFile, r.ModelRepo, note = "docs_search is now semantic" };
+    }
+}

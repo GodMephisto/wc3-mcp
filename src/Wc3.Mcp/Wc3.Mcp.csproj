@@ -33,4 +33,12 @@
     <ProjectReference Include="..\Wc3.Commands\Wc3.Commands.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The reference documents the server serves as MCP resources (see Wc3Context.cs),
+         copied beside the exe so a client can read a whole document. -->
+    <Content Include="context\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

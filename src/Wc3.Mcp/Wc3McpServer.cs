@@ -36,6 +36,8 @@ public static class Wc3McpServer
 
         var resources = new McpServerResourceCollection();
         resources.Add(McpToolCatalog.CreateCatalogResource());
+        foreach (var resource in Wc3Context.CreateResources())
+            resources.Add(resource);
 
         var prompts = new McpServerPrimitiveCollection<McpServerPrompt>();
         foreach (var prompt in CreatePrompts())
@@ -89,10 +91,10 @@ public static class Wc3McpServer
         }
     }
 
-    /// <summary>Every [McpServerTool] method on <see cref="Wc3Tools"/>, bound with our JSON options.</summary>
+    /// <summary>Every [McpServerTool] method on <see cref="Wc3Tools"/> and <see cref="Wc3Context"/>, bound with our JSON options.</summary>
     public static IReadOnlyList<McpServerTool> CreateTools() =>
-        typeof(Wc3Tools)
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+        new[] { typeof(Wc3Tools), typeof(Wc3Context) }
+            .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Static))
             .Where(m => m.GetCustomAttribute<McpServerToolAttribute>() is not null)
             .Select(m => McpServerTool.Create(m, target: null,
                 new McpServerToolCreateOptions { SerializerOptions = JsonOptions }))

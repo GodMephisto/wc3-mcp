@@ -34,4 +34,13 @@
     <ProjectReference Include="..\..\src\Wc3.Mcp\Wc3.Mcp.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The reference documents the MCP serves as resources (Wc3Context). Content does not flow
+         transitively from the referenced project, so the context folder is linked beside the tests. -->
+    <Content Include="..\..\src\Wc3.Mcp\context\**\*"
+             Link="context\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

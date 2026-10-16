@@ -24,7 +24,7 @@ public class McpServerTests
         "camera_add", "camera_list", "camera_remove", "camera_set", "camera_tour", "changelog",
         "ci_all", "ci_compat", "ci_lint", "ci_schema", "ci_validate",
         "compat_explain",
-        "compat_matrix", "deprotect_map", "diff", "doctor_check", "doctor_compare", "doctor_fix",
+        "compat_matrix", "deprotect_map", "diff", "docs_search", "doctor_check", "doctor_compare", "doctor_fix",
         "doctor_inspect", "editor_catalog_get", "editor_catalog_list",
         "file_get_text", "file_list", "file_set", "force_list", "force_rename",
         "force_set_flags", "force_set_players",
@@ -58,7 +58,8 @@ public class McpServerTests
         "placed_unit_get", "placed_unit_remove", "placed_unit_set", "placed_units_list",
         "player_list", "player_set_color", "player_set_force", "player_set_name", "player_set_race",
         "port_deps", "port_into_version", "port_preview",
-        "port_unit", "quickstart", "region_create", "region_list", "region_remove", "region_to_rect",
+        "port_unit", "quickstart", "rag_install", "rag_status", "region_create", "region_list", "region_remove",
+        "region_to_rect",
         "region_validate",
         "render_model", "repair_generated", "replay_diff", "replay_find_map", "replay_players",
         "replay_stats", "replay_summary", "replay_timeline", "roundtrip",
@@ -207,6 +208,29 @@ public class McpServerTests
             var text = Assert.IsType<TextContentBlock>(Assert.Single(result.Messages).Content).Text;
             Assert.Contains("map_overview", text);
             Assert.Contains("sample.w3x", text);
+        });
+    }
+
+    [Fact]
+    public async Task Context_documents_are_served_as_resources_and_searchable()
+    {
+        // The two community references are the context injector. A resource returns a document
+        // whole, and docs_search finds a passage in it, so a client configures nothing.
+        await WithClient(async (client, ct) =>
+        {
+            var resources = await client.ListResourcesAsync(cancellationToken: ct);
+            Assert.Contains(resources, r => r.Uri == "wc3://context/abilities");
+            Assert.Contains(resources, r => r.Uri == "wc3://context/ui-frames");
+
+            var contents = await client.ReadResourceAsync("wc3://context/abilities", cancellationToken: ct);
+            var text = Assert.IsType<TextResourceContents>(Assert.Single(contents.Contents)).Text;
+            Assert.Contains("Aerial Shackles", text);
+
+            var result = await client.CallToolAsync("docs_search",
+                new Dictionary<string, object?> { ["query"] = "Aerial Shackles", ["max"] = 3 }, cancellationToken: ct);
+            Assert.NotEqual(true, result.IsError);
+            var body = Assert.IsType<TextContentBlock>(Assert.Single(result.Content)).Text;
+            Assert.Contains("Aerial Shackles", body);
         });
     }
 }
