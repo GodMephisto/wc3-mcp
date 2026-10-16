@@ -197,7 +197,10 @@ public static class WctPairing
         pos += 4;
         if (count < 0) return false;
 
-        var slots = new List<SlotRange>(count);
+        // Each slot needs at least its 4-byte length field, so the remaining buffer bounds how many
+        // can follow. Pre-sizing to a raw count from a malformed file would let a hostile header
+        // allocate arbitrarily before the loop's own bound check ever runs.
+        var slots = new List<SlotRange>(Math.Min(count, (bytes.Length - pos) / 4));
         for (int i = 0; i < count; i++)
         {
             int start = pos;

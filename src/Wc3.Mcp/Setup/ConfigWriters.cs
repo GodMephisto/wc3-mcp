@@ -292,14 +292,24 @@ public static class JsonConfig
                 if (valueEnd < 0) return false;
                 if (newEntry is null)
                 {
-                    int end = valueEnd;
+                    int start = tokens[entryNameIdx].Start;
                     if (CommaAfter(valueEnd))
                     {
-                        end = valueEnd;
+                        int end = valueEnd;
                         while (end < bytes.Length && IsJsonSpace(bytes[end])) end++;
                         end++;
+                        spliced = Splice(bytes, start, end, Array.Empty<byte>());
                     }
-                    spliced = Splice(bytes, tokens[entryNameIdx].Start, end, Array.Empty<byte>());
+                    else
+                    {
+                        // No comma follows, so this is the last entry. Remove the comma that
+                        // precedes it too, or the object would be left with a trailing comma that
+                        // a strict client rejects and the whole config stops loading.
+                        int lead = start;
+                        while (lead > 0 && IsJsonSpace(bytes[lead - 1])) lead--;
+                        if (lead > 0 && bytes[lead - 1] == (byte)',') lead--;
+                        spliced = Splice(bytes, lead, valueEnd, Array.Empty<byte>());
+                    }
                 }
                 else
                 {

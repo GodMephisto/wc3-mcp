@@ -144,6 +144,38 @@ public sealed class SetupTests : IDisposable
     }
 
     [Fact]
+    public void Removing_the_last_entry_from_a_commented_file_leaves_no_trailing_comma()
+    {
+        var text = $$"""
+            {
+              // our servers
+              "mcpServers": {
+                "other": { "command": "other.exe" },
+                "{{N}}": { "command": "wc3ctl.exe" }
+              }
+            }
+            """;
+        var file = Write(Path.Combine(Home, ".cursor", "mcp.json"), text);
+
+        var (code, _) = Cli("uninstall", "cursor");
+
+        Assert.Equal(0, code);
+        var after = File.ReadAllText(file);
+        Assert.Contains("// our servers", after);
+        // The removed entry was last, so dropping only it would leave a trailing comma. A client
+        // that rejects trailing commas would then refuse the whole file, losing every other entry.
+        var strict = new JsonDocumentOptions
+        {
+            CommentHandling = JsonCommentHandling.Skip,
+            AllowTrailingCommas = false,
+        };
+        var parsed = JsonNode.Parse(after, documentOptions: strict);
+        Assert.NotNull(parsed);
+        Assert.Equal("other.exe", (string?)parsed!.AsObject()["mcpServers"]!["other"]!["command"]);
+        Assert.False(parsed["mcpServers"]!.AsObject().ContainsKey(N));
+    }
+
+    [Fact]
     public void A_broken_json_file_with_comments_is_left_alone()
     {
         var text = "{ // start\n  \"mcpServers\": ";

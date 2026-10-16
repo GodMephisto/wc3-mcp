@@ -209,14 +209,15 @@ public static class SelfUpdateCommand
             string zipPath = Path.Combine(work, asset.Name);
             await DownloadAsync(asset.Url, zipPath, ct).ConfigureAwait(false);
 
-            if (sum is not null)
-            {
-                string sumPath = zipPath + ".sha256";
-                await DownloadAsync(sum.Value.Url, sumPath, ct).ConfigureAwait(false);
-                if (!VerifySha256(zipPath, sumPath))
-                    return new UpdateResult(false,
-                        "The download did not match its checksum, so it was discarded.", null, 0, 0);
-            }
+            if (sum is null)
+                return new UpdateResult(false,
+                    "The release carries no checksum, so it was not applied.", null, 0, 0);
+
+            string sumPath = zipPath + ".sha256";
+            await DownloadAsync(sum.Value.Url, sumPath, ct).ConfigureAwait(false);
+            if (!VerifySha256(zipPath, sumPath))
+                return new UpdateResult(false,
+                    "The download did not match its checksum, so it was discarded.", null, 0, 0);
 
             string unpacked = Path.Combine(work, "unpacked");
             ZipFile.ExtractToDirectory(zipPath, unpacked);

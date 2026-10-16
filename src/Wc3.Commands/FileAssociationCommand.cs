@@ -43,7 +43,10 @@ public static class FileAssociationCommand
         if (string.IsNullOrWhiteSpace(studioExePath))
             return new FileAssociationResult(false, "No Studio executable was given.");
 
-        string command = $"\"{studioExePath}\" \"%1\"";
+        // A trailing separator would make the closing quote part of the path once Windows parses
+        // the command line, so trim it before quoting.
+        string exe = studioExePath.TrimEnd('\\', '/');
+        string command = $"\"{exe}\" \"%1\"";
         try
         {
             foreach (var extension in Extensions)
