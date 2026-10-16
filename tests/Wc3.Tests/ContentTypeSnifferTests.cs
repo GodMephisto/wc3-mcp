@@ -127,4 +127,55 @@ public class ContentTypeSnifferTests
         Assert.True(t.IsEmpty);
         Assert.False(entry.IsMaterialized);
     }
+
+    [Fact]
+    public void Pre_sniff_warms_every_nameless_entry_without_materializing_any()
+    {
+        // 70 crosses the parallel threshold in MapDocument (64), so this exercises the per-worker
+        // archive path. Every payload is a valid BLP, so a skipped or mismatched read surfaces as a
+        // null or wrong type rather than passing silently.
+        var blp = Tagged("BLP1", 64 * 1024);
+        var unnamed = Enumerable.Range(0, 70).Select(_ => (byte[])blp.Clone()).ToArray();
+        var doc = Wc3.Model.MapDocument.Load(SyntheticMap.Build(
+            new Dictionary<string, byte[]> { ["war3map.j"] = Encoding.ASCII.GetBytes("// x\n") },
+            unnamed));
+
+        doc.PreSniffUnnamedEntries();
+
+        var nameless = doc.Files.Where(f => f.FileName is null).ToList();
+        Assert.Equal(70, nameless.Count);
+        Assert.All(nameless, f =>
+        {
+            Assert.Equal("BLP texture", ContentTypeSniffer.Sniff(f).DisplayName);
+            Assert.False(f.IsMaterialized);
+        });
+    }
+
+    [Fact]
+    public void Pre_sniff_below_the_threshold_still_types_nameless_entries()
+    {
+        var doc = Wc3.Model.MapDocument.Load(SyntheticMap.Build(
+            new Dictionary<string, byte[]> { ["war3map.j"] = Encoding.ASCII.GetBytes("// x\n") },
+            new[] { Tagged("MDLX") }));
+
+        doc.PreSniffUnnamedEntries();
+
+        var entry = doc.Files.Single(f => f.FileName is null);
+        Assert.Equal("MDX model", ContentTypeSniffer.Sniff(entry).DisplayName);
+    }
+
+    [Fact]
+    public void Pre_sniff_leaves_named_entries_uncached()
+    {
+        var blp = Tagged("BLP1");
+        var doc = Wc3.Model.MapDocument.Load(SyntheticMap.Build(
+            new Dictionary<string, byte[]> { ["war3map.j"] = Encoding.ASCII.GetBytes("// x\n") },
+            Enumerable.Range(0, 70).Select(_ => (byte[])blp.Clone()).ToArray()));
+
+        doc.PreSniffUnnamedEntries();
+
+        // A named entry's name already answers the type question, so no caller reads its cache and
+        // the pre-pass must not spend a read on it.
+        Assert.Null(doc.Files.Single(f => f.FileName == "war3map.j").SniffCache);
+    }
 }

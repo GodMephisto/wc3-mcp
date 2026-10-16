@@ -59,7 +59,8 @@ public static class PortraitRepairCommand
     /// <param name="stampVersion">
     /// When set, the model's VERS is rewritten to this value after the camera is removed.
     /// Removing the camera alone was reported by the map's author as not enough, and the
-    /// version has to be re-stamped too.
+    /// version has to be re-stamped too. The stamp applies only to the models the repair is
+    /// already touching, those below the target version that carry a camera.
     /// </param>
     /// <param name="upgradeGeometry">
     /// Insert the fields a version 900 or above model carries and an 800 era one does not,
@@ -82,25 +83,29 @@ public static class PortraitRepairCommand
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var units = ObjectKinds.MergedEntries(doc, ObjectKinds.Info(ObjectKind.Unit)).ToList();
+        var declaredModels = DeclaredUnitModels(doc, units).ToList();
         int resolved = 0, atRisk = 0, repaired = 0;
 
-        foreach (var unit in units)
+        foreach (string declared in declaredModels)
         {
-            string? declared = unit.Mods
-                .FirstOrDefault(m => m.Key.Equals("umdl", StringComparison.OrdinalIgnoreCase))
-                .Value;
             if (string.IsNullOrWhiteSpace(declared)) continue;
 
-            string baseName = declared.Replace('/', '\\').Split('\\').Last();
+            string full = declared.Replace('/', '\\');
+            int slash = full.LastIndexOf('\\');
+            string prefix = slash >= 0 ? full[..(slash + 1)] : "";
+            string baseName = slash >= 0 ? full[(slash + 1)..] : full;
             int dot = baseName.LastIndexOf('.');
             string stem = dot > 0 ? baseName[..dot] : baseName;
-            if (!seen.Add(stem)) continue;
+            if (!seen.Add(prefix + stem)) continue;
 
             // Resolved by MPQ name hash, NOT through GetFile, because a protected map lists
             // almost nothing. On one real map that difference was 3 models found against 178.
+            // The stem fallbacks keep the declared DIRECTORY, because a unit model is declared
+            // as war3mapImported\x.mdl while the archive stores war3mapImported\x.mdx, and a
+            // bare "x.mdx" hashes to a root entry that does not exist.
             byte[]? bytes = null;
             string? hit = null;
-            foreach (var candidate in new[] { declared, stem + ".mdx", stem + ".mdl" })
+            foreach (var candidate in new[] { declared, prefix + stem + ".mdx", prefix + stem + ".mdl" })
                 if (doc.TryReadFileByName(candidate, out var b) && b.Length >= 12)
                 {
                     bytes = b;
@@ -118,13 +123,14 @@ public static class PortraitRepairCommand
                 continue;
             }
 
-            // Without a version stamp the risk is the CONJUNCTION, a camera at a version below
-            // 900, because only those render the black pane. With one, the scope is every model
-            // below the target version, camera or not. That second case is what reaches a model
-            // whose camera an earlier pass already removed, which is exactly the build that was
-            // shipped and reported still broken.
+            // The black portrait pane is the CONJUNCTION a camera at a version below 900, the
+            // one case the command's own description names. A cameraless model renders correctly
+            // through the engine's own fallback, so it is left alone whether or not a version
+            // stamp was requested. Stamping every model below the target was the wrong scope, it
+            // reaches models that already render and, if the engine honours the declared version,
+            // changes how their geometry is read for no portrait benefit.
             int target = stampVersion ?? 900;
-            bool inScope = ver < target && (camera || stampVersion is not null);
+            bool inScope = ver < target && camera;
             if (!inScope)
             {
                 models.Add(new PortraitModel(hit, ver, camera,
@@ -202,10 +208,82 @@ public static class PortraitRepairCommand
                 apply ? what : "would " + what, bytes.Length, stripped.Length));
         }
 
-        diagnostics.Add($"{units.Count} units, {resolved} distinct models resolved from the "
-            + $"archive, {atRisk} at risk, {repaired} {(apply ? "repaired" : "repairable")}");
+        diagnostics.Add($"{units.Count} units, {declaredModels.Count} declared model path(s), "
+            + $"{resolved} distinct models resolved from the archive, {atRisk} at risk, "
+            + $"{repaired} {(apply ? "repaired" : "repairable")}");
         return new PortraitRepairResult(units.Count, resolved, atRisk, repaired,
             models.OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase).ToList(), diagnostics);
+    }
+
+    /// <summary>
+    /// Every model path the map declares for a unit, from all three homes a map can use.
+    ///
+    /// Object data carries <c>umdl</c>. A Reforged or repaired map carries the skin profile
+    /// <c>Units\UnitSkin.txt</c>, key <c>file</c>. A pre-Reforged SLK map carries a <c>file</c>
+    /// column in <c>Units\UnitUI.slk</c>. Reading only object data is the blindness that let this
+    /// repair report "0 at risk" on a map whose black-portrait heroes are all defined in the SLK
+    /// and the skin profile, not in war3map.w3u.
+    /// </summary>
+    private static IEnumerable<string> DeclaredUnitModels(
+        MapDocument doc, IReadOnlyList<MapObjectEntry> units)
+    {
+        foreach (var unit in units)
+            if (unit.Mods
+                    .FirstOrDefault(m => m.Key.Equals("umdl", StringComparison.OrdinalIgnoreCase))
+                    .Value is { Length: > 0 } umdl)
+                yield return umdl;
+
+        // Resolved by MPQ name hash rather than GetFile, because a protected map strips the
+        // listfile so these standard paths read as unnamed and a GetFile lookup finds nothing.
+        if (doc.TryReadFileByName(@"Units\UnitSkin.txt", out var skinBytes) && skinBytes.Length > 0)
+            foreach (var path in ProfileFileValues(skinBytes))
+                yield return path;
+
+        if (doc.TryReadFileByName(@"Units\UnitUI.slk", out var slkBytes) && slkBytes.Length > 0)
+            foreach (var path in SlkFileColumnValues(slkBytes))
+                yield return path;
+    }
+
+    /// <summary>Every comma-separated <c>file</c> value of an INI-style skin profile.</summary>
+    private static IEnumerable<string> ProfileFileValues(byte[] bytes)
+    {
+        foreach (var raw in Encoding.Latin1.GetString(bytes).Replace("\r\n", "\n").Split('\n'))
+        {
+            string line = raw.Trim();
+            if (line.Length == 0 || line[0] == '[' || line.StartsWith("//", StringComparison.Ordinal))
+                continue;
+            int eq = line.IndexOf('=');
+            if (eq <= 0 || !line[..eq].Trim().Equals("file", StringComparison.OrdinalIgnoreCase))
+                continue;
+            foreach (var path in SplitPaths(line[(eq + 1)..]))
+                yield return path;
+        }
+    }
+
+    /// <summary>Every comma-separated <c>file</c> cell of a legacy SLK table.</summary>
+    private static IEnumerable<string> SlkFileColumnValues(byte[] bytes)
+    {
+        var slk = Reforged3RepairCommand.SlkDocument.Parse(bytes);
+        if (!slk.TryGetColumn("file", out _))
+            yield break;
+        foreach (var row in slk.Rows())
+        {
+            if (!row.TryGetValue("file", out var value))
+                continue;
+            foreach (var path in SplitPaths(value))
+                yield return path;
+        }
+    }
+
+    /// <summary>A model cell can list several paths comma-separated, take each.</summary>
+    private static IEnumerable<string> SplitPaths(string value)
+    {
+        foreach (var part in value.Split(','))
+        {
+            string path = part.Trim().Trim('"');
+            if (path.Length > 0)
+                yield return path;
+        }
     }
 
     /// <summary>

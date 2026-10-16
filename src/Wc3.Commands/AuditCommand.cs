@@ -463,10 +463,7 @@ public static class AuditCommand
         // Everything the map defines, which is what a requirement may legitimately name. The
         // map's own gating redefines base unit ids as invisible markers, so a requirement
         // naming one of those is deliberate and must not be reported.
-        var defined = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var kind in ObjectKinds.All)
-            foreach (var e in ObjectKinds.MergedEntries(doc, ObjectKinds.Info(kind)))
-                defined.Add(e.Id.ToRawcode());
+        var defined = MapDefinedRawcodes(doc);
         var index = ObjectKinds.MergedEntries(doc, ObjectKinds.Info(ObjectKind.Ability))
             .ToDictionary(e => e.Id);
 
@@ -554,10 +551,7 @@ public static class AuditCommand
     /// </summary>
     internal static DanglingScan DanglingReferences(MapDocument doc, GameData.GameDataContext ctx)
     {
-        var mapDefines = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var kind in ObjectKinds.All)
-            foreach (var e in ObjectKinds.MergedEntries(doc, ObjectKinds.Info(kind)))
-                mapDefines.Add(e.Id.ToRawcode());
+        var mapDefines = MapDefinedRawcodes(doc);
 
         // A buff id is legitimately satisfied by either store, because the engine lets an
         // ability id stand where a buff is expected and several base abilities do exactly that.
@@ -591,6 +585,69 @@ public static class AuditCommand
             }
         return new DanglingScan(found, examined, resolvedByMap, resolvedByGame);
     }
+
+    /// <summary>
+    /// Every rawcode the map defines, from object data AND from replacement SLK tables.
+    ///
+    /// A map can define its objects in the SLK files it ships instead of, or as well as, object
+    /// data. Reading only object data reports every SLK-defined object as dangling, which is how
+    /// a map whose buffs live in Units\AbilityBuffData.slk collected 21 phantom dangling-buff
+    /// errors and would have had those 21 real ability fields rewritten to a different buff by
+    /// repair audit-errors. Only the object tables are read, never a *MetaData.slk, whose leading
+    /// column is a field id and would wrongly whitelist arbitrary rawcodes.
+    /// </summary>
+    internal static HashSet<string> MapDefinedRawcodes(MapDocument doc)
+    {
+        var defined = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kind in ObjectKinds.All)
+            foreach (var e in ObjectKinds.MergedEntries(doc, ObjectKinds.Info(kind)))
+                defined.Add(e.Id.ToRawcode());
+
+        // A named SLK in the archive, split on the archive's own separator so a backslash path
+        // is read the same on macOS and Linux as on Windows.
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in doc.Files)
+        {
+            if (file.FileName is null || !ObjectSlkNames.Contains(Wc3Path.GetFileName(file.FileName)))
+                continue;
+            seen.Add(Wc3Path.GetFileName(file.FileName));
+            AddSlkRawcodes(file.CurrentBytes, defined);
+        }
+
+        // A protected map strips the listfile, so a named SLK reads as unnamed and the loop
+        // above sees nothing. Probe the standard paths by MPQ hash so those maps still resolve
+        // their SLK-defined rawcodes.
+        foreach (var path in ObjectSlkPaths)
+            if (!seen.Contains(Wc3Path.GetFileName(path))
+                && doc.TryReadFileByName(path, out var bytes) && bytes.Length > 0)
+                AddSlkRawcodes(bytes, defined);
+
+        return defined;
+    }
+
+    private static void AddSlkRawcodes(byte[] bytes, HashSet<string> defined)
+    {
+        foreach (var id in Reforged3RepairCommand.SlkDocument.Parse(bytes).FirstColumnValues())
+            if (id.Length > 0)
+                defined.Add(id);
+    }
+
+    /// <summary>The object SLK tables a map can ship, by file name. Not the *MetaData.slk set.</summary>
+    private static readonly HashSet<string> ObjectSlkNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "AbilityData.slk", "AbilityBuffData.slk", "UnitData.slk", "UnitUI.slk",
+        "UnitBalance.slk", "UnitWeapons.slk", "UnitAbilities.slk", "ItemData.slk",
+        "UpgradeData.slk", "DestructableData.slk", "Doodads.slk",
+    };
+
+    /// <summary>The standard archive paths for the object SLK tables, probed on protected maps.</summary>
+    private static readonly string[] ObjectSlkPaths =
+    {
+        @"Units\AbilityData.slk", @"Units\AbilityBuffData.slk", @"Units\UnitData.slk",
+        @"Units\UnitUI.slk", @"Units\UnitBalance.slk", @"Units\UnitWeapons.slk",
+        @"Units\UnitAbilities.slk", @"Units\ItemData.slk", @"Units\UpgradeData.slk",
+        @"Units\DestructableData.slk", @"Doodads\Doodads.slk",
+    };
 
     private static string DisplayName(MapObjectEntry e, MapStrings strings) =>
         strings.Resolve(ModValue(e, "unam") ?? ModValue(e, "anam")) is { Length: > 0 } n

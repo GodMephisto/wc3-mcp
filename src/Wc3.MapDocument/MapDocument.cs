@@ -230,6 +230,109 @@ public sealed class MapDocument
         }
     }
 
+    // Below this many nameless entries the per-worker archive setup costs more than the reads it
+    // parallelizes, so the sweep stays sequential. Measured against a protected map with 64,738
+    // nameless entries, where the serialized sweep was 22.6 seconds.
+    private const int ParallelSniffThreshold = 64;
+
+    /// <summary>
+    /// Warms <see cref="MapFileEntry.SniffCache"/> for every nameless entry so a later
+    /// <see cref="ContentTypeSniffer.Sniff(MapFileEntry)"/> is a cache read.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ReadEntryPrefix"/> takes <see cref="_archiveLock"/> around the single shared
+    /// archive, so a serialized sweep of a protected map's nameless entries reads one leading
+    /// sector at a time, measured at 22.6 seconds for 64,738 of them. Past
+    /// <see cref="ParallelSniffThreshold"/> this opens one <see cref="MpqArchive"/> per worker over
+    /// the same in-memory original bytes with <c>loadListFile: false</c> and reads each entry's
+    /// prefix from its own archive, so <see cref="_archiveLock"/> is never taken and the reads run
+    /// concurrently. The bytes sniffed are identical to the shared path, and a fresh archive
+    /// enumerates blocks in the order Load assigned <see cref="MapFileEntry.BlockIndex"/>, so a
+    /// worker indexes its own archive by that index. A named entry never needs a content type,
+    /// every caller asks only about nameless ones, so only nameless entries are collected.
+    /// </remarks>
+    public void PreSniffUnnamedEntries()
+    {
+        var targets = new List<MapFileEntry>();
+        foreach (var f in _files)
+            if (f.FileName is null && f.SniffCache is null && f.OverrideBytes is null
+                && !f.IsMaterialized && f.CurrentSize > 0)
+                targets.Add(f);
+        if (targets.Count == 0) return;
+
+        if (targets.Count < ParallelSniffThreshold)
+        {
+            foreach (var f in targets) ContentTypeSniffer.Sniff(f);
+            return;
+        }
+
+        Parallel.ForEach(targets,
+            () => new EntryPrefetcher(_originalBytes),
+            (entry, _, prefetcher) => { prefetcher.Sniff(entry); return prefetcher; },
+            prefetcher => prefetcher.Dispose());
+
+        // An entry added since Load carries no block row in the archive the workers opened, so a
+        // worker left it alone. Classify whatever is still uncached through the shared reader,
+        // which for these is an in-memory or already-armed read rather than the bulk of the work.
+        foreach (var f in targets)
+            if (f.SniffCache is null) ContentTypeSniffer.Sniff(f);
+    }
+
+    /// <summary>
+    /// A per-worker MPQ archive over the document's original bytes, used only to read leading
+    /// sectors of nameless entries without the shared <see cref="_archiveLock"/>. War3Net's
+    /// <see cref="MpqArchive"/> is not thread safe, so one per worker keeps every read on that
+    /// worker independent. The Parallel.ForEach local init creates one and its matching local
+    /// finally disposes it, so no archive outlives the sweep.
+    /// </summary>
+    private sealed class EntryPrefetcher : IDisposable
+    {
+        private readonly MpqArchive _archive;
+        private readonly MpqEntry[] _byBlock;
+
+        public EntryPrefetcher(byte[] originalBytes)
+        {
+            _archive = MpqArchive.Open(
+                new MemoryStream(originalBytes, writable: false), loadListFile: false);
+            _byBlock = _archive.ToArray();
+        }
+
+        public void Sniff(MapFileEntry file)
+        {
+            if (file.BlockIndex < 0 || file.BlockIndex >= _byBlock.Length) return;
+            var block = _byBlock[file.BlockIndex];
+            int want = (int)Math.Min(ContentTypeSniffer.PrefixLength, block.FileSize);
+            if (want <= 0) return;
+
+            byte[] prefix;
+            try
+            {
+                using var fs = _archive.OpenFile(block);
+                var buffer = new byte[want];
+                int got = 0;
+                while (got < want)
+                {
+                    int n = fs.Read(buffer, got, want - got);
+                    if (n <= 0) break;
+                    got += n;
+                }
+                prefix = got == want ? buffer : buffer[..got];
+            }
+            catch
+            {
+                // A declared size with no readable bytes is Unreadable, not Empty, matching
+                // ContentTypeSniffer.Sniff(MapFileEntry). The full read owns reporting, this is silent.
+                prefix = Array.Empty<byte>();
+            }
+
+            file.SniffCache ??= prefix.Length == 0
+                ? SniffedContentType.Unreadable
+                : ContentTypeSniffer.Sniff(prefix);
+        }
+
+        public void Dispose() => _archive.Dispose();
+    }
+
     private void ParseKnownFiles()
     {
         foreach (var entry in _files)

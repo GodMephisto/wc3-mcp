@@ -66,6 +66,12 @@ public static class Wc3Tools
         => Run(() => ChangelogCommand.Execute(
             repo_dir ?? RepoLayout.FindRoot() ?? Directory.GetCurrentDirectory(), from_ref, to_ref));
 
+    [McpServerTool(Name = "quickstart", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Route a broad request to the right workflow. Returns the ten core workflows a map task usually falls into (inspect, port-hero, reforged-3-fix, black-portraits, shrink-map, hunt-leaks, edit-objects, terrain-and-placement, lua-conversion, patch-compat), each naming the MCP tools and the wc3ctl commands that carry it out. Pass a goal (a substring such as 'portrait', 'leak' or 'shrink') to narrow the list. With more than two hundred tools on this server, call this first when the caller states an outcome rather than a tool. Read-only, it touches no map.")]
+    public static IReadOnlyList<QuickstartWorkflow> Quickstart(
+        [Description("Optional goal substring used to narrow the workflows, for example 'portrait', 'leak' or 'shrink'.")] string? goal = null)
+        => Run(() => QuickstartCommand.Execute(goal));
+
     [McpServerTool(Name = "mcp_export_verify", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Verify that a wc3-mcp checkout holds the same server source scripts/export-wc3-mcp.py would export from this repository, reporting every file that differs without writing. Read-only.")]
     public static McpExportVerifyResult McpExportVerify(
@@ -2559,6 +2565,69 @@ public static class Wc3Tools
         => Run(() => SaveEdit(map, out_path, doc =>
         {
             var r = TriggerCommand.SetRunOnMapInit(doc, id, on);
+            return (r.Ok, r.Message);
+        }));
+
+    [McpServerTool(Name = "trigger_var_list", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("List the map's global variables (the .wtg Variables list), each with its name, type, array flag, declared size and initial value. Read-only.")]
+    public static IReadOnlyList<TriggerVariableFields> TriggerVarList(
+        [Description("Path to a .w3x/.w3m map file.")] string map)
+        => Run(() => TriggerCommand.ListVariables(LoadMap(map)));
+
+    [McpServerTool(Name = "trigger_var_add", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
+    [Description("Add a global variable to the map's wtg and save the edited map to out_path. Provides a name, a type (for example integer, real, string, boolean, unit, group, trigger) and, for an array, the array flag and size. An initial value marks the variable initialized. Refuses a blank name or type and a name that already exists, because the wtg keys variables by name. IMPORTANT: this edits war3map.wtg, the World Editor's trigger SOURCE, not war3map.j, so a variable it defines is visible in the World Editor and inert in game until that editor saves the map. The input map is NEVER modified in place.")]
+    public static EditToolResult TriggerVarAdd(
+        [Description("Path to the source .w3x/.w3m map file. Read-only; the edited copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map). To make SEVERAL edits, pass this file as the next call's map argument. Each tool loads the map fresh from disk, so two edits both reading the ORIGINAL map produce two separate outputs and the first edit is lost.")] string out_path,
+        [Description("Variable name.")] string name,
+        [Description("Variable type, for example integer, real, string, boolean, unit, group or trigger.")] string type,
+        [Description("Declare it as an array. Default false.")] bool is_array = false,
+        [Description("Array size when is_array is true. Default 1.")] int array_size = 1,
+        [Description("Initial value. Providing one marks the variable initialized. Omit to leave it uninitialized.")] string? initial_value = null)
+        => Run(() => SaveEdit(map, out_path, doc =>
+        {
+            var r = TriggerCommand.AddVariable(doc, name, type, is_array, array_size, initial_value);
+            return (r.Ok, r.Message);
+        }));
+
+    [McpServerTool(Name = "trigger_var_set", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Update an existing global variable in the map's wtg by name and save the edited map to out_path. Any argument left off keeps its current value, so one field can change without restating the rest. This does not rewrite references to the variable inside trigger bodies. The input map is NEVER modified in place.")]
+    public static EditToolResult TriggerVarSet(
+        [Description("Path to the source .w3x/.w3m map file. Read-only; the edited copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map). To make SEVERAL edits, pass this file as the next call's map argument. Each tool loads the map fresh from disk, so two edits both reading the ORIGINAL map produce two separate outputs and the first edit is lost.")] string out_path,
+        [Description("Name of the variable to update.")] string name,
+        [Description("New type. Omit to keep the current one.")] string? type = null,
+        [Description("New array flag. Omit to keep the current one.")] bool? is_array = null,
+        [Description("New array size. Omit to keep the current one.")] int? array_size = null,
+        [Description("New initial value, which also marks the variable initialized. Omit to keep the current one.")] string? initial_value = null)
+        => Run(() => SaveEdit(map, out_path, doc =>
+        {
+            var r = TriggerCommand.SetVariable(doc, name, type, is_array, array_size, initial_value);
+            return (r.Ok, r.Message);
+        }));
+
+    [McpServerTool(Name = "trigger_var_remove", ReadOnly = false, Destructive = true, Idempotent = false, OpenWorld = false)]
+    [Description("Remove a global variable from the map's wtg by name and save the edited map to out_path. Any trigger that referenced the variable is left pointing at nothing, so check references afterwards. The input map is NEVER modified in place.")]
+    public static EditToolResult TriggerVarRemove(
+        [Description("Path to the source .w3x/.w3m map file. Read-only; the edited copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map). To make SEVERAL edits, pass this file as the next call's map argument. Each tool loads the map fresh from disk, so two edits both reading the ORIGINAL map produce two separate outputs and the first edit is lost.")] string out_path,
+        [Description("Name of the variable to remove.")] string name)
+        => Run(() => SaveEdit(map, out_path, doc =>
+        {
+            var r = TriggerCommand.RemoveVariable(doc, name);
+            return (r.Ok, r.Message);
+        }));
+
+    [McpServerTool(Name = "trigger_set_code", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Set the custom-text JASS body of a custom-text trigger and save the edited map to out_path. The body is written into war3map.wct at the byte level, replacing only that trigger's slot so every other slot's bytes survive verbatim. This is a deliberate change of direction from the rest of the trigger surface, which never rewrites war3map.wct, and it is safe here because only the one slot is spliced rather than the whole file re-encoded. A GUI trigger is refused. IMPORTANT: this edits the World Editor's trigger source, not the compiled war3map.j the game runs, so the body is inert in game until the map is opened and saved in the World Editor. The input map is NEVER modified in place.")]
+    public static EditToolResult TriggerSetCode(
+        [Description("Path to the source .w3x/.w3m map file. Read-only; the edited copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map). To make SEVERAL edits, pass this file as the next call's map argument. Each tool loads the map fresh from disk, so two edits both reading the ORIGINAL map produce two separate outputs and the first edit is lost.")] string out_path,
+        [Description("Trigger item id of the custom-text trigger, from triggers_read.")] int id,
+        [Description("The JASS body to store in this trigger's war3map.wct slot.")] string code)
+        => Run(() => SaveEdit(map, out_path, doc =>
+        {
+            var r = TriggerCommand.SetCustomText(doc, id, code);
             return (r.Ok, r.Message);
         }));
 
