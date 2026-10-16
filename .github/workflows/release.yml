@@ -159,7 +159,21 @@ jobs:
           curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
 
       - name: Publish to the MCP Registry
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           ./mcp-publisher validate
           ./mcp-publisher login github-oidc
-          ./mcp-publisher publish
+          # npm can take a minute before a just published version is visible, and the registry
+          # refuses a server whose npm package version it cannot see yet, so retry with a wait.
+          VERSION="${TAG#v}"
+          for i in $(seq 1 10); do
+            if ./mcp-publisher publish; then
+              echo "published to the MCP Registry on attempt $i"
+              exit 0
+            fi
+            echo "attempt $i failed, waiting 30s for npm to publish ${VERSION}"
+            sleep 30
+          done
+          echo "giving up after 10 attempts"
+          exit 1
