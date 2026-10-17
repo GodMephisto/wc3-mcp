@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Text;
 using System.Text.RegularExpressions;
+using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using ModelContextProtocol.Protocol;
 using Wc3.Commands.Rag;
@@ -156,9 +157,25 @@ public static class Wc3Context
         return slash < 0 ? docId : docId[..slash];
     }
 
+    /// <summary>
+    /// Map the RAG store's own failures to a clean tool error. A missing or malformed index or
+    /// graph, or a failed download, becomes an McpException the client shows, not a raw crash.
+    /// </summary>
+    private static T Rag<T>(Func<T> body)
+    {
+        try
+        {
+            return body();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or DirectoryNotFoundException or IOException)
+        {
+            throw new McpException(ex.Message);
+        }
+    }
+
     [McpServerTool(Name = "rag_status", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Report whether the local semantic retrieval index is installed, with its chunk count, corpus and the embedding model. docs_search uses the index automatically once it is installed.")]
-    public static object RagStatus() => RagCommand.Status();
+    public static object RagStatus() => Rag(() => (object)RagCommand.Status());
 
     [McpServerTool(Name = "rag_install", ReadOnly = false, Idempotent = true, OpenWorld = true)]
     [Description("Install the local semantic index and graph over the Warcraft III corpus. Fetches the embedding model and the corpus dataset, verifies each, and builds the index and the graph, after which docs_search is semantic and the graph tools work. Needs network on the first run. The corpus is fixed to the bundled dataset, never a folder named by the caller, so this cannot read arbitrary local files.")]
@@ -166,7 +183,7 @@ public static class Wc3Context
         [Description("CPU threads for embedding. Default min(cores/2, 4), the low CPU setting. Raise it to build faster.")] int? threads = null,
         [Description("Chunks per inference, default 16. Larger batches finish sooner and use more memory.")] int? batch = null)
     {
-        var r = RagCommand.Install(null, threads, batch);
+        var r = Rag(() => RagCommand.Install(null, threads, batch));
         return new { r.Root, r.Corpus, r.Chunks, r.IndexFile, r.ModelRepo, note = "docs_search is now semantic" };
     }
 
@@ -177,19 +194,19 @@ public static class Wc3Context
         [Description("How many hops out to walk. Default 1.")] int depth = 1,
         [Description("Restrict to one edge type, HAS_SECTION, LINKS_TO or SIMILAR_TO. Omit for all.")] string? edge = null,
         [Description("Maximum nodes to return. Default 25.")] int limit = 25)
-        => RagCommand.GraphNeighbors(node, depth, edge, limit);
+        => Rag(() => RagCommand.GraphNeighbors(node, depth, edge, limit));
 
     [McpServerTool(Name = "graph_hubs", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("The most connected nodes in the corpus graph, the documents and sections the corpus centres on. Use it to see what the corpus is really about.")]
     public static object GraphHubs(
         [Description("Maximum nodes to return. Default 20.")] int top = 20,
         [Description("Restrict to one node type, Document or Section. Omit for all.")] string? type = null)
-        => RagCommand.GraphHubs(top, type);
+        => Rag(() => RagCommand.GraphHubs(top, type));
 
     [McpServerTool(Name = "graph_path", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("The shortest chain of edges between two nodes in the corpus graph, so you can see how two documents or subjects connect.")]
     public static object GraphPath(
         [Description("The start node id or name.")] string from,
         [Description("The end node id or name.")] string to)
-        => RagCommand.GraphPath(from, to);
+        => Rag(() => RagCommand.GraphPath(from, to));
 }
