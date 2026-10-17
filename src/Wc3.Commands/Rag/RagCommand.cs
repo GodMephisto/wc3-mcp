@@ -13,7 +13,8 @@ public static class RagCommand
         int Chunks, string Corpus, string? BuiltUtc, string ModelRepo);
 
     public sealed record RagInstallResult(
-        string Root, string Corpus, int Chunks, string IndexFile, long IndexBytes, string ModelRepo);
+        string Root, string Corpus, int Chunks, string IndexFile, long IndexBytes, string ModelRepo,
+        long Nodes = 0, long Edges = 0, long Neo4jNodes = 0, long Neo4jEdges = 0);
 
     public sealed record RagHit(string Document, string Section, float Score, string Passage);
 
@@ -41,7 +42,7 @@ public static class RagCommand
         return new RagDatasetResult(dir, n, RagPaths.DatasetUrl);
     }
 
-    public static RagInstallResult Install(string? corpus, int? threads = null, int? batch = null, Action<string>? log = null)
+    public static RagInstallResult Install(string? corpus, int? threads = null, int? batch = null, Action<string>? log = null, bool neo4j = false)
     {
         // No corpus given means the full public dataset, fetched from the release and verified,
         // so the package stays small and a client still gets everything with one command.
@@ -56,8 +57,26 @@ public static class RagCommand
         var graph = RagGraph.Build(ctx, index, (n, doc) => log?.Invoke($"  {n,5} graph nodes, {doc}"));
         graph.Save(RagPaths.GraphFile);
         log?.Invoke($"graph    {graph.Nodes.Count} nodes, {graph.Edges.Count} edges");
+
+        long neo4jNodes = 0, neo4jEdges = 0;
+        if (neo4j)
+        {
+            // The load is verified against the graph, and a mismatch fails the install rather than
+            // reporting success over a store that did not take the graph.
+            using var store = Neo4jStore.FromEnvironment();
+            store.VerifyConnectivityAsync().GetAwaiter().GetResult();
+            store.EnsureSchemaAsync().GetAwaiter().GetResult();
+            store.LoadAsync(graph, (nodes, edges) => { if (nodes > 0 || edges > 0) log?.Invoke($"  neo4j {nodes} nodes, {edges} edges"); }).GetAwaiter().GetResult();
+            (neo4jNodes, neo4jEdges) = store.CountsAsync().GetAwaiter().GetResult();
+            log?.Invoke($"neo4j    {neo4jNodes} nodes, {neo4jEdges} edges");
+            if (neo4jNodes != graph.Nodes.Count || neo4jEdges != graph.Edges.Count)
+                throw new InvalidOperationException(
+                    $"the neo4j store holds {neo4jNodes} nodes and {neo4jEdges} edges, the graph built {graph.Nodes.Count} and {graph.Edges.Count}");
+        }
+
         return new RagInstallResult(
-            RagPaths.Root, ctx, index.Chunks.Count, RagPaths.IndexFile, new FileInfo(RagPaths.IndexFile).Length, RagPaths.ModelRepo);
+            RagPaths.Root, ctx, index.Chunks.Count, RagPaths.IndexFile, new FileInfo(RagPaths.IndexFile).Length, RagPaths.ModelRepo,
+            graph.Nodes.Count, graph.Edges.Count, neo4jNodes, neo4jEdges);
     }
 
     public static RagSearchResult Search(string query, int top = 8, int? threads = null)
