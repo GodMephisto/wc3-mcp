@@ -1,0 +1,69 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WiseOwlSoftware/WiseOwl.Casc"
+source_path: "docs/api/WiseOwl.Casc.Diablo4/WiseOwl.Casc.Diablo4/Diablo4Storage/GetAttributeName.md"
+ref: HEAD
+---
+
+# Diablo4Storage.GetAttributeName method (1 of 2)
+
+FR-C25 / FR-C27 — resolve an engine `AttributeId` (the raw `eAttribute` int on a [`NodeAttribute`](../NodeAttribute.md) / [`GlyphAffixAttributeRef`](../GlyphAffixAttributeRef.md) / [`AffixEffect`](../AffixEffect.md)) to its in-game localized display name via the `AttributeDescriptions` StringList (sno `4080`) — the same source the tooltip renderer uses.
+
+```csharp
+public string? GetAttributeName(int attributeId, string locale = "enUS")
+```
+
+| parameter | description |
+| --- | --- |
+| attributeId | The raw `eAttribute` int. |
+| locale | Locale (default [`DefaultLocale`](./DefaultLocale.md)); routes through the per-locale StringList bundle via [`GetStrings`](./GetStrings.md). |
+
+## Return Value
+
+The stripped display name (templates / placeholders / color tags removed) — e.g. `"Strength"` for id 9, `"Maximum Life"` for 133, `"Armor"` for 482, `"Damage to Elites"` for 953 (the current-build ids; stale predecessors 481/950 resolve to `null`). `null` on any of the unresolved cases above.
+
+## Remarks
+
+Pipeline (CL-88, season-robust). The raw `AttributeId` is a registry ordinal the engine renumbers every build (Armor `481→482`, Damage-to-Elites `950→953`, high-health `1120→1123`, Barrier `1124→1127`, …), so it is not a durable key. Resolution is therefore (1) a runtime `id → node-name token` scan of the live `Generic_` nodes → [`LabelByToken`](../AttributeNames/LabelByToken.md) (the season-stable primary, auto-tracking each build's renumbering); then (2) a second read-not-curated source — the item-affix `Desc` placeholder token, which is itself a sno-4080 key, keyed by the current-build `AttributeId` (FR-C27 R2 / CL-97; resolves many ids the curated node path misses, e.g. `707 → "Damage Over Time"`); then (3) the curated [`LabelByAttributeId`](../AttributeNames/LabelByAttributeId.md) fallback, restricted to the stable low range ([`StableAttributeIdRangeExclusiveMax`](../AttributeNames/StableAttributeIdRangeExclusiveMax.md)) — the drift-prone tail is intentionally absent so a shifted id returns an honest `null` rather than a stale wrong name (FR-C31 / CL-93); then (4) the compound base-id map. Ids no affix or curated token names (node/glyph-only stats) return `null` — the honest residual, never a wrong name. The affix source is built by a one-time full-affix scan on first use, cached.
+
+Flag-namespaced (negative) ids are out of scope here. A negative `attributeId` (high bit `0x80000000` set) is a `DataAttributes` designer-table reference, a disjoint namespace — this method returns `null` for it (never `abs()` it into the engine table); resolve it via [`TryGetDataAttributeName`](./TryGetDataAttributeName.md). The `-1` "no attribute" sentinel also returns `null`.
+
+Returns `null` when the id resolves to no label, when the `AttributeDescriptions` bundle is missing for the locale, or when the label isn't in the table (honest sentinel — the consumer composes its own `"Attribute <id>"` fallback).
+
+## See Also
+
+* class [Diablo4Storage](../Diablo4Storage.md)
+* namespace [WiseOwl.Casc.Diablo4](../../WiseOwl.Casc.Diablo4.md)
+
+---
+
+# Diablo4Storage.GetAttributeName method (2 of 2)
+
+FR-C28 (CL-85) — compound-key attribute-name resolution. Same pipeline as the single-id [`GetAttributeName`](./GetAttributeName.md) overload, but consults the [`LabelByCompoundKey`](../AttributeNames/LabelByCompoundKey.md) map first when *paramPlus12* is non-sentinel (a real `ParamPlus12` GBID / enum / SNO ref). Resolves the tag-conditional cases the simple id can't disambiguate — e.g. `(259, 0x32ABA6FB) → "Demonology Damage"` on `Warlock_Rare_006`, `(254, 1) → "Fire Damage"` on a fire-typed elemental node, `(238, 0xCCA1AF65) → "Companion Cooldown Reduction"` on a Druid CDR node.
+
+```csharp
+public string? GetAttributeName(int attributeId, uint paramPlus12, string locale = "enUS")
+```
+
+| parameter | description |
+| --- | --- |
+| attributeId | The raw `eAttribute` int. |
+| paramPlus12 | The associated `ParamPlus12` — a skill-tag GBID, element/status/form/resource enum, or power/weapon SNO ref depending on *attributeId*'s semantics. Pass the [`NoParam`](../GlyphAffixAttributeRef/NoParam.md) sentinel (`0xFFFFFFFF`) for "no compound key" (forwards to the single-id overload). |
+| locale | Locale (default [`DefaultLocale`](./DefaultLocale.md)). |
+
+## Return Value
+
+The resolved display string, or `null` when neither the compound map nor the single-id map has an entry.
+
+## Remarks
+
+Cascade. (1) If *paramPlus12* is the no-param sentinel (`0xFFFFFFFF`) → forward to [`GetAttributeName`](./GetAttributeName.md). (2) Else, look up `(attributeId, paramPlus12)` in [`LabelByCompoundKey`](../AttributeNames/LabelByCompoundKey.md) — direct hit returns the curated enUS string. (3) Compound miss → fall through to the single-id lookup (so a partially-mapped attribute still surfaces the base label rather than nothing).
+
+Locale. The compound map is enUS-only today (clean-room curated; the tag names are typically build-stable and don't need StringList resolution). The *locale* argument is reserved for the future iteration that pipes the AttributeDescriptions template through the per-locale StringList and substitutes the per-tag name.
+
+## See Also
+
+* class [Diablo4Storage](../Diablo4Storage.md)
+* namespace [WiseOwl.Casc.Diablo4](../../WiseOwl.Casc.Diablo4.md)
+
+<!-- DO NOT EDIT: generated by xmldocmd for WiseOwl.Casc.Diablo4.dll -->

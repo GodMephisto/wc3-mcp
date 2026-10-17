@@ -1,0 +1,21 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/ReterasModelStudio"
+source_path: "matrixeater/src/com/matrixeater/hacks/texerrors.txt"
+ref: HEAD
+---
+
+UI\Widgets\ToolTips\Human\ToolTipManaIcon.blp
+UI\Widgets\EscMenu\Human\human-options-button-highlight.blp
+UI\Widgets\EscMenu\NightElf\nightelf-options-button-highlight.blp
+UI\Widgets\EscMenu\Orc\orc-options-button-highlight.blp
+UI\Widgets\EscMenu\Undead\undead-options-button-highlight.blp
+UI\MiniMap\ping2.blp
+UI\MiniMap\ping4.blp
+UI\MiniMap\ping5.blp
+UI\MiniMap\ping6.blp
+UI\Feedback\BuildProgressBar\human-buildprogressbar-border.blp
+UI\Feedback\BuildProgressBar\human-buildprogressbar-fill.blp
+UI\Feedback\HPBarConsole\human-healthbar-fill.blp
+UI\Feedback\XpBar\human-bigbar-fill.blp
+UI\Feedback\XpBar\human-xpbar-border.blp

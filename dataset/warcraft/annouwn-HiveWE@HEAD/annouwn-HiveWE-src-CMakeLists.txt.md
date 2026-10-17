@@ -1,0 +1,240 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/annouwn/HiveWE"
+source_path: "src/CMakeLists.txt"
+ref: HEAD
+---
+
+target_sources(HiveWE_lib PUBLIC FILE_SET yeet TYPE CXX_MODULES FILES
+	"types.ixx"
+	"map_global.ixx"
+	"globals.ixx"
+
+	"base/map/map.ixx"
+	"base/map/resize.cpp"
+	"base/map/unused_files.cpp"
+	"base/binary_reader.ixx"
+	"base/doodad.ixx"
+	"base/doodads.ixx"
+	"base/binary_writer.ixx"
+	"base/hierarchy.ixx"
+	"base/render_manager.ixx"
+	"base/game_cameras.ixx"
+	"base/gameplay_constants.ixx"
+	"base/imports.ixx"
+	"base/map_info.ixx"
+	"base/pathing_map.ixx"
+	"base/regions.ixx"
+	"base/stock_object_data.ixx"
+	"base/camera.ixx"
+	"base/world_undo_manager.ixx"
+	"base/window_handler.ixx"
+	"base/resource_manager.ixx"
+	"base/shadow_map.ixx"
+	"base/sounds.ixx"
+	"base/trigger_strings.ixx"
+	"base/physics.ixx"
+	"base/terrain_undo.ixx"
+	"base/units_undo.ixx"
+	"base/pathing_undo.ixx"
+	"base/doodads_undo.ixx"
+	"base/regions_undo.ixx"
+	"base/units.ixx"
+	"base/terrain.ixx"
+
+	"base/triggers/triggers.ixx"
+	"base/triggers/gui.cpp"
+	"base/triggers/map_script.cpp"
+
+	"file_formats/blp.ixx"
+	"file_formats/casc.ixx"
+	"file_formats/ini.ixx"
+	"file_formats/json.ixx"
+	"file_formats/mdx/mdx.ixx"
+
+	"file_formats/mpq.ixx"
+	"file_formats/slk.ixx"
+
+	"resources/cliff_mesh.ixx"
+	"resources/gpu_texture.ixx"
+	"resources/ground_texture.ixx"
+	"resources/shader.ixx"
+
+	"resources/texture.ixx"
+	"resources/pathing_texture.ixx"
+	"resources/qicon_resource.ixx"
+	"resources/editable_mesh.ixx"
+	"resources/particle_emitter2_simulation.ixx"
+	"resources/particle_emitter2_renderer.ixx"
+	"resources/skinned_mesh/render_node.ixx"
+	"resources/skinned_mesh/skeletal_model_instance.ixx"
+	"resources/skinned_mesh.ixx"
+	"resources/skinned_mesh_globals.ixx"
+
+	"models/tree/ability_tree_model.ixx"
+	"models/tree/base_tree_model.ixx"
+	"models/tree/buff_tree_model.ixx"
+	"models/tree/destructible_tree_model.ixx"
+	"models/tree/doodad_tree_model.ixx"
+	"models/tree/item_tree_model.ixx"
+	"models/tree/unit_tree_model.ixx"
+	"models/tree/upgrade_tree_model.ixx"
+
+	"models/list/ability_list_model.ixx"
+	"models/list/base_list_model.ixx"
+	"models/list/destructible_list_model.ixx"
+	"models/list/doodad_list_model.ixx"
+	"models/list/item_list_model.ixx"
+	"models/list/unit_list_model.ixx"
+	"models/list/upgrade_list_model.ixx"
+	"models/list/buff_list_model.ixx"
+
+	"models/table_model.ixx"
+
+	"object_editor/slk_conversions.ixx"
+
+	"custom_widgets/aspect_ratio_pixmap_label.ixx"
+	"custom_widgets/color_button.ixx"
+
+	"custom_widgets/qribbon.ixx"
+	"custom_widgets/unit_selector.ixx"
+	"custom_widgets/flow_layout.ixx"
+
+	"utilities/timer.ixx"
+	"utilities/gl_thread_pool.ixx"
+	"utilities/utilities.ixx"
+	"utilities/opengl_utilities.ixx"
+	"utilities/modification_tables.ixx"
+	"utilities/object_data_text.ixx"
+	"utilities/object_data_io.ixx"
+	"utilities/scenario_data_io.ixx"
+	"utilities/unordered_map.ixx"
+
+	"map_protector/asset_obfuscation.ixx"
+	"map_protector/protection_pipeline.ixx"
+
+	"utilities/no_init_allocator.ixx"
+	"utilities/math_operations.ixx"
+	"utilities/rects.ixx"
+	
+	"test.ixx"
+	"object_editor/ability_list_editor.ixx"
+)
+
+set(HIVEWE_UI_FILES
+	"main_window/HiveWE.ui"
+	"menus/doodad_palette.ui"
+	"menus/map_info_editor.ui"
+	"menus/minimap.ui"
+	"menus/pathing_palette.ui"
+	"menus/settings_editor.ui"
+	"menus/terrain_palette.ui"
+	"menus/tile_pather.ui"
+	"menus/tile_picker.ui"
+	"menus/tile_setter.ui"
+	"menus/unit_palette.ui"
+	"object_editor/object_editor.ui"
+	"trigger_editor/trigger_editor.ui"
+	"trigger_editor/variable_editor.ui"
+)
+
+target_sources(HiveWE PRIVATE
+	"main.cpp"
+	${HIVEWE_UI_FILES}
+	"main_window/hivewe.rc"
+)
+
+target_sources(HiveWE_lib PRIVATE
+	${HIVEWE_UI_FILES}
+	"main_window/hivewe.cpp"
+	"main_window/glwidget.cpp"
+	"main_window/main_ribbon.cpp"
+
+	"brush/brush.cpp"
+	"brush/doodad_brush.cpp"
+	"brush/pathing_brush.cpp"
+	"brush/region_brush.cpp"
+	"brush/terrain_brush.cpp"
+	"brush/terrain_operators.cpp"
+	"brush/unit_brush.cpp"
+	
+	"file_formats/mdx/mdl_reader.cpp"
+	"file_formats/mdx/mdl_writer.cpp"
+	"file_formats/mdx/mdx_reader.cpp"
+	"file_formats/mdx/mdx_writer.cpp"
+	"file_formats/mdx/optimizer.cpp"
+	"file_formats/mdx/utilities.cpp"
+	"file_formats/mdx/validator.cpp"
+
+
+	"menus/doodad_palette.cpp"
+	"menus/map_info_editor.cpp"
+	"menus/minimap.cpp"
+	"menus/new_map_dialog.cpp"
+	"menus/palette.cpp"
+	"menus/pathing_palette.cpp"
+	"menus/region_palette.cpp"
+	"menus/settings_editor.cpp"
+	"menus/shortcut_config_dialog.cpp"
+	"menus/object_data_import_dialog.cpp"
+	"menus/terrain_palette.cpp"
+	"menus/unit_properties_dialog.cpp"
+	"menus/unit_palette.cpp"
+	"menus/tile_pather.cpp"
+	"menus/tile_picker.cpp"
+	"menus/tile_setter.cpp"
+	"menus/gameplay_constants_editor.cpp"
+	"menus/item_drop_editor.cpp"
+	"menus/item_tables_editor.cpp"
+	"menus/scenario_properties_editor.cpp"
+	"menus/gameplay_constants_editor.h"
+	"menus/item_drop_editor.h"
+	"menus/item_tables_editor.h"
+	"menus/scenario_properties_editor.h"
+	"menus/region_palette.h"
+	"menus/new_map_dialog.h"
+	"menus/shortcut_config_dialog.h"
+	"menus/object_data_import_dialog.h"
+	"menus/unit_properties_dialog.h"
+
+	"asset_manager/asset_manager.cpp"
+	"asset_manager/asset_manager.h"
+
+	"models/single_model.cpp"
+	
+	"custom_widgets/aspect_ratio_pixmap_label.h"
+	"custom_widgets/color_button.h"
+
+	"trigger_editor/trigger_editor.cpp"
+	"trigger_editor/search_window.cpp"
+	"trigger_editor/jass_editor.cpp"
+	"trigger_editor/jass_tokenizer.cpp"
+	"trigger_editor/trigger_explorer.cpp"
+	"trigger_editor/variable_editor.cpp"
+	"trigger_editor/trigger_model.cpp"
+
+	"model_editor/model_editor_camera.cpp"
+	"model_editor/model_editor.cpp"
+	"model_editor/model_editor_glwidget.cpp"
+
+	"object_editor/icon_view.cpp"
+	"object_editor/model_view.cpp"
+	"object_editor/model_grid_glwidget.cpp"
+	"object_editor/object_editor.cpp"
+	"object_editor/global_search.cpp"
+
+	"tooltip_editor/tooltip_editor.cpp"
+	"tooltip_editor/tooltip_editor.h"
+	"tooltip_editor/template_manager.cpp"
+	"tooltip_editor/template_manager.h"
+	"tooltip_editor/wc3_color_dialog.cpp"
+	"tooltip_editor/wc3_color_dialog.h"
+
+	"map_protector/map_protector.cpp"
+	"map_protector/map_protector.h"
+
+	"qt_imgui/imgui_renderer.cpp"
+	"qt_imgui/qt_imgui.cpp"
+
+	
+ )

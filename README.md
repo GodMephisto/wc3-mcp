@@ -52,6 +52,18 @@ detected. The server is also listed in the
 [MCP Registry](https://registry.modelcontextprotocol.io) as
 `io.github.GodMephisto/wc3-mcp`, for apps that install from there.
 
+## Context and RAG
+
+Out of the box the server answers `docs_search` from the bundled Warcraft III references, the Big UI-Frame Tutorial and the Editor Ability Insight doc, lexical and offline, and serves each whole as an MCP resource.
+
+For the full corpus and semantic search, install the local index. From your AI app, call the `rag_install` tool, or from a shell
+
+```powershell
+wc3ctl rag install
+```
+
+It fetches two files, once, and verifies each against a pinned digest. The embedding model `BAAI/bge-small-en-v1.5`, about 130 MB, and the corpus, about 61 MB from this repo's `dataset-v1` release. It then builds a local vector index and a graph. No database, no service, no key, and it is set low on CPU by default. After that `docs_search` is semantic and the graph tools `graph_neighbors`, `graph_hubs` and `graph_path` are live. `wc3ctl rag status` reports what is installed.
+
 ## Set up your AI app
 
 These need `wc3-mcp` on your PATH, which the one-line install and the first

@@ -1,0 +1,33 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/j8383888/War3MapTD"
+source_path: "工具/w3x2lni_zhCN_v2.5.2/data/zhCN-1.24.4/mpq/Custom_V1/units/campaignupgradefunc.txt"
+ref: HEAD
+---
+
+//naga siren training 
+[Rnsw]
+Art=ReplaceableTextures\CommandButtons\BTNSirenAdept.blp,ReplaceableTextures\CommandButtons\BTNSirenMaster.blp
+Buttonpos=0,2
+
+[Rnen]
+Art=ReplaceableTextures\CommandButtons\BTNEnsnare.blp
+Buttonpos=0,2
+
+[Rnsi]
+Art=ReplaceableTextures\CommandButtons\BTNDryadDispelMagic.blp
+Buttonpos=1,2
+
+[Rnat]
+Art=ReplaceableTextures\CommandButtons\BTNNagaWeaponUp1.blp,ReplaceableTextures\CommandButtons\BTNNagaWeaponUp2.blp,ReplaceableTextures\CommandButtons\BTNNagaWeaponUp3.blp
+Buttonpos=0,2
+
+
+[Rnam]
+Art=ReplaceableTextures\CommandButtons\BTNNagaArmorUp1.blp,ReplaceableTextures\CommandButtons\BTNNagaArmorUp2.blp,ReplaceableTextures\CommandButtons\BTNNagaArmorUp3.blp
+Buttonpos=1,2
+
+[Rnsb]
+Art=ReplaceableTextures\CommandButtons\BTNNagaBurrow.blp
+Buttonpos=2,2
+

@@ -1,0 +1,30 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/dimonp/assets_mpq_importer"
+source_path: "thirdparty/wc3lib/doc/map/spec.txt"
+ref: HEAD
+---
+
+Original specification:
+http://wc3lib.org/spec/InsideTheW3M.html
+
+16) "war3map.w3r" The triggers regions file
+
+order is:
+left
+bottom
+right
+top
+
+end of structure is usually -1
+
+sound name is the sound name used in JASS with prefix "gg_snd_"
+
+17) "war3map.w3s" The sounds definition file
+
+name has the prefix "gg_snd_" in it
+file is in the form "Directory\...\filename"
+
+String: EAX effects can be empty (is for music files at least - "Human1.mp3") If it is an empty string it uses the default value from the corresponding SLK file
+
+channel can be -1 in this case it uses the default channel from SLK file

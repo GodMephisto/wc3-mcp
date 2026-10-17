@@ -1,0 +1,44 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WiseOwlSoftware/WiseOwl.Casc"
+source_path: "docs/api/WiseOwl.Casc.Diablo4/WiseOwl.Casc.Diablo4/Catalog.md"
+ref: HEAD
+---
+
+# Catalog class
+
+FR-C20 — the asset discovery/retrieval facade ([`Catalog`](./Diablo4Storage/Catalog.md)). Lets a consumer discover what the game contains and retrieve the decoded definition without hardcoding SNO ids/names or knowing which typed reader to call: `Find` a filtered set of [`AssetRef`](./AssetRef.md)s, then `TryGet` the decoded value (pattern-match the real type, or ask for it via [`TryGet`](./Catalog/TryGet.md)). The strongly-typed accessors on [`Diablo4Storage`](./Diablo4Storage.md) remain as ergonomic shortcuts over the same providers.
+
+```csharp
+public sealed class Catalog
+```
+
+## Public Members
+
+| name | description |
+| --- | --- |
+| [EnumerateNodes](Catalog/EnumerateNodes.md)(…) | FR-C21 — every paragon node in the install (or the subset matching *query*) projected as a fully-resolved [`ParagonNodeInfo`](./ParagonNodeInfo.md). Lazy: enumeration streams one node at a time and shares the SNO-keyed decode cache with [`GetNodeInfo`](./Catalog/GetNodeInfo.md) / [`GetBoardNodes`](./Catalog/GetBoardNodes.md). Malformed nodes (those whose [`Parse`](./ParagonNodeDefinition/Parse.md) throws or whose [`CoreToc`](./CoreToc.md) name is missing) are silently skipped. |
+| [Facets](Catalog/Facets.md)(…) | FR-C20 P2b — the asset's categorical [`Facet`](./Facet.md)s with provenance, for discovery/filtering. Populated today: |
+| [Find](Catalog/Find.md)(…) | Discover assets matching *query* (lazy, unless [`OrderByName`](./AssetQuery/OrderByName.md) buffers to sort). A `null` query yields every catalogued asset. |
+| [Find&lt;T&gt;](Catalog/Find.md)(…) | FR-C20 P4 — discover and decode in one lazy pass: enumerate *query* and yield each asset already decoded to *T*, silently skipping non-matching kinds and undecodable blobs. The ergonomic "give me every [`TiledStyleDefinition`](./TiledStyleDefinition.md)" shortcut. |
+| [FindByFacet](Catalog/FindByFacet.md)(…) | FR-C20 P2b — discover assets of a kind carrying a categorical facet (e.g. every ParagonGlyph with `class=Barbarian`). Computes [`Facets`](./Catalog/Facets.md) per asset (decodes where the facet requires it), so scope with *kind*. |
+| [GetBoardNodes](Catalog/GetBoardNodes.md)(…) | FR-C21 — the consumer hot path: enumerate every placed node on a paragon board paired with its grid cell coordinate (row, col), each [`ParagonNodeInfo`](./ParagonNodeInfo.md) fully resolved (magnitude / unit / stat name). Returns an empty list when the board SNO is missing or fails to decode. |
+| [GetNodeInfo](Catalog/GetNodeInfo.md)(…) | FR-C21 — the display-ready projection of one paragon node, evaluated and resolved through the Appendix C carve-out (magnitudes computed via [`Evaluate`](./ParagonMagnitudeFormula/Evaluate.md); the AttributeFormulas table consulted once and re-used; stat names resolved from the `Generic_<Rarity>_<Token>` node-name convention). Returns `null` when the SNO is missing, the record fails to decode, or has no corresponding [`CoreToc`](./CoreToc.md) name. |
+| [GetParagonTooltipChrome](Catalog/GetParagonTooltipChrome.md)() | FR-C23 (Option A, CL-77) — the engine's authored paragon-node tooltip chrome (per-rarity 9-slice TiledStyle panels). The consumer renders each via the existing [`ReadTiledStyle`](./Diablo4Storage/ReadTiledStyle.md) / [`TryGet`](./Catalog/TryGet.md) path. See [`ParagonTooltipChrome`](./ParagonTooltipChrome.md) for the surfaced fields. The wider layout / per-state recipe (slot rects, typography, state binding) is tracked on `casc-fr#38` (FR-C26) — the FR-C7-shaped multi-CL RE thread. |
+| [OfKind](Catalog/OfKind.md)(…) | Every asset of a kind (lazy). |
+| [Related](Catalog/Related.md)(…) | FR-C20 P5 — the asset's authored relationship edges, so board → node → power and glyph → affix / class traversal is first-class instead of hand-assembled. Each [`Target`](./AssetLink/Target.md) is a full [`AssetRef`](./AssetRef.md) — call [`Related`](./Catalog/Related.md) on it to chain. Authored FK edges only: |
+| [TryGet](Catalog/TryGet.md)(…) | Decode an asset into its strongly-typed definition (the real type — e.g. [`TiledStyleDefinition`](./TiledStyleDefinition.md), [`ItemDefinition`](./ItemDefinition.md)). Returns `false` (no throw) on a malformed/absent blob or an unknown kind. (2 methods) |
+| [TryGet&lt;T&gt;](Catalog/TryGet.md)(…) | Decode an asset, narrowing to the expected type *T* (the decoded definition type). |
+| [TryGetAtlasImage](Catalog/TryGetAtlasImage.md)(…) | FR-C20 P3 — decode a whole TextureAtlas mip0 to RGBA pixels (the atlas-browser path: discover → peek → retrieve). Returns `false` (no throw) for a non-atlas ref, an unsupported codec (only BC1/BC3 decode today — check [`Codec`](./AssetFacets/Codec.md) via [`TryPeek`](./Catalog/TryPeek.md)), or an absent payload. |
+| [TryGetFrameImage](Catalog/TryGetFrameImage.md)(…) | FR-C20 P3 — decode the single frame a texture *handle* names, cropped from its owning atlas mip0. Pairs with [`TryResolveHandle`](./Catalog/TryResolveHandle.md) for "what does this handle look like?". Returns `false` for an unresolved/sentinel handle, an unsupported codec, or an absent payload. (Decodes the owning atlas per call — to slice many frames of one atlas, call [`TryGetAtlasImage`](./Catalog/TryGetAtlasImage.md) once and crop with `TextureDefinition.Frames[i].PixelRect`.) |
+| [TryPeek](Catalog/TryPeek.md)(…) | FR-C20 P2 — decode-free metadata peek: cheap facets for filtering big kinds without a full [`TryGet`](./Catalog/TryGet.md). Populated for TextureAtlas (dimensions, frame count, codec) from the preloaded combined-meta. Returns `false` when no cheap facet is available for the kind. |
+| [TryResolve](Catalog/TryResolve.md)(…) | Resolve a kind's asset by its `CoreTOC` name (case-insensitive). |
+| [TryResolveFrame](Catalog/TryResolveFrame.md)(…) | FR-C20 P1 — like [`TryResolveHandle`](./Catalog/TryResolveHandle.md) but also yields the handle's [`TexFrame`](./TexFrame.md) (UV rect) directly, saving the follow-up `TryGet(atlas)` + `Frames[i]` step. Use `frame.PixelRect(facets.Width, facets.Height)` (facets via [`TryPeek`](./Catalog/TryPeek.md)) for the pixel rect. |
+| [TryResolveHandle](Catalog/TryResolveHandle.md)(…) | FR-C20 P1 — reverse-lookup: resolve a raw texture *handle* to the TextureAtlas that contains it and the handle's *frameIndex* within that atlas (use `TextureDefinition.Frames[frameIndex]` for its UVs/rect). Returns `false` for a handle that resolves to no atlas frame (e.g. an engine-internal/non-texture handle). |
+
+## See Also
+
+* namespace [WiseOwl.Casc.Diablo4](../WiseOwl.Casc.Diablo4.md)
+* [Catalog.cs](https://github.com/WiseOwlSoftware/WiseOwl.Casc/blob/main/Catalog.cs)
+
+<!-- DO NOT EDIT: generated by xmldocmd for WiseOwl.Casc.Diablo4.dll -->

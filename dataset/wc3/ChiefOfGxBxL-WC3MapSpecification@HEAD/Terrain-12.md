@@ -1,0 +1,51 @@
+---
+type: vendor-doc
+source_repo: https://github.com/ChiefOfGxBxL/WC3MapSpecification
+source_path: Terrain/12.md
+ref: HEAD
+---
+
+# Terrain/12.md
+
+File structure:
+
+* `char(4)` File id = "W3E!"
+
+* `int` File version = 0x0C (12)
+
+* `char(1)` Base tileset (e.g. 'L' = Lordaeron Summer)
+
+* `int` Uses custom tileset (0=False, 1=True)
+
+* `int` Number of tile palettes
+
+  * `char(4)` Tile id
+
+* `int` Number of cliff tile palettes
+
+  * `char(4)` Cliff tile id
+
+* `int` Map width
+
+* `int` Map height
+
+* `float` Offset X
+
+* `float` Offset Y
+
+* Repeat for each tile in height*width:
+
+  * `short` Ground height
+
+  * `short` Water height and boundary; water height = `short & 0x7fff` and boundary = `short & 0x4000`
+
+  * `short/byte` Flags and ground texture
+
+     * IF (FORMAT == 11): `byte`; texture = `byte & 0x0f` and flags = `byte & 0xf0` // 16 different texture tiles
+
+     * IF (FORMAT >= 12): `ushort`; texture = `ushort & 0x3f` and flags = `ushort & 0xffc0` // 64 different texture tiles, two more bits for textures, thus flags and mask shifted left by 2 bits too
+
+  * `byte` Ground variation and cliff variation - ground variation = `byte & 0xf8` and cliff variation = `byte & 0x7`
+
+  * `byte` Cliff texture and layer height - cliff texture = `byte & 0xf0` and layer height = `byte & 0xf`
+

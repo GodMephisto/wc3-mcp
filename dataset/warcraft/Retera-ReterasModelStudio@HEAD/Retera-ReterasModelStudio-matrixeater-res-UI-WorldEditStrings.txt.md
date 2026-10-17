@@ -1,0 +1,18 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/ReterasModelStudio"
+source_path: "matrixeater/res/UI/WorldEditStrings.txt"
+ref: HEAD
+---
+
+[WorldEditStrings]
+WESTRING_APPNAME=Retera Model Studio
+
+WESTRING_UE_STANDARDUNITS=Standard Units
+WESTRING_UE_CUSTOMUNITS=Custom Units
+
+// Trigger unit colors
+WESTRING_UNITCOLOR_00="Red"
+WESTRING_UNITCOLOR_01="Blue"
+WESTRING_UNITCOLOR_02="Green"
+WESTRING_UNITCOLOR_03="Yellow"

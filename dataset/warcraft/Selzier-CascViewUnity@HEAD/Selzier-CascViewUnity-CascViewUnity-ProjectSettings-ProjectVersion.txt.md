@@ -1,0 +1,9 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Selzier/CascViewUnity"
+source_path: "CascViewUnity/ProjectSettings/ProjectVersion.txt"
+ref: HEAD
+---
+
+m_EditorVersion: 2019.4.3f1
+m_EditorVersionWithRevision: 2019.4.3f1 (f880dceab6fe)

@@ -1,0 +1,83 @@
+---
+type: vendor-doc
+source_repo: https://github.com/ChiefOfGxBxL/WC3MapSpecification
+source_path: Sounds/3.md
+ref: HEAD
+---
+
+# Sounds/3.md
+
+File structure:
+
+* `int` File version = 0x03 (3)
+
+* `int` Number of sounds
+
+  * `string` Sound name
+
+  * `string` Sound path
+
+  * `string` Sound EAX
+
+  * `int` Flags (bitstring)
+
+    | 16 | 8 | 4 | 2 | 1 |
+
+    |:-:|:-:|:-:|:-:|:-:|
+
+    | isImported | isMusic | stopWhenOutOfRange | is3dSound | isLooping |
+
+  * `int` Fade rate in
+
+  * `int` Fade rate out
+
+  * `int` Volume
+
+  * `float` Pitch
+
+  * `float` Pitch variance
+
+  * `int` Priority
+
+  * `int` Channel
+
+  * `float` Min distance
+
+  * `float` Max distance
+
+  * `float` Cutoff distance
+
+  * `unknown(4)` (0 when imported, 00 00 80 4F = 1333788672 when native)
+
+  * `unknown(4)` (0 when imported, 00 00 80 4F = 1333788672 when native)
+
+  * `unknown(4)` (127 when imported, FF FF FF FF = -1 when native)
+
+  * `unknown(4)` (0 when imported, 00 00 80 4F = 1333788672 when native)
+
+  * `unknown(4)` (0 when imported, 00 00 80 4F = 1333788672 when native)
+
+  * `unknown(4)`(0 when imported, 00 00 80 4F = 1333788672 when native)
+
+  * `string` Variable name (starts with `gg_snd_`)
+
+  * `string` (Internal sound name?)
+
+    > For example, if you use a WC3 audio file, this value will be what WC3 knows it as, e.g. "AltarOfStormsWhat". For imported audio, this field appears to always be empty.
+
+  * `string` Sound path, repeated?
+
+  * `unknown(4)` (always -1?)
+
+  * `unknown(1)` (always 0?)
+
+  * `unknown(4)` (always -1?)
+
+  * `unknown(4)` (always 0?)
+
+  * `unknown(4)` (always 0?)
+
+  * `unknown(1)` (always 0?)
+
+  * `unknown(4)` (always 1?)
+

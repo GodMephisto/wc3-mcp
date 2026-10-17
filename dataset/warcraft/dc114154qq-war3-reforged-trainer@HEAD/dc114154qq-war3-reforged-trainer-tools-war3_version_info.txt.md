@@ -1,0 +1,36 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/dc114154qq/war3-reforged-trainer"
+source_path: "tools/war3_version_info.txt"
+ref: HEAD
+---
+
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 0, 10, 0),
+    prodvers=(1, 0, 10, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0),
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable(
+        '080404B0',
+        [
+          StringStruct('CompanyName', 'twomengxi.xyz'),
+          StringStruct('FileDescription', '魔兽争霸3重制版修改器'),
+          StringStruct('FileVersion', '1.0.10'),
+          StringStruct('InternalName', 'War3ReforgedTrainer'),
+          StringStruct('OriginalFilename', 'War3ReforgedTrainer-v1.0.10.exe'),
+          StringStruct('ProductName', '魔兽争霸3重制版修改器'),
+          StringStruct('ProductVersion', '1.0.10'),
+        ],
+      )
+    ]),
+    VarFileInfo([VarStruct('Translation', [2052, 1200])]),
+  ],
+)

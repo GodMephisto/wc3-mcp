@@ -1,0 +1,44 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WiseOwlSoftware/WiseOwl.Casc"
+source_path: "docs/api/WiseOwl.Casc.Diablo4/WiseOwl.Casc.Diablo4/NodeAttribute.md"
+ref: HEAD
+---
+
+# NodeAttribute structure
+
+One attribute grant on a paragon node (an `AttributeSpecifier`, stride 88). Raw decoded fields only — the magnitude is produced by evaluating [`InlineFormula`](./NodeAttribute/InlineFormula.md) or the GameBalance formula named by [`FormulaGbid`](./NodeAttribute/FormulaGbid.md); evaluation and the calibrated intrinsics are the consumer's, not the library's (see `docs/casc-diablo4-format.md` Appendix C, library boundary).
+
+```csharp
+public struct NodeAttribute : IEquatable<NodeAttribute>
+```
+
+| parameter | description |
+| --- | --- |
+| AttributeId | `eAttribute` at specifier `+0` — the attribute id (== Maxroll attribute numeric key). |
+| NParam | `nParam` at specifier `+4` (DT_INT; 0 for plain stat nodes). This is the field historically called "Param". |
+| ParamPlus12 | The distinct value at specifier `+12` (verified: `MaximumDominance` → 11, `EarthquakeDuration` → 1031902). Exposed raw so the consumer never re-parses the specifier. |
+| FormulaGbid | `gbidFormula` at specifier `+48` (DT_GBID). `0xFFFFFFFF` means "no shared formula — use [`InlineFormula`](./NodeAttribute/InlineFormula.md)"; otherwise it is `GbidHash(formulaName)` resolvable through [`AttributeFormulaTable`](./AttributeFormulaTable.md). |
+| InlineFormula | The node's own formula source text (read at specifier `+24` offset / `+28` size, payload-relative) when [`FormulaGbid`](./NodeAttribute/FormulaGbid.md) is `0xFFFFFFFF`; otherwise empty. |
+| AttributeGbid | The attribute's GBID from the node's second parallel array (descriptor at payload `+88`; one UInt32 per attribute, in [`Attributes`](./ParagonNodeDefinition/Attributes.md) order). Stable per [`AttributeId`](./NodeAttribute/AttributeId.md) across nodes (e.g. `AttributeId 9` → `0x1E663884` everywhere it appears), so it is a reliable secondary key for the same `eAttribute`. Its canonical resource name is not yet recovered (it is not a DJB2/GBID hash of any tested attribute label); surfaced raw rather than left undecoded. `0` when the node has no parallel entry for this attribute. |
+
+## Public Members
+
+| name | description |
+| --- | --- |
+| [NodeAttribute](NodeAttribute/NodeAttribute.md)(…) | One attribute grant on a paragon node (an `AttributeSpecifier`, stride 88). Raw decoded fields only — the magnitude is produced by evaluating [`InlineFormula`](./NodeAttribute/InlineFormula.md) or the GameBalance formula named by [`FormulaGbid`](./NodeAttribute/FormulaGbid.md); evaluation and the calibrated intrinsics are the consumer's, not the library's (see `docs/casc-diablo4-format.md` Appendix C, library boundary). |
+| [AttributeGbid](NodeAttribute/AttributeGbid.md) { get; set; } | The attribute's GBID from the node's second parallel array (descriptor at payload `+88`; one UInt32 per attribute, in [`Attributes`](./ParagonNodeDefinition/Attributes.md) order). Stable per [`AttributeId`](./NodeAttribute/AttributeId.md) across nodes (e.g. `AttributeId 9` → `0x1E663884` everywhere it appears), so it is a reliable secondary key for the same `eAttribute`. Its canonical resource name is not yet recovered (it is not a DJB2/GBID hash of any tested attribute label); surfaced raw rather than left undecoded. `0` when the node has no parallel entry for this attribute. |
+| [AttributeId](NodeAttribute/AttributeId.md) { get; set; } | `eAttribute` at specifier `+0` — the attribute id (== Maxroll attribute numeric key). |
+| [FormulaGbid](NodeAttribute/FormulaGbid.md) { get; set; } | `gbidFormula` at specifier `+48` (DT_GBID). `0xFFFFFFFF` means "no shared formula — use [`InlineFormula`](./NodeAttribute/InlineFormula.md)"; otherwise it is `GbidHash(formulaName)` resolvable through [`AttributeFormulaTable`](./AttributeFormulaTable.md). |
+| [InlineFormula](NodeAttribute/InlineFormula.md) { get; set; } | The node's own formula source text (read at specifier `+24` offset / `+28` size, payload-relative) when [`FormulaGbid`](./NodeAttribute/FormulaGbid.md) is `0xFFFFFFFF`; otherwise empty. |
+| [IsInline](NodeAttribute/IsInline.md) { get; } | True when this attribute carries its own inline formula text rather than referencing a shared GameBalance formula by GBID. |
+| [NParam](NodeAttribute/NParam.md) { get; set; } | `nParam` at specifier `+4` (DT_INT; 0 for plain stat nodes). This is the field historically called "Param". |
+| [ParamPlus12](NodeAttribute/ParamPlus12.md) { get; set; } | The distinct value at specifier `+12` (verified: `MaximumDominance` → 11, `EarthquakeDuration` → 1031902). Exposed raw so the consumer never re-parses the specifier. |
+| const [NoGbid](NodeAttribute/NoGbid.md) | The [`FormulaGbid`](./NodeAttribute/FormulaGbid.md) sentinel meaning "use [`InlineFormula`](./NodeAttribute/InlineFormula.md)". |
+
+## See Also
+
+* namespace [WiseOwl.Casc.Diablo4](../WiseOwl.Casc.Diablo4.md)
+* [NodeAttribute.cs](https://github.com/WiseOwlSoftware/WiseOwl.Casc/blob/main/NodeAttribute.cs)
+
+<!-- DO NOT EDIT: generated by xmldocmd for WiseOwl.Casc.Diablo4.dll -->

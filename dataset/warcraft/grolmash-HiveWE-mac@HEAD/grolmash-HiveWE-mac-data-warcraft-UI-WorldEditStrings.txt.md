@@ -1,0 +1,20 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/grolmash/HiveWE-mac"
+source_path: "data/warcraft/UI/WorldEditStrings.txt"
+ref: HEAD
+---
+
+[WorldEditStrings]
+WESTRING_UNITCOLOR_00=Red
+WESTRING_UNITCOLOR_01=Blue
+WESTRING_UNITCOLOR_02=Teal
+WESTRING_UNITCOLOR_03=Purple
+WESTRING_UNITCOLOR_04=Yellow
+WESTRING_UNITCOLOR_05=Orange
+WESTRING_UNITCOLOR_06=Green
+WESTRING_UNITCOLOR_07=Pink
+WESTRING_UNITCOLOR_08=Gray
+WESTRING_UNITCOLOR_09=Light Blue
+WESTRING_UNITCOLOR_10=Dark Green
+WESTRING_UNITCOLOR_11=Brown

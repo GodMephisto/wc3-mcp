@@ -1,0 +1,29 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/thegraydot/mpqcli"
+source_path: "docs/SUMMARY.md"
+ref: HEAD
+---
+
+# Summary
+
+- [Introduction](./introduction.md)
+- [Installation](./installation.md)
+- [Commands](./commands_list.md)
+  - [version](./commands/version.md)
+  - [about](./commands/about.md)
+  - [completion](./commands/completion.md)
+  - [info](./commands/info.md)
+  - [create](./commands/create.md)
+  - [add](./commands/add.md)
+  - [remove](./commands/remove.md)
+  - [rename](./commands/rename.md)
+  - [list](./commands/list.md)
+  - [extract](./commands/extract.md)
+  - [read](./commands/read.md)
+  - [verify](./commands/verify.md)
+  - [compact](./commands/compact.md)
+- [Advanced Examples](./advanced.md)
+- [Building](./building.md)
+- [Contributing](./contributing.md)
+- [Changelog](./changelog.md)

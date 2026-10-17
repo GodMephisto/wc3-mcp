@@ -1,0 +1,40 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WiseOwlSoftware/WiseOwl.Casc"
+source_path: "docs/api/WiseOwl.Casc.Diablo4/WiseOwl.Casc.Diablo4/AffixDefinition.md"
+ref: HEAD
+---
+
+# AffixDefinition class
+
+A decoded Diablo IV `AffixDefinition` (`.aff`, SNO group Affix = 104) — an item/aspect/charm affix. Identity, localized [`Name`](./AffixDefinition/Name.md)/[`Description`](./AffixDefinition/Description.md), and the [`Effects`](./AffixDefinition/Effects.md) — the attribute(s) the affix modifies. The rolled magnitude (min/max value range) and the additive-vs-multiplicative operation are not literal fields of the record for the bulk of stat affixes (they are item-power-curve driven by the engine); modeling those stays the consumer's domain per `casc-diablo4-format.md` Appendix C.
+
+```csharp
+public sealed class AffixDefinition
+```
+
+## Public Members
+
+| name | description |
+| --- | --- |
+| static [Parse](AffixDefinition/Parse.md)(…) | Decode an Affix from its raw SNO blob (identity + the structural [`Effects`](./AffixDefinition/Effects.md) + [`StaticValues`](./AffixDefinition/StaticValues.md) + [`AllowedItemTypes`](./AffixDefinition/AllowedItemTypes.md) + [`MaxRank`](./AffixDefinition/MaxRank.md); the localized fields need [`CoreToc`](./CoreToc.md) — use [`ReadAffix`](./Diablo4Storage/ReadAffix.md)). On the byte-only path each effect's [`AttributeName`](./AffixEffect/AttributeName.md) is Empty. |
+| [AllowedItemTypes](AffixDefinition/AllowedItemTypes.md) { get; } | FR-C36… (#51, CL-106) — the item types this affix is allowed to roll on: the affix pool from the item's side. A gear affix (magic / rare / legendary) is rolled from a per-item-type pool; this is the affix's list of eligible `eItemType` ids (decoded from the `DT_VARIABLEARRAY[int]` at payload `+0x78`). Semantically verified: `CoreStat_Strength` → armor/jewelry types, `CoreStat_Strength_Weapon` → the weapon types, `Charm_Armor_Percent` → `[71]`. Invert across all affixes for the "what can roll on this type" query (!:Diablo4Storage.RollableAffixes(int, string)). |
+| [Description](AffixDefinition/Description.md) { get; } | Localized affix description (sibling label `Desc`; raw D4 markup intact), or Empty. |
+| [Effects](AffixDefinition/Effects.md) { get; } | CL-92 (LIB-3) — the attribute(s) this affix modifies, one [`AffixEffect`](./AffixEffect.md) per `arModifiers` entry (a single-stat affix has one; a dual affix such as a two-element resistance has one per element). Each carries the `eAttribute` id + parameter and, after a full [`ReadAffix`](./Diablo4Storage/ReadAffix.md), the resolved localized [`AttributeName`](./AffixEffect/AttributeName.md). Empty (never `null`) when the affix authors no modifier array or the descriptor is malformed. See [`AffixEffect`](./AffixEffect.md) for the byte layout and the magnitude/operation boundary. |
+| [MaxRank](AffixDefinition/MaxRank.md) { get; } | FR-C38 (#55, CL-107) — the per-aspect maximum legendary rank: the cap `CurrentLegendaryRank()` reaches in a rank-scaled aspect affix's value formula ([`InlineFormula`](./AffixEffect/InlineFormula.md)), read from the int32 at payload `+0x94`. It is per aspect, not a global constant — the live build (`3.1.1.72836`, Season 14) has caps of 21 (most aspects — 394 of 661), 11 (82), 16 (79), 6 (19), and a spread of others. So an aspect's rolled value span is `[InlineFormula(1) … InlineFormula(MaxRank)]` — e.g. Edgemaster's (`MaxRank` 21, `40+(rank-1)*1`) spans `[40 … 60]`%, and Aspect of Coagulation (`MaxRank` 6, `15+(rank-1)*1`) spans `[15 … 20]`%. Owner in-game oracle (Codex of Power) validated 4/4 aspects exactly (21/21/6/16); the field is present + in a sane rank range on 661/661 `legendary_*` aspect affixes.  The rank floor is 1 (`InlineFormula(1)` = the range minimum). Meaningful for rank-scaled aspect affixes (those whose [`InlineFormula`](./AffixEffect/InlineFormula.md) references `CurrentLegendaryRank()`); for other affixes the field may hold an unrelated quantity or 0, so gate its use on the affix being a rank-scaled aspect. This is season-drift-prone (a build may re-tune caps) — see `casc-diablo4-format.md` §8.2. 0 on a short/malformed record. |
+| [Name](AffixDefinition/Name.md) { get; } | Localized affix display name (sibling label `Name`; the raw authored fragment, e.g. `"Bear Clan Berserker's"`, `"of Limitless Rage"`, `"Devilish"`), or Empty when the affix has no sibling `Name` (system/internal affixes). The consumer owns any `"Aspect …"` composition. |
+| [SnoId](AffixDefinition/SnoId.md) { get; } | The affix's own SNO id (== the CoreTOC id). |
+| [StaticValues](AffixDefinition/StaticValues.md) { get; } | CL-94 — the affix's `"Static Value N"` scalars: the fixed, non-rolled numbers set/mythic/unique-power affixes carry (decoded from the `DT_VARIABLEARRAY[float]` at payload `+0xC0`), indexed positionally to match the affix [`Description`](./AffixDefinition/Description.md)'s `[Affix."Static Value N"]` placeholders. Each entry is a distinct quantity (a threshold, duration, percent, …), not a min/max of one stat — e.g. a Barbarian set power's `[100 Fury, 50%, 20%, 120%]`. Empty (never `null`) for the majority of affixes, whose magnitudes are the item-power formula on each [`FormulaGbid`](./AffixEffect/FormulaGbid.md) instead. This is the reliable in-record float field; the rolled per-item-power ranges are not literals here (see [`FormulaGbid`](./AffixEffect/FormulaGbid.md)). |
+
+## Remarks
+
+[`SnoId`](./AffixDefinition/SnoId.md) is the binary field (payload `0`). The localized [`Name`](./AffixDefinition/Name.md) and [`Description`](./AffixDefinition/Description.md) are both resolved from the affix's sibling StringList table (`docs/casc-diablo4-format.md §11.3`, Appendix A CL-87 / CL-22 / CL-20): group-42 SNO `"Affix_" + snoName`, labels `Name` (the display name, e.g. `"of Limitless Rage"`) and `Desc` (the rules text, carrying D4 markup like `[Affix_Value_1|%|]`). Each field is Empty (honest sentinel) when decoded byte-only, when there is no sibling table, or when that specific label is absent — many system/internal affixes carry a `Desc` but no `Name`. The consumer owns any fallback and any `"Aspect"` composition around the raw display name.
+
+Effects (CL-92).[`Effects`](./AffixDefinition/Effects.md) is decoded from the `arModifiers``DT_VARIABLEARRAY` at payload `+0xB0` — an array of fixed 104-byte modifier records (see [`AffixEffect`](./AffixEffect.md) for the per-record layout). Each element names one modified attribute ([`AttributeId`](./AffixEffect/AttributeId.md) + [`ParamPlus12`](./AffixEffect/ParamPlus12.md)); the resolved [`AttributeName`](./AffixEffect/AttributeName.md) is populated by [`ReadAffix`](./Diablo4Storage/ReadAffix.md) and empty on the byte-only [`Parse`](./AffixDefinition/Parse.md). Empty (never `null`) when the modifier array is absent or malformed (confidence-gated: the descriptor must be well-formed and its byte size an exact multiple of the 104-byte stride).
+
+## See Also
+
+* namespace [WiseOwl.Casc.Diablo4](../WiseOwl.Casc.Diablo4.md)
+* [AffixDefinition.cs](https://github.com/WiseOwlSoftware/WiseOwl.Casc/blob/main/AffixDefinition.cs)
+
+<!-- DO NOT EDIT: generated by xmldocmd for WiseOwl.Casc.Diablo4.dll -->

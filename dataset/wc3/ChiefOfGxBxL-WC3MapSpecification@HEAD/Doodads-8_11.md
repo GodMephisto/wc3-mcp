@@ -1,0 +1,71 @@
+---
+type: vendor-doc
+source_repo: https://github.com/ChiefOfGxBxL/WC3MapSpecification
+source_path: Doodads/8_11.md
+ref: HEAD
+---
+
+# Doodads/8_11.md
+
+File structure:
+
+* `char(4)` File id = "W3do"
+
+* `int` File version = 0x8 (8)
+
+* `int` File subversion? = 0x0B (11)
+
+* `int` Number of doodads
+
+  * `char(4)` Doodad id
+
+  * `int` Variation #
+
+  * `float` Position X
+
+  * `float` Position Y
+
+  * `float` Position Z
+
+  * `float` Angle (radians)
+
+  > Caution: The doodads file format is unique because it is the only file to specify an angle field in radians; all other WC3 files use degrees for angles
+
+  * `float` Scale X
+
+  * `float` Scale Y
+
+  * `float` Scale Z
+
+  * `char(4)` Skin id
+
+  * `byte` Flags (not quite a proper bitfield: 0 = invisible, non-solid; 1 = visible, non-solid; 2 = visible, solid (normal); fized Z -> add 4 to result)
+
+  * `byte` Life (%)
+
+  * `int` Random item set pointer
+
+  * `int` Number of item sets
+
+    * `int` Number of items in set
+
+      * `char(4)` Item id
+
+      * `int` % chance to drop
+
+  * `int` Doodad id
+
+* `int` Special doodad format? = 0x0 (0)
+
+> Special doodads refer to doodads listed under Doodad Palette > Cliff/Terrain, e.g. Cave Natural Cliff. They are doodads in the sense that they are placed via the Doodad Palette, but their placement modifies the terrain around them.
+
+* `int` Number of special doodads
+
+  * `char(4)` Special doodad id
+
+  * `int` Position Z (in "tile" coordinates)
+
+  * `int` Position X (in "tile" coordinates)
+
+  * `int` Position Y (in "tile" coordinates)
+

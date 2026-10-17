@@ -1,0 +1,1309 @@
+---
+type: vendor-doc
+package: site-www-hiveworkshop-com
+package_version: latest
+language: reference
+source_page: https://www.hiveworkshop.com/threads/ui-list-default-mainframes.317884/
+source_url: https://www.hiveworkshop.com
+extractor: HTML extraction
+exported: 2026-09-05
+---
+
+# UI List Default Mainframes
+Acquired via HTML extraction from <https://www.hiveworkshop.com/threads/ui-list-default-mainframes.317884/>
+#### Tasyen
+
+#### Tasyen
+
+ Level 40
+
+JoinedJul 18, 2010Messages2,476
+
+Resources: 82
+
+#### Resources
+Tools 3Maps 3Spells and Systems 25User Interface 15JASS 3Lua 10Tutorials 23
+
+This are lists of mainframes found in the Default Warcraft 3 fdfs, Seperated by FrameType. Mainframes are Frames having their framehead outside of any framebody. Only such loaded mainframes can be created/inherited functional with the Frame natives.
+
+BNetPopupMenuBackdropTemplateLoadedbattlenetmatchmakerpanel.fdf
+
+LadderButtonBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+LadderButtonPushedBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+LadderButtonDisabledBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+LadderButtonDisabledPushedBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+ClanButtonBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+ClanButtonPushedBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+ClanButtonDisabledBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+ClanButtonDisabledPushedBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+TeamPopupMenuBackdropTemplateLoadedbattlenetteampanel.fdf
+
+OptionsPopupMenuBackdropTemplateLoadedoptionsmenu.fdf
+
+ScoreScreenButtonBackdropTemplateLoadedscorescreen.fdf
+
+SkirmishPopupMenuBackdropTemplateLoadedskirmish.fdf
+
+EscMenuBackdropLoadedescmenumainpanel.fdf
+
+QuestButtonBaseTemplateLoadedquestdialog.fdf
+
+QuestButtonBackdropTemplateLoadedquestdialog.fdf
+
+QuestButtonPushedBackdropTemplateLoadedquestdialog.fdf
+
+QuestButtonDisabledBackdropTemplateLoadedquestdialog.fdf
+
+QuestButtonDisabledPushedBackdropTemplateLoadedquestdialog.fdf
+
+CustomPopupMenuBackdropTemplateNot Loadedbattlenetcustompanel.fdf
+
+CustomPopupMenuSmallBackdropTemplateNot Loadedbattlenetcustompanel.fdf
+
+CustomPopupMenuLargeBackdropTemplateNot Loadedbattlenetcustompanel.fdf
+
+BattleNetHeavyBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetMediumBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetLightBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetControlBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetEditBoxBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetMenuSmallButtonBaseBackdropNot Loadedbattlenettemplates.fdf
+
+BattleNetMenuLargeButtonBaseBackdropNot Loadedbattlenettemplates.fdf
+
+BattleNetMenuSingleButtonBaseBackdropNot Loadedbattlenettemplates.fdf
+
+BattleNetMenuSingleSmallButtonBaseBackdropNot Loadedbattlenettemplates.fdf
+
+BattleNetMenuSingleLargeButtonBaseBackdropNot Loadedbattlenettemplates.fdf
+
+BattleNetMenuButtonBaseBackdropNot Loadedbattlenettemplates.fdf
+
+BattleNetButtonBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetButtonPushedBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetButtonDisabledBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetButtonDisabledPushedBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetBorderedButtonBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetBorderedButtonPushedBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetBorderedButtonDisabledBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetBorderedButtonDisabledPushedBackdropTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetPopupMenuBaseBackdropNot Loadedbattlenettemplates.fdf
+
+StandardHeavyBackdropTemplateNot Loadedstandardtemplates.fdfgamecrash
+
+StandardMediumBackdropTemplateNot Loadedstandardtemplates.fdfgamecrash
+
+StandardLightBackdropTemplateNot Loadedstandardtemplates.fdfgamecrash
+
+StandardControlBackdropTemplateNot Loadedstandardtemplates.fdfgamecrash
+
+StandardMenuTinyButtonBaseBackdropNot Loadedstandardtemplates.fdf
+
+StandardMenuSmallButtonBaseBackdropNot Loadedstandardtemplates.fdf
+
+StandardMenuLargeButtonBaseBackdropNot Loadedstandardtemplates.fdf
+
+StandardMenuSingleButtonBaseBackdropNot Loadedstandardtemplates.fdf
+
+StandardMenuSingleSmallButtonBaseBackdropNot Loadedstandardtemplates.fdf
+
+StandardMenuSingleLargeButtonBaseBackdropNot Loadedstandardtemplates.fdf
+
+StandardMenuButtonBaseBackdropNot Loadedstandardtemplates.fdf
+
+StandardButtonBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardButtonPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardButtonDisabledBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardButtonDisabledPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardBorderedButtonBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardBorderedButtonPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardBorderedButtonDisabledBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardBorderedButtonDisabledPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallButtonBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallButtonPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallButtonDisabledBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallButtonDisabledPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignButtonBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignButtonPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignButtonDisabledBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignButtonDisabledPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignArrowButtonBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignArrowButtonPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignArrowButtonDisabledBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignArrowButtonDisabledPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignCameraButtonBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignCameraButtonPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignCameraButtonDisabledBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignCameraButtonDisabledPushedBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardEditBoxBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardDecoratedEditBoxBackdropTemplateNot Loadedstandardtemplates.fdf
+
+StandardPopupMenuBaseBackdropNot Loadedstandardtemplates.fdf
+
+CampaignPopupMenuBaseBackdropNot Loadedstandardtemplates.fdf
+
+EscMenuButtonBackdropTemplateNot Loadedescmenutemplates.fdf Player Race based
+
+EscMenuButtonPushedBackdropTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuButtonDisabledBackdropTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuButtonDisabledPushedBackdropTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuControlBackdropTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuEditBoxBackdropTemplateNot Loadedescmenutemplates.fdf
+
+ScoreScreenTabButtonTemplateLoadedscorescreen.fdf
+
+BattleNetPopupMenuArrowTemplateNot Loadedbattlenettemplates.fdf
+
+StandardPopupMenuArrowTemplateNot Loadedstandardtemplates.fdf
+
+StandardPopupMenuSmallArrowTemplateNot Loadedstandardtemplates.fdf
+
+StandardPopupMenuExtraSmallArrowTemplateNot Loadedstandardtemplates.fdf
+
+CampaignPopupMenuArrowTemplateNot Loadedstandardtemplates.fdf
+
+EscMenuPopupMenuArrowTemplateNot Loadedescmenutemplates.fdf
+
+BattleNetChatDisplayTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetRadioButtonTemplateNot Loadedbattlenettemplates.fdf
+
+StandardCheckBoxTemplateNot Loadedstandardtemplates.fdf
+
+BattleNetChatActionMenuLoadedbattlenetchatactionmenu.fdf
+
+BattleNetIconSelectBoxLoadedbattleneticonselectbox.fdf
+
+MMPlayerSlotLoadedbattlenetmatchmakerpanel.fdf
+
+BattleNetNewsBoxLoadedbattlenetnewsbox.fdf
+
+CheckListBoxLoadedchecklistbox.fdf
+
+DecoratedMapListBoxLoadeddecoratedmaplistbox.fdf
+
+ListBoxWar3Loadedlistboxwar3.fdf
+
+MapListBoxLoadedmaplistbox.fdf
+
+MapPreferenceBoxLoadedmappreferencebox.fdf
+
+PlayerSlotLoadedplayerslot.fdf
+
+TeamColorMenuLoadedplayerslot.fdf
+
+TeamSetupLoadedteamsetup.fdf
+
+ListBoxWar3Not Loadedlistbox.fdf
+
+BattleNetHelpDialogLoadedbattlenetchatpanel.fdf
+
+BattleNetClanInviteDialogLoadedbattlenetclanpane.fdf
+
+BattleNetCustomFilterDialogLoadedbattlenetcustomjoinpanel.fdf
+
+BattleNetMatchmakerTeamInviteDialogLoadedbattlenetmatchmakerpanel.fdf
+
+BattleNetMatchmakerPendingInviteDialogLoadedbattlenetmatchmakerpanel.fdf
+
+BattleNetIconSelectDialogLoadedbattlenetprofilepanel.fdf
+
+BattleNetScheduledGameLoadedbattlenetscheduledgame.fdf
+
+BattleNetTeamInviteDialogLoadedbattlenetteampanel.fdf
+
+DialogWar3Loadeddialogwar3.fdf
+
+QuickReplayDialogLoadedmainmenu.fdf
+
+QuickReplayConfirmDialogLoadedmainmenu.fdf
+
+BattleNetPatchDialogLoadedmainmenu.fdf
+
+BattleNetConnectDialogLoadedmainmenu.fdf
+
+UserDataMigrationDialogLoadedmainmenu.fdf
+
+OptionsConfirmDialogLoadedoptionsmenu.fdf
+
+AllianceDialogLoadedalliancedialog.fdf
+
+EscMenuOptionsConfirmDialogLoadedescmenuoptionspanel.fdf
+
+GameResultDialogLoadedgameresultdialog.fdf
+
+GameSaveSplashDialogLoadedgamesavesplashdialog.fdf
+
+ScriptDialogLoadedscriptdialog.fdf
+
+SuspendDialogLoadedsuspenddialog.fdf
+
+UnresponsiveDialogLoadedunresponsivedialog.fdf
+
+BattleNetDialogTemplateNot Loadedbattlenettemplates.fdf
+
+DialogWar3Not Loadeddialog.fdf
+
+StandardDialogTemplateNot Loadedstandardtemplates.fdf
+
+BattleNetEditBoxTemplateNot Loadedbattlenettemplates.fdf
+
+StandardEditBoxTemplateNot Loadedstandardtemplates.fdf
+
+StandardDecoratedEditBoxTemplateNot Loadedstandardtemplates.fdf
+
+EscMenuEditBoxTemplateNot Loadedescmenutemplates.fdf
+
+AdvancedOptionsDisplayLoadedadvancedoptionsdisplay.fdf
+
+AdvancedOptionsPaneLoadedadvancedoptionspane.fdf
+
+AdBannerLoadedbattlenetchatpanel.fdf
+
+BattleNetChatPanelLoadedbattlenetchatpanel.fdf
+
+BattleNetChatroomLoadedbattlenetchatroom.fdf
+
+BattleNetClanInvitationLoadedbattlenetclaninvitation.fdf
+
+BattleNetClanMateListBoxLoadedbattlenetclanmatelistbox.fdf
+
+BattleNetClanPaneLoadedbattlenetclanpane.fdf
+
+BattleNetCustomCreatePanelLoadedbattlenetcustomcreatepanel.fdf
+
+BattleNetCustomJoinPanelLoadedbattlenetcustomjoinpanel.fdf
+
+BattleNetCustomLoadPanelLoadedbattlenetcustomloadpanel.fdf
+
+BattleNetFriendsListBoxLoadedbattlenetfriendslistbox.fdf
+
+BattleNetFriendsPaneLoadedbattlenetfriendspane.fdf
+
+BattleNetMainFrameLoadedbattlenetmain.fdf
+
+BattleNetMatchmakerPanelLoadedbattlenetmatchmakerpanel.fdf
+
+BattleNetProfilePanelLoadedbattlenetprofilepanel.fdf
+
+BattleNetProfileListBoxLoadedbattlenetprofilepanel.fdf
+
+BattleNetProfileListItemLoadedbattlenetprofilepanel.fdf
+
+BattleNetStandardPanelLoadedbattlenetstandardpanel.fdf
+
+BattleNetStatusBoxLoadedbattlenetstatusbox.fdf
+
+BattleNetTeamInvitationLoadedbattlenetteaminvitation.fdf
+
+BattleNetTeamPanelLoadedbattlenetteampanel.fdf
+
+BattleNetUserListBoxLoadedbattlenetuserlistbox.fdf
+
+CampaignListBoxLoadedcampaignlistbox.fdf
+
+CampaignMenuLoadedcampaignmenu.fdf
+
+CustomCampaignMenuLoadedcustomcampaignmenu.fdf
+
+GameChatroomLoadedgamechatroom.fdf
+
+LoadingLoadedloading.fdf
+
+LoadingPlayerSlotLoadedloading.fdf
+
+LoadSavedGameScreenLoadedloadsavedgamescreen.fdf
+
+LocalMultiplayerCreateLoadedlocalmultiplayercreate.fdf
+
+LocalMultiplayerJoinLoadedlocalmultiplayerjoin.fdf
+
+LocalMultiplayerLoadLoadedlocalmultiplayerload.fdf
+
+MainMenuFrameLoadedmainmenu.fdf
+
+MapInfoPaneLoadedmapinfopane.fdf
+
+MovieScreenLoadedmoviescreen.fdf
+
+OptionsMenuLoadedoptionsmenu.fdf
+
+ScoreScreenFrameLoadedscorescreen.fdf
+
+SaveReplayPanelLoadedscorescreen.fdf
+
+SinglePlayerMenuLoadedsingleplayermenu.fdf
+
+SkirmishLoadedskirmish.fdf
+
+ViewReplayScreenLoadedviewreplayscreen.fdf
+
+AllianceSlotLoadedallianceslot.fdf
+
+BrowserFrameLoadedbrowserframe.fdf
+
+ChatDialogLoadedchatdialog.fdf
+
+CinematicPanelLoadedcinematicpanel.fdf
+
+EscMenuMainPanelLoadedescmenumainpanel.fdf
+
+EscMenuOptionsPanelLoadedescmenuoptionspanel.fdf
+
+EscMenuSaveGamePanelLoadedescmenusavegamepanel.fdf
+
+LeaderboardLoadedleaderboard.fdf
+
+LogDialogLoadedlogdialog.fdf
+
+MultiboardLoadedmultiboard.fdf
+
+QuestDialogLoadedquestdialog.fdf
+
+QuestListItemLoadedquestdialog.fdf
+
+QuestItemListItemLoadedquestdialog.fdf
+
+SuspendPlayerSlotLoadedsuspenddialog.fdf
+
+TimerDialogLoadedtimerdialog.fdf
+
+BattleNetChannelListNot Loadedbattlenetchannellist.fdf
+
+BattleNetCustomPanelNot Loadedbattlenetcustompanel.fdf
+
+BattleNetFrameTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetUserListBoxItemNot Loadedbattlenetuserlistboxitem.fdf
+
+StandardFrameTemplateNot Loadedstandardtemplates.fdf
+
+InfoPanelBuildingDetailNot Loadedinfopanelbuildingdetail.fdf
+
+InfoPanelItemDetailNot Loadedinfopanelitemdetail.fdf
+
+InfoPanelUnitDetailNot Loadedinfopanelunitdetail.fdf
+
+IconicButtonTemplateLoadedbattlenetchatpanel.fdf
+
+IconButtonTemplateLoadedbattlenetmain.fdf
+
+ClanButtonTemplateLoadedbattlenetprofilepanel.fdf
+
+QuestButtonTemplateLoadedquestdialog.fdf
+
+StandardIconicButtonTemplateNot Loadedstandardtemplates.fdf
+
+ScoreScreen5ColumnButtonTemplateLoadedscorescreen.fdf
+
+ScoreScreen4ColumnButtonTemplateLoadedscorescreen.fdf
+
+ScoreScreenBottomCheckButtonTemplateLoadedscorescreen.fdf
+
+QuestCheckBoxLoadedquestdialog.fdf
+
+QuestCheckBox2Loadedquestdialog.fdf
+
+QuestCheckBox3Loadedquestdialog.fdf
+
+EscMenuCheckBoxTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuRadioButtonTemplateNot Loadedescmenutemplates.fdf
+
+DebugButtonLoadedmainmenu.fdf
+
+ReplayButtonLoadedmainmenu.fdf
+
+BrowserButtonLoadedmainmenu.fdf
+
+ScoreScreenBottomButtonTemplateLoadedscorescreen.fdf
+
+ScriptDialogButtonLoadedscriptdialog.fdf
+
+EscMenuButtonTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuPopupMenuTitleTemplateNot Loadedescmenutemplates.fdf
+
+LadderButtonFocusHighlightBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+LadderButtonMouseOverHighlightBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+ClanButtonFocusHighlightBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+ClanButtonMouseOverHighlightBackdropTemplateLoadedbattlenetprofilepanel.fdf
+
+QuestButtonMouseOverHighlightTemplateLoadedquestdialog.fdf
+
+BattleNetButtonFocusHighlightTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetButtonMouseOverHighlightTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetBorderedButtonFocusHighlightTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetBorderedButtonMouseOverHighlightTemplateNot Loadedbattlenettemplates.fdf
+
+StandardButtonFocusHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardButtonMouseOverHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardBorderedButtonFocusHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardBorderedButtonMouseOverHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallButtonFocusHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallButtonMouseOverHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignButtonFocusHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignButtonMouseOverHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignArrowButtonFocusHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignArrowButtonMouseOverHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignCameraButtonFocusHighlightTemplateNot Loadedstandardtemplates.fdf
+
+StandardCampaignCameraButtonMouseOverHighlightTemplateNot Loadedstandardtemplates.fdf
+
+EscMenuButtonMouseOverHighlightTemplateNot Loadedescmenutemplates.fdf
+
+BattleNetListBoxTemplateNot Loadedbattlenettemplates.fdf
+
+StandardListBoxTemplateNot Loadedstandardtemplates.fdf
+
+BattleNetPopupMenuMenuTemplateNot Loadedbattlenettemplates.fdf
+
+StandardPopupMenuMenuTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallPopupMenuMenuTemplateNot Loadedstandardtemplates.fdf
+
+StandardExtraSmallPopupMenuMenuTemplateNot Loadedstandardtemplates.fdf
+
+CampaignPopupMenuMenuTemplateNot Loadedstandardtemplates.fdf
+
+EscMenuPopupMenuMenuTemplateNot Loadedescmenutemplates.fdf
+
+AdvancedPopupMenuTemplateLoadedadvancedoptionspane.fdf
+
+ClanPopupMenuTemplateLoadedbattlenetclanpane.fdf
+
+FilterPopupMenuTemplateLoadedbattlenetcustomjoinpanel.fdf
+
+BNetPopupMenuTemplateLoadedbattlenetmatchmakerpanel.fdf
+
+PlayerSlotPopupMenuLoadedbattlenetmatchmakerpanel.fdf
+
+BNetPopupMenuTemplateLoadedbattlenetstandardpanel.fdf
+
+TeamPopupMenuTemplateLoadedbattlenetteampanel.fdf
+
+TeamMemberPopupMenuLoadedbattlenetteampanel.fdf
+
+OptionsPopupMenuTemplateLoadedoptionsmenu.fdf
+
+PlayerSlotPopupMenuLoadedplayerslot.fdf
+
+SkirmishPopupMenuTemplateLoadedskirmish.fdf
+
+CustomPopupMenuTemplateNot Loadedbattlenetcustompanel.fdf
+
+BattleNetPopupMenuTemplateNot Loadedbattlenettemplates.fdf
+
+StandardPopupMenuTemplateNot Loadedstandardtemplates.fdf
+
+CampaignPopupMenuTemplateNot Loadedstandardtemplates.fdf
+
+EscMenuPopupMenuTemplateNot Loadedescmenutemplates.fdf
+
+QuestMainListScrollBarLoadedquestdialog.fdf
+
+QuestOptionalListScrollBarLoadedquestdialog.fdf
+
+QuestItemListScrollBarLoadedquestdialog.fdf
+
+QuestConditionListScrollBarLoadedquestdialog.fdf
+
+BattleNetScrollBarTemplateNot Loadedbattlenettemplates.fdf
+
+StandardScrollBarTemplateNot Loadedstandardtemplates.fdf
+
+EscMenuScrollBarTemplateNot Loadedescmenutemplates.fdf
+
+UpperButtonBarButtonTemplateLoadedupperbuttonbar.fdf
+
+ConsoleUILoadedconsoleui.fdf
+
+SimpleObserverPanelLoadedobserverpanel.fdf
+
+SimpleReplayPanelLoadedreplaypanel.fdf
+
+ResourceBarFrameLoadedresourcebar.fdf
+
+SimpleInfoPanelUnitDetailLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelCargoDetailLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelBuildingDetailLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelItemDetailLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelDestructableDetailLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelIconDamageLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelIconArmorLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelIconRankLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelIconFoodLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelIconGoldLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelIconHeroLoadedsimpleinfopanel.fdf
+
+SimpleInfoPanelIconAllyLoadedsimpleinfopanel.fdf
+
+UpperButtonBarFrameLoadedupperbuttonbar.fdf
+
+BattleNetSliderTemplateNot Loadedbattlenettemplates.fdf
+
+StandardSliderTemplateNot Loadedstandardtemplates.fdf
+
+EscMenuSliderTemplateNot Loadedescmenutemplates.fdf
+
+TeamLabelTextTemplateLoadedbattlenetprofilepanel.fdf
+
+LadderNameTextTemplateLoadedbattlenetprofilepanel.fdf
+
+TeamValueTextTemplateLoadedbattlenetprofilepanel.fdf
+
+TeamLadderRankValueTextTemplateLoadedbattlenetprofilepanel.fdf
+
+ScoreScreenTabTextTemplateLoadedscorescreen.fdf
+
+ScoreScreenTabTextSelectedTemplateLoadedscorescreen.fdf
+
+ScoreScreenColumnHeaderTemplateLoadedscorescreen.fdf
+
+EscMenuMainPanelDialogTextTemplateLoadedescmenumainpanel.fdf
+
+EscMenuSaveDialogTextTemplateLoadedescmenusavegamepanel.fdf
+
+BattleNetButtonTextTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetButtonBarTextTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetTitleTextTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetLabelTextTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetValueTextTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetListBoxTextTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetInfoTextTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetEditBoxTextTemplateNot Loadedbattlenettemplates.fdf
+
+StandardButtonTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardInfoTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardTitleTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardLabelTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardValueTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallTitleTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardExtraSmallTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardExtraSmallTitleTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardEditBoxTextTemplateNot Loadedstandardtemplates.fdf
+
+StandardDecoratedEditBoxTextTemplateNot Loadedstandardtemplates.fdf
+
+EscMenuButtonTextTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuInfoTextTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuTitleTextTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuLabelTextTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuLabelTextSmallTemplateNot Loadedescmenutemplates.fdf
+
+EscMenuEditBoxTextTemplateNot Loadedescmenutemplates.fdf
+
+InfoPanelTitleTextTemplateNot Loadedinfopaneltemplates.fdf
+
+InfoPanelDescriptionTextTemplateNot Loadedinfopaneltemplates.fdf
+
+InfoPanelLabelTextTemplateNot Loadedinfopaneltemplates.fdf
+
+InfoPanelAttributeTextTemplateNot Loadedinfopaneltemplates.fdf
+
+BattleNetTextAreaTemplateNot Loadedbattlenettemplates.fdf
+
+EscMenuTextAreaTemplateNot Loadedescmenutemplates.fdf
+
+LadderButtonTemplateLoadedbattlenetprofilepanel.fdf
+
+ChatroomButtonTemplateNot Loadedbattlenetcustompanel.fdf
+
+BattleNetButtonTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetBorderedButtonTemplateNot Loadedbattlenettemplates.fdf
+
+BattleNetPopupMenuTitleTemplateNot Loadedbattlenettemplates.fdf
+
+StandardButtonTemplateNot Loadedstandardtemplates.fdf
+
+StandardBorderedButtonTemplateNot Loadedstandardtemplates.fdf
+
+StandardSmallButtonTemplateNot Loadedstandardtemplates.fdf
+
+CampaignButtonTemplateNot Loadedstandardtemplates.fdf
+
+CampaignArrowButtonTemplateNot Loadedstandardtemplates.fdf
+
+CampaignCameraButtonTemplateNot Loadedstandardtemplates.fdf
+
+StandardPopupMenuTitleTemplateNot Loadedstandardtemplates.fdf
+
+StandardPopupMenuSmallTitleTemplateNot Loadedstandardtemplates.fdf
+
+StandardPopupMenuExtraSmallTitleTemplateNot Loadedstandardtemplates.fdf
+
+CampaignPopupMenuTitleTemplateNot Loadedstandardtemplates.fdf
+
+All names in one list without any addition
+
+ Code:
+
+BNetPopupMenuBackdropTemplate
+LadderButtonBackdropTemplate
+LadderButtonPushedBackdropTemplate
+LadderButtonDisabledBackdropTemplate
+LadderButtonDisabledPushedBackdropTemplate
+ClanButtonBackdropTemplate
+ClanButtonPushedBackdropTemplate
+ClanButtonDisabledBackdropTemplate
+ClanButtonDisabledPushedBackdropTemplate
+BNetPopupMenuBackdropTemplate
+TeamPopupMenuBackdropTemplate
+OptionsPopupMenuBackdropTemplate
+ScoreScreenButtonBackdropTemplate
+SkirmishPopupMenuBackdropTemplate
+EscMenuBackdrop
+QuestButtonBaseTemplate
+QuestButtonBackdropTemplate
+QuestButtonPushedBackdropTemplate
+QuestButtonDisabledBackdropTemplate
+QuestButtonDisabledPushedBackdropTemplate
+CustomPopupMenuBackdropTemplate
+CustomPopupMenuSmallBackdropTemplate
+CustomPopupMenuLargeBackdropTemplate
+BattleNetHeavyBackdropTemplate
+BattleNetMediumBackdropTemplate
+BattleNetLightBackdropTemplate
+BattleNetControlBackdropTemplate
+BattleNetEditBoxBackdropTemplate
+BattleNetMenuSmallButtonBaseBackdrop
+BattleNetMenuLargeButtonBaseBackdrop
+BattleNetMenuSingleButtonBaseBackdrop
+BattleNetMenuSingleSmallButtonBaseBackdrop
+BattleNetMenuSingleLargeButtonBaseBackdrop
+BattleNetMenuButtonBaseBackdrop
+BattleNetButtonBackdropTemplate
+BattleNetButtonPushedBackdropTemplate
+BattleNetButtonDisabledBackdropTemplate
+BattleNetButtonDisabledPushedBackdropTemplate
+BattleNetBorderedButtonBackdropTemplate
+BattleNetBorderedButtonPushedBackdropTemplate
+BattleNetBorderedButtonDisabledBackdropTemplate
+BattleNetBorderedButtonDisabledPushedBackdropTemplate
+BattleNetPopupMenuBaseBackdrop
+StandardHeavyBackdropTemplate
+StandardMediumBackdropTemplate
+StandardLightBackdropTemplate
+StandardControlBackdropTemplate
+StandardMenuTinyButtonBaseBackdrop
+StandardMenuSmallButtonBaseBackdrop
+StandardMenuLargeButtonBaseBackdrop
+StandardMenuSingleButtonBaseBackdrop
+StandardMenuSingleSmallButtonBaseBackdrop
+StandardMenuSingleLargeButtonBaseBackdrop
+StandardMenuButtonBaseBackdrop
+StandardButtonBackdropTemplate
+StandardButtonPushedBackdropTemplate
+StandardButtonDisabledBackdropTemplate
+StandardButtonDisabledPushedBackdropTemplate
+StandardBorderedButtonBackdropTemplate
+StandardBorderedButtonPushedBackdropTemplate
+StandardBorderedButtonDisabledBackdropTemplate
+StandardBorderedButtonDisabledPushedBackdropTemplate
+StandardSmallButtonBackdropTemplate
+StandardSmallButtonPushedBackdropTemplate
+StandardSmallButtonDisabledBackdropTemplate
+StandardSmallButtonDisabledPushedBackdropTemplate
+StandardCampaignButtonBackdropTemplate
+StandardCampaignButtonPushedBackdropTemplate
+StandardCampaignButtonDisabledBackdropTemplate
+StandardCampaignButtonDisabledPushedBackdropTemplate
+StandardCampaignArrowButtonBackdropTemplate
+StandardCampaignArrowButtonPushedBackdropTemplate
+StandardCampaignArrowButtonDisabledBackdropTemplate
+StandardCampaignArrowButtonDisabledPushedBackdropTemplate
+StandardCampaignCameraButtonBackdropTemplate
+StandardCampaignCameraButtonPushedBackdropTemplate
+StandardCampaignCameraButtonDisabledBackdropTemplate
+StandardCampaignCameraButtonDisabledPushedBackdropTemplate
+StandardEditBoxBackdropTemplate
+StandardDecoratedEditBoxBackdropTemplate
+StandardPopupMenuBaseBackdrop
+CampaignPopupMenuBaseBackdrop
+EscMenuButtonBackdropTemplate
+EscMenuButtonPushedBackdropTemplate
+EscMenuButtonDisabledBackdropTemplate
+EscMenuButtonDisabledPushedBackdropTemplate
+EscMenuControlBackdropTemplate
+EscMenuEditBoxBackdropTemplate
+ScoreScreenTabButtonTemplate
+BattleNetPopupMenuArrowTemplate
+StandardPopupMenuArrowTemplate
+StandardPopupMenuSmallArrowTemplate
+StandardPopupMenuExtraSmallArrowTemplate
+CampaignPopupMenuArrowTemplate
+EscMenuPopupMenuArrowTemplate
+BattleNetChatDisplayTemplate
+BattleNetRadioButtonTemplate
+StandardCheckBoxTemplate
+BattleNetChatActionMenu
+BattleNetIconSelectBox
+MMPlayerSlot
+BattleNetNewsBox
+CheckListBox
+DecoratedMapListBox
+ListBoxWar3
+MapListBox
+MapPreferenceBox
+PlayerSlot
+TeamColorMenu
+TeamSetup
+ListBoxWar3
+BattleNetHelpDialog
+BattleNetClanInviteDialog
+BattleNetCustomFilterDialog
+BattleNetMatchmakerTeamInviteDialog
+BattleNetMatchmakerPendingInviteDialog
+BattleNetIconSelectDialog
+BattleNetScheduledGame
+BattleNetTeamInviteDialog
+DialogWar3
+QuickReplayDialog
+QuickReplayConfirmDialog
+BattleNetPatchDialog
+BattleNetConnectDialog
+UserDataMigrationDialog
+OptionsConfirmDialog
+AllianceDialog
+EscMenuOptionsConfirmDialog
+GameResultDialog
+GameSaveSplashDialog
+ScriptDialog
+SuspendDialog
+UnresponsiveDialog
+BattleNetDialogTemplate
+DialogWar3
+StandardDialogTemplate
+BattleNetEditBoxTemplate
+StandardEditBoxTemplate
+StandardDecoratedEditBoxTemplate
+EscMenuEditBoxTemplate
+AdvancedOptionsDisplay
+AdvancedOptionsPane
+AdBanner
+BattleNetChatPanel
+BattleNetChatroom
+BattleNetClanInvitation
+BattleNetClanMateListBox
+BattleNetClanPane
+BattleNetCustomCreatePanel
+BattleNetCustomJoinPanel
+BattleNetCustomLoadPanel
+BattleNetFriendsListBox
+BattleNetFriendsPane
+BattleNetMainFrame
+BattleNetMatchmakerPanel
+BattleNetProfilePanel
+BattleNetProfileListBox
+BattleNetProfileListItem
+BattleNetStandardPanel
+BattleNetStatusBox
+BattleNetTeamInvitation
+BattleNetTeamPanel
+BattleNetUserListBox
+CampaignListBox
+CampaignMenu
+CustomCampaignMenu
+GameChatroom
+Loading
+LoadingPlayerSlot
+LoadSavedGameScreen
+LocalMultiplayerCreate
+LocalMultiplayerJoin
+LocalMultiplayerLoad
+MainMenuFrame
+MapInfoPane
+MovieScreen
+OptionsMenu
+ScoreScreenFrame
+SaveReplayPanel
+SinglePlayerMenu
+Skirmish
+ViewReplayScreen
+AllianceSlot
+BrowserFrame
+ChatDialog
+CinematicPanel
+EscMenuMainPanel
+EscMenuOptionsPanel
+EscMenuSaveGamePanel
+Leaderboard
+LogDialog
+Multiboard
+QuestDialog
+QuestListItem
+QuestItemListItem
+SuspendPlayerSlot
+TimerDialog
+BattleNetChannelList
+BattleNetCustomPanel
+BattleNetFrameTemplate
+BattleNetUserListBoxItem
+StandardFrameTemplate
+InfoPanelBuildingDetail
+InfoPanelItemDetail
+InfoPanelUnitDetail
+IconicButtonTemplate
+IconButtonTemplate
+ClanButtonTemplate
+QuestButtonTemplate
+StandardIconicButtonTemplate
+ScoreScreen5ColumnButtonTemplate
+ScoreScreen4ColumnButtonTemplate
+ScoreScreenBottomCheckButtonTemplate
+QuestCheckBox
+QuestCheckBox2
+QuestCheckBox3
+EscMenuCheckBoxTemplate
+EscMenuRadioButtonTemplate
+DebugButton
+ReplayButton
+BrowserButton
+ScoreScreenBottomButtonTemplate
+ScriptDialogButton
+EscMenuButtonTemplate
+EscMenuPopupMenuTitleTemplate
+LadderButtonFocusHighlightBackdropTemplate
+LadderButtonMouseOverHighlightBackdropTemplate
+ClanButtonFocusHighlightBackdropTemplate
+ClanButtonMouseOverHighlightBackdropTemplate
+QuestButtonMouseOverHighlightTemplate
+BattleNetButtonFocusHighlightTemplate
+BattleNetButtonMouseOverHighlightTemplate
+BattleNetBorderedButtonFocusHighlightTemplate
+BattleNetBorderedButtonMouseOverHighlightTemplate
+StandardButtonFocusHighlightTemplate
+StandardButtonMouseOverHighlightTemplate
+StandardBorderedButtonFocusHighlightTemplate
+StandardBorderedButtonMouseOverHighlightTemplate
+StandardSmallButtonFocusHighlightTemplate
+StandardSmallButtonMouseOverHighlightTemplate
+StandardCampaignButtonFocusHighlightTemplate
+StandardCampaignButtonMouseOverHighlightTemplate
+StandardCampaignArrowButtonFocusHighlightTemplate
+StandardCampaignArrowButtonMouseOverHighlightTemplate
+StandardCampaignCameraButtonFocusHighlightTemplate
+StandardCampaignCameraButtonMouseOverHighlightTemplate
+EscMenuButtonMouseOverHighlightTemplate
+BattleNetListBoxTemplate
+StandardListBoxTemplate
+BattleNetPopupMenuMenuTemplate
+StandardPopupMenuMenuTemplate
+StandardSmallPopupMenuMenuTemplate
+StandardExtraSmallPopupMenuMenuTemplate
+CampaignPopupMenuMenuTemplate
+EscMenuPopupMenuMenuTemplate
+AdvancedPopupMenuTemplate
+ClanPopupMenuTemplate
+FilterPopupMenuTemplate
+BNetPopupMenuTemplate
+PlayerSlotPopupMenu
+BNetPopupMenuTemplate
+TeamPopupMenuTemplate
+TeamMemberPopupMenu
+OptionsPopupMenuTemplate
+PlayerSlotPopupMenu
+SkirmishPopupMenuTemplate
+CustomPopupMenuTemplate
+BattleNetPopupMenuTemplate
+StandardPopupMenuTemplate
+CampaignPopupMenuTemplate
+EscMenuPopupMenuTemplate
+QuestMainListScrollBar
+QuestOptionalListScrollBar
+QuestItemListScrollBar
+QuestConditionListScrollBar
+BattleNetScrollBarTemplate
+StandardScrollBarTemplate
+EscMenuScrollBarTemplate
+UpperButtonBarButtonTemplate
+ConsoleUI
+SimpleObserverPanel
+SimpleReplayPanel
+ResourceBarFrame
+SimpleInfoPanelUnitDetail
+SimpleInfoPanelCargoDetail
+SimpleInfoPanelBuildingDetail
+SimpleInfoPanelItemDetail
+SimpleInfoPanelDestructableDetail
+SimpleInfoPanelIconDamage
+SimpleInfoPanelIconArmor
+SimpleInfoPanelIconRank
+SimpleInfoPanelIconFood
+SimpleInfoPanelIconGold
+SimpleInfoPanelIconHero
+SimpleInfoPanelIconAlly
+UpperButtonBarFrame
+BattleNetSliderTemplate
+StandardSliderTemplate
+EscMenuSliderTemplate
+TeamLabelTextTemplate
+LadderNameTextTemplate
+TeamValueTextTemplate
+TeamLadderRankValueTextTemplate
+ScoreScreenTabTextTemplate
+ScoreScreenTabTextSelectedTemplate
+ScoreScreenColumnHeaderTemplate
+EscMenuMainPanelDialogTextTemplate
+EscMenuSaveDialogTextTemplate
+BattleNetButtonTextTemplate
+BattleNetButtonBarTextTemplate
+BattleNetTitleTextTemplate
+BattleNetLabelTextTemplate
+BattleNetValueTextTemplate
+BattleNetListBoxTextTemplate
+BattleNetInfoTextTemplate
+BattleNetEditBoxTextTemplate
+StandardButtonTextTemplate
+StandardInfoTextTemplate
+StandardTitleTextTemplate
+StandardLabelTextTemplate
+StandardValueTextTemplate
+StandardSmallTextTemplate
+StandardSmallTitleTextTemplate
+StandardExtraSmallTextTemplate
+StandardExtraSmallTitleTextTemplate
+StandardEditBoxTextTemplate
+StandardDecoratedEditBoxTextTemplate
+EscMenuButtonTextTemplate
+EscMenuInfoTextTemplate
+EscMenuTitleTextTemplate
+EscMenuLabelTextTemplate
+EscMenuLabelTextSmallTemplate
+EscMenuEditBoxTextTemplate
+InfoPanelTitleTextTemplate
+InfoPanelDescriptionTextTemplate
+InfoPanelLabelTextTemplate
+InfoPanelAttributeTextTemplate
+BattleNetTextAreaTemplate
+EscMenuTextAreaTemplate
+LadderButtonTemplate
+ChatroomButtonTemplate
+BattleNetButtonTemplate
+BattleNetBorderedButtonTemplate
+BattleNetPopupMenuTitleTemplate
+StandardButtonTemplate
+StandardBorderedButtonTemplate
+StandardSmallButtonTemplate
+CampaignButtonTemplate
+CampaignArrowButtonTemplate
+CampaignCameraButtonTemplate
+StandardPopupMenuTitleTemplate
+StandardPopupMenuSmallTitleTemplate
+StandardPopupMenuExtraSmallTitleTemplate
+CampaignPopupMenuTitleTemplate
+
+###
+ Other UI-Frame Tutorials
+
+The following links might provide more insight into this subject.
+
+UI: Change Lumber Text
+
+[JASS/AI] - UI: Create a TextButton
+
+[JASS/AI] - UI: Positionate Frames (important)
+
+UI: toc-Files
+
+UI: Reading a FDF
+
+UI - The concept of Parent-Frames
+
+[JASS/AI] - UI: FrameEvents and FrameTypes
+
+UI: Frames and Tooltips
+
+[JASS/AI] - UI: Creating a Bar
+
+UI - Simpleframes
+
+UI: What are BACKDROPs?
+
+UI: GLUEBUTTON
+
+UI: TEXTAREA the scrolling Text Frame
+
+UI: EditBox - Text Input
+
+[JASS/AI] - UI: Creating a Cam control
+
+UI: Showing 3 Multiboards
+
+UI: OriginFrames
+
+Default Names for BlzGetFrameByName (Access to Existing game-Frames)
+
+[JASS/AI] - UI: List - Default MainFrames (built in CreateAble)​
+
+#### Attachments
+
+BattleNetPopupMenuBaseBackdrop.png
+
+ 296 bytes
+
+ · Views: 484
+
+
+
+LadderButtonDisabledPushedBackdropTemplate.png
+
+ 13.9 KB
+
+ · Views: 492
+
+
+
+StandardBorderedButtonDisabledPushedBackdropTemplate.png
+
+ 2.8 KB
+
+ · Views: 552
+
+
+
+
+ Last edited by a moderator: Oct 8, 2020
+
+#### Chaosy
+
+#### Chaosy
+
+Tutorial Reviewer
+
+ Level 41
+
+JoinedJun 9, 2011Messages13,295
+
+Resources: 42
+
+#### Resources
+Icons 3Maps 1Spells and Systems 22Ported Icons 5Tutorials 11
+
+Not much to say, very useful complement to the other tutorials.
+
+Approved.
+
+#### TTT
+
+#### TTT
+
+ Level 4
+
+JoinedApr 21, 2017Messages41
+
+very useful!
+
+#### emperor_d3st
+
+#### emperor_d3st
+
+ Level 18
+
+JoinedApr 13, 2008Messages1,629
+
+Resources: 2
+
+#### Resources
+Ported Models 2
+
+Thank you sir, this is gold.
+
+ You must log in or register to reply here.
+
+
+### Similar threads
+
+ UI: Change Lumber Text
+
+
+Tasyen
+
+May 29, 2019
+
+Scripting Tutorials
+
+Replies17Views9K
+
+Apr 1, 2021
+pr114
+
+ UI: Reading a FDF
+
+
+Tasyen
+
+May 29, 2019
+
+Scripting Tutorials
+
+Replies15Views16K
+
+Dec 1, 2020
+Tasyen
+
+ UI: EditBox - Text Input
+
+
+Tasyen
+
+Jun 12, 2019
+
+Scripting Tutorials
+
+Replies15Views10K
+
+Apr 6, 2023
+Tasyen
+
+ UI: Create a TextButton
+
+
+Tasyen
+
+May 30, 2019
+
+Scripting Tutorials
+
+Replies12Views12K
+
+Jan 11, 2021
+Tasyen
+
+ UI: TEXTAREA the scrolling Text Frame
+
+
+Tasyen
+
+Sep 20, 2019
+
+Scripting Tutorials
+
+Replies20Views9K
+
+Dec 6, 2021
+Seago
+
+S
+
+Share:
+BlueskyLinkedInRedditPinterestTumblrWhatsAppEmailShareLink
+
+Home
+
+Forums
+
+Warcraft III
+
+Warcraft 3 Tutorials
+
+Scripting Tutorials
+
+ This site uses cookies to help personalise content, tailor your experience and to keep you logged in if you register.
+
+By continuing to use this site, you are consenting to our use of cookies.
+
+
+AcceptLearn more…
+
+Back
+
+Top
