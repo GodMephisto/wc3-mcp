@@ -22,9 +22,15 @@ public static class RagPaths
     public static string VocabTxt => Path.Combine(ModelDir, "vocab.txt");
     public static string IndexFile => Path.Combine(Root, "index.bin");
 
+    /// <summary>The corpus, downloaded from the release rather than shipped, so the package stays small.</summary>
+    public static string DatasetDir => Path.Combine(Root, "corpus");
+
     public const string ModelRepo = "BAAI/bge-small-en-v1.5";
     public const string ModelUrl = "https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/onnx/model.onnx";
     public const string VocabUrl = "https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/vocab.txt";
+
+    public const string DatasetUrl = "https://github.com/GodMephisto/wc3-mcp/releases/download/dataset-v1/wc3-corpus.tgz";
+    public const string DatasetSha256 = "32bf2562c3133f704a00208c60596e0450591c4be530d2db699f938a3ed5da16";
 }
 
 /// <summary>
@@ -245,6 +251,46 @@ public static class RagInstaller
             http.DefaultRequestHeaders.Authorization = new("Bearer", token);
         await Download(http, RagPaths.ModelUrl, RagPaths.ModelOnnx, log, ct).ConfigureAwait(false);
         await Download(http, RagPaths.VocabUrl, RagPaths.VocabTxt, log, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Fetch the corpus once, verify the digest, and extract it. Idempotent per install.</summary>
+    public static async Task<string> EnsureDatasetAsync(Action<string>? log = null, CancellationToken ct = default)
+    {
+        if (Directory.Exists(RagPaths.DatasetDir) && Directory.EnumerateFileSystemEntries(RagPaths.DatasetDir).Any())
+        {
+            log?.Invoke("dataset  present");
+            return RagPaths.DatasetDir;
+        }
+        Directory.CreateDirectory(RagPaths.DatasetDir);
+        Directory.CreateDirectory(RagPaths.Root);
+        string tgz = Path.Combine(RagPaths.Root, "wc3-corpus.tgz");
+        using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(30) })
+        using (var resp = await http.GetAsync(RagPaths.DatasetUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false))
+        {
+            resp.EnsureSuccessStatusCode();
+            log?.Invoke("dataset  downloading ...");
+            await using var src = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            await using var dst = File.Create(tgz);
+            await src.CopyToAsync(dst, ct).ConfigureAwait(false);
+        }
+
+        string actual;
+        using (var sha = System.Security.Cryptography.SHA256.Create())
+        await using (var fs = File.OpenRead(tgz))
+            actual = Convert.ToHexString(await sha.ComputeHashAsync(fs, ct).ConfigureAwait(false)).ToLowerInvariant();
+        if (!string.Equals(actual, RagPaths.DatasetSha256, StringComparison.OrdinalIgnoreCase))
+        {
+            File.Delete(tgz);
+            throw new InvalidOperationException($"dataset checksum mismatch, expected {RagPaths.DatasetSha256}, got {actual}");
+        }
+
+        log?.Invoke("dataset  verified, extracting ...");
+        await using (var fs = File.OpenRead(tgz))
+        await using (var gz = new System.IO.Compression.GZipStream(fs, System.IO.Compression.CompressionMode.Decompress))
+            System.Formats.Tar.TarFile.ExtractToDirectory(gz, RagPaths.DatasetDir, overwriteFiles: true);
+        File.Delete(tgz);
+        log?.Invoke("dataset  ready");
+        return RagPaths.DatasetDir;
     }
 
     private static async Task Download(HttpClient http, string url, string dest, Action<string>? log, CancellationToken ct)

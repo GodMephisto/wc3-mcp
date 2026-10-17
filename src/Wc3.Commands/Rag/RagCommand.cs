@@ -34,12 +34,23 @@ public static class RagCommand
             index?.Chunks.Count ?? 0, index?.Corpus ?? "", index?.BuiltUtc.ToString("o"), RagPaths.ModelRepo);
     }
 
+    public sealed record RagDatasetResult(string Dir, int Documents, string Url);
+
+    /// <summary>Download the corpus if absent, without building the index. `rag install` calls this too.</summary>
+    public static RagDatasetResult FetchDataset(Action<string>? log = null)
+    {
+        string dir = RagInstaller.EnsureDatasetAsync(log).GetAwaiter().GetResult();
+        int n = Directory.GetFiles(dir, "*.md", SearchOption.AllDirectories).Length;
+        return new RagDatasetResult(dir, n, RagPaths.DatasetUrl);
+    }
+
     public static RagInstallResult Install(string? corpus, int? threads = null, int? batch = null, Action<string>? log = null)
     {
-        string ctx = corpus ?? BundledContextDir();
+        // No corpus given means the full public dataset, fetched from the release and verified,
+        // so the package stays small and a client still gets everything with one command.
+        string ctx = corpus ?? RagInstaller.EnsureDatasetAsync(log).GetAwaiter().GetResult();
         if (!Directory.Exists(ctx))
-            throw new DirectoryNotFoundException(
-                $"no corpus at '{ctx}'. Pass --corpus <dir> or run from an install that carries the context folder.");
+            throw new DirectoryNotFoundException($"no corpus at '{ctx}'.");
         RagInstaller.EnsureModelAsync(log).GetAwaiter().GetResult();
         using var embedder = new RagEmbedder(RagPaths.ModelOnnx, RagPaths.VocabTxt, threads);
         var index = RagIndex.Build(ctx, embedder, (n, doc) => log?.Invoke($"  {n,5} chunks, {doc}"), Math.Clamp(batch ?? 16, 1, 128));
