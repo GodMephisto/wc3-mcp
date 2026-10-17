@@ -55,6 +55,10 @@ public static class RagCommand
         using var embedder = new RagEmbedder(RagPaths.ModelOnnx, RagPaths.VocabTxt, threads);
         var index = RagIndex.Build(ctx, embedder, (n, doc) => log?.Invoke($"  {n,5} chunks, {doc}"), Math.Clamp(batch ?? 16, 1, 128));
         index.Save(RagPaths.IndexFile);
+        // The graph is built from the same documents and embeddings, so it and the index agree.
+        var graph = RagGraph.Build(ctx, index, (n, doc) => log?.Invoke($"  {n,5} graph nodes, {doc}"));
+        graph.Save(RagPaths.GraphFile);
+        log?.Invoke($"graph    {graph.Nodes.Count} nodes, {graph.Edges.Count} edges");
         return new RagInstallResult(
             RagPaths.Root, ctx, index.Chunks.Count, RagPaths.IndexFile, new FileInfo(RagPaths.IndexFile).Length, RagPaths.ModelRepo);
     }
@@ -71,4 +75,37 @@ public static class RagCommand
     }
 
     private static string Truncate(string s, int n) => s.Length <= n ? s : s[..n] + "\n... (truncated)";
+
+    // ---- the graph half, over the same corpus and embeddings ----
+
+    public sealed record GraphNodeResult(string Id, string Type, string Name, int Degree, string? Edge, float? Weight);
+    public sealed record GraphPathResult(string From, string To, int Hops, IReadOnlyList<string> Path);
+
+    private static RagGraph LoadGraph() =>
+        RagGraph.Load(RagPaths.GraphFile)
+        ?? throw new InvalidOperationException("no graph. Run 'wc3ctl rag install' first.");
+
+    /// <summary>Nodes within a depth of a start node, over the link and similarity edges.</summary>
+    public static IReadOnlyList<GraphNodeResult> GraphNeighbors(string node, int depth = 1, string? edge = null, int limit = 25)
+    {
+        var g = LoadGraph();
+        return g.Neighbors(node, depth, edge, limit)
+            .Select(n => new GraphNodeResult(n.Id, n.Type, n.Name, 0, n.Edge, n.Weight))
+            .ToArray();
+    }
+
+    /// <summary>The most connected nodes, the hubs of the corpus.</summary>
+    public static IReadOnlyList<GraphNodeResult> GraphHubs(int top = 20, string? type = null)
+    {
+        var g = LoadGraph();
+        return g.Hubs(top, type).Select(n => new GraphNodeResult(n.Id, n.Type, n.Name, n.Degree, null, null)).ToArray();
+    }
+
+    /// <summary>The shortest edge path between two nodes.</summary>
+    public static GraphPathResult GraphPath(string from, string to)
+    {
+        var g = LoadGraph();
+        var path = g.ShortestPath(from, to);
+        return new GraphPathResult(from, to, Math.Max(0, path.Count - 1), path);
+    }
 }

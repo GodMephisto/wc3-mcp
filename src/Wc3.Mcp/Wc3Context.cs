@@ -162,4 +162,27 @@ public static class Wc3Context
         var r = RagCommand.Install(corpus, threads, batch);
         return new { r.Root, r.Corpus, r.Chunks, r.IndexFile, r.ModelRepo, note = "docs_search is now semantic" };
     }
+
+    [McpServerTool(Name = "graph_neighbors", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("List the nodes within a depth of a start node in the corpus graph, over link edges and embedding-similarity edges. Use it to find the documents related to one you already have. The graph is built by rag install, beside the index.")]
+    public static object GraphNeighbors(
+        [Description("A node id or name, for example a document title or a path without the .md.")] string node,
+        [Description("How many hops out to walk. Default 1.")] int depth = 1,
+        [Description("Restrict to one edge type, HAS_SECTION, LINKS_TO or SIMILAR_TO. Omit for all.")] string? edge = null,
+        [Description("Maximum nodes to return. Default 25.")] int limit = 25)
+        => RagCommand.GraphNeighbors(node, depth, edge, limit);
+
+    [McpServerTool(Name = "graph_hubs", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("The most connected nodes in the corpus graph, the documents and sections the corpus centres on. Use it to see what the corpus is really about.")]
+    public static object GraphHubs(
+        [Description("Maximum nodes to return. Default 20.")] int top = 20,
+        [Description("Restrict to one node type, Document or Section. Omit for all.")] string? type = null)
+        => RagCommand.GraphHubs(top, type);
+
+    [McpServerTool(Name = "graph_path", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("The shortest chain of edges between two nodes in the corpus graph, so you can see how two documents or subjects connect.")]
+    public static object GraphPath(
+        [Description("The start node id or name.")] string from,
+        [Description("The end node id or name.")] string to)
+        => RagCommand.GraphPath(from, to);
 }

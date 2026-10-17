@@ -31,6 +31,10 @@ wc3ctl rag install --threads 8 --batch 32 --corpus "C:/my-notes"
 
 Measured on 606 chunks, four threads batch 16 is 1m34s and eight threads batch 32 is 1m25s, so the low CPU default costs little wall clock and a machine is not pinned unless the user asks.
 
+### The graph
+
+`rag install` also builds a graph beside the index, nodes for a document and its sections, and edges for a document to its section, a document to one it links, and a document to one it is close to by embedding. The MCP exposes it as `graph_neighbors`, `graph_hubs` and `graph_path`, and the CLI as `rag neighbors`, `rag hubs` and `rag path`. No server, the graph is a local file queried in process. A Neo4j backend, for Cypher and vault parity, is a later option behind a flag, fed from these same nodes and edges rather than a second extraction.
+
 ## Build your own, for a bigger or private corpus
 
 For thousands of documents, or a set a person adds their own maps and notes to, a local RAG of your own is the right shape. One machine, no account, its only cost is disk and the model.

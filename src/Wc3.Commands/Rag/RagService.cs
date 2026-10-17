@@ -21,6 +21,7 @@ public static class RagPaths
     public static string ModelOnnx => Path.Combine(ModelDir, "model.onnx");
     public static string VocabTxt => Path.Combine(ModelDir, "vocab.txt");
     public static string IndexFile => Path.Combine(Root, "index.bin");
+    public static string GraphFile => Path.Combine(Root, "graph.bin");
 
     /// <summary>The corpus, downloaded from the release rather than shipped, so the package stays small.</summary>
     public static string DatasetDir => Path.Combine(Root, "corpus");
