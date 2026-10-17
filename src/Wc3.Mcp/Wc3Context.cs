@@ -21,9 +21,7 @@ public static class Wc3Context
 {
     private static string Root => Path.Combine(AppContext.BaseDirectory, "context");
 
-    // A heading is a markdown # line, or the "-Ability Name" convention the Ability Insight
-    // document uses, or a rule of dashes. Kept short so a bulleted sentence is not one.
-    private static readonly Regex HeadingRx = new(@"^\s*(?:#{1,6}\s+(?<h>.*)|-{1,2}(?<h>[A-Z(][^\n]{0,80})|={3,})$", RegexOptions.Compiled);
+    // One heading rule shared with the index and the graph (see RagText.Heading).
 
     // The optional local retrieval index, built by `wc3ctl rag install`. Loaded once and kept, so
     // a search does not pay the model load again. When it is absent, docs_search is lexical only.
@@ -80,8 +78,11 @@ public static class Wc3Context
         // `wc3ctl rag install` and auto-connects here, so a client needs no configuration.
         if (Index.Value is { } idx && Embedder.Value is { } semantic)
         {
-            var semanticHits = idx.Search(semantic, query, max)
-                .Where(h => doc is null || h.chunk.Document.Equals(doc, StringComparison.OrdinalIgnoreCase))
+            // Search a wider candidate pool, filter by document, then take max, or the filter
+            // could drop a real match that ranked below the global top max.
+            var semanticHits = idx.Search(semantic, query, Math.Clamp(max * 8, 8, 50))
+                .Where(h => doc is null || FirstSegment(h.chunk.Document).Equals(doc, StringComparison.OrdinalIgnoreCase))
+                .Take(Math.Clamp(max, 1, 40))
                 .Select(h => new { document = h.chunk.Document, section = h.chunk.Heading, score = Math.Round(h.score, 3), passage = Truncate(h.chunk.Text, 1600) })
                 .ToArray();
             return new { query, mode = "semantic", documents = Documents().Select(d => d.id).ToArray(), matches = semanticHits.Length, results = semanticHits };
@@ -99,7 +100,7 @@ public static class Wc3Context
             var buf = new StringBuilder();
             foreach (var line in text.Split('\n'))
             {
-                var m = HeadingRx.Match(line);
+                var m = RagText.Heading.Match(line);
                 if (m.Success)
                 {
                     Score(buf, heading, id);
@@ -148,18 +149,24 @@ public static class Wc3Context
     private static string Truncate(string s, int n) =>
         s.Length <= n ? s : s[..n] + "\n... (truncated, read the whole document with the resource wc3://context/)";
 
+    /// <summary>The top-level folder of a document id, the directory under context/, or the id itself.</summary>
+    private static string FirstSegment(string docId)
+    {
+        int slash = docId.IndexOf('/');
+        return slash < 0 ? docId : docId[..slash];
+    }
+
     [McpServerTool(Name = "rag_status", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Report whether the local semantic retrieval index is installed, with its chunk count, corpus and the embedding model. docs_search uses the index automatically once it is installed.")]
     public static object RagStatus() => RagCommand.Status();
 
     [McpServerTool(Name = "rag_install", ReadOnly = false, Idempotent = true, OpenWorld = true)]
-    [Description("Install the local semantic retrieval index. Fetches the embedding model once (about 130 MB, needs network) and builds the index over the bundled Warcraft III documents, after which docs_search is semantic and needs nothing else. Run by a user, not per query.")]
+    [Description("Install the local semantic index and graph over the Warcraft III corpus. Fetches the embedding model and the corpus dataset, verifies each, and builds the index and the graph, after which docs_search is semantic and the graph tools work. Needs network on the first run. The corpus is fixed to the bundled dataset, never a folder named by the caller, so this cannot read arbitrary local files.")]
     public static object RagInstall(
-        [Description("Folder of .md documents to index. Omit for the bundled context folder.")] string? corpus = null,
         [Description("CPU threads for embedding. Default min(cores/2, 4), the low CPU setting. Raise it to build faster.")] int? threads = null,
         [Description("Chunks per inference, default 16. Larger batches finish sooner and use more memory.")] int? batch = null)
     {
-        var r = RagCommand.Install(corpus, threads, batch);
+        var r = RagCommand.Install(null, threads, batch);
         return new { r.Root, r.Corpus, r.Chunks, r.IndexFile, r.ModelRepo, note = "docs_search is now semantic" };
     }
 

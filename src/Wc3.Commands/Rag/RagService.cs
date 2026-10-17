@@ -1,6 +1,7 @@
 // src/Wc3.Commands/Rag/RagService.cs
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using Microsoft.ML.Tokenizers;
@@ -16,7 +17,9 @@ namespace Wc3.Commands.Rag;
 public static class RagPaths
 {
     public static string Root =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "wc3ctl", "rag");
+        Environment.GetEnvironmentVariable("W3C_RAG_HOME") is { Length: > 0 } custom
+            ? custom
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "wc3ctl", "rag");
     public static string ModelDir => Path.Combine(Root, "model");
     public static string ModelOnnx => Path.Combine(ModelDir, "model.onnx");
     public static string VocabTxt => Path.Combine(ModelDir, "vocab.txt");
@@ -29,15 +32,29 @@ public static class RagPaths
     public const string ModelRepo = "BAAI/bge-small-en-v1.5";
     public const string ModelUrl = "https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/onnx/model.onnx";
     public const string VocabUrl = "https://huggingface.co/BAAI/bge-small-en-v1.5/resolve/main/vocab.txt";
+    // Pinned digests, because the model is loaded by ONNX Runtime from a user-writable folder and
+    // is the same trust concern as the corpus, which was already verified.
+    public const string ModelSha256 = "828e1496d7fabb79cfa4dcd84fa38625c0d3d21da474a00f08db0f559940cf35";
+    public const string VocabSha256 = "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3";
 
     public const string DatasetUrl = "https://github.com/GodMephisto/wc3-mcp/releases/download/dataset-v1/wc3-corpus.tgz";
     public const string DatasetSha256 = "32bf2562c3133f704a00208c60596e0450591c4be530d2db699f938a3ed5da16";
 }
 
 /// <summary>
+/// One heading rule for the index, the graph and the MCP search, so a section means the same thing
+/// in all three. Markdown hashes, the Ability Insight dash convention, and rule lines of equals.
+/// </summary>
+public static class RagText
+{
+    public static readonly Regex Heading =
+        new(@"^\s*(?:#{1,6}\s+(?<h>.*)|-{1,2}(?<h>[A-Z(][^\n]{0,80})|={3,})$", RegexOptions.Compiled);
+}
+
+/// <summary>
 /// bge-small-en-v1.5 through ONNX Runtime. CLS pooling then L2 normalize, matching the model card.
 /// The CPU is kept modest on purpose. ONNX's OpenMP backend spins by default, so a batch job can
-/// pin every core, and the fix is three things: PASSIVE wait so idle threads sleep, a small
+/// pin every core, and the fix is three things, PASSIVE wait so idle threads sleep, a small
 /// intra-op cap rather than every core, and batched inference so the cost is one run per batch
 /// instead of one run per chunk. Set W3C_RAG_THREADS to change the cap.
 /// </summary>
@@ -154,7 +171,7 @@ public sealed class RagIndex
 
         foreach (var doc in docs)
         {
-            string id = Path.GetFileNameWithoutExtension(doc);
+            string id = DocIdOf(corpusDir, doc);
             string text = File.ReadAllText(doc).Replace("\r\n", "\n").TrimStart('\uFEFF');
             foreach (var (heading, window) in Window(text))
             {
@@ -169,6 +186,14 @@ public sealed class RagIndex
         return new RagIndex(chunks, corpusDir, DateTime.UtcNow);
     }
 
+    /// <summary>
+    /// The one document id, the corpus-relative path without extension, used by both the index and
+    /// the graph so a chunk and a node name the same document. A bare file name here and a relative
+    /// path there is what left the similarity edges pointing at nodes that did not exist.
+    /// </summary>
+    public static string DocIdOf(string root, string path) =>
+        Path.ChangeExtension(Path.GetRelativePath(root, path), null)!.Replace('\\', '/');
+
     /// <summary>Split at headings and at a soft 1800 character cap, keeping the nearest heading.</summary>
     public static IEnumerable<(string heading, string window)> Window(string text)
     {
@@ -176,8 +201,7 @@ public sealed class RagIndex
         var buf = new StringBuilder();
         foreach (var line in text.Split('\n'))
         {
-            var m = System.Text.RegularExpressions.Regex.Match(
-                line, @"^\s*(?:#{1,6}\s+(?<h>.*)|-{1,2}(?<h>[A-Z(][^\n]{0,80}))$");
+            var m = RagText.Heading.Match(line);
             if (m.Success)
             {
                 if (buf.Length > 0) { yield return (heading, buf.ToString()); buf.Clear(); }
@@ -205,7 +229,8 @@ public sealed class RagIndex
 
     public void Save(string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        string? dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         using var fs = File.Create(path);
         using var w = new BinaryWriter(fs, Encoding.UTF8);
         w.Write(3);
@@ -222,21 +247,31 @@ public sealed class RagIndex
     public static RagIndex? Load(string path)
     {
         if (!File.Exists(path)) return null;
-        using var fs = File.OpenRead(path);
-        using var r = new BinaryReader(fs, Encoding.UTF8);
-        if (r.ReadInt32() != 3) return null;
-        string corpus = r.ReadString();
-        var built = DateTime.Parse(r.ReadString());
-        int count = r.ReadInt32();
-        var chunks = new List<RagChunk>(count);
-        for (int i = 0; i < count; i++)
+        try
         {
-            string doc = r.ReadString(), head = r.ReadString(), txt = r.ReadString();
-            var vec = new float[RagEmbedder.Dim];
-            for (int d = 0; d < RagEmbedder.Dim; d++) vec[d] = r.ReadSingle();
-            chunks.Add(new RagChunk(doc, head, txt, vec));
+            using var fs = File.OpenRead(path);
+            using var r = new BinaryReader(fs, Encoding.UTF8);
+            if (r.ReadInt32() != 3) return null;
+            string corpus = r.ReadString();
+            var built = DateTime.Parse(r.ReadString());
+            int count = r.ReadInt32();
+            // Bound the count against the stream before allocating, and a corrupt file degrades to
+            // no index rather than crashing the server.
+            if (count < 0 || (long)count * (RagEmbedder.Dim * 4 + 16) > fs.Length) return null;
+            var chunks = new List<RagChunk>(count);
+            for (int i = 0; i < count; i++)
+            {
+                string doc = r.ReadString(), head = r.ReadString(), txt = r.ReadString();
+                var vec = new float[RagEmbedder.Dim];
+                for (int d = 0; d < RagEmbedder.Dim; d++) vec[d] = r.ReadSingle();
+                chunks.Add(new RagChunk(doc, head, txt, vec));
+            }
+            return new RagIndex(chunks, corpus, built);
         }
-        return new RagIndex(chunks, corpus, built);
+        catch (Exception ex) when (ex is IOException or EndOfStreamException or FormatException or ArgumentException)
+        {
+            return null;
+        }
     }
 }
 
@@ -250,8 +285,8 @@ public static class RagInstaller
         string? token = Environment.GetEnvironmentVariable("HF_TOKEN");
         if (!string.IsNullOrWhiteSpace(token))
             http.DefaultRequestHeaders.Authorization = new("Bearer", token);
-        await Download(http, RagPaths.ModelUrl, RagPaths.ModelOnnx, log, ct).ConfigureAwait(false);
-        await Download(http, RagPaths.VocabUrl, RagPaths.VocabTxt, log, ct).ConfigureAwait(false);
+        await Download(http, RagPaths.ModelUrl, RagPaths.ModelOnnx, RagPaths.ModelSha256, log, ct).ConfigureAwait(false);
+        await Download(http, RagPaths.VocabUrl, RagPaths.VocabTxt, RagPaths.VocabSha256, log, ct).ConfigureAwait(false);
     }
 
     /// <summary>Fetch the corpus once, verify the digest, and extract it. Idempotent per install.</summary>
@@ -294,15 +329,41 @@ public static class RagInstaller
         return RagPaths.DatasetDir;
     }
 
-    private static async Task Download(HttpClient http, string url, string dest, Action<string>? log, CancellationToken ct)
+    /// <summary>
+    /// Stream to a .part file, verify the digest, then move it into place, so a killed download
+    /// never leaves a partial file the loader would accept and a tampered one never loads.
+    /// </summary>
+    private static async Task Download(HttpClient http, string url, string dest, string sha256, Action<string>? log, CancellationToken ct)
     {
-        if (File.Exists(dest) && new FileInfo(dest).Length > 0) { log?.Invoke($"present  {Path.GetFileName(dest)}"); return; }
+        if (File.Exists(dest) && new FileInfo(dest).Length > 0 &&
+            string.Equals(Sha256Of(dest), sha256, StringComparison.OrdinalIgnoreCase))
+        {
+            log?.Invoke($"present  {Path.GetFileName(dest)}");
+            return;
+        }
         log?.Invoke($"fetching {Path.GetFileName(dest)} ...");
-        using var resp = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-        resp.EnsureSuccessStatusCode();
-        await using var src = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        await using var dst = File.Create(dest);
-        await src.CopyToAsync(dst, ct).ConfigureAwait(false);
+        string part = dest + ".part";
+        using (var resp = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false))
+        {
+            resp.EnsureSuccessStatusCode();
+            await using var src = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+            await using var dst = File.Create(part);
+            await src.CopyToAsync(dst, ct).ConfigureAwait(false);
+        }
+        string actual = Sha256Of(part);
+        if (!string.Equals(actual, sha256, StringComparison.OrdinalIgnoreCase))
+        {
+            File.Delete(part);
+            throw new InvalidOperationException($"checksum mismatch for {Path.GetFileName(dest)}, expected {sha256}, got {actual}");
+        }
+        File.Move(part, dest, overwrite: true);
         log?.Invoke($"wrote    {Path.GetFileName(dest)} ({new FileInfo(dest).Length / 1024 / 1024} MB)");
+    }
+
+    private static string Sha256Of(string path)
+    {
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        using var fs = File.OpenRead(path);
+        return Convert.ToHexString(sha.ComputeHash(fs)).ToLowerInvariant();
     }
 }

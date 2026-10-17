@@ -55,7 +55,7 @@ public sealed class RagGraph
 
         foreach (var path in docs)
         {
-            string id = DocId(corpusDir, path);
+            string id = RagIndex.DocIdOf(corpusDir, path);
             string text = File.ReadAllText(path).Replace("\r\n", "\n").TrimStart('\uFEFF');
             string title = FirstHeading(text) ?? Path.GetFileNameWithoutExtension(path);
             titles[id] = title;
@@ -77,7 +77,7 @@ public sealed class RagGraph
             }
             foreach (var line in text.Split('\n'))
             {
-                var hm = Regex.Match(line, @"^\s*#{1,6}\s+(?<h>.*)$");
+                var hm = RagText.Heading.Match(line);
                 if (hm.Success) { if (buf.Length > 0) Flush(); heading = hm.Groups["h"].Value.Trim(); }
                 buf.Append(line).Append('\n');
             }
@@ -128,19 +128,13 @@ public sealed class RagGraph
         return new RagGraph(nodes, edges, DateTime.UtcNow);
     }
 
-    private static string DocId(string root, string path)
-    {
-        string rel = Path.GetRelativePath(root, path).Replace('\\', '/');
-        return Path.ChangeExtension(rel, null)!;
-    }
-
     private static string? FirstHeading(string text)
     {
         var m = Regex.Match(text, @"^\s*#\s+(?<h>.+)$", RegexOptions.Multiline);
         return m.Success ? m.Groups["h"].Value.Trim() : null;
     }
 
-    public sealed record Neighbor(string Id, string Type, string Name, string Edge, float Weight, int Depth);
+    public sealed record Neighbor(string Id, string Type, string Name, string Edge, float Weight, int Depth, int Degree);
     public sealed record NodeSummary(string Id, string Type, string Name, int Degree);
 
     /// <summary>Breadth first over the edges, up to a depth.</summary>
@@ -161,7 +155,7 @@ public sealed class RagGraph
                 if (edgeType is not null && !t.Equals(edgeType, StringComparison.OrdinalIgnoreCase)) continue;
                 if (!seen.Add(to)) continue;
                 var n = _nodes[to];
-                outp.Add(new Neighbor(n.Id, n.Type, n.Name, t, w, d + 1));
+                outp.Add(new Neighbor(n.Id, n.Type, n.Name, t, w, d + 1, _adj[to].Count));
                 frontier.Enqueue((to, d + 1));
             }
         }
@@ -217,7 +211,8 @@ public sealed class RagGraph
 
     public void Save(string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        string? dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         using var fs = File.Create(path);
         using var w = new BinaryWriter(fs, Encoding.UTF8);
         w.Write(1);
@@ -231,16 +226,27 @@ public sealed class RagGraph
     public static RagGraph? Load(string path)
     {
         if (!File.Exists(path)) return null;
-        using var fs = File.OpenRead(path);
-        using var r = new BinaryReader(fs, Encoding.UTF8);
-        if (r.ReadInt32() != 1) return null;
-        var built = DateTime.Parse(r.ReadString());
-        int nc = r.ReadInt32();
-        var nodes = new List<RagNode>(nc);
-        for (int i = 0; i < nc; i++) nodes.Add(new RagNode(r.ReadString(), r.ReadString(), r.ReadString()));
-        int ec = r.ReadInt32();
-        var edges = new List<RagEdge>(ec);
-        for (int i = 0; i < ec; i++) edges.Add(new RagEdge(r.ReadString(), r.ReadString(), r.ReadString(), r.ReadSingle()));
-        return new RagGraph(nodes, edges, built);
+        try
+        {
+            using var fs = File.OpenRead(path);
+            using var r = new BinaryReader(fs, Encoding.UTF8);
+            if (r.ReadInt32() != 1) return null;
+            var built = DateTime.Parse(r.ReadString());
+            int nc = r.ReadInt32();
+            // Bound each count against the stream before allocating, a corrupt file degrades to no
+            // graph rather than a large allocation or a crash on the MCP path.
+            if (nc < 0 || (long)nc * 12 > fs.Length) return null;
+            var nodes = new List<RagNode>(nc);
+            for (int i = 0; i < nc; i++) nodes.Add(new RagNode(r.ReadString(), r.ReadString(), r.ReadString()));
+            int ec = r.ReadInt32();
+            if (ec < 0 || (long)ec * 16 > fs.Length) return null;
+            var edges = new List<RagEdge>(ec);
+            for (int i = 0; i < ec; i++) edges.Add(new RagEdge(r.ReadString(), r.ReadString(), r.ReadString(), r.ReadSingle()));
+            return new RagGraph(nodes, edges, built);
+        }
+        catch (Exception ex) when (ex is IOException or EndOfStreamException or FormatException or ArgumentException)
+        {
+            return null;
+        }
     }
 }

@@ -19,9 +19,6 @@ public static class RagCommand
 
     public sealed record RagSearchResult(string Query, int Matches, IReadOnlyList<RagHit> Results);
 
-    /// <summary>The bundled documents, beside the exe. The default corpus.</summary>
-    public static string BundledContextDir() => Path.Combine(AppContext.BaseDirectory, "context");
-
     public static RagStatus Status()
     {
         bool model = File.Exists(RagPaths.ModelOnnx) && File.Exists(RagPaths.VocabTxt);
@@ -90,7 +87,7 @@ public static class RagCommand
     {
         var g = LoadGraph();
         return g.Neighbors(node, depth, edge, limit)
-            .Select(n => new GraphNodeResult(n.Id, n.Type, n.Name, 0, n.Edge, n.Weight))
+            .Select(n => new GraphNodeResult(n.Id, n.Type, n.Name, n.Degree, n.Edge, n.Weight))
             .ToArray();
     }
 
