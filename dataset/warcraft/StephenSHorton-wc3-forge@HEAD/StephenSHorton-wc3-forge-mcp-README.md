@@ -19,7 +19,7 @@ npm run build
 ## Register with Claude Code
 
 ```powershell
-claude mcp add wc3-forge --scope user -- node C:\Users\<user>\projects\wc3-forge\mcp\dist\index.js
+claude mcp add wc3-forge --scope user -- node C:\Users\4step\projects\wc3-forge\mcp\dist\index.js
 ```
 
 (`--scope` MUST come before `--`, otherwise it gets forwarded to node.)

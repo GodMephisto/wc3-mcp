@@ -9,7 +9,7 @@ ref: HEAD
 
 ## [certain] Both reference repos are cloned locally (sparse) and are current HEAD; read them there rather than re-fetching.
 
-mdx-m3-viewer (TypeScript, GPL-ish/MIT, ghostwolf/flowtsohg): C:\Users\<user>\AppData\Local\Temp\claude\c--Projects-Wc3-Model-Viewer\54ab26fb-e693-4e6b-87b3-6a884757b1cf\scratchpad\mdxv\src  (HEAD 2ff0bc00, 2025-08-27). Sparse-checkout of 'src/**'.
+mdx-m3-viewer (TypeScript, GPL-ish/MIT, ghostwolf/flowtsohg): C:\Users\Darithos\AppData\Local\Temp\claude\c--Projects-Wc3-Model-Viewer\54ab26fb-e693-4e6b-87b3-6a884757b1cf\scratchpad\mdxv\src  (HEAD 2ff0bc00, 2025-08-27). Sparse-checkout of 'src/**'.
 ReterasModelStudio (Java, Retera/Eric Theller): ...\scratchpad\rms\craft3data\src (HEAD e0c0dc34, 2026-02-22). Sparse-checkout of 'craft3data/src/**'.
 NOTE on package naming: the widely-cited refactor to `com.hiveworkshop.rms.parsers.mdlx.*` did NOT land on master. On current master only `com.hiveworkshop.rms.editor.render3d` exists (4 files: GLTestCanvas, GLTestCanvas2, GLTestMain, NGGLDP). Everything else is still under `com.hiveworkshop.wc3.*`:
   - com.hiveworkshop.wc3.mdx.*   = raw MDX binary chunk structs + reader/writer (BoneChunk, GeosetChunk, LayerChunk, MaterialChunk, BindPoseChunk, CornChunk, FaceEffectsChunk, MdxModel, MdxUtils, Tracks, ~85 files)
@@ -817,4 +817,4 @@ _evidence: cross-reference of scratchpad/mdxv/src/viewer/handlers/mdx/shaders/hd
 - https://github.com/Retera/ReterasModelStudio/blob/master/craft3data/src/com/hiveworkshop/wc3/mdl/{Geoset,GeosetVertex,GeosetAnim,IdObject,Layer,Material,LayerShader,ShaderTextureTypeHD,QuaternionRotation}.java
 - https://github.com/Retera/ReterasModelStudio/blob/master/craft3data/src/com/hiveworkshop/wc3/gui/modeledit/PerspectiveViewport.java
 - C:\Program Files\Autodesk\3ds Max 2016\scripts\Startup\Warcraft_3_Reforged_Tools\GriffonStudios_Warcraft_3_Reforged_Read.ms (TaylorMouse, lines 195-420 for VERS/MTLS/LAYS/TEXS)
-- Local sparse clones: C:\Users\<user>\AppData\Local\Temp\claude\c--Projects-Wc3-Model-Viewer\54ab26fb-e693-4e6b-87b3-6a884757b1cf\scratchpad\{mdxv,rms}
+- Local sparse clones: C:\Users\Darithos\AppData\Local\Temp\claude\c--Projects-Wc3-Model-Viewer\54ab26fb-e693-4e6b-87b3-6a884757b1cf\scratchpad\{mdxv,rms}

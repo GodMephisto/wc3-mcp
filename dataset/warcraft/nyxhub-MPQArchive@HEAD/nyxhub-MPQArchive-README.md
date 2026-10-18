@@ -45,7 +45,7 @@ Add this dependency in your package description
 To unarchive in memory:
 
 ```swift
-let replayFileURL = URL(fileURLWithPath: "/Users/<user>/Infernal Shrines (60).StormReplay")
+let replayFileURL = URL(fileURLWithPath: "/Users/..../Infernal Shrines (60).StormReplay")
 do {
     let archive = try MPQArchive(fileURL: replayFileURL)
 

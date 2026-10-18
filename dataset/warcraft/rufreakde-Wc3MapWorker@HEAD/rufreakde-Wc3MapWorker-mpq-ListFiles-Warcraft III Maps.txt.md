@@ -11560,10 +11560,10 @@ c7o
 C:\Program Files\Warcraft III\Save\Profile1\Campaigns.w3p
 c:\program files\warcraft iii\save\profile2\campaigns.w3p
 c:\program files\warcraft iii\save\profile3\campaigns.w3p
-C:\Users\<user>\Daten\GameZ\Warcraft III\Save\Profile1\Campaigns.w3p
-C:\Users\<user>\Daten\GameZ\Warcraft III\Save\Profile2\Campaigns.w3p
-C:\Users\<user>\GameZ\Warcraft III\Save\Profile1\Campaigns.w3p
-C:\Users\<user>\GameZ\Warcraft III\Save\Profile2\Campaigns.w3p
+C:\Users\Dekar\Daten\GameZ\Warcraft III\Save\Profile1\Campaigns.w3p
+C:\Users\Dekar\Daten\GameZ\Warcraft III\Save\Profile2\Campaigns.w3p
+C:\Users\Dekar\GameZ\Warcraft III\Save\Profile1\Campaigns.w3p
+C:\Users\Dekar\GameZ\Warcraft III\Save\Profile2\Campaigns.w3p
 C:\WC3 Stuff\Warcraft III\Save\Profile1\Campaigns.w3p
 C:\WC3 Stuff\Warcraft III\Save\Profile2\Campaigns.w3p
 C:\WC3 Stuff\Warcraft III\Save\Profile3\Campaigns.w3p

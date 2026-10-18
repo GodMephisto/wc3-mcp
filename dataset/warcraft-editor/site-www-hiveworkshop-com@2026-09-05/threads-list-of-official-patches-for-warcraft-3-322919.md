@@ -906,11 +906,11 @@ Search for an already installed version
 
 C:\ProgramData\Battle.net\
 
-C:\Users\<user>\AppData\Local\Blizzard Entertainment\Telemetry
+C:\Users\Admin\AppData\Local\Blizzard Entertainment\Telemetry
 
-C:\Users\<user>\AppData\Local\Battle.net\
+C:\Users\Admin\AppData\Local\Battle.net\
 
-C:\Users\<user>\AppData\Roaming\Battle.net\
+C:\Users\Admin\AppData\Roaming\Battle.net\
 
 optionally remove %USERPROFILE%\Documents\Warcraft III and %PUBLIC%\Documents\Warcraft III
 

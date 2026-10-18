@@ -1670,7 +1670,7 @@ source code of ObjectMerger from PitzerMike doesn't support LUA commands from tr
 ...
 //! endexternalblock
 
-the reason is, that a LUA file will be created by using an "externalblock" command in JASS. this LUA file can be found in a path like: "C:\Users\<user>\AppData\Local\Temp\V706D.tmp.lua". i stumbled across this path, as the compiled ObjectMerger from source code will error report it in a message box as soon as preprocessor command "externalblock" is used in JASS in a trigger & the map is saved. message box example: "Could not open: C:\Users\<user>\AppData\Local\Temp\V706D.tmp.lua". the LUA file gets created properly, because that's the job of "JassHelper", but the compiled ObjectMerger from source code isn't yet supporting LUA as this source code isn't the latest which current ObjectMerger.exe from JNGP uses. these LUA files contain all the code from the JASS code block "externalblock", without the leading //! i, which just tells JassHelper to save everything next to it into a LUA file.
+the reason is, that a LUA file will be created by using an "externalblock" command in JASS. this LUA file can be found in a path like: "C:\Users\Source\AppData\Local\Temp\V706D.tmp.lua". i stumbled across this path, as the compiled ObjectMerger from source code will error report it in a message box as soon as preprocessor command "externalblock" is used in JASS in a trigger & the map is saved. message box example: "Could not open: C:\Users\Source\AppData\Local\Temp\V706D.tmp.lua". the LUA file gets created properly, because that's the job of "JassHelper", but the compiled ObjectMerger from source code isn't yet supporting LUA as this source code isn't the latest which current ObjectMerger.exe from JNGP uses. these LUA files contain all the code from the JASS code block "externalblock", without the leading //! i, which just tells JassHelper to save everything next to it into a LUA file.
 
 work of reference for inner workings:
 
@@ -1698,7 +1698,7 @@ so, everything between JASS lines with "externalblock" & "endexternalblock" is s
 later in the JassHelper source code file "grimoirejasshelper.dpr" inside function at line #326: function doWEWarlock(const m:string):boolean; a procedure is called at line #699: doExternalThings;. "doExternalThings" is declared at line #272: procedure doExternalThings;.
 
 this procedure "doExternalThings" looks for entries in a variable called "Exter". "Exter" derives from JassHelper source code file "jasshelper.pas". in "jasshelper.pas" it's initialized at line #449: Exter: Texternalusage=nil;. "TexternalUsage" is a custom variable of type "class(TObject)" (TObject = Type Object => TexternalUsage = Type External Usage), defined at line #229: TexternalUsage=class(TObject) .... entries for this variable are added with the procedure at line #505: procedure Texternalusage.add(const na:string; const a:string; const i:integer; const ex:string; const si:string);. the last argument "si" (probably stands for string input or standard input) is for the already mentioned variable of type string named "ExternalBlockStdIn". in other words, each entry in "Exter" holds the whole JASS trigger code of lines between "externalblock" inside "Exter.stdin[N]". "Exter.N" returns the entry count.​
-inside "doExternalThings" each entry for "Exter" is passed to another procedure called "doTool" at line #292: doTool(EXTERNAL_Names[j],EXTERNAL_PROGRAMS[j],Exter.args, Exter.ext, Exter.stdin);. "doTool" is the actual procedure which creates the LUA files. "doTool" is declared at line #231: procedure doTool(const name:string; const prog:string; args:string; const ext:string; const stdin:string);. at line #238: tem:=TempFile; the variable "tem" of type string is set to a global function called "TempFile". "TempFile" comes from JassHelper source code file "vxFilesys.pas". "TempFile" is declared public at line #11: function TempFile: TFileName;. the actual function is declared at line #113: function TempFile: TFileName;. from what i understood, what it does is returning the absolute path to a new empty temporary file. at line #118: if GetTempFileName(PChar(GetTempDir),'V', 0, NomArchTemp) = 0 then "GetTempFileName" is a default function of coding language pascal with syntax: "function GetTempFileName(Dir: PChar;Prefix: PChar;uUnique: DWord;TempFileName: PChar):DWord;". "PChar" means Pointer to an array of Char. "GetTempDir" is a function declared at line #85: function GetTempDir: TFileName;. it returns the actual absolute path to a temporary file with function at line #90: SetString(Result, TmpDir, GetTempPath(MAX_PATH, TmpDir));. "GetTempPath" is a function from WinAPI. it is included in coding language pascal by using "uses" & adding "Windows". it retrieves the path of the directory designated for temporary files, like: "C:\Users\<user>\AppData\Local\Temp\". back in JassHelper source code file "grimoirejasshelper.dpr" inside procedure "doTool" at line #242: Assign(ftem,tem); "Assign" assigns the name from "tem" to the file variable "ftem" of type Textfile. "Assign" is a default function of coding language pascal. at line #243: Rewrite(ftem); the file "ftem" gets opened for writing. "Rewrite" is a default function of coding language pascal. finally, at line #244: Write(ftem,stdin); the contents of the variable "stdin" are written to the file "ftem". also "Write" is a default function of coding language pascal. the LUA file is created.
+inside "doExternalThings" each entry for "Exter" is passed to another procedure called "doTool" at line #292: doTool(EXTERNAL_Names[j],EXTERNAL_PROGRAMS[j],Exter.args, Exter.ext, Exter.stdin);. "doTool" is the actual procedure which creates the LUA files. "doTool" is declared at line #231: procedure doTool(const name:string; const prog:string; args:string; const ext:string; const stdin:string);. at line #238: tem:=TempFile; the variable "tem" of type string is set to a global function called "TempFile". "TempFile" comes from JassHelper source code file "vxFilesys.pas". "TempFile" is declared public at line #11: function TempFile: TFileName;. the actual function is declared at line #113: function TempFile: TFileName;. from what i understood, what it does is returning the absolute path to a new empty temporary file. at line #118: if GetTempFileName(PChar(GetTempDir),'V', 0, NomArchTemp) = 0 then "GetTempFileName" is a default function of coding language pascal with syntax: "function GetTempFileName(Dir: PChar;Prefix: PChar;uUnique: DWord;TempFileName: PChar):DWord;". "PChar" means Pointer to an array of Char. "GetTempDir" is a function declared at line #85: function GetTempDir: TFileName;. it returns the actual absolute path to a temporary file with function at line #90: SetString(Result, TmpDir, GetTempPath(MAX_PATH, TmpDir));. "GetTempPath" is a function from WinAPI. it is included in coding language pascal by using "uses" & adding "Windows". it retrieves the path of the directory designated for temporary files, like: "C:\Users\Source\AppData\Local\Temp\". back in JassHelper source code file "grimoirejasshelper.dpr" inside procedure "doTool" at line #242: Assign(ftem,tem); "Assign" assigns the name from "tem" to the file variable "ftem" of type Textfile. "Assign" is a default function of coding language pascal. at line #243: Rewrite(ftem); the file "ftem" gets opened for writing. "Rewrite" is a default function of coding language pascal. finally, at line #244: Write(ftem,stdin); the contents of the variable "stdin" are written to the file "ftem". also "Write" is a default function of coding language pascal. the LUA file is created.
 
 4 the argument passing to ObjectMerger.exe (of JASS "externalblock"/ LUA files):
 
@@ -1721,17 +1721,17 @@ WinExec.StartApp(
 
 grimext\ObjectMerger.exe,
 
-''C:\Spiele\Warcraft III\Maps\_SourceSeeker\test_objectMergerW3u.w3m" ".\jass\" "C:\Users\<user>\AppData\Local\Temp\V758A.tmp.lua",
+''C:\Spiele\Warcraft III\Maps\_SourceSeeker\test_objectMergerW3u.w3m" ".\jass\" "C:\Users\Source\AppData\Local\Temp\V758A.tmp.lua",
 
 C:\Spiele\JNGP2.0 2.0.0.7 (TriggerHappy) [2013_12_13]\vexorianjasshelper,
 
 0,
 
-C:\Users\<user>\AppData\Local\Temp\V758D.tmp,
+C:\Users\Source\AppData\Local\Temp\V758D.tmp,
 
-C:\Users\<user>\AppData\Local\Temp\V758B.tmp,
+C:\Users\Source\AppData\Local\Temp\V758B.tmp,
 
-C:\Users\<user>\AppData\Local\Temp\V758C.tmp​
+C:\Users\Source\AppData\Local\Temp\V758C.tmp​
 );
 
 5 the entry point in the ObjectMerger source code (coding language = C/C++) on map save:
@@ -1755,7 +1755,7 @@ this path is the path to the map currently saved. JassHelper detects it & runs O
 argv[2]=.\jass\
 
 this path comes from: "...\JNGP\jasshelper.conf" from section: "[lookupfolders]" from line with: "".\jass\"". JassHelper retrieves it from there & runs ObjectMerger by passing this path as 2nd argument.​
-argv[3]=C:\Users\<user>\AppData\Local\Temp\V758A.tmp.lua
+argv[3]=C:\Users\Source\AppData\Local\Temp\V758A.tmp.lua
 
 this path leads to the LUA file containing the "externalblock" code. JassHelper created it & runs ObjectMerger by passing this path as 3rd argument (explained above).​
 so, although LUA isn't supported yet in the ObjectMerger source code (in the following we will proof this by stepping through the code), source code continues with code execution, because "argc" isn't < 4 (it is 4, see example)!​
@@ -1798,7 +1798,7 @@ the last step before the error for LUA files pops up an if-block is entered at l
 
 - argument 4 "obj" is null.
 
-- argument 5 "OnlyExtension(argv[start])" in our case is "OnlyExtension(argv[3])" which can be "OnlyExtension("C:\Users\<user>\AppData\Local\Temp\V758A.tmp.lua")" which would be "lua".
+- argument 5 "OnlyExtension(argv[start])" in our case is "OnlyExtension(argv[3])" which can be "OnlyExtension("C:\Users\Source\AppData\Local\Temp\V758A.tmp.lua")" which would be "lua".
 
 in sum it could look like this: "if (!loadpresentfiles(mpq, "C:\Spiele\Warcraft III\Maps\_SourceSeeker\test_objectMergerW3u.w3m", null, null, "lua")) {". what it does there is passing the map's "war3map.wts" file to "wts" & "OBJ".
 

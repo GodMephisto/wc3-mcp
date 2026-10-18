@@ -44,7 +44,7 @@ add-on at the path hardcoded near the top — adjust if the Blender version chan
 
 Known-good references for `m3compare.py`:
 
-- `C:\Users\<user>\Documents\D3Exports\OmniNPC_Male_Skeleton_A\OmniNPC_Male_Skeleton_A.m3`
+- `C:\Users\Darithos\Documents\D3Exports\OmniNPC_Male_Skeleton_A\OmniNPC_Male_Skeleton_A.m3`
   (m3studio export that loads in SC2).
 - A real Blizzard unit, extracted from the SC2 install with
   `CascProbe "C:/Games/StarCraft II" --extract "mods\liberty.sc2mod\base.sc2assets\assets\units\terran\marine\marine.m3" marine.m3`

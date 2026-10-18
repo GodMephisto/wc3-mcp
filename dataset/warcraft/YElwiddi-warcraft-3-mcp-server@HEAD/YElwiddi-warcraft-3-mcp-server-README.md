@@ -72,7 +72,7 @@ entry under `mcpServers` (keep any servers you already have):
 Close and reopen Claude Code / Claude Desktop so it loads the new tools. You're done!
 
 > 💡 **Tip:** Use forward slashes `/` in the path even on Windows, e.g.
-> `C:/Users/<user>/warcraft-3-mcp-server/dist/index.js`.
+> `C:/Users/You/warcraft-3-mcp-server/dist/index.js`.
 
 ---
 
@@ -80,7 +80,7 @@ Close and reopen Claude Code / Claude Desktop so it loads the new tools. You're 
 
 Just ask Claude in plain English and give it the **full path to your map**. For example:
 
-> *"Use wc3 to give me an overview of `C:\Users\<user>\Desktop\MyMap.w3x`."*
+> *"Use wc3 to give me an overview of `C:\Users\Me\Desktop\MyMap.w3x`."*
 
 By default, edits are saved to a copy next to your map (`MyMap.edited.w3x`) so your original is
 safe. Tell Claude *"overwrite the original"* if you want it to edit the file in place.

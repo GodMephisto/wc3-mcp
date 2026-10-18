@@ -6218,7 +6218,7 @@ Each Frame uses one of the Warcraft 3 FrameTypes, with the FrameType the behavio
 
 In fdf paths are written only with one "\".
 
-The upto date version of Warcraft 3 tells you about syntax errors of custom fdf. When they are loaded over a toc file in your map. To inspect such a error log run your map with the fdf and toc then close the game and check Users\<user>\Documents\Warcraft III\Logs\War3Log.txt.
+The upto date version of Warcraft 3 tells you about syntax errors of custom fdf. When they are loaded over a toc file in your map. To inspect such a error log run your map with the fdf and toc then close the game and check Users\User\Documents\Warcraft III\Logs\War3Log.txt.
 
 Such an Fdf-error line in that Log-file could look like that:
 
@@ -9474,7 +9474,7 @@ BlzCreateFrame needs a loaded Frame-blueprint, it might not be loaded. In this c
 
 BlzCreateFrame can only create root/main-Frames, the ones that have no parent in fdf.
 
-When you have created a custom fdf. Check for frame errors in "Users\<user>\Documents\Warcraft III\Logs\War3Log.txt" (after you run the map and also only for newest version of Warcraft 3).
+When you have created a custom fdf. Check for frame errors in "Users\...\Documents\Warcraft III\Logs\War3Log.txt" (after you run the map and also only for newest version of Warcraft 3).
 
 Also check, if the fdf is in your map (asset/import manager).
 

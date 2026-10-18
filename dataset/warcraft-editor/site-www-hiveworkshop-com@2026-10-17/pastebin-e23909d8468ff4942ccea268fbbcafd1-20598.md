@@ -6092,7 +6092,7 @@ Each Frame uses one of the Warcraft 3 FrameTypes, with the FrameType the behavio
 
 In fdf paths are written only with one "\".
 
-The upto date version of Warcraft 3 tells you about syntax errors of custom fdf. When they are loaded over a toc file in your map. To inspect such a error log run your map with the fdf and toc then close the game and check Users\<user>\Documents\Warcraft III\Logs\War3Log.txt.
+The upto date version of Warcraft 3 tells you about syntax errors of custom fdf. When they are loaded over a toc file in your map. To inspect such a error log run your map with the fdf and toc then close the game and check Users\User\Documents\Warcraft III\Logs\War3Log.txt.
 
 Such an Fdf-error line in that Log-file could look like that:
 

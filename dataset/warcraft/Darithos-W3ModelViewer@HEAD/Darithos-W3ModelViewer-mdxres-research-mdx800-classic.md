@@ -37,7 +37,7 @@ Chunks that only exist for version > 800 (Reforged): BPOS, FAFX, CORN. Blizzard'
 Ghostwolf's writer emits chunks in exactly this order: VERS, MODL, SEQS, GLBS, MTLS, TEXS, TXAN, GEOS, GEOA, BONE, LITE, HELP, ATCH, PIVT, PREM, PRE2, (CORN), RIBB, CAMS, EVTS, CLID, (FAFX), (BPOS), then any preserved unknown chunks. Writing in this order is safe for WC3.
 Note WC3 tolerates unknown chunks — third-party tools stash metadata in them.
 
-_evidence: mdx-m3-viewer src/parsers/mdlx/model.ts loadMdx()/saveMdx() (local: C:\Users\<user>\AppData\Local\Temp\mdxv\mdx-m3-viewer-master\src\parsers\mdlx\model.ts:116-273); hiveworkshop.com/threads/mdx-specifications.240487 "Header { char[4] tag; uint32 size }"_
+_evidence: mdx-m3-viewer src/parsers/mdlx/model.ts loadMdx()/saveMdx() (local: C:\Users\Darithos\AppData\Local\Temp\mdxv\mdx-m3-viewer-master\src\parsers\mdlx\model.ts:116-273); hiveworkshop.com/threads/mdx-specifications.240487 "Header { char[4] tag; uint32 size }"_
 
 ## [certain] VERS payload is a single uint32 version; 800 = RoC/TFT classic. MODL payload is exactly 372 bytes: char[80] name, char[260] animationFileName, Extent(28), uint32 blendTime.
 

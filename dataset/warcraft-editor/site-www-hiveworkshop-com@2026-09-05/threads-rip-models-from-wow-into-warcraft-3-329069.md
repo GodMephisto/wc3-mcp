@@ -62,7 +62,7 @@ All this programs are added into one file. Here you have all needed editors apar
 
  You should check if your mappings are loaded. Open M2Mod and go to the CASC window. Click Load mappings. If you don't have listfile.csv just download it from wow.tools (go to files, select build, download listfile.csv (Blizzard Filenames Only)).
 
- Place WowTools from M2Mod in C:\Users\<user> name\AppData\Roaming\Blender Foundation\Blender\2.79\scripts\addons
+ Place WowTools from M2Mod in C:\Users\Your name\AppData\Roaming\Blender Foundation\Blender\2.79\scripts\addons
 
  Now check if your Blender has enabled addons, go to File -> User Preferences -> Add-ons and search for WowTools and enable it if it is disabled. Then Save User Settings and close this window.
 

@@ -11,7 +11,7 @@ This document describes how to compile and run test programs against the origina
 
 ## Prerequisites
 
-- StormLib source code available at `/home/<user>/Repos/github.com/ladislav-zezula/StormLib`
+- StormLib source code available at `/home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib`
 - GCC compiler
 - CMake (for building StormLib if needed)
 
@@ -23,8 +23,8 @@ For a simple test program that uses StormLib:
 
 ```bash
 gcc -o test_program test_program.c \
-    -I/home/<user>/Repos/github.com/ladislav-zezula/StormLib/src \
-    -L/home/<user>/Repos/github.com/ladislav-zezula/StormLib/build \
+    -I/home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib/src \
+    -L/home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib/build \
     -lstorm -lz -lbz2
 ```
 
@@ -34,8 +34,8 @@ For debugging with gdb:
 
 ```bash
 gcc -g -O0 -o test_program test_program.c \
-    -I/home/<user>/Repos/github.com/ladislav-zezula/StormLib/src \
-    -L/home/<user>/Repos/github.com/ladislav-zezula/StormLib/build \
+    -I/home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib/src \
+    -L/home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib/build \
     -lstorm -lz -lbz2
 ```
 
@@ -45,8 +45,8 @@ To enable StormLib's internal debug output:
 
 ```bash
 gcc -g -O0 -DSTORMLIB_DEBUG -o test_program test_program.c \
-    -I/home/<user>/Repos/github.com/ladislav-zezula/StormLib/src \
-    -L/home/<user>/Repos/github.com/ladislav-zezula/StormLib/build \
+    -I/home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib/src \
+    -L/home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib/build \
     -lstorm -lz -lbz2
 ```
 
@@ -125,7 +125,7 @@ fread(buffer, 1, table_size, fp);
 If you need to step through StormLib code:
 
 ```bash
-cd /home/<user>/Repos/github.com/ladislav-zezula/StormLib
+cd /home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib
 mkdir build-debug
 cd build-debug
 cmake -DCMAKE_BUILD_TYPE=Debug ..
@@ -189,6 +189,6 @@ The key insight came from examining the raw bytes and seeing that the tables wer
 
 ## References
 
-- StormLib source: `/home/<user>/Repos/github.com/ladislav-zezula/StormLib`
+- StormLib source: `/home/danielsreichenbach/Repos/github.com/ladislav-zezula/StormLib`
 - MPQ format docs: http://www.zezula.net/en/mpq/mpqformat.html
-- Test archives: `/home/<user>/Downloads/wow/*/Data/*.MPQ`
+- Test archives: `/home/danielsreichenbach/Downloads/wow/*/Data/*.MPQ`

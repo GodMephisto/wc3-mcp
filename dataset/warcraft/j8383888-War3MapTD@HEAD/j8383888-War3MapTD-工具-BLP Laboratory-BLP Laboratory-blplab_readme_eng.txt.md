@@ -102,7 +102,7 @@ BLP format allows to have one header for all jpeg images (mipmaps) in file, so f
 Output jpeg image will be in progressive format. File size can vary (both bigger or smaller in compare with standard encoding), but it is compressed a lot better in MPQ.
 
 - Mipmap count -
-�ount of generated mipmaps for image (http://en.wikipedia.org/wiki/Mipmap).
+裲unt of generated mipmaps for image (http://en.wikipedia.org/wiki/Mipmap).
 
 ==== BLP 2 OPTIONS
 
