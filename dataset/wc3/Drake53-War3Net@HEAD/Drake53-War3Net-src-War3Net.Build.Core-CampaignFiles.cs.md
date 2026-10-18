@@ -1,0 +1,35 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/CampaignFiles.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build
+{
+    [Flags]
+    public enum CampaignFiles
+    {
+        ImportedFiles = 1 << 0,
+        Info = 1 << 1,
+        AbilityObjectData = 1 << 2,
+        BuffObjectData = 1 << 3,
+        DestructableObjectData = 1 << 4,
+        DoodadObjectData = 1 << 5,
+        ItemObjectData = 1 << 6,
+        UnitObjectData = 1 << 7,
+        UpgradeObjectData = 1 << 8,
+        TriggerStrings = 1 << 9,
+
+        All = ImportedFiles
+            | Info
+            | AbilityObjectData
+            | BuffObjectData
+            | DestructableObjectData
+            | DoodadObjectData
+            | ItemObjectData
+            | UnitObjectData
+            | UpgradeObjectData
+            | TriggerStrings,
+    }
+}

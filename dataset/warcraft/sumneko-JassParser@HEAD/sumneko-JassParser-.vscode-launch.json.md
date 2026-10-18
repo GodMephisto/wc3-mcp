@@ -1,0 +1,55 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/sumneko/JassParser"
+source_path: ".vscode/launch.json"
+ref: HEAD
+---
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "测试",
+            "type": "lua",
+            "request": "launch",
+            "stopOnEntry": false,
+            "program": "${workspaceRoot}/jass.lua",
+            "cwd": "${workspaceRoot}",
+            "env": {
+                "PATH": "${workspaceRoot}\\bin\\"
+            },
+            "luaexe": "${workspaceRoot}\\bin\\lua.exe",
+            "path": "${workspaceRoot}/bin/?.lua",
+            "cpath": "${workspaceRoot}/bin/?.dll;",
+            "arg": [
+                "${workspaceRoot}/war3map.j",
+                "-ver=24",
+                "-gui"
+            ],
+            "sourceCoding": "utf8",
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "单元测试",
+            "type": "lua",
+            "request": "launch",
+            "stopOnEntry": false,
+            "program": "${workspaceRoot}/test/main.lua",
+            "cwd": "${workspaceRoot}",
+            "env": {
+                "PATH": "${workspaceRoot}\\bin\\"
+            },
+            "luaexe": "${workspaceRoot}\\bin\\lua.exe",
+            "path": "${workspaceRoot}/bin/?.lua",
+            "cpath": "${workspaceRoot}/bin/?.dll;",
+            "arg0": [
+                "-e",
+                "DEBUG=true",
+            ],
+            "arg": [
+            ],
+            "sourceCoding": "utf8"
+        },
+    ]
+}

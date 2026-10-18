@@ -1,0 +1,50 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/JASS-Tree-sitter-Rust"
+source_path: "src/lng/blp/response.rs"
+ref: HEAD
+---
+
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD;
+use image::{DynamicImage, ImageFormat, RgbaImage};
+use serde::Serialize;
+use std::io::Cursor;
+use url::Url;
+
+#[derive(Serialize)]
+pub struct BlpResponse<'a> {
+    pub uri: &'a Url,
+    pub mipmaps: Vec<BlpMipmapMeta>,
+}
+
+#[derive(Serialize)]
+pub struct BlpMipmapMeta {
+    pub width: u32,
+    pub height: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_data_url: Option<String>,
+}
+
+impl BlpMipmapMeta {
+    /// Build from a Frame + optional decoded RgbaImage.
+    pub fn from_frame(frame: &blp::Frame, img: Option<&RgbaImage>) -> Self {
+        Self {
+            width: frame.width,
+            height: frame.height,
+            image_data_url: img.and_then(image_to_data_url),
+        }
+    }
+}
+
+pub fn image_to_data_url(img: &RgbaImage) -> Option<String> {
+    let dynamic = DynamicImage::ImageRgba8(img.clone());
+    let mut cursor = Cursor::new(Vec::new());
+
+    if dynamic.write_to(&mut cursor, ImageFormat::Png).is_ok() {
+        let bytes = cursor.into_inner();
+        Some(format!("data:image/png;base64,{}", STANDARD.encode(&bytes)))
+    } else {
+        None
+    }
+}

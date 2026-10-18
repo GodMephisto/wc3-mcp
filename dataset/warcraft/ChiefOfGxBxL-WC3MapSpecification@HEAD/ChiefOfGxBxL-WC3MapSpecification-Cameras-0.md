@@ -5,20 +5,20 @@ source_path: "Cameras/0.md"
 ref: HEAD
 ---
 
-File structure:
-* `int` File version = 0x0 (0)
-* `int` Number of cameras
-  * `float` Target X
-  * `float` Target Y
-  * `float` Offset Z
-  * `float` Rotation
-  * `float` Angle of attack
-  * `float` Distance
-  * `float` Roll
-  * `float` Field of view
-  * `float` Far clipping
-  * `float` Near clipping
-  * `float` Local pitch *(three new "local" floats were added, but the file version was not incremented, so new version 0 files will have this, while older version 0 files will not)*
-  * `float` Local yaw *(see note above)*
-  * `float` Local roll *(see note above)*
-  * `string` Camera name
+File structure:
+* `int` File version = 0x0 (0)
+* `int` Number of cameras
+  * `float` Target X
+  * `float` Target Y
+  * `float` Offset Z
+  * `float` Rotation
+  * `float` Angle of attack
+  * `float` Distance
+  * `float` Roll
+  * `float` Field of view
+  * `float` Far clipping
+  * `float` Near clipping
+  * `float` Local pitch *(three new "local" floats were added, but the file version was not incremented, so new version 0 files will have this, while older version 0 files will not)*
+  * `float` Local yaw *(see note above)*
+  * `float` Local roll *(see note above)*
+  * `string` Camera name

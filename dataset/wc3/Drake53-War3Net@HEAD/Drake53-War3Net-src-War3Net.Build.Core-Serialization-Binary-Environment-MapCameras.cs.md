@@ -1,0 +1,55 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Environment/MapCameras.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Environment
+{
+    public sealed partial class MapCameras
+    {
+        internal MapCameras(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            FormatVersion = reader.ReadInt32<MapCamerasFormatVersion>();
+            UseNewFormat = true;
+
+            nint cameraCount = reader.ReadInt32();
+            var oldStreamPosition = reader.BaseStream.Position;
+            try
+            {
+                for (nint i = 0; i < cameraCount; i++)
+                {
+                    Cameras.Add(reader.ReadCamera(FormatVersion, UseNewFormat));
+                }
+            }
+            catch (Exception e) when (e is DecoderFallbackException || e is EndOfStreamException || e is InvalidDataException)
+            {
+                reader.BaseStream.Position = oldStreamPosition;
+
+                UseNewFormat = false;
+                Cameras.Clear();
+                for (nint i = 0; i < cameraCount; i++)
+                {
+                    Cameras.Add(reader.ReadCamera(FormatVersion, UseNewFormat));
+                }
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write((int)FormatVersion);
+
+            writer.Write(Cameras.Count);
+            foreach (var camera in Cameras)
+            {
+                writer.Write(camera, FormatVersion, UseNewFormat);
+            }
+        }
+    }
+}

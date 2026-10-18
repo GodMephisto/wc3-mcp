@@ -1,0 +1,56 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Object/ObjectData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Object
+{
+    public sealed partial class ObjectData
+    {
+        internal ObjectData(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            FormatVersion = reader.ReadInt32<ObjectDataFormatVersion>();
+
+            UnitData = reader.ReadBool() ? reader.ReadUnitObjectData() : null;
+            ItemData = reader.ReadBool() ? reader.ReadItemObjectData() : null;
+            DestructableData = reader.ReadBool() ? reader.ReadDestructableObjectData() : null;
+            DoodadData = reader.ReadBool() ? reader.ReadDoodadObjectData() : null;
+            AbilityData = reader.ReadBool() ? reader.ReadAbilityObjectData() : null;
+            BuffData = reader.ReadBool() ? reader.ReadBuffObjectData() : null;
+            UpgradeData = reader.ReadBool() ? reader.ReadUpgradeObjectData() : null;
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write((int)FormatVersion);
+
+            writer.WriteBool(UnitData is not null);
+            UnitData?.WriteTo(writer);
+
+            writer.WriteBool(ItemData is not null);
+            ItemData?.WriteTo(writer);
+
+            writer.WriteBool(DestructableData is not null);
+            DestructableData?.WriteTo(writer);
+
+            writer.WriteBool(DoodadData is not null);
+            DoodadData?.WriteTo(writer);
+
+            writer.WriteBool(AbilityData is not null);
+            AbilityData?.WriteTo(writer);
+
+            writer.WriteBool(BuffData is not null);
+            BuffData?.WriteTo(writer);
+
+            writer.WriteBool(UpgradeData is not null);
+            UpgradeData?.WriteTo(writer);
+        }
+    }
+}

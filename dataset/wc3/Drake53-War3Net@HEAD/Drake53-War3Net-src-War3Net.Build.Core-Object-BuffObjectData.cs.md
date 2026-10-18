@@ -1,0 +1,35 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Object/BuffObjectData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Object
+{
+    public sealed partial class BuffObjectData
+    {
+        public const string FileExtension = ".w3h";
+        public const string CampaignFileName = "war3campaign.w3h";
+        public const string CampaignSkinFileName = "war3campaignSkin.w3h";
+        public const string MapFileName = "war3map.w3h";
+        public const string MapSkinFileName = "war3mapSkin.w3h";
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BuffObjectData"/> class.
+        /// </summary>
+        /// <param name="formatVersion"></param>
+        public BuffObjectData(ObjectDataFormatVersion formatVersion)
+        {
+            FormatVersion = formatVersion;
+        }
+
+        public ObjectDataFormatVersion FormatVersion { get; set; }
+
+        public List<SimpleObjectModification> BaseBuffs { get; init; } = new();
+
+        public List<SimpleObjectModification> NewBuffs { get; init; } = new();
+
+        public override string ToString() => $"{FileExtension} file";
+    }
+}

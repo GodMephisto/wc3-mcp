@@ -1,0 +1,82 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/sugky7302/my-first-war3-project"
+source_path: ".vscode/tasks.json"
+ref: HEAD
+---
+
+{
+    "version": "2.0.0",
+    "type": "shell",
+    "inputs": [
+        {
+            "id": "map",
+            "type": "promptString",
+            "description": "請輸入地圖名稱",
+            "default": "map"
+        }
+    ],
+    "tasks": [
+        {
+            "label": "執行",
+            "type": "shell",
+            "command": "${workspaceFolder}\\.vscode\\run.bat",
+            "args": [
+                "${workspaceRoot}",
+                "${input:map}"
+            ],
+        },
+        {
+            "label": "配置",
+            "command": "chcp 65001 && \"${workspaceRoot}/tools/w3x2lni/bin/w3x2lni-lua.exe\"",
+            "args": [
+                ".\\tools\\配置.lua",
+                "${workspaceRoot}"
+            ]
+        },
+        {
+            "label": "語法檢查",
+            "command": "chcp 65001 && \"${workspaceRoot}\\tools\\jasshelper\\jasshelper.exe\"",
+            "args": [
+                "${workspaceRoot}\\tools\\jasshelper\\jass\\common.j",
+                "${workspaceRoot}\\tools\\jasshelper\\jass\\blizzard.j",
+                "${workspaceRoot}/${input:map}.w3x"
+            ],
+        },
+        {
+            "label": "打包",
+            "type": "shell",
+            "command": "${workspaceFolder}\\.vscode\\w3x2lni.bat",
+            "args": [
+                "${workspaceRoot}",
+                "obj",
+                "${input:map}"
+            ],
+            "dependsOn": ["語法檢查"]
+        },
+        {
+            "label": "解包",
+            "command": "${workspaceFolder}\\.vscode\\w3x2lni.bat",
+            "args": [
+                "${workspaceRoot}",
+                "lni",
+                "${input:map}",
+            ]
+        },
+        {
+            "label": "發佈(Slk)",
+            "command": "chcp 65001 && \"${workspaceRoot}/tools/w3x2lni/w2l.exe\"",
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "args": [
+                "slk",
+                "${workspaceRoot}",
+                "${workspaceRoot}/${input:map}.w3x"
+            ]
+        }
+    ]
+}

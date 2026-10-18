@@ -1,0 +1,54 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/blp-rs"
+source_path: "Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "blp"
+description = "Blizzard BLP image format reader/writer (Warcraft/World of Warcraft textures)"
+authors = ["nazarpunk <nazarpunk@gmail.com>"]
+version = "1.0.0"
+repository = "https://github.com/WarRaft/blp-rs"
+edition = "2024"
+license = "MIT"
+readme = "README.md"
+keywords = ["blp", "warcraft", "image", "texture"]
+categories = ["encoding", "graphics"]
+exclude = [
+    "preview/*",
+    "test-data/*",
+    "*.sh",
+]
+
+[dependencies]
+byteorder = "1.5.0"
+hex = "0.4.3"
+image = { version = "0.25.8", features = [
+    "avif", # AVIF format support (modern codec based on AV1)
+    "bmp", # BMP format support (Windows Bitmap)
+    "dds", # DDS format support (DirectDraw Surface, often used in games)
+    "default", # Enables the default feature set (common formats like PNG, JPEG, GIF, etc.)
+    "default-formats", # Convenience feature to include the basic built-in formats
+    "exr", # OpenEXR format support (HDR images, film/VFX industry)
+    "gif", # GIF format support (animated or static)
+    "hdr", # Radiance HDR format support (high dynamic range images)
+    "ico", # ICO format support (Windows icon files)
+    "jpeg", # JPEG format support (most common photo format)
+    "png", # PNG format support (lossless images with alpha channel)
+    "pnm", # PNM format support (Portable AnyMap: PBM, PGM, PPM)
+    "qoi", # QOI format support (Quite OK Image, lightweight lossless format)
+    "rayon", # Multi-threaded processing via Rayon (faster decoding/encoding)
+    "tga", # TGA format support (Targa, common in old games)
+    "tiff", # TIFF format support (Tagged Image File Format, used in photography/scans)
+    "webp", # WebP format support (modern web image format)
+] }
+
+jpeg-decoder = "0.3.2"
+psd = "0.3.3"
+num_enum = "0.7.4"
+sha1 = "0.11.0-rc.3"
+turbojpeg = "1.3.3"
+walkdir = "2.5.0"
+

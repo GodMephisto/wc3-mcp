@@ -1,0 +1,30 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/rzaharia/UnitAbilitiesWarcraft3"
+source_path: "wurst/spells/Conflagration/ConflagrationObjects.wurst"
+ref: HEAD
+---
+
+package ConflagrationObjects
+
+import public ConflagrationConstants
+import public BuffObjEditing
+import ChannelAbilityPreset
+
+public let CONFLAGRATION_SPELL_ID = compiletime(ABIL_ID_GEN.next())
+public let BUFF_OBJ = compiletime(createDummyBuffObject(
+    BUFF_NAME, BUFF_TT, Icons.bTNFireBolt, Abilities.incinerateBuff, "chest"))
+
+@compiletime function genObj()
+    new ChannelAbilityPreset(CONFLAGRATION_SPELL_ID,4,true)
+    ..setName(SPELL_NAME)
+    ..presetTooltipNormal(lvl-> SPELL_TT_NORMAL)
+    ..presetIcon(SPELL_ICON)
+    ..presetButtonPosNormal(0, 0)
+    ..presetManaCost(lvl -> 0)
+    ..presetCooldown(lvl -> 4.)
+    ..presetHotkey("Q")
+    ..presetTargetTypes(Targettype.POINT)
+    ..presetAreaofEffect(lvl -> SPELL_RADIUS)
+    ..presetOption(Option.TARGETIMAGE, true)
+        

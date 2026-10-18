@@ -1,0 +1,82 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/ChiefOfGxBxL/WC3MapTranslator"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+    "name": "wc3maptranslator",
+    "version": "5.0.1",
+    "description": "Module to translate between `war3map` and `json` formats for WarCraft III .w3x maps",
+    "keywords": [
+        "wc3",
+        "warcraft",
+        "reforged",
+        "frozen throne",
+        "reign of chaos",
+        "war3map",
+        "translator",
+        "json",
+        "w3x"
+    ],
+    "main": "dist/src/index.js",
+    "bin": {
+        "wc3maptranslator": "dist/src/cli.js"
+    },
+    "types": "dist/src/index.d.ts",
+    "files": [
+        "dist/src/**"
+    ],
+    "scripts": {
+        "build": "tsc --build",
+        "rebuild": "npm run clean && npm run build",
+        "clean": "npx rimraf dist",
+        "lint": "npx eslint .",
+        "test": "npm run rebuild && node --test \"./dist/test/**/*.js\""
+    },
+    "engines": {
+        "node": ">=24",
+        "npm": ">=11",
+        "tsc": ">4"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://chiefofgxbxl@github.com/ChiefOfGxBxL/WC3MapTranslator.git"
+    },
+    "author": "ChiefOfGxBxL",
+    "contributors": [
+        "ChiefOfGxBxL",
+        "dulingzhi",
+        "rufreakde",
+        "ttay24",
+        "yatyricky",
+        "Slayer95"
+    ],
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/ChiefOfGxBxL/WC3MapTranslator/issues"
+    },
+    "homepage": "https://github.com/ChiefOfGxBxL/WC3MapTranslator#readme",
+    "dependencies": {
+        "chalk": "^5.6.2",
+        "commander": "^14.0.2",
+        "fs-extra": "^11.3.5",
+        "ieee754": "^1.2.1",
+        "intn": "^1.0.0",
+        "round-to": "^7.0.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.39.2",
+        "@stylistic/eslint-plugin": "^5.6.1",
+        "@types/fs-extra": "^11.0.4",
+        "@types/node": "^24.10.4",
+        "coveralls": "^3.1.0",
+        "eslint": "^9.39.2",
+        "eslint-plugin-github": "^6.0.0",
+        "source-map-support": "^0.5.19",
+        "ts-node": "^9.1.1",
+        "typescript": "^4.2.2",
+        "typescript-eslint": "^8.50.0"
+    }
+}

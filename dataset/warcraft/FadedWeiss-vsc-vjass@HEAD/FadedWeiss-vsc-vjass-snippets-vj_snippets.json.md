@@ -1,0 +1,145 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/FadedWeiss/vsc-vjass"
+source_path: "snippets/vj_snippets.json"
+ref: HEAD
+---
+
+{
+    "and": {
+		"prefix": "and",
+		"body": "and",
+		"description": "and",
+		"scope": "source.vjass"
+    },
+	"break": {
+		"prefix": "break",
+		"body": "break",
+		"description": "break",
+		"scope": "source.vjass"
+	},
+	"elseif": {
+		"prefix": "elseif",
+		"body": "elseif",
+		"description": "elseif",
+		"scope": "source.vjass"
+	},
+	"false": {
+		"prefix": "false",
+		"body": "false",
+		"description": "false",
+		"scope": "source.vjass"
+    },
+    "not": {
+		"prefix": "not",
+		"body": "not",
+		"description": "not",
+		"scope": "source.vjass"
+	},    
+    "or": {
+        "prefix": "or",
+        "body": "or",
+        "description": "or",
+        "scope": "source.vjass"
+    },
+    "return": {
+        "prefix": "return",
+        "body": "return",
+        "description": "return",
+        "scope": "source.vjass"
+    },
+    "true": {
+        "prefix": "true",
+        "body": "true",
+        "description": "true",
+        "scope": "source.vjass"
+    },
+    "else": {
+		"prefix": "else",
+		"body": "else",
+		"description": "else",
+		"scope": "source.vjass"
+    },
+    "global": {
+        "prefix": "globals",
+        "body": "globals\n\t${0:}\nendglobals"
+    },	
+    "if": {
+		"prefix": "if",
+		"body": "if ${1:condition} then\n\t${0:// body}\nendif",
+		"description": "if",
+		"scope": "source.vjass"
+	},
+	"ifel": {
+		"prefix": "ifel",
+		"body": "if ${1:condition} then\n\t${2:// body}\nelse\n\t${0:// body}\nendif",
+		"description": "ifel",
+		"scope": "source.vjass"
+    },
+    "elif": {
+		"prefix": "elif",
+		"body": "elseif ${1:condition} then\n\t${0:// body}\n",
+		"description": "elif",
+		"scope": "source.vjass"
+    },
+    "fun": {
+		"prefix": "fun",
+		"body": "function ${1:function_name} takes ${2:nothing} returns ${3:nothing}\n\t${0:// body}\nendfunction",
+		"description": "function",
+		"scope": "source.vjass"
+	},
+	"function": {
+		"prefix": "function",
+		"body": "function ${1:function_name} takes ${2:nothing} returns ${3:nothing}\n\t${0:// body}\nendfunction",
+		"description": "function",
+		"scope": "source.vjass"
+	},
+	"ret": {
+		"prefix": "ret",
+		"body": "return ${1:...}",
+		"description": "return ...",
+		"scope": "source.vjass"
+    },
+    "loo": {
+        "prefix": "loo",
+        "body": "loop\n\t${0:// body}\nendloop",
+        "description": "loop ...",
+        "scope": "source.vjass"
+    },
+    "loop": {
+        "prefix": "loop",
+        "body": "loop\n\texitwhen ${1:condition}\n\t${0:// body}\nendloop",
+        "description": "loop with exit",
+        "scope": "source.vjass"
+    },
+    "struct": {
+        "prefix": "struct",
+        "body": "struct ${1:struct_name}\n\t${0:// body}\nendstruct",
+        "description": "struct",
+        "scope": "source.vjass"
+    },
+    "method": {
+        "prefix": "method",
+        "body": "method ${1:method_name} takes ${2:nothing} returns ${3:nothing}\n\t${0:// body}\nendmethod",
+        "description": "method",
+        "scope": "source.vjass"
+    },
+    "library": {
+        "prefix": "library",
+        "body": "library ${1:library_name} initializer ${2:init_function} requires ${3:require_libs}\n\tprivate function ${2:initializer_name} takes nothing returns nothing\n\t\t${0:// init_body}\n\tendfunction\nendlibrary\n",
+        "description": "library",
+        "scope": "source.vjass"
+    },
+    "callDebug":{
+        "prefix": "cdebug",
+        "body": "call BJDebugMsg()",
+        "description": "call debugMsg",
+        "scope": "source.vjass"
+    },
+    "dbg":{
+        "prefix:": "dbg",
+        "body": "BJDebugMsg()",
+        "description": "debugMsg",
+        "scope": "source.vjass"
+    }
+}

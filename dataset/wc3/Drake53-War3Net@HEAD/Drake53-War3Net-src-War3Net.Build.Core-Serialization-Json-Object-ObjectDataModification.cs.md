@@ -1,0 +1,55 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Json/Object/ObjectDataModification.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Object
+{
+    public abstract partial class ObjectDataModification
+    {
+        protected object GetValue(JsonElement jsonElement, ReadOnlySpan<char> propertyName, ObjectDataFormatVersion formatVersion)
+        {
+            return Type switch
+            {
+                ObjectDataType.Int => jsonElement.GetInt32(propertyName),
+                ObjectDataType.Real => jsonElement.GetSingle(propertyName),
+                ObjectDataType.Unreal => jsonElement.GetSingle(propertyName),
+                ObjectDataType.String => jsonElement.GetString(propertyName),
+                ObjectDataType.Bool => throw new NotSupportedException(),
+                ObjectDataType.Char => throw new NotSupportedException(),
+
+                _ => throw new InvalidEnumArgumentException(nameof(Type), (int)Type, typeof(ObjectDataType)),
+            };
+        }
+
+        protected void WriteValue(Utf8JsonWriter writer, ReadOnlySpan<char> propertyName, ObjectDataFormatVersion formatVersion)
+        {
+            switch (Type)
+            {
+                case ObjectDataType.Int:
+                    writer.WriteNumber(propertyName, (int)Value);
+                    break;
+
+                case ObjectDataType.Real:
+                case ObjectDataType.Unreal:
+                    writer.WriteNumber(propertyName, (float)Value);
+                    break;
+
+                case ObjectDataType.String:
+                    writer.WriteString(propertyName, (string)Value);
+                    break;
+
+                case ObjectDataType.Bool:
+                    throw new NotSupportedException();
+
+                case ObjectDataType.Char:
+                    throw new NotSupportedException();
+
+                default:
+                    throw new InvalidEnumArgumentException(nameof(Type), (int)Type, typeof(ObjectDataType));
+            }
+        }
+    }
+}

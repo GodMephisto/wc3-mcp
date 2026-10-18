@@ -1,0 +1,76 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/4eb0da/war3-model"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "name": "war3-model",
+  "version": "4.0.1",
+  "description": "Warcraft 3 model parser, generator, convertor and previewer",
+  "keywords": [
+    "warcraft3",
+    "reforged",
+    "mdl",
+    "mdx",
+    "blp",
+    "webgl",
+    "webgpu",
+    "typescript",
+    "front-end",
+    "backend"
+  ],
+  "homepage": "https://github.com/4eb0da/war3-model",
+  "bugs": {
+    "url": "https://github.com/4eb0da/war3-model/issues"
+  },
+  "repository": "github:4eb0da/war3-model",
+  "author": "4eb0da",
+  "license": "MIT",
+  "engines": {
+    "node": ">=4.0.0"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run build-lib",
+    "prepare": "husky install",
+    "dev": "vite",
+    "build-lib": "vite build",
+    "build-samples": "SAMPLES=1 vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint --ext .ts ."
+  },
+  "dependencies": {
+    "gl-matrix": "3.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/eslint": "9.6.1",
+    "@types/estree": "1.0.8",
+    "@types/node": "25.5.0",
+    "@webgpu/types": "0.1.69",
+    "dds-parser": "1.0.1",
+    "eslint": "10.0.3",
+    "husky": "7.0.4",
+    "monaco-editor": "0.55.1",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.57.0",
+    "vite": "8.0.0",
+    "vite-plugin-dts": "4.5.4"
+  },
+  "files": [
+    "dist/*"
+  ],
+  "main": "dist/war3-model.cjs",
+  "module": "dist/es/war3-model.mjs",
+  "typings": "dist/war3-model.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/war3-model.d.ts",
+      "require": "./dist/war3-model.cjs",
+      "import": "./dist/es/war3-model.mjs"
+    },
+    "./dist/": "./dist/"
+  },
+  "type": "module"
+}

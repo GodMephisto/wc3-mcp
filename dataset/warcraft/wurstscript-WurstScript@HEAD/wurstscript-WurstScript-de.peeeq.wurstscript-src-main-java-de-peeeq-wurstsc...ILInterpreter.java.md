@@ -1,0 +1,747 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/intermediatelang/interpreter/ILInterpreter.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.intermediatelang.interpreter;
+
+import java.util.concurrent.CancellationException;
+import de.peeeq.wurstscript.utils.CompilationCancellation;
+import de.peeeq.wurstio.jassinterpreter.DebugPrintError;
+import de.peeeq.wurstio.jassinterpreter.InterpreterException;
+import de.peeeq.wurstio.jassinterpreter.VarargArray;
+import de.peeeq.wurstscript.ast.ClassOrInterface;
+import de.peeeq.wurstscript.ast.FuncDef;
+import de.peeeq.wurstscript.gui.WurstGui;
+import de.peeeq.wurstscript.intermediatelang.*;
+import de.peeeq.wurstscript.jassIm.*;
+import de.peeeq.wurstscript.jassinterpreter.ExitwhenException;
+import de.peeeq.wurstscript.jassinterpreter.ReturnException;
+import de.peeeq.wurstscript.jassinterpreter.TestFailException;
+import de.peeeq.wurstscript.jassinterpreter.TestSuccessException;
+import de.peeeq.wurstscript.parser.WPos;
+import de.peeeq.wurstscript.translation.imtranslation.FunctionFlagEnum;
+import de.peeeq.wurstscript.translation.imtranslation.JassKeyOfLowering;
+import de.peeeq.wurstscript.translation.imtranslation.JassKeyedMapLowering;
+import de.peeeq.wurstscript.types.TypesHelper;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.io.File;
+import java.util.*;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+
+public class ILInterpreter implements AbstractInterpreter, AutoCloseable {
+    private ImProg prog;
+    private final ProgramState globalState;
+    private final TimerMockHandler timerMockHandler = new TimerMockHandler();
+
+    public ILInterpreter(ImProg prog, WurstGui gui, Optional<File> mapFile, ProgramState globalState) {
+        this.prog = prog;
+        this.globalState = globalState;
+        globalState.addNativeProvider(new BuiltinFuncs(globalState));
+    }
+
+    public ILInterpreter(ImProg prog, WurstGui gui, Optional<File> mapFile, boolean isCompiletime) {
+        this(prog, gui, mapFile, new ProgramState(gui, prog, isCompiletime));
+    }
+
+    /**
+     * Records the call's type arguments against the callee's type variables, so that a type class
+     * dispatch inside the body can find the instance chosen at the call site. Only relevant when
+     * interpreting a program which still has generics.
+     */
+    private static void bindTypeArguments(ProgramState globalState, LocalState localState, ImFunction f,
+                                          @Nullable Element caller, ILconst[] args) {
+        ImTypeArguments typeArgs = null;
+        if (caller instanceof ImFunctionCall call) {
+            typeArgs = call.getTypeArguments();
+        } else if (caller instanceof ImMethodCall call) {
+            typeArgs = call.getTypeArguments();
+        }
+        boolean genericReceiver = args.length > 0 && args[0] instanceof ILconstObject receiver
+            && globalState.isGenericHierarchy(receiver.getType().getClassDef());
+        if (!genericReceiver && (typeArgs == null || typeArgs.isEmpty())) {
+            // Nothing to bind, which is the case for almost every call.
+            return;
+        }
+        Map<ImTypeVar, ImTypeArgument> binding = new HashMap<>();
+
+        // A bound may belong to the owning class rather than to the method, as in
+        // class Box<T: Show>. The receiver carries the arguments the class was created with.
+        if (genericReceiver) {
+            ILconstObject receiver = (ILconstObject) args[0];
+            bindClassTypeArguments(globalState, binding, receiver.getType(),
+                Collections.newSetFromMap(new IdentityHashMap<>()));
+        }
+
+        if (typeArgs != null) {
+            List<ImTypeVar> typeVars = f.getTypeVariables();
+            for (int i = 0; i < Math.min(typeVars.size(), typeArgs.size()); i++) {
+                binding.putIfAbsent(typeVars.get(i), inheritIfStillAbstract(globalState, typeArgs.get(i)));
+            }
+            // A generic class holds its type variables on the class, not on its functions, so a
+            // constructor is called with arguments it has no variable of its own to bind. Only do
+            // this when the function has no type parameters, because then the arguments are the
+            // class's; a method with its own parameters is called with those instead, and the
+            // class's mapping already came from the receiver, which must not be overwritten.
+            if (typeVars.isEmpty()) {
+                ImClass owner = owningClass(f);
+                if (owner != null) {
+                    ImTypeVars classVars = owner.getTypeVariables();
+                    for (int i = 0; i < Math.min(classVars.size(), typeArgs.size()); i++) {
+                        binding.putIfAbsent(classVars.get(i),
+                            inheritIfStillAbstract(globalState, typeArgs.get(i)));
+                    }
+                }
+            }
+        }
+
+        if (!binding.isEmpty()) {
+            localState.setTypeArguments(binding);
+        }
+    }
+
+    /**
+     * Binds the type variables of the receiver's class and of every class it inherits from.
+     * <p>
+     * A subclass may fix its parent's parameter, as in {@code class Child extends Parent<int>}.
+     * The bound then belongs to {@code Parent}, while the receiver is a {@code Child} carrying no
+     * arguments of its own, so the supertype chain is where the concrete type is recorded.
+     */
+    private static void bindClassTypeArguments(ProgramState globalState,
+                                               Map<ImTypeVar, ImTypeArgument> binding,
+                                               ImClassType classType, Set<ImClass> visited) {
+        bindClassTypeArguments(globalState, binding, classType.getClassDef(),
+            new ArrayList<>(classType.getTypeArguments()), visited);
+    }
+
+    private static void bindClassTypeArguments(ProgramState globalState,
+                                               Map<ImTypeVar, ImTypeArgument> binding,
+                                               ImClass classDef, List<ImTypeArgument> classArgs,
+                                               Set<ImClass> visited) {
+        if (!visited.add(classDef)) {
+            return;
+        }
+        ImTypeVars classVars = classDef.getTypeVariables();
+        for (int i = 0; i < Math.min(classVars.size(), classArgs.size()); i++) {
+            binding.putIfAbsent(classVars.get(i), inheritIfStillAbstract(globalState, classArgs.get(i)));
+        }
+        for (ImClassType superType : classDef.getSuperClasses()) {
+            // A subclass may forward its own parameter, as in class Child<U: Show> extends
+            // Parent<U>. The supertype is written in terms of the subclass's variables, so resolve
+            // them against what this class was instantiated with before descending.
+            List<ImTypeArgument> superArgs = new ArrayList<>();
+            for (ImTypeArgument superArg : superType.getTypeArguments()) {
+                superArgs.add(resolveAgainst(binding, superArg));
+            }
+            bindClassTypeArguments(globalState, binding, superType.getClassDef(), superArgs, visited);
+        }
+    }
+
+    /** Replaces a type argument that is still a variable by whatever that variable is bound to. */
+    private static ImTypeArgument resolveAgainst(Map<ImTypeVar, ImTypeArgument> binding,
+                                                 ImTypeArgument arg) {
+        if (!(arg.getType() instanceof ImTypeVarRef ref)) {
+            return arg;
+        }
+        ImTypeArgument known = binding.get(ref.getTypeVariable());
+        if (known == null) {
+            // One source type parameter can be several nodes, so fall back to the name.
+            for (Map.Entry<ImTypeVar, ImTypeArgument> e : binding.entrySet()) {
+                if (e.getKey().getName().equals(ref.getTypeVariable().getName())) {
+                    known = e.getValue();
+                    break;
+                }
+            }
+        }
+        return known != null ? known : arg;
+    }
+
+    private static @Nullable ImClass owningClass(ImFunction f) {
+        Element owner = f.getParent();
+        while (owner != null && !(owner instanceof ImClass)) {
+            owner = owner.getParent();
+        }
+        return (ImClass) owner;
+    }
+
+    /**
+     * When a bounded generic passes its own type parameter to another one, the inner call site
+     * carries no instance because the parameter is still abstract there. The caller's frame knows
+     * what it was called with, so take the argument from there.
+     */
+    private static ImTypeArgument inheritIfStillAbstract(ProgramState globalState, ImTypeArgument arg) {
+        if (!arg.getTypeClassBinding().isEmpty() || !(arg.getType() instanceof ImTypeVarRef ref)) {
+            return arg;
+        }
+        ImTypeArgument fromCaller = globalState.getCurrentTypeArgument(ref.getTypeVariable());
+        return fromCaller != null ? fromCaller : arg;
+    }
+
+    public static LocalState runFunc(ProgramState globalState, ImFunction f, @Nullable Element caller,
+                                     ILconst... args) {
+        CompilationCancellation.check();
+        if (Thread.currentThread().isInterrupted()) {
+            throw new InterpreterException(globalState, "Execution interrupted");
+        }
+
+        try {
+            // --- varargs rewrite ---
+            if (f.hasFlag(FunctionFlagEnum.IS_VARARG)
+                && !(args.length == f.getParameters().size()
+                    && args.length > 0
+                    && args[args.length - 1] instanceof VarargArray)) {
+                ILconst[] newArgs = new ILconst[f.getParameters().size()];
+                if (newArgs.length - 1 >= 0) {
+                    System.arraycopy(args, 0, newArgs, 0, newArgs.length - 1);
+                }
+
+                ILconst[] varargArray = new ILconst[1 + args.length - newArgs.length];
+                for (int i = newArgs.length - 1, j = 0; i < args.length; i++, j++) {
+                    varargArray[j] = args[i];
+                }
+                newArgs[newArgs.length - 1] = new VarargArray(varargArray);
+                args = newArgs;
+            }
+
+            // --- arg count check ---
+            if (f.getParameters().size() != args.length) {
+                throw new Error("wrong number of parameters when calling func " + f.getName() + "(" +
+                    Arrays.stream(args).map(Object::toString).collect(Collectors.joining(", ")) + ")");
+            }
+
+            // --- adjust argument constants to expected primitive types (int->real etc.) ---
+            for (int i = 0; i < f.getParameters().size(); i++) {
+                args[i] = adjustTypeOfConstant(args[i], f.getParameters().get(i).getType());
+            }
+
+            // --- natives / compiletimenative ---
+            if (f.isNative() || f.hasFlag(FunctionFlagEnum.IS_COMPILETIME_NATIVE)) {
+                return runBuiltinFunction(globalState, f, args);
+            }
+
+            // --- key projection intrinsic ---
+            // Its source body is a placeholder: a `T:` parameter cannot be projected to an integer
+            // in Wurst, which is why JassKeyOfLowering supplies one after generic elimination. That
+            // pass runs inside transformProgToJass, so running the body here would give compiletime
+            // evaluation and -runTests a constant key for every element.
+            if (JassKeyOfLowering.isUnloweredKeyOf(f)) {
+                return new LocalState(keyOfValue(globalState, args[0]));
+            }
+
+            // --- generic keyed-map value intrinsics ---
+            // Placeholders too: JassKeyedMapLowering gives them their bodies after generic elimination,
+            // and their source bodies only raise an error. Run them the way that pass compiles them,
+            // through the int fallback, with the value in its integer representation.
+            if (JassKeyedMapLowering.isUnloweredPutNative(f)) {
+                // Looked up first: it checks the intrinsic's shape before any argument is read.
+                ImFunction put = JassKeyedMapLowering.fallbackOf(globalState.getProg(), f,
+                    f.getParameters().size() > 1
+                        ? keyedMapCallType(globalState, f, caller, f.getParameters().get(1).getType()) : JassIm.ImVoid());
+                JassKeyedMapLowering.checkSpecialization(f,
+                    keyedMapCallType(globalState, f, caller, f.getParameters().get(1).getType()),
+                    keyedMapCallType(globalState, f, caller, f.getParameters().get(2).getType()));
+                runFunc(globalState, put, caller, args[0], args[1], keyedMapIntValue(globalState, args[2]));
+                return new LocalState();
+            }
+            if (JassKeyedMapLowering.isUnloweredGetNative(f)) {
+                ImFunction get = JassKeyedMapLowering.fallbackOf(globalState.getProg(), f,
+                    f.getParameters().size() > 1
+                        ? keyedMapCallType(globalState, f, caller, f.getParameters().get(1).getType()) : JassIm.ImVoid());
+                ImType valueType = keyedMapCallType(globalState, f, caller, f.getReturnType());
+                JassKeyedMapLowering.checkSpecialization(f,
+                    keyedMapCallType(globalState, f, caller, f.getParameters().get(1).getType()), valueType);
+                ILconst stored = runFunc(globalState, get, caller, args[0], args[1]).getReturnVal();
+                return new LocalState(keyedMapValueOfInt(globalState, stored, valueType));
+            }
+            if (JassKeyedMapLowering.isUnloweredMembership(f)) {
+                ImFunction fallback = JassKeyedMapLowering.membershipFallback(globalState.getProg(), f,
+                    f.getParameters().size() > 1
+                        ? keyedMapCallType(globalState, f, caller, f.getParameters().get(1).getType()) : JassIm.ImVoid());
+                return runFunc(globalState, fallback, caller, args);
+            }
+
+            // --- local state & bind parameters ---
+            LocalState localState = new LocalState();
+            for (int i = 0; i < f.getParameters().size(); i++) {
+                localState.setVal(f.getParameters().get(i), args[i]);
+            }
+            bindTypeArguments(globalState, localState, f, caller, args);
+
+            // --- stacktrace bookkeeping ---
+            if (f.getBody().isEmpty()) {
+                // Still create a stackframe for correct type resolution / tracing symmetry
+                Map<ImTypeVar, ImType> normalized = Collections.emptyMap();
+                @Nullable ILconstObject receiverObj = null;
+                if (args.length > 0 && args[0] instanceof ILconstObject) {
+                    receiverObj = (ILconstObject) args[0];
+                }
+                if (caller != null) {
+                    globalState.setLastElement(caller);
+                }
+                globalState.pushStackframeWithTypes(f, receiverObj, args, caller != null ? caller : f, normalized);
+                try {
+                    return localState.setReturnVal(ILconstNull.instance());
+                } finally {
+                    globalState.popStackframe();
+                }
+            } else {
+                globalState.setLastStatement(f.getBody().get(0));
+            }
+
+            // --- build type substitutions (for pre-generic-elimination runs) ---
+            @Nullable ILconstObject receiverObj = null;
+            if (args.length > 0 && args[0] instanceof ILconstObject) {
+                receiverObj = (ILconstObject) args[0];
+            }
+
+            boolean needsTypeSubstitution = false;
+            if (receiverObj != null) {
+                if (!receiverObj.getCapturedTypeSubstitutions().isEmpty()) {
+                    needsTypeSubstitution = true;
+                } else if (!f.getParameters().isEmpty()) {
+                    ImType p0t = f.getParameters().get(0).getType();
+                    if (p0t instanceof ImClassType imClassType) {
+                        needsTypeSubstitution = !imClassType.getClassDef().getTypeVariables().isEmpty();
+                    }
+                }
+            }
+            if (!needsTypeSubstitution && caller instanceof ImFunctionCall imFunctionCall) {
+                needsTypeSubstitution = !imFunctionCall.getTypeArguments().isEmpty();
+            }
+
+            Map<ImTypeVar, ImType> normalized = Collections.emptyMap();
+            if (needsTypeSubstitution) {
+                Map<ImTypeVar, ImType> subst = new HashMap<>();
+
+                if (receiverObj != null) {
+                    subst.putAll(receiverObj.getCapturedTypeSubstitutions());
+                }
+
+                // A) Bind class type vars from receiver (for instance methods / funcs with this as first param)
+                if (receiverObj != null && !f.getParameters().isEmpty()) {
+                    ImType p0t = f.getParameters().get(0).getType();
+                    if (p0t instanceof ImClassType sigThisType) {
+                        ImClass cls = sigThisType.getClassDef();
+                        ImTypeVars tvars = cls.getTypeVariables();
+                        ImTypeArguments concreteArgs = receiverObj.getType().getTypeArguments();
+
+                        int n = Math.min(tvars.size(), concreteArgs.size());
+                        for (int i2 = 0; i2 < n; i2++) {
+                            subst.put(tvars.get(i2), concreteArgs.get(i2).getType());
+                        }
+                    }
+                }
+
+                // B) Bind type vars from explicit call type arguments.
+                if (caller instanceof ImFunctionCall fc) {
+                    ImTypeArguments targs = fc.getTypeArguments();
+
+                    // 1) If the function itself is generic, bind those first
+                    ImTypeVars fvars = f.getTypeVariables();
+                    int n1 = Math.min(fvars.size(), targs.size());
+                    for (int i2 = 0; i2 < n1; i2++) {
+                        subst.put(fvars.get(i2), targs.get(i2).getType());
+                    }
+
+                    ImClass sourceOwner = findSourceOwnerClass(f, globalState.getProg());
+                    if (sourceOwner != null) {
+                        ImTypeVars cvars = sourceOwner.getTypeVariables();
+                        int n2 = Math.min(cvars.size(), targs.size());
+                        for (int i2 = 0; i2 < n2; i2++) {
+                            subst.put(cvars.get(i2), targs.get(i2).getType());
+                        }
+                    }
+
+                    // 2) If the function is inside a class, also bind class type vars with the same call type args
+                    Element owner = f.getParent();
+                    while (owner != null && !(owner instanceof ImClass)) {
+                        owner = owner.getParent();
+                    }
+                    if (owner instanceof ImClass) {
+                        ImClass cls = (ImClass) owner;
+                        ImTypeVars cvars = cls.getTypeVariables();
+                        int n2 = Math.min(cvars.size(), targs.size());
+                        for (int i2 = 0; i2 < n2; i2++) {
+                            subst.put(cvars.get(i2), targs.get(i2).getType());
+                        }
+                    }
+                }
+
+                // C) Normalize RHS through existing frames (so nested substitutions resolve)
+                if (!subst.isEmpty()) {
+                    Map<ImTypeVar, ImType> normalizedTmp = new HashMap<>();
+                    for (Map.Entry<ImTypeVar, ImType> e : subst.entrySet()) {
+                        ImType rhs = globalState.resolveType(e.getValue());
+                        if (rhs instanceof ImTypeVarRef imTypeVarRef && imTypeVarRef.getTypeVariable() == e.getKey()) {
+                            continue; // skip self-maps
+                        }
+                        normalizedTmp.put(e.getKey(), rhs);
+                    }
+                    normalized = normalizedTmp;
+                }
+            }
+
+            if (caller != null) {
+                globalState.setLastElement(caller);
+            }
+            globalState.pushStackframeWithTypes(f, receiverObj, args, caller != null ? caller : f, normalized);
+            globalState.pushTypeArguments(localState.getTypeArguments());
+
+            ILconst retVal = null;
+            boolean didReturn = false;
+
+            try {
+                f.getBody().runStatements(globalState, localState);
+                if (localState.hasReturned()) {
+                    retVal = adjustTypeOfConstant(localState.takeReturn(), f.getReturnType());
+                    didReturn = true;
+                } else if (localState.consumeExit()) {
+                    // an exitwhen outside of any loop fails as it did when it was thrown
+                    throw ExitwhenException.instance();
+                }
+            } catch (ReturnException e) {
+                retVal = adjustTypeOfConstant(e.getVal(), f.getReturnType());
+                didReturn = true;
+            } finally {
+                globalState.popTypeArguments();
+                globalState.popStackframe();
+            }
+
+            if (didReturn) {
+                return localState.setReturnVal(retVal);
+            }
+
+            if (f.getReturnType() instanceof ImVoid) {
+                return localState;
+            }
+
+            throw new InterpreterException("function " + f.getName() + " did not return any value...");
+
+        } catch (InterpreterException e) {
+            String msg = buildStacktrace(globalState, e);
+            e.setStacktrace(msg);
+            e.setTrace(getTrace(globalState, f));
+            throw e;
+        } catch (TestSuccessException | TestFailException | DebugPrintError | CancellationException e) {
+            throw e;
+        } catch (Throwable e) {
+            String msg = buildStacktrace(globalState, e);
+            de.peeeq.wurstscript.ast.Element trace = getTrace(globalState, f);
+            throw new InterpreterException(trace, "You encountered a bug in the interpreter: " + e, e).setStacktrace(msg);
+        }
+    }
+
+    private static @Nullable ImClass findSourceOwnerClass(ImFunction f, ImProg prog) {
+        if (!(f.getTrace() instanceof FuncDef)) {
+            return null;
+        }
+        FuncDef fd = (FuncDef) f.getTrace();
+        if (!fd.attrIsStatic()) {
+            return null;
+        }
+        ClassOrInterface owner = fd.attrNearestClassOrInterface();
+        if (owner == null) {
+            return null;
+        }
+        for (ImClass c : prog.getClasses()) {
+            if (c.getTrace() == owner) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+
+    public static de.peeeq.wurstscript.ast.Element getTrace(ProgramState globalState, ImFunction f) {
+        Element lastStatement = globalState.getLastStatement();
+        return lastStatement == null ? f.attrTrace() : lastStatement.attrTrace();
+    }
+
+    public static String buildStacktrace(ProgramState globalState, Throwable e) {
+        StringBuilder err = new StringBuilder();
+
+        try {
+            ILStackFrame top = globalState.getStackFrames().getStackFrames().isEmpty()
+                ? null
+                : globalState.getStackFrames().getStackFrames().get(0);
+
+            WPos src = null;
+            if (top != null) {
+                src = top.getCurrentSourcePos();
+            }
+            if (src == null && globalState.getLastStatement() != null) {
+                src = globalState.getLastStatement().attrTrace().attrSource();
+            }
+
+            if (src != null) {
+                err.append("Trace : ")
+                    .append(new File(src.getFile()).getName())
+                    .append(":")
+                    .append(src.getLine())
+                    .append("\n");
+            }
+        } catch (Exception ignored) {
+            // ignore
+        }
+
+        globalState.getStackFrames().appendTo(err);
+        return err.toString();
+    }
+
+
+    @SuppressWarnings("null")
+    static ILconst adjustTypeOfConstant(@Nullable ILconst retVal, ImType expectedType) {
+        if (retVal instanceof ILconstInt && isTypeReal(expectedType)) {
+            ILconstInt retValI = (ILconstInt) retVal;
+            retVal = new ILconstReal(retValI.getVal());
+        }
+        return retVal;
+    }
+
+    private static boolean isTypeReal(ImType t) {
+        if (t instanceof ImSimpleType st) {
+            return st.getTypename().equals("real");
+        }
+        return false;
+    }
+
+
+    private static final LocalState EMPTY_LOCAL_STATE = new LocalState();
+
+    /**
+     * The integer key of a runtime value, matching what JassKeyOfLowering compiles the intrinsic
+     * to: an int and a class instance are their own key, and a handle is keyed by its id.
+     */
+    private static ILconst keyOfValue(ProgramState globalState, ILconst value) {
+        if (value instanceof ILconstInt) {
+            return value;
+        }
+        if (value instanceof ILconstObject obj) {
+            return ILconstInt.create(obj.getObjectId());
+        }
+        if (value instanceof ILconstNull) {
+            // A null class instance is integer 0 on Jass, and so is GetHandleId of a null handle.
+            return ILconstInt.create(0);
+        }
+        if (value instanceof IlConstHandle) {
+            for (NativesProvider natives : globalState.getNativeProviders()) {
+                try {
+                    return natives.invoke("GetHandleId", new ILconst[]{value});
+                } catch (NoSuchNativeException e) {
+                    // Not this provider's native - the next one may have it.
+                }
+            }
+        }
+        throw new InterpreterException(globalState, "Cannot compute a keyed-set key for "
+            + value.print() + ": only int, class instances and handles have a stable integer key.");
+    }
+
+    /** The integer a keyed-map value is stored as on Jass: an int is itself, a class instance its id. */
+    private static ILconst keyedMapIntValue(ProgramState globalState, ILconst value) {
+        if (value instanceof ILconstInt) {
+            return value;
+        }
+        if (value instanceof ILconstObject obj) {
+            return ILconstInt.create(obj.getObjectId());
+        }
+        if (value instanceof ILconstNull) {
+            return ILconstInt.create(0);
+        }
+        throw new InterpreterException(globalState, "keyedMapPutNative stores only int and class values, not "
+            + value.print() + ".");
+    }
+
+    /**
+     * A type the keyed-map intrinsic declares, as this call instantiates it: a type variable is taken
+     * from the call's type arguments and resolved through the calling frames.
+     */
+    private static ImType keyedMapCallType(ProgramState globalState, ImFunction f, @Nullable Element caller,
+                                           ImType declared) {
+        if (declared instanceof ImTypeVarRef ref && caller instanceof ImFunctionCall call) {
+            int index = f.getTypeVariables().indexOf(ref.getTypeVariable());
+            if (index >= 0 && index < call.getTypeArguments().size()) {
+                return globalState.resolveType(call.getTypeArguments().get(index).getType());
+            }
+        }
+        return globalState.resolveType(declared);
+    }
+
+    /**
+     * Turns a stored integer back into the requested value type, as the Jass lowering reads it. A null
+     * class reference is the integer 0 here, as it is on Jass, and an id without a live object stays
+     * the integer the Jass build would read.
+     */
+    private static ILconst keyedMapValueOfInt(ProgramState globalState, ILconst stored, ImType valueType) {
+        if (TypesHelper.isIntType(valueType)) {
+            return stored;
+        }
+        if (valueType instanceof ImClassType classType && stored instanceof ILconstInt id) {
+            if (id.getVal() == 0) {
+                return valueType.defaultValue();
+            }
+            ILconstObject obj = globalState.getObjectByIndex(id.getVal(), classType);
+            return obj == null ? stored : obj;
+        }
+        throw new InterpreterException(globalState, "keyedMapGetNative reads only int and class values, not "
+            + valueType + ".");
+    }
+
+    /**
+     * Calls a native through the provider which implements it. Results are not memoised: the natives are
+     * cheaper than hashing and comparing their arguments, and the ones whose identity matters (the
+     * conversions, Player) keep their own handles.
+     */
+    private static LocalState runBuiltinFunction(ProgramState globalState, ImFunction f, ILconst... args) {
+        final String fname = f.getName();
+
+        // Build error text lazily (only if we actually get exceptions)
+        StringBuilder errors = null;
+
+        // Fast path: direct dispatch to previously resolved provider.
+        NativesProvider cachedProvider = globalState.getCachedNativeProvider(fname);
+        if (cachedProvider != null) {
+            try {
+                return new LocalState(cachedProvider.invoke(fname, args));
+            } catch (NoSuchNativeException e) {
+                // Provider mapping changed or function not available in this provider instance anymore.
+                // Fall through to full scan and refresh cache.
+            }
+        } else if (globalState.isKnownMissingNative(fname)) {
+            // No provider has this function; skip repeated scans/exceptions.
+            globalState.compilationError("function " + fname + " cannot be used from the Wurst interpreter.\n");
+            if (f.getReturnType() instanceof ImVoid) {
+                return EMPTY_LOCAL_STATE;
+            }
+            final ILconst returnValue = f.getReturnType().defaultValue();
+            return new LocalState(returnValue);
+        }
+
+        for (NativesProvider natives : globalState.getNativeProviders()) {
+            try {
+                final LocalState localState = new LocalState(natives.invoke(fname, args));
+                globalState.cacheNativeProvider(fname, natives);
+                return localState;
+            } catch (NoSuchNativeException e) {
+                if (errors == null) errors = new StringBuilder(128);
+                errors.append('\n').append(e.getMessage());
+                // keep trying next provider
+            }
+        }
+
+        // If we reach here, none of the providers handled it
+        globalState.markMissingNative(fname);
+        if (errors == null) errors = new StringBuilder(64);
+        errors.insert(0, "function ").append(fname).append(" cannot be used from the Wurst interpreter.\n");
+        globalState.compilationError(errors.toString());
+
+        // Return a lightweight state
+        if (f.getReturnType() instanceof ImVoid) {
+            return EMPTY_LOCAL_STATE;
+        }
+        final ILconst returnValue = f.getReturnType().defaultValue();
+        return new LocalState(returnValue);
+    }
+
+    public LocalState executeFunction(String funcName, @Nullable Element trace) {
+        globalState.resetStackframes();
+        for (ImFunction f : prog.getFunctions()) {
+            if (f.getName().equals(funcName)) {
+                return runFunc(globalState, f, trace);
+            }
+        }
+
+        throw new Error("no function with name " + funcName + "was found.");
+    }
+
+    public void runVoidFunc(ImFunction f, @Nullable Element trace) {
+        globalState.resetStackframes();
+        ILconst[] args = {};
+        if (!f.getParameters().isEmpty()) {
+            // this should only happen because of added stacktrace parameter
+            args = new ILconstString[]{ILconstString.fromText("initial call")};
+        }
+        runFunc(globalState, f, trace, args);
+    }
+
+    public Element getLastStatement() {
+        return globalState.getLastStatement();
+    }
+
+    public void writebackGlobalState(boolean injectObjects) {
+        globalState.writeBack(injectObjects);
+
+    }
+
+    public ProgramState getGlobalState() {
+        return globalState;
+    }
+
+    public void addNativeProvider(NativesProvider np) {
+        globalState.addNativeProvider(np);
+    }
+
+    public ProgramState.StackTrace getStackFrames() {
+        return globalState.getStackFrames();
+
+    }
+
+    @Override
+    public void runFuncRef(ILconstFuncRef obj, @Nullable Element trace) {
+        runVoidFunc(obj.getFunc(), trace);
+    }
+
+    @Override
+    public TimerMockHandler getTimerMockHandler() {
+        return timerMockHandler;
+    }
+
+    @Override
+    public void completeTimers() {
+        timerMockHandler.completeTimers();
+    }
+
+    @Override
+    public ImProg getImProg() {
+        return prog;
+    }
+
+    @Override
+    public int getInstanceCount(int val) {
+        long count = 0L;
+        for (ILconstObject o : globalState.getAllObjects()) {
+            if (o.getType().getClassDef().attrTypeId() == val) {
+                if (!o.isDestroyed()) {
+                    count++;
+                }
+            }
+        }
+        return (int) count;
+    }
+
+    @Override
+    public int getMaxInstanceCount(int val) {
+        long count = 0L;
+        for (ILconstObject o : globalState.getAllObjects()) {
+            if (o.getType().getClassDef().attrTypeId() == val) {
+                count++;
+            }
+        }
+        return (int) count;
+    }
+
+    /**
+     * Closes the interpreter by shutting down its global ProgramState and releasing registered native provider resources.
+     */
+    @Override
+    public void close() {
+        if (globalState != null) {
+            globalState.close();
+        }
+    }
+}

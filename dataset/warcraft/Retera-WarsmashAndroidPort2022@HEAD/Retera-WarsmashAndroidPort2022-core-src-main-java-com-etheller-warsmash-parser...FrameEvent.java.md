@@ -1,0 +1,27 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/WarsmashAndroidPort2022"
+source_path: "core/src/main/java/com/etheller/warsmash/parsers/fdf/datamodel/FrameEvent.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.parsers.fdf.datamodel;
+
+public enum FrameEvent {
+	CONTROL_CLICK,
+	MOUSE_ENTER,
+	MOUSE_LEAVE,
+	MOUSE_UP,
+	MOUSE_DOWN,
+	MOUSE_WHEEL,
+	CHECKBOX_CHECKED,
+	CHECKBOX_UNCHECKED,
+	EDITBOX_TEXT_CHANGED,
+	POPUPMENU_ITEM_CHANGED,
+	MOUSE_DOUBLECLICK,
+	SPRITE_ANIM_UPDATE,
+	SLIDER_VALUE_CHANGED,
+	DIALOG_CANCEL,
+	DIALOG_ACCEPT,
+	EDITBOX_ENTER
+}

@@ -1,0 +1,65 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/jassinterpreter/providers/OutputProvider.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio.jassinterpreter.providers;
+
+import de.peeeq.wurstio.jassinterpreter.DebugPrintError;
+import de.peeeq.wurstio.jassinterpreter.Implements;
+import de.peeeq.wurstscript.intermediatelang.ILconstReal;
+import de.peeeq.wurstscript.intermediatelang.ILconstString;
+import de.peeeq.wurstscript.intermediatelang.IlConstHandle;
+import de.peeeq.wurstscript.intermediatelang.interpreter.AbstractInterpreter;
+import de.peeeq.wurstscript.jassinterpreter.TestFailException;
+import de.peeeq.wurstscript.jassinterpreter.TestSuccessException;
+
+import java.io.PrintStream;
+
+public class OutputProvider extends Provider {
+    protected PrintStream outStream = System.err;
+
+    public OutputProvider(AbstractInterpreter interpreter) {
+        super(interpreter);
+    }
+
+    public void setOutStream(PrintStream outStream) {
+        this.outStream = outStream;
+    }
+
+    public void DisplayTextToForce(IlConstHandle force, ILconstString msg) {
+        outStream.println(msg.text());
+    }
+
+    public void DisplayTimedTextToForce(IlConstHandle force, ILconstReal duration, ILconstString msg) {
+        outStream.println(msg.text());
+    }
+
+    public void DisplayTextToPlayer(IlConstHandle player, ILconstReal x, ILconstReal y, ILconstString msg) {
+        outStream.println(msg.text());
+    }
+
+    public void DisplayTimedTextToPlayer(IlConstHandle player, ILconstReal x, ILconstReal y, ILconstReal duration, ILconstString msg) {
+        outStream.println(msg.text());
+    }
+
+    @Implements(funcNames = {"BJDebugMsg", "println"})
+    public void println(ILconstString msg) {
+        outStream.println(msg.text());
+    }
+
+    public void $debugPrint(ILconstString msg) {
+        outStream.println(msg.text());
+        throw new DebugPrintError(msg.text());
+    }
+
+    public void testSuccess() {
+        throw TestSuccessException.instance;
+    }
+
+    public void testFail(ILconstString msg) {
+        throw new TestFailException(msg.text());
+    }
+}

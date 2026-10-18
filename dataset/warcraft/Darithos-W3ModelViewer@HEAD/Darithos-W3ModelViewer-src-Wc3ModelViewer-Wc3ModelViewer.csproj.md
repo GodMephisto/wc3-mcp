@@ -1,0 +1,37 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Darithos/W3ModelViewer"
+source_path: "src/Wc3ModelViewer/Wc3ModelViewer.csproj"
+ref: HEAD
+---
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- CascLib.dll is native x64, so the process must be 64-bit. -->
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>Wc3ModelViewer</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wc3ModelViewer.Core\Wc3ModelViewer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HelixToolkit.Wpf" Version="3.1.2" />
+  </ItemGroup>
+
+  <!-- Ship the native CascLib.dll next to the app so P/Invoke resolves it. -->
+  <ItemGroup>
+    <None Include="..\..\native\CascLib.dll">
+      <Link>CascLib.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,49 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/TrayHard/casc-modern"
+source_path: "src-tauri/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "casc-modern"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "CASC Modern — Tauri app"
+
+[lib]
+name = "casc_modern_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+casc-core = { workspace = true }
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+regex = { workspace = true }
+globset = { workspace = true }
+memchr = { workspace = true }
+base64 = { workspace = true }
+image = { workspace = true }
+
+# WebView2 grabs Ctrl+F (find bar) etc. as browser accelerator keys before the
+# frontend sees them. We disable that via the raw WebView2 settings so those
+# shortcuts reach the app. Versions track what tauri/wry resolve to.
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.38"
+windows = "0.61"

@@ -384,7 +384,7 @@ CAM_ versions: v2=148, v3=180, v5=264. v5 layout:
  =264
 MODL.cameras @276, and MODL.cameras_addon @288 = Reference->U16_ with one 0xFFFF per camera (same rule as attachments; m3studio io_m3_export.py:1997).
 
-Camera ORIENTATION comes from the bone, not from CAM_: the camera looks down the bone's -Y (Blender/m3 convention: the bone's local axis), so you must synthesise a bone whose rest rotation aims from the WC3 camera Position toward its TargetPosition. WC3 CAMS chunk gives: Name (80 chars), Position VEC3, FieldOfView (radians), FarClip, NearClip, TargetPosition VEC3, plus optional KCTR (position track) and KTTR (target track) and KCRL (roll).
+Camera ORIENTATION comes from the bone, not from CAM_: the camera looks down the bone's **-Z**, with the bone's **+Y** as up, so you must synthesise a bone whose rest rotation aims from the WC3 camera Position toward its TargetPosition along -Z. This was written here as -Y (the Blender bone convention) and the writer followed it; the result was a portrait camera pointing 90 degrees off its subject — level shots stared straight at the ground and the in-game portrait came back solid black, while the SC2 editor's preview looked right because the preview frames the model with its own orbit camera and never reads CAM_. MEASURED, not assumed: over the 537 Blizzard/HotS models that carry a CAM_, the mean dot product between the camera bone's local -Z and the direction from the bone to the model's MSEC bounds centre is +0.986, while local -Y averages -0.041 (square to the shot) and +X/-X average 0.00; the bone's local +Y against world up averages +0.845. WC3 CAMS chunk gives: Name (80 chars), Position VEC3, FieldOfView (radians), FarClip, NearClip, TargetPosition VEC3, plus optional KCTR (position track) and KTTR (target track) and KCRL (roll).
   CAM_.field_of_view.init  = WC3 FieldOfView (already radians)
   CAM_.near_clip.init      = WC3 NearClip
   CAM_.far_clip.init       = WC3 FarClip
@@ -398,7 +398,73 @@ Practical note for WC3: portrait animations live in <Model>_Portrait.mdx as sequ
 
 _evidence: https://github.com/Solstice245/m3studio/blob/main/structures.xml lines 2366-2394 (CAM_); cameras_addon at https://github.com/Solstice245/m3studio/blob/main/io_m3_export.py lines 1992-1997; https://github.com/SC2Mapster/m3addon/blob/master/structures.xml lines 2767-2795_
 
-## [likely] The hard m3 limits are 65535 vertices PER REGION (face indices are region-relative uint16) and 256 bones PER REGION (per-vertex bone lookup indices are uint8). The writer's global 65536-vertex throw matches both Blender addons but is stricter than the format; splitting is done with extra REGN + extra BAT_ inside the SINGLE existing DIV_.
+## [certain] Warcraft III additive maps to SC2 blend mode 3 "Alpha Add", never mode 2 "Add" — mode 2 has no alpha path at all.
+
+Across 2,553 Blizzard materials using blend mode 2, particle and geoset alike, **not one** carries an alpha layer; mode 3 carries one on 93% of geoset materials and 99% of particle materials, and Blizzard reaches for mode 3 5.5x more often. Anything drawn with mode 2 is permanently, fully opaque, which produced two separate bugs:
+
+  - A Warcraft III sprite sheet keeps its shape in ALPHA over flat white RGB (`Clouds32_anim.blp` is 64 white puffs in an 8x8 atlas). With no alpha path each particle drew as a solid coloured square.
+  - An additive card that GEOA hides outside one animation could never fade at all.
+
+So: `CompositeBlend.Additive` -> blend_mode 3, and additive materials get the `layer_alpha1` mask the same way alpha-blend ones do. Where a glow's alpha is already solid 255 the two modes render identically, so this costs nothing on art that was already correct. The recipe table above (FilterMode 3 Additive -> blend_mode 2) is wrong on this point and is superseded by this entry.
+
+## [certain] A geoset that appears in only some animations is hidden with BAT_.bone + an SDFG flag track, NOT by fading the material's colour alpha.
+
+This file already described the mechanism (see BAT_ V1 offset 12 above); it had simply never been implemented, and the exporter drove GEOA through the material's diffuse `color_value` alpha plus `alpha_test_threshold` instead. That fades a draw call, it does not remove one, and on additive geometry it does nothing at all — Andromath's spell sparkle burned through all ten of his non-Spell animations while the app's own previewer hid it correctly.
+
+The working recipe, MEASURED before implementing:
+  - `BAT_.bone` (offset 12, i16) points the draw call at a bone. Blizzard sets it on **5,600 of 9,673** batches — this is ordinary, not exotic.
+  - That bone's `batching` anim ref (BONE offset 140) reads **interpolation 0, flags 6** when animated, `init` = the rest state (both 0 and 1 occur across 7,544 batch bones) and `null` = 1 always.
+  - The track is **SDFG in STC_ slot 11** (3,530 of 3,530 occurrences), with keys in a section tagged **`FLAG`**, 4 bytes each, holding only 0 or 1 (22,360 entries, no exceptions).
+  - Give each GEOA-driven material its own toggle bone. It carries no geometry, so append it after the MDX nodes and the camera bones where nothing indexes by node number any more, and leave it unskinned so `skin_bone_count` is unaffected.
+
+Keep the material colour track as well: the batch flag is a hard cut at alpha 0.5, and a smooth GEOA fade still wants the colour track underneath it.
+
+Rest state follows the same rule as the geoset visibility default and the emitter emission rate — sample inside the primary Stand sequence. Check the result: across a 26-model pack every model must still have visible geometry at rest, and the batches that rest hidden should be exactly the corpses, effect cards and building variants.
+
+## [certain] Three things a Warcraft III effect needs on the way into SC2: no shadow from transparent materials, the flipbook bit on an atlas layer, and KP2V baked into emit_rate.
+
+All three came out of one bug report — a sea witch that imported as a pile of magenta grid cards, and an Andromath standing in a solid black square.
+
+**1. Transparent materials must set no_shadows_cast (0x20), and normally no_shadows_receive (0x80).**
+WC3 hero models put a large additive quad flat on the ground for the team glow (Andromath's is 254x254, the sea witch's 375x298). Exported without these bits SC2 shadows that quad, and the unit stands in a black square the size of the plane with nothing visible casting it — the glow itself renders correctly on top, which is what makes it look like a terrain bug rather than a model one.
+MEASURED over 18,305 Blizzard models, reading MAT_ with the stride derived from the section table so v19 and v20 are both read correctly:
+
+| blend mode | materials | no_shadows_cast | no_shadows_receive |
+| --- | --- | --- | --- |
+| 0 Opaque | 11,818 | 16% | 9% |
+| 1 Alpha Blend | 11,759 | 95% | 82% |
+| 2 Add | 2,667 | 97% | 88% |
+| 3 Alpha Add | 5,243 | 98% | 93% |
+
+So the bits follow blend mode, and cutouts (blend 0 + alpha test) are deliberately left casting — they are in the opaque pass and a cut-out leaf should have a shadow.
+
+**2. A particle sampling a sprite sheet needs LAYR.flags 0x100 particle_uv_flipbook.**
+Without it SC2 maps the whole sheet onto every quad. WC3's `Clouds32_anim.blp` is an 8x8 atlas of 64 cloud puffs, so each particle drew as a grid of 64 dots — the exact pattern in the bug report's screenshot. MEASURED by following each PAR_ v24 to its own material through MATM: of emitters whose atlas has more than one cell, 82% sit on a material carrying a 0x100 layer; of single-cell emitters, 6% do.
+
+**3. WC3 switches emitters on and off per animation through KP2V; SC2 has no such switch, so bake it into PAR_.emit_rate.**
+That is how one model carries a death cloud, a walk dust puff and a standing shimmer without all three running at once. Exported as a constant rate they all run all the time, which is why a standing sea witch was engulfed in her own death effect. emit_rate is an animatable float, and zero is the same thing as off. Two rules matter:
+  - The rest value (the anim ref's init, used when no track drives it) is the rate sampled inside the primary Stand sequence — the same rule the geoset visibility default already follows, so a death-only emitter reads 0 and an unposed preview is not mid-death.
+  - **Sample with the viewer's own MdxAnimator.SampleFloat, never a naive lookup across the global timeline.** WC3 reads only the keys that fall INSIDE the playing sequence and falls back to the rest value when a sequence contains none. A hand-rolled clamp across the whole track silenced the Pyre's fire (its two KP2V keys sit in Death, so Stand has none and must fall back to "on") and the sea witch's standing shimmer. The two samplers disagree on 5 of 14 emitters in one test pack.
+
+SDR3 is written into STC_ slot 5 with anim refs packed `5 << 16 | index`, which the layout at the top of this file already predicted. CONFIRMED by reading slot tags across 3,369 Blizzard STC_ v4 sections: slot 5 is SDR3 in 8,645 of 8,645 occurrences, and every other slot is equally unambiguous (0 SDEV, 1 SD2V, 2 SD3V, 3 SD4Q, 4 SDCC, 7 SDS6, 8 SDU6, 10 SDU3, 11 SDFG, 12 SDMB).
+
+_evidence: measured against C:\games\StarCraft II\Mods\HotS.SC2Mod; emitters inspected with `MdxProbe --emitters <model.mdx>`, which prints each PRE2's atlas, rates and the sequences its KP2V has it alive for_
+
+## [certain] A Warcraft III model must be turned -90 degrees about Z on export: WC3 builds a model facing +X, StarCraft II expects one facing -Y.
+
+Exported unturned, a unit walks, attacks and idles square to the way its actor points it — reported as "moonwalking: they do turn, they just don't turn towards their facing". The turn is (x, y, z) -> (y, -x, z) and, because every WC3 node's local frame is world-axis aligned, each animated local rotation conjugates the same way: q=(x,y,z,w) -> (y,-x,z,w). Positions, normals, tangents, bone pivots, parent-local rest offsets, baked location keys, baked rotation keys, camera positions/targets and per-sequence bounds all go through it; the turn is a proper rotation, so triangle winding is untouched.
+
+MEASURED four ways:
+  1. Registration. The Reforged azuredragon, bandit, satyr and murloc meshes were histogram-matched against their hand-converted SC2 counterparts (AlleyV_Wc3R_*.m3, which work in-game) at each quarter turn: 270 degrees scored 0.013-0.025 mismatch, every other angle 0.44-0.66. After the exporter applies the turn, our own exports of the same four register onto those counterparts at 0 degrees with 0.015-0.026.
+  2. Mesh symmetry. A biped/quadruped is mirror-symmetric across the plane square to its facing. 170 of 200 sampled WC3 unit models mirror across Y=0 (facing along X); 714 of 877 Blizzard SC2 unit models mirror across X=0 (facing along Y).
+  3. Portrait cameras, which stand in front of their subject. Mean unit vector from model centre to camera: Blizzard SC2 (-0.20, -0.86), Warcraft III (+0.83, -0.11).
+  4. Foot geometry (toes lead). WC3 mean toe offset from body centre X +0.215 / Y -0.038; Blizzard SC2 X +0.017 / Y -0.062.
+
+Portrait models do not strictly need the turn — SC2 frames them with the camera the model carries, which turns with it — so applying it uniformly is safe and keeps one code path.
+
+_evidence: spike/MdxProbe --symmetry (WC3 side, reads the CASC install); the SC2 side measured against C:\games\StarCraft II\Mods\HotS.SC2Mod (Blizzard storm_* art and the AlleyV_Wc3R_* WC3 conversions)_
+
+## [verified] The hard m3 limits are 65535 vertices PER REGION (face indices are region-relative uint16) and 256 bones PER REGION (per-vertex bone lookup indices are uint8). The writer's global 65536-vertex throw matches both Blender addons but is stricter than the format; splitting is done with extra REGN + extra BAT_ inside the SINGLE existing DIV_.
 
 Mechanics, verified from the importer:
   - REGN v5.first_vertex_index is uint32 (it was uint16 only in v2), so the U8__ vertex buffer can legitimately exceed 65536 vertices.
@@ -425,6 +491,7 @@ BAT_ V1 (14 bytes) full layout — the writer already matches it byte for byte, 
 
 That last field is the m3 answer to WC3 GEOA (geoset animation): a WC3 geoset whose GEOA alpha animates 0<->1 as a hard visibility switch maps to BAT_.bone = <a dedicated bone> plus an SDFG (flag) track on that bone's `batching` anim id (BONE offset 140, the 4th anim ref). Smoothly-animated GEOA alpha instead has to go onto the material (SDCC on the diffuse LAYR color_value alpha, or SDR3 on a layer's color_multiply).
 
+_evidence (2026-10-07): StarCraft II's own CASC holds 53 of 33,365 .m3 files over 65,536 vertices in total (max 200,005), 34 of them animated (smx1_eggroomset: 183k, 208 bones, 13 sequences), and no region over 65,536; HotS.SC2Mod holds 12 (max 124,865). The writer's global throw refused the Reforged Tree of Life (~108k: three upgrade tiers in one file) and is now a per-region check._
 _evidence: Region-relative faces: https://github.com/SC2Mapster/m3addon/blob/master/m3import.py lines 1364-1391 and https://github.com/Solstice245/m3studio/blob/main/io_m3_import.py lines 1061-1068; 65536 total check: https://github.com/Solstice245/m3studio/blob/main/io_m3_export.py lines 1115-1116; REGN/BAT_ structs: https://github.com/Solstice245/m3studio/blob/main/structures.xml lines 755-831; BONE.batching semantics: same file line 741 ('BAT_ instances which point to bone are toggled by this property')_
 
 ## [likely] m3 SEQS V2 has a per-sequence not_looping flag (0x1), a frequency field, and always_global/global_in_previewer flags. SC2 picks animations purely by the SEQS name string, matched as a space-separated token sequence against the actor's requested animation name.
@@ -561,7 +628,7 @@ Alternatively, MODL.vertex_flags bits 0x2000..0x10000 (fuv0..fuv3) select FLOAT 
 
 _evidence: https://github.com/Solstice245/m3studio/blob/main/io_m3_import.py lines 37-41 and 1063-1064; REGN uv_multiply/uv_offset at https://github.com/Solstice245/m3studio/blob/main/structures.xml lines 787-788; vertex_flags fuv bits same file lines 2535-2543; current behaviour at C:\Projects\D3 Model Viewer\src\D3ModelViewer.Core\Formats\M3Writer.cs:682-683_
 
-## [likely] Animation coverage gap: the writer only emits SD3V/SD4Q bone tracks plus SDEV/SDMB. WC3 needs at minimum SDCC (colour), SDR3 (float), SD2V (vec2) and SDFG (flag) tracks, wired through the STC_ anim_ids/anim_refs table with the correct sub-block type indices.
+## [partly done] Animation coverage gap: the writer emits SD3V/SD4Q bone tracks, SDCC colour tracks, SDR3 float tracks (emitter emit_rate) plus SDEV/SDMB. Still missing: SD2V (vec2, for UV offset/tiling) and SDFG (flag, for hard geoset visibility switches), wired through the STC_ anim_ids/anim_refs table with the correct sub-block type indices.
 
 STC_ V4 (204 bytes) layout and the anim_refs encoding — this is the mechanism the writer already uses but only for 3 of 14 block types:
    0 name Reference->CHAR   ('<Sequence>_full')
@@ -625,15 +692,30 @@ _evidence: STC_ struct: https://github.com/Solstice245/m3studio/blob/main/struct
 11. (feature, low) Material/UV animation: SDCC on LAYR.color_value for KMTA, SD2V on uv_offset / uv_tiling and SD3V on uv_angle for TXAN. Requires extending the STC_ id/ref builder with block types 1, 4 and 11.
 12. (feature, low) Cameras: CAM_ v5 at MODL offset 276 + cameras_addon 0xFFFF at 288, with a synthesised look-at bone; merge the _Portrait.mdx sequences.
 13. (feature, low) Hit tests: WC3 CLID collision shapes -> SSGS v1 (108 B) list at MODL offset 768; also fill hittest_tight at offset 660 with a sphere covering the model instead of 108 zero bytes.
-14. (robustness) Replace the global 65536 throw with per-region splitting (see the limits finding); keep the 256-bones-per-region check.
+14. (done 2026-10-07) The global 65536 throw is now a per-region check. No splitting is needed: MDX faces are u16 too, so no geoset can yield a larger region.
 15. (skip) PAR_/RIB_ — emit Ref_Attacher attachment points and a JSON sidecar instead.
 
 _evidence: C:\Projects\D3 Model Viewer\src\D3ModelViewer.Core\Formats\M3Writer.cs (whole file, read in full); struct facts as cited in the other findings_
 
+## [measured] Billboards: WC3's Billboarded flag becomes a BBSC entry of type 6 with identity up/forward. No basis change is needed after the facing turn.
+
+Reported as "the priest's staff orb is a flat picture" (ClericWC1.mdx, and the stock SD priest). The orb is a four-vertex card on bone `Plane01`, flagged `Billboarded`. The exporter wrote no BBSC, so SC2 froze the card in its rest pose. The hand-converted `reference/War3_Priest.m3`, which renders correctly in game, lists `Plane01` and `Plane05` in BBSC (type 6, camera_look_at 0). Bone flags play no part: no BBSC bone in Blizzard's corpus sets billboard1/billboard2 (0x10/0x40).
+
+BBSC V0 (48 bytes): dependents Ref, bone u16, billboard_type u8 (0 WorldX, 1 WorldY, 2 WorldZ, 3 LocalX, 4 LocalY, 5 LocalZ, 6 Full), camera_look_at u8, up QUAT, forward QUAT. MODL `billboards` is the 5th of the six refs after `hittest_tight`.
+
+Axis convention, measured by UV correlation (the local axis u grows along = screen right, the one v shrinks along = screen up, their cross = the drawn face):
+- **SC2** (`spike/m3verify/m3billboard.py`, 3,586 of 18,504 HotS files carry BBSC): type 6 with identity quaternions reads `right=+x up=+z front=-y` on 331 of 346 cards. Blizzard type counts: 6 ×4,307, 2 ×854, 4 ×30, 0 ×10, 3 ×5, 5 ×4. camera_look_at is 1 on 4,580 and 0 on 630. When up/forward are not identity, they rotate bone-local into the billboard frame: the reference priest's ~102° X turn carries its +z-facing card onto -y.
+- **WC3** (`MdxProbe --billboards [n] sd|hd`): flat cards on fully billboarded nodes lie on node-local X in 3,059 of 3,073 SD and 308 of 308 HD cases. The dominant layout is `right=+y up=+z front=+x` (2,604 SD, 282 HD); the rest are the same plane with the art rolled.
+- `ToSc2` (x→-y, y→x) maps the WC3 layout onto the SC2 one exactly, and exported bones have identity rest rotation, so up = forward = identity.
+
+Axis locks: WC3 ships LockZ on 248 SD nodes, LockY on 88, LockX on 9. LockZ → type 2 (WorldZ). Blizzard's type-2 upright cards share the handedness above and carry names like `WorldZ`/`Dummy_Vertical`. LockX/LockY have no measured counterpart (Blizzard types 0/1 carry no geometry to measure), so they are left unbillboarded and the export log says so.
+
+Viewer: `MdxAnimator.Camera` billboards Billboarded and LockZ nodes (node-local +X to the viewer, +Y screen right, +Z up; animated rotation discarded, pivot position and inherited scale kept). Exporters leave it null. `MdxProbe --bbcheck <file> [seq] [--nocamera]` verifies facing through a sequence: ClericWC1's orb reads |front·toCamera| ≥ 0.999 over 30 views, against 0.025 without billboarding. Without billboarding the staff swinging upright in Stand tips the card flat.
+
 ## Open questions
 
 - Does the SC2 engine / Editor previewer actually reject 16-byte-unaligned section offsets, or is m3studio's `len % 16` padding harmless in practice? Test: export one model both ways and open both in the SC2 Editor Previewer. No source I found settles this; every Blizzard file is aligned, and m3addon rounds up, so aligning is the safe default regardless.
-- Does SC2 tolerate a model whose total vertex count exceeds 65536 (multiple regions, each under 65536, with region-relative uint16 faces)? Both Blender addons hard-error at 65536 total, but nothing in REGN v5 (uint32 first_vertex_index) requires it. Needs an empirical test against a large Heroes of the Storm .m3 from C:\games\Heroes of the Storm — check whether any shipped model exceeds 65536.
+- ~~Does SC2 tolerate a model whose total vertex count exceeds 65536?~~ Yes. Blizzard ships 34 animated SC2 models over it; see the limits finding.
 - MDX V-coordinate handedness: I inferred top-down (D3D) from the format's Direct3D lineage and from the fact that MDX->OBJ converters flip V, but I did not find an explicit statement in mdx-m3-viewer or the local MaxScript. Verify by exporting one WC3 model with a visibly asymmetric texture and comparing against the in-game render.
 - Exact alpha-test threshold WC3 uses for FilterMode 1 (Transparent). The commonly cited value is 0.75 (=> 191/192 of 255) based on mdx-m3-viewer's shader `if (color.a < 0.75) discard;`, but I did not read that shader directly this session.
 - Reforged HD material layer slot ORDER. TaylorMouse's Max plugin exposes diffuse / normal / ORM / emissive / reflection and separately a replaceable-texture dropdown, implying the on-disk LAYS order is diffuse, normal, ORM, emissive, team-color, team-glow (6 layers), but the Read.ms parser reads layers positionally without naming them. Confirm by dumping a known Reforged HD unit's MTLS chunk.

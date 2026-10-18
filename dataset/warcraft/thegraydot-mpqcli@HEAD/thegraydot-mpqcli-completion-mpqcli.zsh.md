@@ -1,0 +1,212 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/thegraydot/mpqcli"
+source_path: "completion/mpqcli.zsh"
+ref: HEAD
+---
+
+#compdef mpqcli
+
+_mpqcli_locales=(
+    default enUS zhTW csCZ deDE esES frFR itIT
+    jaJP koKR nlNL plPL ptBR ruRU zhCN enGB esMX ptPT
+)
+
+_mpqcli_games=(
+    generic
+    diablo1 diablo d1
+    lordsofmagic lomse
+    starcraft starcraft1 sc sc1
+    warcraft2 wc2 war2
+    diablo2 d2
+    warcraft3 wc3 war3
+    warcraft3-map wc3-map war3-map
+    wow1 wow-vanilla
+    wow2 wow-tbc
+    wow3 wow-wotlk
+    wow4 wow-cataclysm
+    wow5 wow-mop
+    starcraft2 sc2
+    diablo3 d3
+)
+
+_mpqcli_info_properties=(
+    format-version header-offset header-size archive-size
+    file-count max-files signature-type
+)
+
+_mpqcli_list_properties=(
+    hash-index name-hash1 name-hash2 name-hash3 locale
+    file-index byte-offset file-time file-size compressed-size
+    flags encryption-key encryption-key-raw
+)
+
+_mpqcli() {
+    local context state state_descr line
+    typeset -A opt_args
+
+    _arguments -C \
+        '1: :_mpqcli_cmds' \
+        '*:: :->subcmd'
+
+    case $state in
+        subcmd)
+            case $words[1] in
+                info)       _mpqcli_info ;;
+                create)     _mpqcli_create ;;
+                add)        _mpqcli_add ;;
+                remove)     _mpqcli_remove ;;
+                rename)     _mpqcli_rename ;;
+                list)       _mpqcli_list ;;
+                extract)    _mpqcli_extract ;;
+                read)       _mpqcli_read ;;
+                verify)     _mpqcli_verify ;;
+                compact)    _mpqcli_compact ;;
+                completion) _mpqcli_completion ;;
+            esac
+            ;;
+    esac
+}
+
+_mpqcli_cmds() {
+    local cmds=(
+        'version:Prints program version'
+        'about:Prints program information'
+        'info:Prints info about an MPQ archive'
+        'create:Create an MPQ archive from files and directories'
+        'add:Add files to an existing MPQ archive'
+        'remove:Remove files from an existing MPQ archive'
+        'rename:Rename a file in an existing MPQ archive'
+        'list:List files from the MPQ archive'
+        'extract:Extract files from the MPQ archive'
+        'read:Read a file from an MPQ archive'
+        'verify:Verify the MPQ archive'
+        'compact:Compact the MPQ archive'
+        'completion:Generate shell completion script'
+    )
+    _describe 'subcommand' cmds
+}
+
+# MPQ archives in either case plus directories; _files offers every file when
+# nothing matches, so archives with other extensions stay reachable
+_mpqcli_archives() {
+    _files -g '*.(#i)mpq' "$@"
+}
+
+_mpqcli_info() {
+    local props="${_mpqcli_info_properties[*]}"
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '(-q --property)'{-q,--property}'[print only a specific property]:property:('"$props"')'
+}
+
+_mpqcli_create() {
+    local locales="${_mpqcli_locales[*]}" games="${_mpqcli_games[*]}"
+    _arguments \
+        '1:archive:_files' \
+        '*:files:_files' \
+        '(-p --path)'{-p,--path}'[archive path for a single file, or prefix for a directory or several inputs]:path' \
+        '(-s --sign)'{-s,--sign}'[sign the archive]' \
+        '(-e --locale)'{-e,--locale}'[locale for added files]:locale:('"$locales"')' \
+        '(-g --game)'{-g,--game}'[game profile]:profile:('"$games"')' \
+        '--format-version[MPQ archive format version (1-4)]:version:(1 2 3 4)' \
+        '--stream-flags[override stream flags]:flags' \
+        '--sector-size[override sector size]:size' \
+        '--raw-chunk-size[override raw chunk size for MPQ v4]:size' \
+        '--file-flags1[override file flags for listfile]:flags' \
+        '--file-flags2[override file flags for attributes]:flags' \
+        '--file-flags3[override file flags for signature]:flags' \
+        '--attr-flags[override attribute flags]:flags' \
+        '--flags[override MPQ file flags for added files]:flags' \
+        '--compression[override compression for first sector]:compression' \
+        '--compression-next[override compression for subsequent sectors]:compression'
+}
+
+_mpqcli_add() {
+    local locales="${_mpqcli_locales[*]}" games="${_mpqcli_games[*]}"
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '*:files:_files' \
+        '(-p --path)'{-p,--path}'[archive path for a single file, or prefix for a directory or several inputs]:path' \
+        '(-w --overwrite -u --update)'{-w,--overwrite}'[replace every existing file]' \
+        '(-u --update -w --overwrite)'{-u,--update}'[replace only files that changed]' \
+        '(-e --locale)'{-e,--locale}'[locale for added file]:locale:('"$locales"')' \
+        '(-g --game)'{-g,--game}'[game profile]:profile:('"$games"')' \
+        '--flags[override MPQ file flags]:flags' \
+        '--compression[override compression for first sector]:compression' \
+        '--compression-next[override compression for subsequent sectors]:compression'
+}
+
+_mpqcli_remove() {
+    local locales="${_mpqcli_locales[*]}"
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '*:archive paths' \
+        '(-e --locale)'{-e,--locale}'[locale of file to remove]:locale:('"$locales"')'
+}
+
+_mpqcli_rename() {
+    local locales="${_mpqcli_locales[*]}"
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '2:old archive path' \
+        '3:new archive path' \
+        '(-e --locale)'{-e,--locale}'[locale of file to rename]:locale:('"$locales"')'
+}
+
+_mpqcli_list() {
+    local props="${_mpqcli_list_properties[*]}"
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '(-l --listfile)'{-l,--listfile}'[listfile path]:file:_files' \
+        '(-d --detailed)'{-d,--detailed}'[detailed listing with extra columns]' \
+        '(-a --all)'{-a,--all}'[include hidden files]' \
+        '*'{-q,--property}'[print specific property values]:property:('"$props"')'
+}
+
+_mpqcli_extract() {
+    local locales="${_mpqcli_locales[*]}"
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '*:archive paths' \
+        '(-o --output)'{-o,--output}'[output directory]:dir:_files -/' \
+        '(-j --flat)'{-j,--flat}'[write files without their folders]' \
+        '(-l --listfile)'{-l,--listfile}'[listfile path]:file:_files' \
+        '(-e --locale)'{-e,--locale}'[preferred locale for extracted files]:locale:('"$locales"')'
+}
+
+_mpqcli_read() {
+    local locales="${_mpqcli_locales[*]}"
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '2:file-in-archive' \
+        '(-e --locale)'{-e,--locale}'[preferred locale for read file]:locale:('"$locales"')'
+}
+
+_mpqcli_verify() {
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '(-x --print)'{-x,--print}'[print the digital signature in hex]'
+}
+
+_mpqcli_compact() {
+    _arguments \
+        '1:archive:_mpqcli_archives' \
+        '(-l --listfile)'{-l,--listfile}'[listfile path]:file:_files'
+}
+
+_mpqcli_completion() {
+    _arguments '1:shell:_mpqcli_shells'
+}
+
+_mpqcli_shells() {
+    local shells=(
+        'bash:Generate bash completion script'
+        'zsh:Generate zsh completion script'
+        'powershell:Generate PowerShell completion script'
+        'fish:Generate fish completion script'
+    )
+    _describe 'shell' shells
+}
+
+_mpqcli "$@"

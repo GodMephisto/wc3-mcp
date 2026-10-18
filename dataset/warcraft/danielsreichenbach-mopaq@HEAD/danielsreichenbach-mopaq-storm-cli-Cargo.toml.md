@@ -1,0 +1,60 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/danielsreichenbach/mopaq"
+source_path: "storm-cli/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "storm-cli"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "Command-line tool for working with MPQ archives"
+readme = "../README.md"
+
+[[bin]]
+name = "storm-cli"
+path = "src/main.rs"
+
+[dependencies]
+mopaq = { path = "../mopaq", version = "0.1.0", features = ["serde"] }
+
+# CLI framework
+clap = { workspace = true }
+clap_complete = "4.5"
+anyhow = { workspace = true }
+
+# File operations
+walkdir = "2.5"
+tempfile = { workspace = true }
+
+# Output and formatting
+colored = { workspace = true }
+indicatif = { workspace = true }
+
+# Logging and serialization
+env_logger = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Pattern matching
+glob = "0.3"
+regex = "1.11"
+
+# Configuration
+toml = "0.8"
+dirs = "6.0"
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.1"
+tempfile = { workspace = true }
+
+[features]
+default = ["mopaq/default"]

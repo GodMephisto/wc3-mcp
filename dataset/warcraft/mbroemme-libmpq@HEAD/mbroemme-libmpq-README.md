@@ -9,12 +9,18 @@ ref: HEAD
 
 [![CI](https://github.com/mbroemme/libmpq/actions/workflows/ci.yml/badge.svg)](https://github.com/mbroemme/libmpq/actions/workflows/ci.yml)
 [![Coverage](https://mbroemme.github.io/libmpq/coverage.svg)](https://mbroemme.github.io/libmpq/)
-[![GitHub release](https://img.shields.io/github/release/mbroemme/libmpq?style=flat&label=release&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/releases)
-[![GitHub issues](https://img.shields.io/github/issues/mbroemme/libmpq?style=flat&label=issues&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/issues)
-[![GitHub forks](https://img.shields.io/github/forks/mbroemme/libmpq?style=flat&label=forks&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/network/members)
-[![GitHub stars](https://img.shields.io/github/stars/mbroemme/libmpq?style=flat&label=stars&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/stargazers)
-[![License: LGPL-2.1-or-later](https://img.shields.io/badge/license-LGPL--2.1--or--later-blue.svg)](COPYING.LESSER)
-[![GitHub downloads](https://img.shields.io/github/downloads/mbroemme/libmpq/total?style=flat&label=downloads&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/releases)
+[![GitHub
+release](https://img.shields.io/github/release/mbroemme/libmpq?style=flat&label=release&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/releases)
+[![GitHub
+issues](https://img.shields.io/github/issues/mbroemme/libmpq?style=flat&label=issues&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/issues)
+[![GitHub
+forks](https://img.shields.io/github/forks/mbroemme/libmpq?style=flat&label=forks&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/network/members)
+[![GitHub
+stars](https://img.shields.io/github/stars/mbroemme/libmpq?style=flat&label=stars&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/stargazers)
+[![License:
+LGPL-2.1-or-later](https://img.shields.io/badge/license-LGPL--2.1--or--later-blue.svg)](COPYING.LESSER)
+[![GitHub
+downloads](https://img.shields.io/github/downloads/mbroemme/libmpq/total?style=flat&label=downloads&cacheSeconds=21600)](https://github.com/mbroemme/libmpq/releases)
 
 A portable C library for creating, reading, decrypting, decompressing, and
 extracting files from MoPaQ (MPQ) archives.
@@ -25,40 +31,75 @@ MPQ is a proprietary archive format created by Mike O'Brien in 1996. It is
 used by Blizzard games including Diablo, Diablo II, StarCraft, Warcraft II:
 Battle.net Edition, Warcraft III, and World of Warcraft.
 
-libmpq provides a C API for applications that need to inspect, create, and
-extract MPQ archives. Creation supports seekable v1 and v2 archives, streaming
-or buffer/path file addition, encrypted tables and payloads, optional listfiles,
-raw and single-unit files, PKWARE implode, and multi-compression sectors using
-Huffman, zlib, PKWARE, bzip2, or mono/stereo WAVE ADPCM.
+libmpq provides a C API for applications that need to inspect, create, modify,
+and extract MPQ archives. Creation supports seekable v1 and v2 archives,
+streaming or buffer/path file addition, encrypted tables and payloads,
+optional listfiles,
+raw and single-unit files, PKWARE implode, multi-compression sectors using
+Huffman, zlib, PKWARE, bzip2, or mono/stereo WAVE ADPCM, and the exclusive
+MPQ v2+ LZMA method.
 
 ## Features
 
-* Read MPQ archives and embedded archives located at a file offset.
-* Read archive metadata, file names, file sizes, flags, and block information.
-* Create seekable MPQ v1 and v2 archives with fixed file-table capacity.
-* Add files through streaming, memory-buffer, or filesystem-path APIs.
-* Decrypt encrypted hash tables, block tables, and file payloads.
-* Create encrypted hash and block tables, file payloads, and sector offsets.
-* Create raw, single-unit, sectorized, and multi-sector file entries.
-* Compress file sectors with PKWARE implode, Huffman, zlib, bzip2, or WAVE
-  ADPCM using separate first-sector and later-sector masks.
-* Decompress zlib, bzip2, Huffman, PKWARE implode, Blizzard multi-compression,
-  and mono or stereo WAVE ADPCM payloads.
-* Generate an optional `(listfile)` entry during archive creation.
-* Provide a stable C API with installed headers under `include/libmpq`.
-* Support big-endian hosts through explicit little-endian serialization; CI
-  runs the full test suite on emulated s390x.
+* Read, inspect, and extract MPQ archives, including archives embedded at a
+  non-zero file offset.
+* Stream and seek within logical archive members without requiring a complete
+  file buffer.
+* Open MPQ and MPQE archives from filesystem paths or caller-provided
+  random-access I/O callbacks.
+* Create seekable MPQ v1 and v2 archives with configurable file-table capacity,
+  sector size, optional `(listfile)` and `(attributes)` metadata, encrypted
+  tables, and encrypted file payloads.
+* Add raw, single-unit, sectorized, and multi-sector files through streaming,
+  memory-buffer, and filesystem-path APIs.
+* Modify filesystem MPQs, embedded MPQ containers, and authenticated MPQE
+  archives transactionally with named-file replace, remove, and rename operations.
+* Create MPQ or MPQE-wrapped replacement and deletion patch archives without
+  changing the base MPQ; optionally sign patches with caller-supplied keys.
+* Read and create MPQE-wrapped MPQ archives using a caller-supplied
+  authentication code.
+* Read and write PKWARE implode, Huffman, zlib, bzip2, SPARSE, and mono or
+  stereo WAVE ADPCM compression. MPQ v2+ also supports the exclusive LZMA
+  method, and readers accept Blizzard multi-compression payloads.
+* Provide STANDARD and EXTENDED writer compression policies to balance
+  interoperability with broader implemented compression combinations.
+* Inspect archive, file, and block metadata, including names, sizes, flags,
+  packed block sizes, compression methods, and stored attributes.
+* Read and create version-100 `(attributes)` metadata with CRC32, explicit
+  FILETIME, MD5, and PATCH_BIT information.
+* Generate and explicitly verify sector Adler-32 checksums and file-level
+  CRC32/MD5 attributes. Complete reads automatically verify available sector
+  checksums and, for lossless data, available CRC32/MD5 attributes.
+* Detect, verify, and create weak MD5/RSA-512 internal signatures and strong
+  SHA-1/RSA-2048 external `NGIS` signatures using caller-supplied keys. Both
+  mechanisms are legacy compatibility features, not modern authenticity
+  protection.
+* Support little- and big-endian hosts through explicit little-endian MPQ
+  serialization.
+* Provide a stable C API with installed headers, API manual pages,
+  `pkg-config` metadata, and `libmpq-config`.
 * Provide optional Python 3.11+, D, and Java bindings.
-* Install API manual pages for the library functions and `libmpq-config`.
+
+See the [developer guide](DEVELOPER.md) for API examples, optional metadata,
+checksum verification, archive signatures, and writer compression policies.
+
+For lossy WAVE ADPCM members, automatic file-level `(attributes)` CRC32/MD5
+comparison is intentionally skipped: decoded PCM cannot reproduce the original
+source bytes byte-for-byte. Packed-sector integrity checks remain available.
 
 ## Requirements
 
-The build system requires:
+The native library requires a C compiler and development headers and libraries
+for zlib, bzip2, and lzma. Build tools depend on the platform:
 
-* A C99-capable C compiler.
-* GNU Autoconf, Automake, and Libtool.
-* zlib development headers and libraries.
-* bzip2 development headers and libraries.
+* Linux and other Unix systems: a C99-capable compiler, GNU Autoconf,
+  Automake, and Libtool.
+* macOS: Xcode or the standalone Command Line Tools for Xcode, providing
+  Apple Clang, the Apple linker, make, and the macOS SDK. Git checkouts also
+  require GNU Autoconf, Automake, and GNU Libtool; the CI-tested setup obtains
+  these build-generation tools through Homebrew.
+* MinGW-w64: a C99-capable compiler, GNU Autoconf, Automake, and Libtool.
+* Native MSVC: Visual Studio's C++ build tools, CMake 3.21 or newer, and vcpkg.
 
 The Python, D, and Java bindings are maintained and distributed through their
 native package ecosystems. They are included in source distributions but are
@@ -71,10 +112,12 @@ documentation below for build, test, and library-loading instructions.
 
 ## Building
 
+### Unix (Autotools)
+
 For build and install use the commands below. If `--prefix=/usr` is used, the
 `make install` command must be run as root. It installs the native shared
-library, public headers, tools, and manual pages. Language bindings are built
-and installed separately with their native package managers.
+library, public headers, the libmpq-config script, and manual pages. Language
+bindings are built and installed separately with their native package managers.
 
 ```sh
 ./configure --prefix=/usr &&
@@ -82,309 +125,225 @@ make &&
 make install
 ```
 
-### Debian or Ubuntu
+Use `./configure --prefix=DIR` to select a different installation prefix. Use
+`./configure --help` to list the available configuration options. C99 is the
+default language standard; callers may select another supported dialect through
+`CFLAGS`, for example `CFLAGS="-std=c17"`.
+
+Git checkouts require `sh autogen.sh` before `./configure`. Release source
+archives already include the generated Autotools files, including `configure`,
+so their users do not need to run `autogen.sh`.
+
+#### Debian or Ubuntu
 
 Install the build tools and compression-library development packages with:
 
 ```sh
 sudo apt install build-essential autoconf automake libtool \
-  zlib1g-dev libbz2-dev
+  zlib1g-dev libbz2-dev liblzma-dev
 ```
 
-### Fedora
+#### Fedora
 
 Install the compiler, Autotools, and compression-library development packages
 with:
 
 ```sh
 sudo dnf install gcc make autoconf automake libtool \
-  zlib-devel bzip2-devel
+  zlib-devel bzip2-devel xz-devel
 ```
 
-### openSUSE
+#### openSUSE
 
 Install the compiler, Autotools, and compression-library development packages
 with:
 
 ```sh
 sudo zypper install gcc make autoconf automake libtool \
-  zlib-devel libbz2-devel
+  zlib-devel libbz2-devel liblzma-devel
 ```
 
-### Arch Linux
+#### Arch Linux
 
 Install the base build tools and required libraries with:
 
 ```sh
 sudo pacman -S --needed base-devel autoconf automake libtool \
-  zlib bzip2
+  zlib bzip2 xz
 ```
 
-Use `./configure --prefix=DIR` to select a different installation prefix. Use
-`./configure --help` to list the available configuration options. C99 is the
-default language standard; callers may select another supported dialect through
-`CFLAGS`, for example `CFLAGS="-std=c17"`.
+### macOS (Apple toolchain with Autotools)
+
+libmpq builds natively with Apple Clang, the Apple linker, the macOS SDK,
+and the Apple-provided `/usr/bin/make`. GNU Autotools supplies the build frontend.
+Use either full Xcode or the standalone Command Line Tools for Xcode. If you
+do not need the Xcode IDE, install the standalone tools:
+
+```sh
+xcode-select --install
+```
+
+The supported SDK lacks the liblzma development headers. Install them through
+Homebrew and add only their include directory, keeping system library linking:
+
+```sh
+brew install xz
+export CPPFLAGS="-I$(brew --prefix xz)/include ${CPPFLAGS:-}"
+```
+
+Release source archives include the generated Autotools files and need no
+Homebrew bootstrap tools. With the headers available, configure, build, test,
+and optionally install:
+
+```sh
+./configure --prefix="${HOME}/.local"
+/usr/bin/make -j"$(sysctl -n hw.ncpu)"
+/usr/bin/make check
+/usr/bin/make install
+```
+
+For a Git checkout, first install the GNU build-generation tools through
+Homebrew and make GNU Libtool's commands available:
+
+```sh
+brew install autoconf automake libtool
+export PATH="$(brew --prefix libtool)/libexec/gnubin:${PATH}"
+```
+
+Then bootstrap and build libmpq with the Apple toolchain:
+
+```sh
+sh autogen.sh
+./configure --prefix="${HOME}/.local"
+/usr/bin/make -j"$(sysctl -n hw.ncpu)"
+/usr/bin/make check
+/usr/bin/make install
+```
+
+Homebrew places the GNU Libtool commands in `libexec/gnubin` so they do not
+conflict with Apple's `/usr/bin/libtool`. The `autogen.sh` script requires GNU
+Libtool's `libtoolize` command.
+
+CI also installs `pkg-config` through Homebrew to validate the native SDK
+metadata and external consumers. It is not required by `autogen.sh` or the
+normal source configuration.
+
+The supported macOS CI configuration uses Homebrew's liblzma headers and links
+zlib, bzip2, and liblzma from its macOS SDK/system environment. No Homebrew
+library directory is added to the linker search path. The official macOS SDK
+archives do not bundle private copies of these codec libraries.
+
+### Windows
+
+The native C library supports MSVC x64 and ARM64 through CMake. Native CI
+runners build both architectures, run the C regression suite through CTest,
+and compile and execute installed consumers. Autotools remains the POSIX and
+MinGW-w64 build frontend, including native aarch64 via MSYS2 CLANGARM64.
+Windows language bindings are not included in this support.
+
+#### MSVC (CMake)
+
+Install CMake, Visual Studio's C++ build tools, and vcpkg. From a Developer
+PowerShell, install the native dependencies and build (x64 example):
+
+```powershell
+vcpkg install zlib:x64-windows bzip2:x64-windows liblzma:x64-windows
+cmake -S . -B build -A x64 -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --build build --config Release --parallel
+ctest --test-dir build -C Release --output-on-failure
+```
+
+For a native ARM64 build, use an ARM64 developer environment, replace
+`x64-windows` with `arm64-windows`, and use `-A ARM64`.
+
+Consumers include `libmpq/mpq.h` and link the DLL import library or static
+library, without special preprocessor definitions. Use `-DBUILD_SHARED_LIBS=OFF`
+for a static CMake build. Static consumers also link the codec and Windows
+system libraries.
+
+#### MinGW-w64 (Autotools)
+
+MinGW-w64 uses Autotools on native Windows runners for MINGW64 x86_64 and
+CLANGARM64 aarch64. For example, in an MSYS2 MINGW64 shell:
+
+```sh
+sh autogen.sh
+./configure --host=x86_64-w64-mingw32 --enable-shared --disable-static
+make
+make check
+make install
+```
+
+For ARM64, use an MSYS2 CLANGARM64 shell on Windows ARM64. Install
+`mingw-w64-clang-aarch64-clang`, `mingw-w64-clang-aarch64-llvm-tools`,
+`mingw-w64-clang-aarch64-zlib`, `mingw-w64-clang-aarch64-bzip2`,
+`mingw-w64-clang-aarch64-xz`, and `mingw-w64-clang-aarch64-pkgconf`, plus
+`autoconf automake libtool make diffutils`. Use `CC=clang` and
+`--host=aarch64-w64-mingw32`; compiler and binary tools must resolve from
+`/clangarm64/bin`. This uses native Clang/LLVM, not a cross compiler.
+
+Provide MinGW-built zlib, bzip2, and lzma libraries, not Unix libraries. For
+cross-builds, set dependency include/library search paths as needed and run
+`make check LOG_COMPILER=wine` with the DLL directories in `WINEPATH`.
+For a static-only build use `--disable-shared --enable-static`; the generated
+`libmpq-config --cflags --libs` supplies the include path and required libraries.
+
+#### Filesystem behavior
+
+Public filesystem paths are UTF-8 on Windows, converted to UTF-16 for native
+filesystem calls. Both slash styles and absolute or relative paths are
+accepted. Archive sources always use binary mode. Clone identity checks use
+the opened file's volume and file ID.
+
+MPQE creation retains the destination directory independently of cwd changes.
+Windows temporary files use exclusive creation, system-generated randomness,
+and non-inheritable handles. Plaintext has a protected owner-only ACL; encrypted
+output inherits the destination directory's normal ACL. Publication replaces
+the destination in one same-directory operation, only after finalization and
+plaintext cleanup. Handled failures attempt cleanup; crashes can leave temps.
 
 ## Usage
 
-The public header is installed as `libmpq/mpq.h`. The following example opens
-an archive, reads the first file into memory, and reports library errors:
-
-```c
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <libmpq/mpq.h>
-
-int
-main(int argc, char **argv)
-{
-    mpq_archive_s *archive = NULL;
-    libmpq__off_t file_size = 0;
-    uint8_t *file_data = NULL;
-    int32_t result;
-
-    if (argc != 2) {
-        fprintf(stderr, "usage: %s ARCHIVE\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-
-    result = libmpq__archive_open(&archive, argv[1], -1);
-    if (result < 0) {
-        fprintf(stderr, "archive_open: %s\n", libmpq__strerror(result));
-        return EXIT_FAILURE;
-    }
-
-    result = libmpq__file_size_unpacked(archive, 0, &file_size);
-    if (result < 0) {
-        fprintf(stderr, "file_size_unpacked: %s\n", libmpq__strerror(result));
-        libmpq__archive_close(archive);
-        return EXIT_FAILURE;
-    }
-
-    file_data = malloc((size_t)file_size);
-    if (file_data == NULL && file_size != 0) {
-        libmpq__archive_close(archive);
-        return EXIT_FAILURE;
-    }
-
-    result = libmpq__file_read(archive, 0, file_data, file_size, NULL);
-    if (result < 0) {
-        fprintf(stderr, "file_read: %s\n", libmpq__strerror(result));
-        free(file_data);
-        libmpq__archive_close(archive);
-        return EXIT_FAILURE;
-    }
-
-    free(file_data);
-    libmpq__archive_close(archive);
-    return EXIT_SUCCESS;
-}
-```
-
-If `pkg-config` is available, compile the example with the installed header
-and shared library:
+Include `<libmpq/mpq.h>` and link against libmpq. With `pkg-config`, compile
+an application using:
 
 ```sh
 cc -std=c99 -Wall -Wextra mpq-example.c -o mpq-example \
   $(pkg-config --cflags --libs libmpq)
 ```
 
-The legacy `libmpq-config` helper is also available:
-
-```sh
-cc -std=c99 -Wall -Wextra mpq-example.c -o mpq-example \
-  $(libmpq-config --cflags) $(libmpq-config --libs)
-```
+See the [native API example](DEVELOPER.md#native-api-example) for opening an
+archive, reading a file, and handling errors. Installed API documentation is
+available through `man 3 libmpq`.
 
 ## Native C SDK packages
 
-The native binary release, `libmpq-native-X.Y.Z.zip`, contains relocatable
-x86_64 Linux SDK archives:
+Individual release downloads provide prebuilt native C SDKs for Linux glibc
+and musl (both x86_64 and aarch64), macOS arm64 and x86_64, Windows MSVC
+x64 and ARM64, and Windows MinGW-w64 x86_64 and aarch64 (MSYS2 CLANGARM64).
+Each SDK includes public headers, a shared library, platform-appropriate
+import libraries or development
+metadata, licenses, and documentation. The macOS SDKs are relocatable,
+architecture-specific `.tar.gz` development archives, not application installers.
 
-* `libmpq-X.Y.Z-linux-glibc-x86_64.tar.gz` for glibc 2.17 and later.
-* `libmpq-X.Y.Z-linux-musl-x86_64.tar.gz` for musl 1.2 and later.
-
-The SDKs use the host's zlib and bzip2 shared libraries; those runtime and
-development dependencies are not bundled. Each archive extracts a single
-package directory containing the executable helper, public headers, shared
-library, pkg-config metadata, manual pages, licenses, README, and BUILDINFO.
-
-Extract the selected SDK anywhere convenient:
-
-```sh
-export LIBMPQ_ROOT="$PWD/libmpq-X.Y.Z"
-export PATH="${LIBMPQ_ROOT}/bin:${PATH}"
-export PKG_CONFIG_PATH="${LIBMPQ_ROOT}/lib/pkgconfig"
-export LD_LIBRARY_PATH="${LIBMPQ_ROOT}/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
-export MANPATH="${LIBMPQ_ROOT}/share/man${MANPATH:+:${MANPATH}}"
-
-pkg-config --cflags --libs libmpq
-libmpq-config --prefix="${LIBMPQ_ROOT}" --cflags
-libmpq-config --prefix="${LIBMPQ_ROOT}" --libs
-man 1 libmpq-config
-man 3 libmpq
-```
+Linux and macOS SDKs use their relevant system runtime and codec dependencies.
+Windows SDK ZIPs bundle the required non-system runtime DLLs under `bin/`;
+choose the MSVC or MinGW-w64 package to match your compiler. No special
+libmpq consumer preprocessor define is required. See the
+[SDK setup instructions](DEVELOPER.md#native-c-sdk-packages) and
+[release package summary](RELEASING.md#release-package-summary).
 
 ## Bindings
 
-The source tree contains bindings for the public C API. Each binding has its
-own package metadata, tests, and distribution workflow.
+Optional language bindings are distributed through their native ecosystems:
 
-### Python
+* [Python](bindings/python/README.md): Python 3.11+ ctypes bindings on PyPI.
+* [D](bindings/d/README.md): high-level wrappers and native declarations on DUB.
+* [Java](bindings/java/README.md): JDK 22+ FFM bindings on Maven Central.
 
-The Python binding is a Python 3.11+ `ctypes` package. Its implementation is
-in `bindings/python/mpq.py`, package metadata is in
-`bindings/python/pyproject.toml`, and tests are in `bindings/python/tests`.
-Autotools does not detect or install the Python package; use the PEP 517
-backend and pip/PyPI instead.
-
-For development from a source checkout, build the native library and run the
-tests with an explicit native-library override:
-
-```sh
-sh autogen.sh
-./configure
-make
-LIBMPQ_LIBRARY="$PWD/src/.libs/libmpq.so" \
-    python -m pytest bindings/python/tests
-```
-
-The release wheels are built with cibuildwheel and repaired for
-`manylinux_2_17_x86_64` and `musllinux_1_2_x86_64`. They contain a private
-native library at `mpq_libs/libmpq.so`, loaded directly by package path; the
-wheel does not require a separately installed libmpq library. This private
-library intentionally has no ELF SONAME. The Python release archive,
-`libmpq-python-X.Y.Z.zip`, contains the sdist and all generated wheels.
-
-See [`bindings/python/README.md`](bindings/python/README.md) for API examples,
-package installation, native-library behavior, and test instructions.
-
-### D
-
-The D binding is a DUB package named `libmpq`. The manifest is
-[`dub.sdl`](dub.sdl), and the modules are under
-`bindings/d/source/libmpq`. Import the high-level API with:
-
-```d
-import libmpq.mpq;
-```
-
-Autotools includes the D sources in source distributions but does not install
-them. DUB/code.dlang.org owns D package installation. From a checkout, build
-the native library and run the tests with DMD or LDC:
-
-```sh
-sh autogen.sh
-./configure
-make
-LIBRARY_PATH="$PWD/src/.libs" LD_LIBRARY_PATH="$PWD/src/.libs" \
-    dub run --config=tests --compiler=dmd
-LIBRARY_PATH="$PWD/src/.libs" LD_LIBRARY_PATH="$PWD/src/.libs" \
-    dub run --config=tests --compiler=ldc2
-```
-
-The D release archive is `libmpq-d-X.Y.Z.zip`. It contains the D source
-package and compiler-specific binary packages for DMD and LDC on Linux
-x86_64, with separate glibc and musl variants. Binary packages include the
-precompiled D archive and the complete `libmpq.so` SONAME chain. Their bundled
-library directory is supplied automatically at link time; runtime loading may
-still require `LD_LIBRARY_PATH`. `BUILDINFO` records compiler and native build
-metadata.
-
-See [`bindings/d/README.md`](bindings/d/README.md) for DUB usage, compiler
-requirements, binary package details, and examples.
-
-### Java
-
-The Java binding is a Maven project under `bindings/java` and requires JDK 22
-or newer. It uses the Java Foreign Function and Memory API and exposes both
-the low-level `org.libmpq.ffi.LibmpqNative` mapping and higher-level
-`AutoCloseable` classes such as `Archive` and `MpqFileWriter`.
-
-The Java JAR is platform-independent and does not contain `libmpq.so`. Supply
-the native library explicitly:
-
-```sh
-mvn -B -f bindings/java/pom.xml test \
-    -Dorg.libmpq.library="$PWD/src/.libs/libmpq.so" \
-    -Dlibmpq.sourceDir="$PWD"
-```
-
-The binding also supports the normal system loader path:
-
-```sh
-LD_LIBRARY_PATH="$PWD/src/.libs" \
-    mvn -B -f bindings/java/pom.xml test \
-    -Dorg.libmpq.test.loaderPath=true \
-    -Dlibmpq.sourceDir="$PWD"
-```
-
-The Java release archive, `libmpq-java-X.Y.Z.zip`, contains the runtime,
-sources, and Javadoc JARs, together with `COPYING`, `COPYING.LESSER`, and the
-Java binding README. The release workflow validates the packaged runtime JAR
-with an external consumer before uploading it.
-
-See [`bindings/java/README.md`](bindings/java/README.md) and
-[`bindings/java/pom.xml`](bindings/java/pom.xml) for Maven configuration,
-project metadata, and API information.
-
-### Release package summary
-
-The top-level release workflow publishes outer archives for the language
-bindings and the native binary SDK. These archives are included in the signed
-global `SHA256SUMS`:
-
-| Package | Release archive | Contents |
-| --- | --- | --- |
-| Native C SDK | `libmpq-native-X.Y.Z.zip` | glibc and musl x86_64 SDK packages |
-| Python | `libmpq-python-X.Y.Z.zip` | Python sdist and all wheels |
-| Java | `libmpq-java-X.Y.Z.zip` | Runtime, sources, Javadoc, licenses, and README |
-| D | `libmpq-d-X.Y.Z.zip` | D source and compiler/platform packages |
-
-The native source archives remain separate top-level assets:
-`libmpq-X.Y.Z.tar.gz` and `libmpq-X.Y.Z.tar.bz2`. The release workflow builds,
-tests, collects, and validates all packages before generating the single
-global checksum manifest and its GPG signature.
-
-### Registry publication dispatch
-
-Registry workflows are separate from the signed GitHub Release workflow and
-are dispatched manually. Test Python packaging or Maven Central credentials
-from a branch:
-
-```sh
-gh workflow run publish-python.yml --ref <branch> -f target=testpypi
-gh workflow run publish-java.yml --ref <branch> -f mode=validate
-gh workflow run publish-d.yml --ref <branch> -f mode=validate
-```
-
-For a production registry release, select the exact tag ref:
-
-```sh
-gh workflow run publish-python.yml --ref vX.Y.Z -f target=pypi
-gh workflow run publish-java.yml --ref vX.Y.Z -f mode=release
-gh workflow run publish-d.yml --ref vX.Y.Z -f mode=release
-```
-
-Both Maven modes create a real Central Portal deployment and wait for
-`VALIDATED`; there is no sandbox. A `validate` deployment is for testing and
-must be dropped in the Central Portal. A `release` deployment remains
-USER_MANAGED until a maintainer manually chooses Publish or Drop.
-
-The Python publishing workflow reuses the same wheel, source-distribution, and
-metadata-validation pipeline as the signed GitHub Release. Likewise, Java
-release packaging and Maven Central validation share one package build and
-consumer-validation script.
-
-D `validate` may run from a branch or tag and validates the complete D release
-package set: source, DMD/glibc, DMD/musl, LDC/glibc, and LDC/musl. It performs
-no registry activity. D `release` requires an exact `v*` tag where the tag,
-native project, and DUB versions agree; code.dlang.org independently discovers
-that tag, and the workflow waits until the exact package version appears. It
-does not upload anything to code.dlang.org. Both modes reuse the canonical D
-package pipeline used by the signed GitHub Release.
+Autotools does not install the bindings. See each binding's README for usage
+and installation, or the [developer guide](DEVELOPER.md#binding-development)
+for local builds and tests. See the [release guide](RELEASING.md) for packaging.
 
 ## Documentation
 
@@ -392,16 +351,23 @@ The documentation includes manual pages for all available public API
 functions, together with a helper for retrieving the compiler and linker flags
 required to use libmpq.
 
-For an implementation-oriented overview of MPQ v1 through v4 headers, tables,
-encryption, sectors, and compression, see [MPQ format guide](MPQ.md).
+See the [developer guide](DEVELOPER.md) for API integration and the
+[release guide](RELEASING.md) for release workflows. For an
+implementation-oriented overview of MPQ v1 through v4
+headers, tables, encryption, sectors, and compression, see the
+[MPQ format guide](MPQ.md).
 
 ## Limitations
 
 * Archive creation is currently limited to seekable MPQ v1 and v2 archives.
   MPQ v3/v4, HET/BET tables, and related format extensions are not supported.
-* Sparse and LZMA compression, attributes, signatures, checksums, patch
-  metadata, and StormLib-specific key modes are not supported by the writer.
-* Windows support is not currently tested or documented by the Autotools build.
+* Encrypted random-access writing is not supported. MPQE modification uses
+  transactional decoding and re-encryption instead.
+* MPQE creation and updates use private plaintext staging files. Cleanup is
+  best effort, so abnormal process or system termination may leave one behind.
+
+See [MPQ.md](MPQ.md) for MPQE signatures and patch namespace format behavior,
+and [DEVELOPER.md](DEVELOPER.md) for authentication and prefix-discovery policy.
 
 ## Contributing
 

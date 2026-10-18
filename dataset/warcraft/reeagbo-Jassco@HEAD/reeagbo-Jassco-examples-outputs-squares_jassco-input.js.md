@@ -1,0 +1,22 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/reeagbo/Jassco"
+source_path: "examples/outputs/squares_jassco/input.js"
+ref: HEAD
+---
+
+﻿// jassco: include("io.asc")
+// jassco: include("math.asc")
+// jassco: include("graph.asc")
+console.log ("Graph Tests")
+var num1=0
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
+
+for (num1=0; num1<=50; num1+=5) {
+ctx.moveTo(128-num1, 96-num1)
+ctx.lineTo(128-num1, 96+num1)
+ctx.lineTo(128+num1, 96+num1)
+ctx.lineTo(128+num1, 96-num1)
+ctx.lineTo(128-num1, 96-num1)
+}

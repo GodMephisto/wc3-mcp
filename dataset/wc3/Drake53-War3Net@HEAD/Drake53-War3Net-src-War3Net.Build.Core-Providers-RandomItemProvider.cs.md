@@ -1,0 +1,35 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Providers/RandomItemProvider.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Providers
+{
+    public static class RandomItemProvider
+    {
+        // use -1 for 'any level'
+        public static int GetRandomItemTypeCode(ItemClass itemClass, int level)
+        {
+            return $"Y{(itemClass == ItemClass.Any ? 'Y' : (char)('i' + (int)itemClass))}I{(char)('0' + level)}".FromRawcode();
+        }
+
+        public static bool IsRandomItem(int code, out ItemClass itemClass, out int level)
+        {
+            var codeString = code.ToRawcode();
+            if (codeString[0] == 'Y' &&
+                codeString[2] == 'I' &&
+                (codeString[1] == 'Y' || Enum.IsDefined(typeof(ItemClass), (ItemClass)(codeString[1] - 'i'))))
+            {
+                itemClass = codeString[1] == 'Y' ? ItemClass.Any : (ItemClass)(codeString[1] - 'i');
+                level = codeString[3] - '0';
+                return true;
+            }
+
+            itemClass = default;
+            level = default;
+            return false;
+        }
+    }
+}

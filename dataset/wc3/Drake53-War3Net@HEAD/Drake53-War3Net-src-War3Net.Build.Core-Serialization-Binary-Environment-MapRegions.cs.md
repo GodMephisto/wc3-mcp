@@ -1,0 +1,53 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Environment/MapRegions.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Environment
+{
+    public sealed partial class MapRegions
+    {
+        internal MapRegions(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            FormatVersion = reader.ReadInt32<MapRegionsFormatVersion>();
+
+            nint regionCount = reader.ReadInt32();
+            if (regionCount == ProtectionSignature)
+            {
+                Protected = true;
+            }
+            else
+            {
+                for (nint i = 0; i < regionCount; i++)
+                {
+                    Regions.Add(reader.ReadRegion(FormatVersion));
+                }
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write((int)FormatVersion);
+
+            if (Protected)
+            {
+                writer.Write(ProtectionSignature);
+            }
+            else
+            {
+                writer.Write(Regions.Count);
+                foreach (var region in Regions)
+                {
+                    writer.Write(region, FormatVersion);
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,16 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/danielsreichenbach/mopaq"
+source_path: "rust-toolchain.toml"
+ref: HEAD
+---
+
+[toolchain]
+channel = "1.86"
+components = ["clippy", "llvm-tools-preview", "rustfmt", "rust-src"]
+targets = [
+  "aarch64-unknown-linux-gnu",
+  "x86_64-pc-windows-gnu",
+  "x86_64-unknown-linux-gnu",
+]
+profile = "minimal"

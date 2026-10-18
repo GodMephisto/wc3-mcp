@@ -1,0 +1,52 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/languageserver/WurstWorkspaceService.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio.languageserver;
+
+import de.peeeq.wurstio.languageserver.requests.SymbolInformationRequest;
+import de.peeeq.wurstscript.WLogger;
+import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.services.WorkspaceService;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ *
+ */
+public class WurstWorkspaceService implements WorkspaceService {
+
+    private final WurstLanguageServer server;
+
+    public WurstWorkspaceService(WurstLanguageServer server) {
+        this.server = server;
+    }
+
+    @Override
+    public CompletableFuture<Either<List<? extends SymbolInformation>, List<? extends WorkspaceSymbol>>> symbol(WorkspaceSymbolParams params) {
+        WLogger.info("symbol");
+        return server.worker().handle(new SymbolInformationRequest(params));
+    }
+
+    @Override
+    public void didChangeConfiguration(DidChangeConfigurationParams params) {
+        WLogger.trace("didChangeConfiguration");
+
+    }
+
+    @Override
+    public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
+        WLogger.trace("didChangeWatchedFiles");
+        server.worker().handleFileChanged(params);
+    }
+
+    @Override
+    public CompletableFuture<Object> executeCommand(ExecuteCommandParams params) {
+        return WurstCommands.execute(server, params);
+    }
+}

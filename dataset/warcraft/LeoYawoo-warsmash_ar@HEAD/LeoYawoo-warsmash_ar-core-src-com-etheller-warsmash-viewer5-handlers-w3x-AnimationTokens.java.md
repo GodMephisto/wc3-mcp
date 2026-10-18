@@ -1,0 +1,81 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/LeoYawoo/warsmash_ar"
+source_path: "core/src/com/etheller/warsmash/viewer5/handlers/w3x/AnimationTokens.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.viewer5.handlers.w3x;
+
+public class AnimationTokens {
+    public enum PrimaryTag {
+        ATTACK,
+        BIRTH,
+        //		CINEMATIC,
+        DEATH,
+        DECAY,
+        DISSIPATE,
+        MORPH,
+        PORTRAIT,
+        SLEEP,
+        //		SPELL,
+        STAND,
+        WALK
+    }
+
+    public enum SecondaryTag {
+        ALTERNATE,
+        ALTERNATEEX,
+        BONE,
+        CHAIN,
+        CHANNEL,
+        COMPLETE,
+        CRITICAL,
+        DEFEND,
+        DRAIN,
+        EATTREE,
+        FAST,
+        FILL,
+        FLAIL,
+        FLESH,
+        FIFTH,
+        FIRE,
+        FIRST,
+        FIVE,
+        FOUR,
+        FOURTH,
+        GOLD,
+        HIT,
+        LARGE,
+        LEFT,
+        LIGHT,
+        LOOPING,
+        LUMBER,
+        MEDIUM,
+        MODERATE,
+        OFF,
+        ONE,
+        PUKE,
+        READY,
+        RIGHT,
+        SECOND,
+        SEVERE,
+        SLAM,
+        SMALL,
+        SPIKED,
+        SPIN,
+        SPELL,
+        CINEMATIC,
+        SWIM,
+        TALK,
+        THIRD,
+        THREE,
+        THROW,
+        TWO,
+        TURN,
+        VICTORY,
+        WORK,
+        WOUNDED,
+        UPGRADE
+    }
+}

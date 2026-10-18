@@ -1,0 +1,13 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/WarsmashAndroidPort2022"
+source_path: "core/src/main/java/com/etheller/warsmash/networking/MultiplayerHack.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.networking;
+
+public class MultiplayerHack {
+	public static String MULTIPLAYER_HACK_SERVER_ADDR = null;
+	public static int LP_VAL = 0;
+}

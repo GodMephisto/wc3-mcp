@@ -7,7 +7,7 @@ ref: HEAD
 
 # verify
 
-Verify a target MPQ archive signature.
+Verify an MPQ archive signature.
 
 ## Verify an MPQ archive
 
@@ -27,8 +27,8 @@ $ echo $?
 
 ## Verify an MPQ archive and print the digital signature
 
-Check the digital signature of an MPQ archive, by verifying the signature in the archive and also printing the digital signature value in hexadecimal using the `-p` or `--print` argument.
+Check the digital signature of an MPQ archive, by verifying the signature in the archive and also printing the digital signature value in hexadecimal using the `-x` or `--print` argument.
 
 ```bash
-$ mpqcli verify -p wow-patch.mpq > signature
+$ mpqcli verify --print wow-patch.mpq > signature
 ```

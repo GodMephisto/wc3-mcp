@@ -156,3 +156,22 @@ if (BLP_BUILD_TESTS)
         target_compile_options(dds_codec_selftest PRIVATE /utf-8)
     endif()
 endif()
+
+# --- command line converter ---
+add_executable(blp_cli
+    src/cli/blp_cli.cpp
+    src/blp/blp_codec.cpp
+    src/core/blp_api.cpp
+    src/core/dds_codec.cpp
+    src/core/image_io.cpp
+    src/core/utils.cpp
+)
+target_include_directories(blp_cli PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb
+    ${TURBOJPEG_DIR}/include
+)
+if (MSVC)
+    target_compile_options(blp_cli PRIVATE /utf-8)
+endif()
+target_link_libraries(blp_cli PRIVATE ${TURBOJPEG_LIB} shell32)

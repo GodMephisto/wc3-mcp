@@ -1,0 +1,159 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/sgraf812/BananaMpq"
+source_path: "BananaMpq/BananaMpq.csproj"
+ref: HEAD
+---
+
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{082737BB-07C5-4129-9BCF-1B1193591FB7}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BananaMpq</RootNamespace>
+    <AssemblyName>BananaMpq</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="SharpDX">
+      <HintPath>..\packages\SharpDX.2.4.2\lib\net40\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="ArrayUtil.cs" />
+    <Compile Include="Geometry\Builders\AdtGeometryBuilder.cs" />
+    <Compile Include="Geometry\Builders\ChunkBuilder.cs" />
+    <Compile Include="Geometry\Builders\DoodadBuilder.cs" />
+    <Compile Include="Geometry\Builders\ModelBuilder.cs" />
+    <Compile Include="Geometry\Builders\SquareMeshBuilder.cs" />
+    <Compile Include="Geometry\Builders\WmoBuilder.cs" />
+    <Compile Include="Geometry\Builders\WmoBuildResults.cs" />
+    <Compile Include="Geometry\BVHNode.cs" />
+    <Compile Include="Geometry\BVHTree.cs" />
+    <Compile Include="Geometry\IBVHNode.cs" />
+    <Compile Include="Geometry\IBVHTree.cs" />
+    <Compile Include="Geometry\IFileReader.cs" />
+    <Compile Include="Geometry\FilePool.cs" />
+    <Compile Include="Geometry\IndexedTriangle.cs" />
+    <Compile Include="Geometry\IndexedTriangleWithNormal.cs" />
+    <Compile Include="Geometry\MaterialFlags.cs" />
+    <Compile Include="Geometry\Scene.cs" />
+    <Compile Include="Geometry\SceneObject.cs" />
+    <Compile Include="Geometry\TriangleMesh.cs" />
+    <Compile Include="Geometry\TriangleWithNormal.cs" />
+    <Compile Include="Layer\Adt.cs" />
+    <Compile Include="Layer\AdtRelated\AdtVersionException.cs" />
+    <Compile Include="Layer\AdtRelated\ChunkLiquid.cs" />
+    <Compile Include="Layer\AdtRelated\MapChunk.cs" />
+    <Compile Include="Layer\AdtRelated\MapChunkCountException.cs" />
+    <Compile Include="Layer\AdtRelated\McvtChunk.cs" />
+    <Compile Include="Layer\AdtRelated\MddfChunk.cs" />
+    <Compile Include="Layer\AdtRelated\Mh2oChunk.cs" />
+    <Compile Include="Layer\AdtRelated\RootModelDefinition.cs" />
+    <Compile Include="Layer\AdtRelated\ModfChunk.cs" />
+    <Compile Include="Layer\AdtRelated\SMLiquidChunk.cs" />
+    <Compile Include="Layer\AdtRelated\SMLiquidInstance.cs" />
+    <Compile Include="Layer\Chunks\Chunk.cs" />
+    <Compile Include="Layer\Chunks\ChunkHeader.cs" />
+    <Compile Include="Layer\Chunks\ChunkMagicException.cs" />
+    <Compile Include="Layer\Chunks\ChunkValidationException.cs" />
+    <Compile Include="Layer\Chunks\IModelDefinition.cs" />
+    <Compile Include="Layer\Chunks\ModelDefinitionChunk.cs" />
+    <Compile Include="Layer\Chunks\MverChunk.cs" />
+    <Compile Include="Layer\Chunks\OffsetChunk.cs" />
+    <Compile Include="Layer\Chunks\StringReference.cs" />
+    <Compile Include="Layer\Chunks\StringReferenceChunk.cs" />
+    <Compile Include="Layer\M2Bounds.cs" />
+    <Compile Include="Layer\ModelDefinition.cs" />
+    <Compile Include="Layer\WdtRelated\MainChunk.cs" />
+    <Compile Include="Layer\WdtRelated\MphdChunk.cs" />
+    <Compile Include="Layer\Wmo.cs" />
+    <Compile Include="Layer\WmoRelated\DoodadSet.cs" />
+    <Compile Include="Layer\WmoRelated\LiquidTypeClass.cs" />
+    <Compile Include="Layer\WmoRelated\MliqChunk.cs" />
+    <Compile Include="Layer\WmoRelated\ModdChunk.cs" />
+    <Compile Include="Layer\WmoRelated\ModsChunk.cs" />
+    <Compile Include="Layer\WmoRelated\MogpChunk.cs" />
+    <Compile Include="Layer\WmoRelated\MohdChunk.cs" />
+    <Compile Include="Layer\WmoRelated\MopyChunk.cs" />
+    <Compile Include="Layer\WmoRelated\MoviChunk.cs" />
+    <Compile Include="Layer\WmoRelated\MovtChunk.cs" />
+    <Compile Include="Layer\WmoRelated\SubDoodadModelDefinition.cs" />
+    <Compile Include="Layer\WmoRelated\WmoGroup.cs" />
+    <Compile Include="Layer\WmoRelated\WmoVersionException.cs" />
+    <Compile Include="MathUtil.cs" />
+    <Compile Include="MiscUtils.cs" />
+    <Compile Include="MpqFilePaths.cs" />
+    <Compile Include="Layer\Wdt.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Visualization\ChunkCollector.cs" />
+    <Compile Include="Visualization\IChunkCollector.cs" />
+    <Compile Include="Visualization\IHasVisualizableProperties.cs" />
+    <Compile Include="WowContinent.cs" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,45 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Blimba/PyWC3"
+source_path: "PyWC3/PyWC3/doo_format.json"
+ref: HEAD
+---
+
+{
+    "header": "<i",
+    "version": "<i",
+    "subv": "<i",
+    "num_doo": "<i",
+    "doo": {
+        "id": "4s",
+        "var": "<i",
+        "x": "<f",
+        "y": "<f",
+        "z": "<f",
+        "angle": "<f",
+        "sx": "<f",
+        "sy": "<f",
+        "sz": "<f",
+        "idagain": "4s",
+        "flags": "b",
+        "life": "b",
+        "item_table_pointer": "4s",
+        "num_itemsets": "<i",
+        "itemsets": {
+            "num_items": "<i",
+            "items": {
+                "id": "4s",
+                "chance": "<i"
+            }
+        },
+        "we_id": "<i"
+    },
+    "terrain_format_version": "<i",
+    "num_cliff": "<i",
+    "cliff": {
+        "id": "4s",
+        "var": "<i",
+        "x": "<i",
+        "y": "<i"
+    }
+}

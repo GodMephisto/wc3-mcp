@@ -1,0 +1,64 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "Directory.Packages.props"
+ref: HEAD
+---
+
+<Project>
+	<PropertyGroup>
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+		<PackageVersion Include="DiffPlex" Version="1.7.0" />
+		<PackageVersion Include="JpegLibrary" Version="0.3.30" />
+		<PackageVersion Include="MessagePack" Version="2.2.60" />
+		<PackageVersion Include="MessagePackAnalyzer" Version="2.2.60" />
+		<PackageVersion Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.0.0" />
+		<PackageVersion Include="MSTest.TestAdapter" Version="2.2.10" />
+		<PackageVersion Include="MSTest.TestFramework" Version="2.2.10" />
+		<PackageVersion Include="NAudio" Version="1.10.0" />
+		<PackageVersion Include="NLua" Version="1.4.32" />
+		<PackageVersion Include="OptimizedPriorityQueue" Version="5.0.0" />
+		<PackageVersion Include="Pfim" Version="0.11.1" />
+		<PackageVersion Include="Pidgin" Version="3.1.0" />
+		<PackageVersion Include="Portable.BouncyCastle" Version="1.9.0" />
+		<PackageVersion Include="Serilog.Sinks.Console" Version="3.1.1" />
+		<PackageVersion Include="Serilog.Sinks.File" Version="4.1.0" />
+		<PackageVersion Include="SharpZipLib" Version="1.4.2" />
+		<PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
+		<PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
+		<PackageVersion Include="System.Drawing.Common" Version="6.0.0" />
+		<PackageVersion Include="System.IO.Hashing" Version="8.0.0" />
+		<PackageVersion Include="System.Text.Json" Version="8.0.4" />
+		<PackageVersion Include="Veldrid" Version="4.8.0" />
+		<PackageVersion Include="Veldrid.ImGui" Version="5.72.0" />
+		<PackageVersion Include="Veldrid.SPIRV" Version="1.0.13" />
+		<PackageVersion Include="Veldrid.StartupUtilities" Version="4.8.0" />
+		<PackageVersion Include="Veldrid.Utilities" Version="4.8.0" />
+		<PackageVersion Include="War3Api.Object" Version="1.31.1-rc.11" />
+		<PackageVersion Include="War3Net.Build" Version="6.1.2" />
+		<PackageVersion Include="War3Net.Build.Core" Version="6.1.2" />
+		<PackageVersion Include="War3Net.CodeAnalysis" Version="6.0.2" />
+		<PackageVersion Include="War3Net.CodeAnalysis.Decompilers" Version="6.1.2" />
+		<PackageVersion Include="War3Net.CodeAnalysis.Jass" Version="6.0.2" />
+		<PackageVersion Include="War3Net.CodeAnalysis.Transpilers" Version="6.1.1" />
+		<PackageVersion Include="War3Net.CodeAnalysis.VJass" Version="0.1.0" />
+		<PackageVersion Include="War3Net.Common" Version="6.0.2" />
+		<PackageVersion Include="War3Net.CSharpLua" Version="2.0.4" />
+		<PackageVersion Include="War3Net.CSharpLua.CoreSystem" Version="2.0.3" />
+		<PackageVersion Include="War3Net.Documents.Sylk" Version="0.1.0" />
+		<PackageVersion Include="War3Net.Drawing.Blp" Version="6.0.2" />
+		<PackageVersion Include="War3Net.Drawing.Jpeg" Version="0.1.0" />
+		<PackageVersion Include="War3Net.Drawing.Tga" Version="0.1.0" />
+		<PackageVersion Include="War3Net.IO.Casc" Version="0.1.0" />
+		<PackageVersion Include="War3Net.IO.Compression" Version="6.0.2" />
+		<PackageVersion Include="War3Net.IO.Mpq" Version="6.0.3" />
+		<PackageVersion Include="War3Net.IO.Slk" Version="6.0.2" />
+		<PackageVersion Include="War3Net.Modeling" Version="0.1.0" />
+		<PackageVersion Include="War3Net.Modeling.Mdx" Version="0.1.0" />
+	</ItemGroup>
+</Project>

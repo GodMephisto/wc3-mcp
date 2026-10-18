@@ -22,3 +22,9 @@ scripts/minimize-fuzz-crash.sh fuzz-archive-open crash-* \
 
 Review the minimized input and its expected behavior before committing it.
 CI never commits untrusted fuzz inputs automatically.
+
+The corpus generator also seeds SPARSE decoding with a zero run, a clipped
+terminal literal, and an oversized declared length. It seeds LZMA decoding
+with malformed headers and LZMA writing with a v2 input. Writer seeds contain
+zero-rich data for SPARSE, SPARSE + zlib, and SPARSE + bzip2. Archive targets
+reuse the public v1/v2 MPQ and MPQE fixtures containing UTF-32LE text entries.

@@ -1,0 +1,43 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/LeoYawoo/warsmash_ar"
+source_path: "core/src/com/etheller/warsmash/viewer5/handlers/blp/BlpTexture.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.viewer5.handlers.blp;
+
+import com.etheller.warsmash.viewer5.ModelViewer;
+import com.etheller.warsmash.viewer5.PathSolver;
+import com.etheller.warsmash.viewer5.RawOpenGLTextureResource;
+import com.etheller.warsmash.viewer5.handlers.ResourceHandler;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+
+public class BlpTexture extends RawOpenGLTextureResource {
+
+    public BlpTexture(final ModelViewer viewer, final ResourceHandler handler, final String extension,
+                      final PathSolver pathSolver, final String fetchUrl) {
+        super(viewer, extension, pathSolver, fetchUrl, handler);
+    }
+
+    @Override
+    protected void lateLoad() {
+
+    }
+
+    @Override
+    protected void load(final InputStream src, final Object options) {
+        BufferedImage img;
+        try {
+            img = ImageIO.read(src);
+            update(img, true);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+}

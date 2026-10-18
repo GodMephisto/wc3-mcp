@@ -1,0 +1,37 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Kruithne/js-blp"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "name": "js-blp",
+  "version": "1.0.5",
+  "description": "BLP (Blizzard Texture File) Reader",
+  "main": "js-blp.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kruithne/js-blp.git"
+  },
+  "keywords": [
+    "blp",
+    "blizzard",
+    "texture",
+    "kruithne",
+    "wow",
+    "warcraft"
+  ],
+  "author": "Kruithne <kruithne@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Kruithne/js-blp/issues"
+  },
+  "homepage": "https://github.com/Kruithne/js-blp#readme",
+  "dependencies": {
+    "bufo": "^1.1.2"
+  }
+}

@@ -1,0 +1,130 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Widget/DoodadData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Widget
+{
+    public sealed partial class DoodadData : WidgetData
+    {
+        internal DoodadData(BinaryReader reader, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, out bool useNewFormat)
+        {
+            ReadFrom(reader, formatVersion, subVersion, out useNewFormat);
+        }
+
+        internal void ReadFrom(BinaryReader reader, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, out bool useNewFormat)
+        {
+            TypeId = reader.ReadInt32();
+            Variation = reader.ReadInt32();
+            Position = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+            Rotation = reader.ReadSingle();
+            Scale = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+
+            // Check if next byte is 'printable' (this also assumes that _flags byte is a low number).
+            useNewFormat = reader.PeekChar() >= 0x20;
+            SkinId = useNewFormat ? reader.ReadInt32() : TypeId;
+
+            if (formatVersion >= MapWidgetsFormatVersion.v12)
+            {
+                GroupId = reader.ReadUInt32();
+            }
+
+            if (formatVersion > MapWidgetsFormatVersion.v6)
+            {
+                State = reader.ReadByte<DoodadState>();
+            }
+
+            Life = reader.ReadByte();
+
+            if (formatVersion >= MapWidgetsFormatVersion.v8)
+            {
+                MapItemTableId = reader.ReadInt32();
+
+                nint droppedItemDataCount = reader.ReadInt32();
+                for (nint i = 0; i < droppedItemDataCount; i++)
+                {
+                    ItemTableSets.Add(reader.ReadRandomItemSet(formatVersion, subVersion, useNewFormat));
+                }
+            }
+
+            if (formatVersion >= MapWidgetsFormatVersion.v13)
+            {
+                Unk1 = reader.ReadInt32();
+            }
+
+            CreationNumber = reader.ReadInt32();
+
+            if (formatVersion >= MapWidgetsFormatVersion.v12)
+            {
+                Roll = reader.ReadSingle();
+                Pitch = reader.ReadSingle();
+                var lightCount = reader.ReadUInt32();
+                for (uint i = 0; i < lightCount; i++)
+                {
+                    DoodadLights.Add(reader.ReadMapDoodadLightData());
+                }
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            writer.Write(TypeId);
+            writer.Write(Variation);
+            writer.Write(Position.X);
+            writer.Write(Position.Y);
+            writer.Write(Position.Z);
+            writer.Write(Rotation);
+            writer.Write(Scale.X);
+            writer.Write(Scale.Y);
+            writer.Write(Scale.Z);
+
+            if (useNewFormat)
+            {
+                writer.Write(SkinId);
+            }
+
+            if (formatVersion >= MapWidgetsFormatVersion.v12)
+            {
+                writer.Write(GroupId);
+            }
+
+            if (formatVersion > MapWidgetsFormatVersion.v6)
+            {
+                writer.Write((byte)State);
+            }
+
+            writer.Write(Life);
+
+            if (formatVersion >= MapWidgetsFormatVersion.v8)
+            {
+                writer.Write(MapItemTableId);
+
+                writer.Write(ItemTableSets.Count);
+                foreach (var itemSet in ItemTableSets)
+                {
+                    writer.Write(itemSet, formatVersion, subVersion, useNewFormat);
+                }
+            }
+
+            if (formatVersion >= MapWidgetsFormatVersion.v13)
+            {
+                writer.Write(Unk1);
+            }
+
+            writer.Write(CreationNumber);
+
+            if (formatVersion >= MapWidgetsFormatVersion.v12)
+            {
+                writer.Write(Roll);
+                writer.Write(Pitch);
+                writer.Write(DoodadLights.Count);
+                foreach (var light in DoodadLights)
+                {
+                    writer.Write(light);
+                }
+            }
+        }
+    }
+}

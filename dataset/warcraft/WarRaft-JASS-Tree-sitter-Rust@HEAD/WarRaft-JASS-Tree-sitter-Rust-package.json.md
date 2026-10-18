@@ -1,0 +1,637 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/JASS-Tree-sitter-Rust"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "version": "0.0.42",
+  "license": "MIT",
+  "author": "WarRaft",
+  "publisher": "WarRaft",
+  "name": "jass-tree-sitter-rust",
+  "displayName": "JASS-Tree-sitter-Rust",
+  "contributors": [],
+  "description": "Tools for develop WarCraft III maps.",
+  "private": false,
+  "icon": "images/logo.png",
+  "pricing": "Free",
+  "keywords": [
+    "warcraft",
+    "ujapi"
+  ],
+  "engines": {
+    "vscode": "^1.111.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/WarRaft/JASS-Tree-sitter-Rust"
+  },
+  "bugs": {
+    "url": "https://github.com/WarRaft/JASS-Tree-sitter-Rust/issues"
+  },
+  "main": "./extension/extension.js",
+  "scripts": {
+    "publish": "vsce publish patch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/vscode": "^1.110.0",
+    "@vscode/vsce": "^3.9.0"
+  },
+  "configurationDefaults": {},
+  "contributes": {
+    "languages": [
+      {
+        "id": "bni",
+        "aliases": [
+          "Blizzard Notation Ini",
+          "BNI"
+        ],
+        "extensions": [
+          ".bni"
+        ],
+        "icon": {
+          "light": "./icons/bni.svg",
+          "dark": "./icons/bni.svg"
+        },
+        "configuration": "./syntaxes/bni.language-configuration.json"
+      },
+      {
+        "id": "blp",
+        "aliases": [
+          "BLP Image"
+        ],
+        "extensions": [
+          ".blp"
+        ],
+        "icon": {
+          "light": "./icons/blp.svg",
+          "dark": "./icons/blp.svg"
+        },
+        "configuration": "./syntaxes/blp.language-configuration.json"
+      },
+      {
+        "id": "jass",
+        "aliases": [
+          "JASS"
+        ],
+        "extensions": [
+          ".j",
+          ".pld",
+          ".ai"
+        ],
+        "icon": {
+          "light": "./icons/jass.svg",
+          "dark": "./icons/jass.svg"
+        },
+        "configuration": "./syntaxes/jass.language-configuration.json"
+      },
+      {
+        "id": "angelscript",
+        "aliases": [
+          "AngelScript",
+          "AS"
+        ],
+        "extensions": [
+          ".as"
+        ],
+        "icon": {
+          "light": "./icons/as.svg",
+          "dark": "./icons/as.svg"
+        },
+        "configuration": "./syntaxes/as.language-configuration.json"
+      },
+      {
+        "id": "doo",
+        "aliases": [
+          "DOO Placement",
+          "DOO"
+        ],
+        "extensions": [
+          ".doo"
+        ],
+        "icon": {
+          "light": "./icons/doo.svg",
+          "dark": "./icons/doo.svg"
+        }
+      },
+      {
+        "id": "w3e",
+        "aliases": [
+          "W3E Terrain",
+          "W3E"
+        ],
+        "extensions": [
+          ".w3e"
+        ],
+        "icon": {
+          "light": "./icons/w3e.svg",
+          "dark": "./icons/w3e.svg"
+        }
+      },
+      {
+        "id": "w3i",
+        "aliases": [
+          "W3I Map Info",
+          "W3I"
+        ],
+        "extensions": [
+          ".w3i"
+        ],
+        "icon": {
+          "light": "./icons/w3i.svg",
+          "dark": "./icons/w3i.svg"
+        }
+      },
+      {
+        "id": "w3r",
+        "aliases": [
+          "W3R Regions",
+          "W3R"
+        ],
+        "extensions": [
+          ".w3r"
+        ],
+        "icon": {
+          "light": "./icons/w3r.svg",
+          "dark": "./icons/w3r.svg"
+        }
+      },
+      {
+        "id": "w3x",
+        "aliases": [
+          "W3X Map Archive",
+          "W3X"
+        ],
+        "extensions": [
+          ".w3x"
+        ],
+        "icon": {
+          "light": "./icons/w3x.svg",
+          "dark": "./icons/w3x.svg"
+        }
+      },
+      {
+        "id": "w3m",
+        "aliases": [
+          "W3M Map Archive",
+          "W3M"
+        ],
+        "extensions": [
+          ".w3m"
+        ],
+        "icon": {
+          "light": "./icons/w3m.svg",
+          "dark": "./icons/w3m.svg"
+        }
+      },
+      {
+        "id": "w3n",
+        "aliases": [
+          "W3N Campaign Archive",
+          "W3N"
+        ],
+        "extensions": [
+          ".w3n"
+        ],
+        "icon": {
+          "light": "./icons/w3n.svg",
+          "dark": "./icons/w3n.svg"
+        }
+      },
+      {
+        "id": "mpq",
+        "aliases": [
+          "MPQ Archive",
+          "MPQ"
+        ],
+        "extensions": [
+          ".mpq"
+        ],
+        "icon": {
+          "light": "./icons/mpq.svg",
+          "dark": "./icons/mpq.svg"
+        }
+      },
+      {
+        "id": "wts",
+        "aliases": [
+          "WarCraft III Strings",
+          "WTS"
+        ],
+        "extensions": [
+          ".wts"
+        ],
+        "icon": {
+          "light": "./icons/wts.svg",
+          "dark": "./icons/wts.svg"
+        },
+        "configuration": "./syntaxes/wts.language-configuration.json"
+      },
+      {
+        "id": "slk",
+        "aliases": [
+          "SLK",
+          "SYLK"
+        ],
+        "extensions": [
+          ".slk"
+        ],
+        "icon": {
+          "light": "./icons/slk.svg",
+          "dark": "./icons/slk.svg"
+        },
+        "configuration": "./syntaxes/slk.language-configuration.json"
+      },
+      {
+        "id": "w3a",
+        "aliases": [
+          "W3A Ability Data",
+          "W3A"
+        ],
+        "extensions": [
+          ".w3a"
+        ],
+        "icon": {
+          "light": "./icons/w3a.svg",
+          "dark": "./icons/w3a.svg"
+        }
+      },
+      {
+        "id": "w3b",
+        "aliases": [
+          "W3B Destructable Data",
+          "W3B"
+        ],
+        "extensions": [
+          ".w3b"
+        ],
+        "icon": {
+          "light": "./icons/w3b.svg",
+          "dark": "./icons/w3b.svg"
+        }
+      },
+      {
+        "id": "w3d",
+        "aliases": [
+          "W3D Doodad Data",
+          "W3D"
+        ],
+        "extensions": [
+          ".w3d"
+        ],
+        "icon": {
+          "light": "./icons/w3d.svg",
+          "dark": "./icons/w3d.svg"
+        }
+      },
+      {
+        "id": "w3h",
+        "aliases": [
+          "W3H Buff Data",
+          "W3H"
+        ],
+        "extensions": [
+          ".w3h"
+        ],
+        "icon": {
+          "light": "./icons/w3h.svg",
+          "dark": "./icons/w3h.svg"
+        }
+      },
+      {
+        "id": "w3q",
+        "aliases": [
+          "W3Q Upgrade Data",
+          "W3Q"
+        ],
+        "extensions": [
+          ".w3q"
+        ],
+        "icon": {
+          "light": "./icons/w3q.svg",
+          "dark": "./icons/w3q.svg"
+        }
+      },
+      {
+        "id": "w3t",
+        "aliases": [
+          "W3T Item Data",
+          "W3T"
+        ],
+        "extensions": [
+          ".w3t"
+        ],
+        "icon": {
+          "light": "./icons/w3t.svg",
+          "dark": "./icons/w3t.svg"
+        }
+      },
+      {
+        "id": "w3u",
+        "aliases": [
+          "W3U Unit Data",
+          "W3U"
+        ],
+        "extensions": [
+          ".w3u"
+        ],
+        "icon": {
+          "light": "./icons/w3u.svg",
+          "dark": "./icons/w3u.svg"
+        }
+      },
+      {
+        "id": "mdx",
+        "aliases": [
+          "MDX Model",
+          "MDX"
+        ],
+        "extensions": [
+          ".mdx"
+        ],
+        "icon": {
+          "light": "./icons/mdx.svg",
+          "dark": "./icons/mdx.svg"
+        }
+      }
+    ],
+    "configurationDefaults": {
+      "[bni]": {
+        "editor.selectionHighlight": false
+      },
+      "[jass]": {
+        "editor.selectionHighlight": false
+      },
+      "[angelscript]": {
+        "editor.selectionHighlight": false
+      },
+      "[wts]": {
+        "editor.selectionHighlight": false
+      },
+      "[slk]": {
+        "editor.selectionHighlight": false
+      }
+    },
+    "taskDefinitions": [
+      {
+        "type": "jass-hook",
+        "required": [
+          "label"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Hook label (e.g. build-before, build-after)"
+          }
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "jass",
+        "scopeName": "source.jass",
+        "path": "./syntaxes/jass.tmLanguage.json"
+      },
+      {
+        "language": "angelscript",
+        "scopeName": "source.angelscript",
+        "path": "./syntaxes/as.tmLanguage.json"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "mdx.preview",
+        "displayName": "%customEditor.mdx.displayName%",
+        "selector": [
+          {
+            "filenamePattern": "*.mdx"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "blp.preview",
+        "displayName": "%customEditor.blp.displayName%",
+        "selector": [
+          {
+            "filenamePattern": "*.blp"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "doo.preview",
+        "displayName": "%customEditor.doo.displayName%",
+        "selector": [
+          {
+            "filenamePattern": "*.doo"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "w3i.preview",
+        "displayName": "%customEditor.w3i.displayName%",
+        "selector": [
+          {
+            "filenamePattern": "*.w3i"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "mapEditor",
+        "displayName": "%customEditor.w3e.displayName%",
+        "selector": [
+          {
+            "filenamePattern": "*.w3e"
+          },
+          {
+            "filenamePattern": "*.w3x"
+          },
+          {
+            "filenamePattern": "*.w3m"
+          },
+          {
+            "filenamePattern": "*.w3n"
+          },
+          {
+            "filenamePattern": "*.mpq"
+          }
+        ],
+        "priority": "default"
+      },
+      {
+        "viewType": "slk.preview",
+        "displayName": "%customEditor.slk.displayName%",
+        "selector": [
+          {
+            "filenamePattern": "*.slk"
+          }
+        ],
+        "priority": "option"
+      }
+    ],
+    "activationEvents": [
+      "onCustomEditor:mdx.preview",
+      "onCustomEditor:blp.preview",
+      "onCustomEditor:doo.preview",
+      "onCustomEditor:w3i.preview",
+      "onCustomEditor:mapEditor",
+      "onCustomEditor:slk.preview"
+    ],
+    "commands": [
+      {
+        "command": "importGraph.show",
+        "title": "%command.importGraph.show%",
+        "icon": "$(type-hierarchy)"
+      },
+      {
+        "command": "callGraph.show",
+        "title": "%command.callGraph.show%",
+        "icon": "$(call-outgoing)"
+      },
+      {
+        "command": "typeGraph.show",
+        "title": "%command.typeGraph.show%",
+        "icon": "$(symbol-class)"
+      },
+      {
+        "command": "exportTable.show",
+        "title": "%command.exportTable.show%",
+        "icon": "$(symbol-namespace)"
+      },
+      {
+        "command": "diagnosticSummary.show",
+        "title": "%command.diagnosticSummary.show%",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "rescan.execute",
+        "title": "%command.rescan.execute%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "build.execute",
+        "title": "%command.build.execute%",
+        "icon": "$(play)"
+      },
+      {
+        "command": "ujapi.download",
+        "title": "%command.ujapi.download%",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "mpq.browse",
+        "title": "%command.mpq.browse%",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "mpq.openFile",
+        "title": "%command.mpq.openFile%",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "mpq.extractHere",
+        "title": "%command.mpq.extractHere%",
+        "icon": "$(file-symlink-directory)"
+      },
+      {
+        "command": "mpq.extractTo",
+        "title": "%command.mpq.extractTo%",
+        "icon": "$(folder)"
+      },
+      {
+        "command": "jass.restartServer",
+        "title": "%command.jass.restartServer%",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "slk.openTable",
+        "title": "%command.slk.openTable%",
+        "icon": "$(table)"
+      },
+      {
+        "command": "slk.openText",
+        "title": "%command.slk.openText%",
+        "icon": "$(code)"
+      },
+      {
+        "command": "jass.toggleTrace",
+        "title": "JASS: Toggle Server Trace"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "mpq.browse",
+          "when": "resourceExtname =~ /\\.(w3[xmn]|mpq)$/i",
+          "group": "navigation"
+        },
+        {
+          "command": "mpq.extractHere",
+          "when": "resourceScheme == mpq",
+          "group": "7_modification"
+        },
+        {
+          "command": "mpq.extractTo",
+          "when": "resourceScheme == mpq",
+          "group": "7_modification"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "importGraph.show",
+          "when": "resourceLangId == jass || resourceLangId == angelscript",
+          "group": "navigation"
+        },
+        {
+          "command": "callGraph.show",
+          "when": "resourceLangId == jass || resourceLangId == angelscript",
+          "group": "navigation"
+        },
+        {
+          "command": "typeGraph.show",
+          "when": "resourceLangId == jass || resourceLangId == angelscript",
+          "group": "navigation"
+        },
+        {
+          "command": "exportTable.show",
+          "when": "resourceLangId == jass || resourceLangId == angelscript",
+          "group": "navigation"
+        },
+        {
+          "command": "diagnosticSummary.show",
+          "when": "resourceLangId == jass || resourceLangId == angelscript",
+          "group": "navigation"
+        },
+        {
+          "command": "rescan.execute",
+          "when": "resourceLangId == jass || resourceLangId == angelscript",
+          "group": "navigation"
+        },
+        {
+          "command": "build.execute",
+          "when": "resourceLangId == jass || resourceLangId == angelscript",
+          "group": "navigation"
+        },
+        {
+          "command": "slk.openTable",
+          "when": "resourceLangId == slk && activeCustomEditorId != slk.preview",
+          "group": "navigation"
+        },
+        {
+          "command": "slk.openText",
+          "when": "activeCustomEditorId == slk.preview",
+          "group": "navigation"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,48 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/nightknighto/Warcraft-3-Reforged-UI-Designer"
+source_path: "src/ts/Persistence/LoadDocument.ts"
+ref: HEAD
+---
+
+import { OpenDialogReturnValue, remote } from 'electron'
+import { readFile, promises } from 'original-fs'
+import { ICallableDivInstance } from '../ClassesAndFunctions/ICallableDivInstance'
+import Load from '../Commands/Implementation/Load'
+import { EditorController } from '../Editor/EditorController'
+import SaveContainer from './SaveContainer'
+import { ProjectTree } from '../Editor/ProjectTree'
+import { debugText } from '../ClassesAndFunctions/MiniFunctions'
+
+export default class LoadDocument implements ICallableDivInstance {
+    public load(filepath: string): void {
+        readFile(filepath, (err, data) => {
+            try {
+                if (err != null) {
+                    console.error('Failed opening file: ' + err.message)
+                } else if (data != null) {
+                    const loadData = new SaveContainer(data.toString())
+                    const command = new Load(loadData)
+                    command.action()
+                    debugText(`Loaded Project from ${filepath}`)
+                }
+            } catch (e) {
+                alert('Load: ' + e)
+            }
+        })
+    }
+
+    public run(): void {
+        const openParams = remote.dialog.showOpenDialog({
+            filters: [{ name: 'JSON', extensions: ['json'] }],
+            properties: ['openFile'],
+        })
+
+        openParams.then((openData: OpenDialogReturnValue) => {
+            if (openData.canceled) return
+            this.load(openData.filePaths[0])
+            ProjectTree.fileSavePath = openData.filePaths[0]
+            // Editor.GetDocumentEditor().changeStack.clear();
+        })
+    }
+}

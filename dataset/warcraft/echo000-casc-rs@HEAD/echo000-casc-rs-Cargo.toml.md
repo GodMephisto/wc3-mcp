@@ -1,0 +1,22 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/echo000/casc-rs"
+source_path: "Cargo.toml"
+ref: HEAD
+---
+
+[workspace]
+members = ["casc-rs", "examples/casc-viewer"]
+resolver = "2"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[patch.crates-io]
+iced = { git = "https://github.com/dtzxporter/iced", rev = "9329aa3fd34f70cda4eef678cc024eb845918f85" }

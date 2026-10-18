@@ -1,0 +1,28 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/echo000/casc-rs"
+source_path: "casc-rs/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "casc-rs"
+version = "0.1.8"
+edition = "2021"
+authors = ["echo000"]
+license = "GPL-3.0"
+description = "A Rust implementation of a Casc Storage Handler for Blizzard's CASC format."
+repository = "https://github.com/echo000/casc-rs"
+homepage = "https://github.com/echo000/casc-rs"
+documentation = "https://docs.rs/casc-rs"
+readme = "README.md"
+keywords = ["casc", "blizzard", "archive", "storage"]
+categories = ["filesystem", "parsing", "compression"]
+
+[dependencies]
+flate2 = { version = "1.1.2", default-features = false, features = [
+    "rust_backend",
+] }
+base64 = "0.22.1"
+byteorder = "1.5.0"
+hex = "0.4"

@@ -1,0 +1,63 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/annouwn/HiveWE"
+source_path: "vcpkg.json"
+ref: HEAD
+---
+
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "vcpkg-configuration": {
+    "overlay-ports": [
+      "overlay-ports"
+    ]
+  },
+  "name": "hivewe",
+  "version": "0.21.1",
+  "builtin-baseline": "188e85422b2a7713b46f33a2be6ce464db3c2bcd",
+  "dependencies": [
+    "abseil",
+    "bullet3",
+    "bzip2",
+    "casclib",
+    {
+      "name": "glad",
+      "default-features": false,
+      "features": [
+        "extensions",
+        "gl-api-46",
+        "loader"
+      ]
+    },
+    "glm",
+    "imgui",
+    "libjpeg-turbo",
+    {
+      "name": "mimalloc",
+      "features": [
+        "override"
+      ]
+    },
+    "nlohmann-json",
+    "outcome",
+    "qt-advanced-docking-system",
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "features": [
+        "gui",
+        "jpeg",
+        "opengl",
+        "png",
+        "widgets"
+      ]
+    },
+    "soil2",
+    "stormlib",
+    "tbb",
+    "unordered-dense",
+    "qscintilla",
+    "tracy",
+    "doctest"
+  ]
+}

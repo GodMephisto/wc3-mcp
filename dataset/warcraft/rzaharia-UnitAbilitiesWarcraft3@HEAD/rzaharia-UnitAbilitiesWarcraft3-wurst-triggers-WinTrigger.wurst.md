@@ -1,0 +1,32 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/rzaharia/UnitAbilitiesWarcraft3"
+source_path: "wurst/triggers/WinTrigger.wurst"
+ref: HEAD
+---
+
+package WinTrigger
+
+import InitUnits
+//import ClosureTimers
+
+//import 
+int currentHostileCount = INITUNITS_NUMBER_OF_HOSTILE_UNITS_TO_CREATE //when it reaches 0 you won
+int passiveUnits = INITUNITS_NUMBER_OF_PLAYER2_UNITS_TO_CREATE
+
+
+function checkWinAction()
+    if (currentHostileCount ==0)
+        print("You won!")
+    currentHostileCount -=1
+
+function checkLoseAction()
+    if (passiveUnits ==0)
+        print("you lost!")
+    passiveUnits -=1
+
+
+public function registerWinCondition()
+    CreateTrigger()..registerPlayerUnitEvent(players[PLAYER_NEUTRAL_AGGRESSIVE], EVENT_PLAYER_UNIT_DEATH,null)
+    ..addAction(function checkWinAction)
+    CreateTrigger()..registerPlayerUnitEvent(players[1], EVENT_PLAYER_UNIT_DEATH,null)..addAction(function checkLoseAction)

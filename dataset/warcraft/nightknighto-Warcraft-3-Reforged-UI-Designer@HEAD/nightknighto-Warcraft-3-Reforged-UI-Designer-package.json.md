@@ -1,0 +1,68 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/nightknighto/Warcraft-3-Reforged-UI-Designer"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+    "name": "wc3-ui-maker",
+    "version": "2.6.1",
+    "description": "A visual UI maker for warcraft 3 Reforged using graphical elements.",
+    "main": "./app/app.js",
+    "scripts": {
+        "delete-app": ".\\wipe_folder.bat \".\\app\\\"",
+        "delete-build": ".\\wipe_folder.bat \".\\build\\\"",
+        "compile-ts": "tsc",
+        "watch-ts": "tsc -w",
+        "update-layout": "xcopy /E /I /y \".\\src\\layout\\*\" \".\\app\\\"",
+        "update-styles": "xcopy /E /I /y \".\\src\\styles\\*\" \".\\app\\styles\"",
+        "update-js": "xcopy /E /I /y \".\\build\\*\" \".\\app\\\"",
+        "update-files": "xcopy /E /I /y \".\\files\\*\" \".\\app\\files\"",
+        "build": "npm run delete-app && npm run delete-build && npm run compile-ts && npm run update-layout && npm run update-styles && npm run update-js && npm run update-files",
+        "lint": "eslint -c .eslintrc --ext .ts ./src",
+        "run": "set ENV=DEV&& electron ./app/app.js",
+        "start": "set ENV=DEV&& npm run build && concurrently \"tsc -w\" \"npm run run\"",
+        "pack": "npm run build && electron-builder"
+    },
+    "author": "NightKnight",
+    "license": "CC0-1.0",
+    "build": {
+        "icon": "files/icon.png",
+        "appId": "org.Deadreyo.W3RUID",
+        "productName": "Reforged UI Designer",
+        "buildVersion": "2.6.1"
+    },
+    "devDependencies": {
+        "@types/dotenv": "^8.2.0",
+        "@typescript-eslint/eslint-plugin": "^3.4.0",
+        "@typescript-eslint/parser": "^3.4.0",
+        "concurrently": "^7.2.2",
+        "electron": "^9.4.3",
+        "electron-builder": "^22.11.9",
+        "eslint": "^7.3.1",
+        "typescript": "^4.5.5",
+        "typescript-lit-html-plugin": "^0.9.0"
+    },
+    "dependencies": {
+        "@material/textfield": "^10.0.0",
+        "@popperjs/core": "^2.9.3",
+        "@types/bootstrap": "^5.1.2",
+        "bootstrap": "^5.1.0",
+        "bootstrap-social": "^5.1.1",
+        "buffer-to-arraybuffer": "0.0.6",
+        "custom-electron-titlebar": "^3.2.6",
+        "del": "^6.0.0",
+        "dotenv": "^16.0.1",
+        "electron-canvas-to-buffer-fixed": "^2.0.0",
+        "electron-fetch": "^1.7.3",
+        "electron-reload": "^1.5.0",
+        "plain-tag": "^0.1.3",
+        "popper.js": "^1.16.1",
+        "queue": "^6.0.2",
+        "queue-typescript": "^1.0.1",
+        "tippy.js": "^6.3.2",
+        "ts-data.stack": "^1.0.6",
+        "webpack": "^5.11.1"
+    }
+}

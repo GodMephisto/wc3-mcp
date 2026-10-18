@@ -1,0 +1,24 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/stijnherfst/HiveWE"
+source_path: "overlay-ports/soil2/vcpkg.json"
+ref: HEAD
+---
+
+{
+  "name": "soil2",
+  "version": "1.3.0",
+  "description": "Simple OpenGL Image Library 2",
+  "homepage": "https://github.com/SpartanJ/SOIL2",
+  "license": "MIT-0",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

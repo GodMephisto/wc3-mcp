@@ -1,0 +1,37 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Ruk33/vrJASS"
+source_path: "src/main/java/com/ruke/vrjassc/translator/expression/MathExpression.java"
+ref: HEAD
+---
+
+package com.ruke.vrjassc.translator.expression;
+
+public class MathExpression extends Expression {
+
+	public static enum Operator {
+		MULT	{ public String toString() { return "*"; } },
+		DIV		{ public String toString() { return "/"; } },
+		PLUS	{ public String toString() { return "+"; } },
+		MINUS	{ public String toString() { return "-"; } },
+	};
+	
+	protected Expression a;
+	protected Operator operator;
+	protected Expression b;
+	
+	public MathExpression(Expression a, Operator operator, Expression b) {
+		this.a = a;
+		this.operator = operator;
+		this.b = b;
+		
+		this.a.setParent(this);
+		this.b.setParent(this);
+	}
+	
+	@Override
+	public String translate() {
+		return this.a.translate() + this.operator + this.b.translate();
+	}
+	
+}

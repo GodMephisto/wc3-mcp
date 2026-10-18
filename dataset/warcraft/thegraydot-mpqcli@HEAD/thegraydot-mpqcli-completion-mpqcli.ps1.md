@@ -1,0 +1,281 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/thegraydot/mpqcli"
+source_path: "completion/mpqcli.ps1"
+ref: HEAD
+---
+
+#Requires -Version 5.1
+<#
+.SYNOPSIS
+    PowerShell argument completer for the mpqcli tool.
+
+.DESCRIPTION
+    Provides tab/menu completion for mpqcli subcommands, options, and known
+    value sets (game profiles, locales, info/list properties). File-path
+    arguments fall back to PowerShell's native filesystem completion.
+
+.NOTES
+    Append it to your profile so it loads at startup:
+        mpqcli completion powershell >> $PROFILE
+
+    Works for any executable named 'mpqcli' or 'mpqcli.exe'.
+#>
+
+Register-ArgumentCompleter -Native -CommandName 'mpqcli', 'mpqcli.exe' -ScriptBlock {
+    param($wordToComplete, $commandAst, $cursorPosition)
+
+    # Static value sets (derived from mpqcli source)
+
+    $subcommands = [ordered]@{
+        'version'    = 'Prints program version'
+        'about'      = 'Prints program information'
+        'info'       = 'Prints info about an MPQ archive'
+        'create'     = 'Create an MPQ archive from files and directories'
+        'add'        = 'Add files to an existing MPQ archive'
+        'remove'     = 'Remove files from an existing MPQ archive'
+        'rename'     = 'Rename a file in an existing MPQ archive'
+        'list'       = 'List files from the MPQ archive'
+        'extract'    = 'Extract files from the MPQ archive'
+        'read'       = 'Read a file from an MPQ archive'
+        'verify'     = 'Verify the MPQ archive'
+        'compact'    = 'Compact the MPQ archive'
+        'completion' = 'Generate shell completion script'
+    }
+
+    $gameProfiles = @(
+        'generic',
+        'diablo1', 'diablo', 'd1',
+        'lordsofmagic', 'lomse',
+        'starcraft', 'starcraft1', 'sc', 'sc1',
+        'warcraft2', 'wc2', 'war2',
+        'diablo2', 'd2',
+        'warcraft3', 'wc3', 'war3',
+        'warcraft3-map', 'wc3-map', 'war3-map',
+        'wow1', 'wow-vanilla',
+        'wow2', 'wow-tbc',
+        'wow3', 'wow-wotlk',
+        'wow4', 'wow-cataclysm',
+        'wow5', 'wow-mop',
+        'starcraft2', 'sc2',
+        'diablo3', 'd3'
+    )
+
+    $locales = @(
+        'default',
+        'enUS', 'enGB', 'zhTW', 'zhCN', 'csCZ', 'deDE', 'esES', 'esMX',
+        'frFR', 'itIT', 'jaJP', 'koKR', 'nlNL', 'plPL', 'ptBR', 'ptPT', 'ruRU'
+    )
+
+    $infoProperties = @(
+        'format-version', 'header-offset', 'header-size', 'archive-size',
+        'file-count', 'max-files', 'signature-type'
+    )
+
+    $listProperties = @(
+        'hash-index', 'name-hash1', 'name-hash2', 'name-hash3', 'locale',
+        'file-index', 'byte-offset', 'file-time', 'file-size', 'compressed-size',
+        'flags', 'encryption-key', 'encryption-key-raw'
+    )
+
+    # Options available per subcommand. Each value maps the option token to a
+    # short help string, in the order the help text lists them
+    $optionSpec = @{
+        'info' = [ordered]@{
+            '-q'         = 'Print only a specific property value'
+            '--property' = 'Print only a specific property value'
+        }
+        'create' = [ordered]@{
+            '-p'              = 'Archive path for a single file, or prefix for a directory or several inputs'
+            '--path'          = 'Archive path for a single file, or prefix for a directory or several inputs'
+            '-s'              = 'Sign the MPQ archive'
+            '--sign'          = 'Sign the MPQ archive'
+            '-e'              = 'Locale to use for added files'
+            '--locale'        = 'Locale to use for added files'
+            '-g'              = 'Game profile for MPQ creation'
+            '--game'          = 'Game profile for MPQ creation'
+            '--format-version'= 'Override the MPQ archive format version (1-4)'
+            '--stream-flags'  = 'Override stream flags'
+            '--sector-size'   = 'Override sector size'
+            '--raw-chunk-size'= 'Override raw chunk size for MPQ v4'
+            '--file-flags1'   = 'Override file flags for (listfile)'
+            '--file-flags2'   = 'Override file flags for (attributes)'
+            '--file-flags3'   = 'Override file flags for (signature)'
+            '--attr-flags'    = 'Override attribute flags (CRC32, FILETIME, MD5)'
+            '--flags'             = 'Override MPQ file flags for added files'
+            '--compression'       = 'Override compression for first sector'
+            '--compression-next'  = 'Override compression for subsequent sectors'
+        }
+        'add' = [ordered]@{
+            '-p'          = 'Archive path for a single file, or prefix for a directory or several inputs'
+            '--path'      = 'Archive path for a single file, or prefix for a directory or several inputs'
+            '-w'          = 'Replace every file that already exists in the archive'
+            '--overwrite' = 'Replace every file that already exists in the archive'
+            '-u'          = 'Replace only files that changed'
+            '--update'    = 'Replace only files that changed'
+            '-e'          = 'Locale to use for added file'
+            '--locale'    = 'Locale to use for added file'
+            '-g'          = 'Game profile for compression rules'
+            '--game'      = 'Game profile for compression rules'
+            '--flags'             = 'Override MPQ file flags'
+            '--compression'       = 'Override compression for first sector'
+            '--compression-next'  = 'Override compression for subsequent sectors'
+        }
+        'remove' = [ordered]@{
+            '-e'       = 'Locale of file to remove'
+            '--locale' = 'Locale of file to remove'
+        }
+        'rename' = [ordered]@{
+            '-e'       = 'Locale of file to rename'
+            '--locale' = 'Locale of file to rename'
+        }
+        'list' = [ordered]@{
+            '-l'         = 'File listing content of an MPQ archive'
+            '--listfile' = 'File listing content of an MPQ archive'
+            '-d'         = 'File listing with additional columns'
+            '--detailed' = 'File listing with additional columns'
+            '-a'         = 'File listing including hidden files'
+            '--all'      = 'File listing including hidden files'
+            '-q'         = 'Print only specific property values'
+            '--property' = 'Print only specific property values'
+        }
+        'extract' = [ordered]@{
+            '-o'         = 'Output directory'
+            '--output'   = 'Output directory'
+            '-j'         = 'Write files into the output directory without their folders'
+            '--flat'     = 'Write files into the output directory without their folders'
+            '-l'         = 'File listing content of an MPQ archive'
+            '--listfile' = 'File listing content of an MPQ archive'
+            '-e'         = 'Preferred locale for extracted files'
+            '--locale'   = 'Preferred locale for extracted files'
+        }
+        'read' = [ordered]@{
+            '-e'       = 'Preferred locale for read file'
+            '--locale' = 'Preferred locale for read file'
+        }
+        'verify' = [ordered]@{
+            '-x'      = 'Print the digital signature (in hex)'
+            '--print' = 'Print the digital signature (in hex)'
+        }
+        'compact' = [ordered]@{
+            '-l'         = 'File listing content of an MPQ archive'
+            '--listfile' = 'File listing content of an MPQ archive'
+        }
+        'version'    = @{}
+        'about'      = @{}
+        'completion' = @{}
+    }
+
+    # Options whose *argument* should complete from a static value set
+    $valueOptions = @{
+        '-e'               = $locales
+        '--locale'         = $locales
+        '-g'               = $gameProfiles
+        '--game'           = $gameProfiles
+        '--format-version' = @('1', '2', '3', '4')
+    }
+    # Property options depend on the subcommand (info vs list), handled below
+
+    # Tokenised elements of the command line, excluding the executable itself
+    $elements = @($commandAst.CommandElements | Select-Object -Skip 1 |
+        ForEach-Object { $_.ToString() })
+
+    # Identify the active subcommand: the first token, provided it is not the
+    # word still being typed. The @() keeps a single token from collapsing to
+    # a string, whose [0] would be its first character
+    $prior = @(if ([string]::IsNullOrEmpty($wordToComplete)) { $elements }
+               else { $elements | Select-Object -SkipLast 1 })
+    $subcommand = $null
+    if ($prior.Count -ge 1 -and $subcommands.Contains($prior[0])) { $subcommand = $prior[0] }
+
+    # The token immediately preceding the cursor (the one we may be an arg to)
+    $prevToken = $null
+    if ($elements.Count -ge 1) {
+        if ([string]::IsNullOrEmpty($wordToComplete)) {
+            $prevToken = $elements[-1]
+        }
+        elseif ($elements.Count -ge 2) {
+            $prevToken = $elements[-2]
+        }
+    }
+
+    $emit = {
+        param($items, $type)
+        foreach ($i in $items) {
+            if ($i.Value -like "$wordToComplete*") {
+                [System.Management.Automation.CompletionResult]::new(
+                    $i.Value, $i.Value,
+                    [System.Management.Automation.CompletionResultType]::$type,
+                    $i.Tip)
+            }
+        }
+    }
+
+    # 1) No subcommand yet -> complete subcommands
+    if (-not $subcommand) {
+        $items = foreach ($k in $subcommands.Keys) {
+            [pscustomobject]@{ Value = $k; Tip = $subcommands[$k] }
+        }
+        return & $emit $items 'Command'
+    }
+
+    # 2) completion subcommand -> complete shell names
+    if ($subcommand -eq 'completion') {
+        if (-not ($wordToComplete -like '-*')) {
+            $shells = [ordered]@{
+                'bash'       = 'Generate bash completion script'
+                'zsh'        = 'Generate zsh completion script'
+                'powershell' = 'Generate PowerShell completion script'
+                'fish'       = 'Generate fish completion script'
+            }
+            $items = foreach ($k in $shells.Keys) {
+                [pscustomobject]@{ Value = $k; Tip = $shells[$k] }
+            }
+            return & $emit $items 'ParameterValue'
+        }
+        return
+    }
+
+    # 3) Completing the argument to a value-bearing option
+    if ($prevToken) {
+        # Locale / game profile options
+        if ($valueOptions.ContainsKey($prevToken)) {
+            $items = foreach ($v in $valueOptions[$prevToken]) {
+                [pscustomobject]@{ Value = $v; Tip = $prevToken }
+            }
+            return & $emit $items 'ParameterValue'
+        }
+        # Property options: meaning depends on the subcommand
+        if ($prevToken -in @('-q', '--property')) {
+            if ($subcommand -eq 'info') {
+                $items = foreach ($v in $infoProperties) {
+                    [pscustomobject]@{ Value = $v; Tip = 'info property' } }
+                return & $emit $items 'ParameterValue'
+            }
+            elseif ($subcommand -eq 'list') {
+                $items = foreach ($v in $listProperties) {
+                    [pscustomobject]@{ Value = $v; Tip = 'list property' } }
+                return & $emit $items 'ParameterValue'
+            }
+        }
+        # Options that take a file/dir path -> let PowerShell complete paths
+        $pathOptions = @('-o', '--output', '-l', '--listfile', '-p', '--path')
+        if ($prevToken -in $pathOptions) {
+            return  # empty -> native path completion takes over
+        }
+    }
+
+    # 4) Completing an option for the current subcommand
+    if ($wordToComplete -like '-*') {
+        $opts = $optionSpec[$subcommand]
+        if ($opts) {
+            $items = foreach ($k in $opts.Keys) {
+                [pscustomobject]@{ Value = $k; Tip = $opts[$k] }
+            }
+            return & $emit $items 'ParameterName'
+        }
+    }
+
+    # 5) Fall back to native filesystem completion (archives/files)
+    return
+}

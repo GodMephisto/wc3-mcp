@@ -1,0 +1,38 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/ReterasModelStudio"
+source_path: "craft3data/src/com/hiveworkshop/wc3/gui/modeledit/newstuff/actions/tools/RenameBoneAction.java"
+ref: HEAD
+---
+
+package com.hiveworkshop.wc3.gui.modeledit.newstuff.actions.tools;
+
+import com.hiveworkshop.wc3.gui.modeledit.UndoAction;
+import com.hiveworkshop.wc3.mdl.IdObject;
+
+public final class RenameBoneAction implements UndoAction {
+	private final String oldName;
+	private final String newName;
+	private final IdObject nodeToRename;
+
+	public RenameBoneAction(final String oldName, final String newName, final IdObject nodeToRename) {
+		this.oldName = oldName;
+		this.newName = newName;
+		this.nodeToRename = nodeToRename;
+	}
+
+	@Override
+	public void undo() {
+		nodeToRename.setName(oldName);
+	}
+
+	@Override
+	public void redo() {
+		nodeToRename.setName(newName);
+	}
+
+	@Override
+	public String actionName() {
+		return "rename " + oldName + " to " + newName;
+	}
+}

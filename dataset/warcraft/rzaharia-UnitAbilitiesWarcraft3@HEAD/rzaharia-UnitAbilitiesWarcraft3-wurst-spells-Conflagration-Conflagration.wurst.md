@@ -1,0 +1,38 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/rzaharia/UnitAbilitiesWarcraft3"
+source_path: "wurst/spells/Conflagration/Conflagration.wurst"
+ref: HEAD
+---
+
+package Conflagration
+
+import ConflagrationObjects
+import ClosureTimers
+import ClosureForGroups
+import HashMap
+import ClosureEvents
+
+let buffId = BUFF_OBJ.abilId
+let buffMap = new HashMap<unit, CallbackSingle>()
+init
+    EventListener.onPointCast(CONFLAGRATION_SPELL_ID) (unit caster, vec2 tpos) ->
+        flashEffect(SPELL_EFFECT_PATH, tpos)
+        doAfter(SPELL_EFFECT_DURATION) -> 
+            forUnitsInRange(tpos, SPELL_RADIUS) (unit u) ->
+                if u.hasAbility(buffId)
+                    caster.damageTarget(u, BONUS_DAMAGE)
+                    flashEffect(BONUS_EFFECT_PATH, tpos)
+
+                caster.damageTarget(u, BASE_DAMAGE)
+                u.addAbility(buffId)
+                if buffMap.has(u)
+                    destroy buffMap.get(u)
+                let cb = doAfter(BUFF_DURATION) -> 
+                    if buffMap.has(u)
+                        buffMap.remove(u)
+                        u.removeAbility(buffId)
+                buffMap.put(u, cb)
+                    
+                
+                    

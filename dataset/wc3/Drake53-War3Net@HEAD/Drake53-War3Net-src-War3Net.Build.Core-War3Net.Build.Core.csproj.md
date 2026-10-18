@@ -1,0 +1,47 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/War3Net.Build.Core.csproj"
+ref: HEAD
+---
+
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>$(TfmGroupDotNet)</TargetFrameworks>
+    <RootNamespace>War3Net.Build</RootNamespace>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Description>Parsers and serializers for war3map files.</Description>
+    <PackageTags>modding;parser;serializer;war3map;warcraft3;wc3</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(PUBLISH)'!='true'">
+    <ProjectReference Include="..\War3Net.CodeAnalysis.Jass\War3Net.CodeAnalysis.Jass.csproj" />
+    <ProjectReference Include="..\War3Net.IO.Mpq\War3Net.IO.Mpq.csproj" />
+    <ProjectReference Include="..\War3Net.IO.Slk\War3Net.IO.Slk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(PUBLISH)'=='true'">
+    <PackageReference Include="War3Net.CodeAnalysis.Jass" />
+    <PackageReference Include="War3Net.IO.Mpq" />
+    <PackageReference Include="War3Net.IO.Slk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources\War3Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>War3Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\War3Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>War3Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

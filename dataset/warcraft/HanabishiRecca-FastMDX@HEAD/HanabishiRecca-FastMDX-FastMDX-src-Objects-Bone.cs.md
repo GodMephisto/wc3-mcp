@@ -1,0 +1,30 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/HanabishiRecca/FastMDX"
+source_path: "FastMDX/src/Objects/Bone.cs"
+ref: HEAD
+---
+
+﻿using System.Runtime.InteropServices;
+
+namespace FastMDX {
+    public struct Bone : IDataRW {
+        public Node Node;
+        public LocalProperties Properties;
+
+        void IDataRW.ReadFrom(DataStream ds) {
+            ds.ReadData(ref Node);
+            ds.ReadStruct(ref Properties);
+        }
+
+        void IDataRW.WriteTo(DataStream ds) {
+            ds.WriteData(ref Node);
+            ds.WriteStruct(ref Properties);
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct LocalProperties {
+            public int GeosetId, GeosetAnimationId;
+        }
+    }
+}

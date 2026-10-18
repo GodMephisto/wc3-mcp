@@ -1,0 +1,25 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/eGlint/Warcraft-III-Noise-Library"
+source_path: ".circleci/config.yml"
+ref: HEAD
+---
+
+version: 2
+
+jobs:
+  build:
+  
+    docker:
+      - image: eglint/pjass
+
+    steps:
+      - checkout
+
+      - run:
+          name: Moving JASS files to root directory
+          command: mv JASS/test/*.j .; mv JASS/*.j .;
+
+      - run:
+          name: Test
+          command: pjass /root/common.j /root/blizzard.j noise-pjass-defined-udg.j Noise.j OctavePerlin.j

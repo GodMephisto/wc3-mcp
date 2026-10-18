@@ -1,0 +1,25 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/sumneko/JassParser"
+source_path: ".vscode/settings.json"
+ref: HEAD
+---
+
+{
+    "Lua.diagnostics.globals": [
+        "fs",
+        "root",
+        "check"
+    ],
+    "Lua.diagnostics.disable": [
+        "undefined-env-child"
+    ],
+    "Lua.runtime.path": [
+        "?.lua",
+        "?/init.lua",
+        "src/?.lua",
+        "src/?/init.lua",
+    ],
+    "Lua.runtime.pathStrict": true,
+    "files.insertFinalNewline": false
+}

@@ -1,0 +1,42 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/WarsmashModEngine"
+source_path: "core/assets/abilityBehaviors/neutralUnitActives.json"
+ref: HEAD
+---
+
+{
+	"abilityList": [{
+		"ids": [{"id":"Ahid", "castId": "ambush"}],
+		"type": "NORMAL_NOTARGET",
+		"displayFields": {
+			"instantCast": {
+				"type": "rawBoolean",
+				"value": "true"
+			}
+		},
+		"specialFields": {
+			"behaviorCategory": "IDLE"
+		},
+		"onBeginCasting": [{
+			"type": "beginChanneling"
+		},{
+			"type": "playAnimation",
+			"unit": {
+				"type": "getCastingUnit"
+			},
+			"tag": {
+				"type": "rawString",
+				"value": "STAND"
+			},
+			"force": {
+				"type": "rawBoolean",
+				"value": "true"
+			},
+			"allowVariations": {
+				"type": "rawBoolean",
+				"value": "true"
+			}
+		}]
+	}]
+}

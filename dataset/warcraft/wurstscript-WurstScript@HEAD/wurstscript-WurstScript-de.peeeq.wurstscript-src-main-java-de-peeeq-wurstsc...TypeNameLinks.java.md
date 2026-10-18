@@ -1,0 +1,161 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/attributes/names/TypeNameLinks.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.attributes.names;
+
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSetMultimap;
+import de.peeeq.wurstscript.ast.*;
+
+import java.util.Collections;
+import java.util.List;
+
+public class TypeNameLinks {
+
+    public static ImmutableMultimap<String, TypeLink> calculate(ClassOrModuleOrModuleInstanciation c) {
+        ImmutableMultimap.Builder<String, TypeLink> result = ImmutableSetMultimap.builder();
+        addTypeParametersIfAny(result, c);
+        for (ClassDef innerClass : c.getInnerClasses()) {
+            result.put(innerClass.getName(), TypeLink.create(innerClass, c));
+        }
+        WScope nextScope = c.attrNextScope();
+        if (nextScope != null) {
+            result.put(c.getName(), TypeLink.create(c, nextScope));
+        }
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(CompilationUnit cu) {
+        ImmutableMultimap.Builder<String, TypeLink> result = ImmutableSetMultimap.builder();
+        addJassTypes(result, cu);
+        // TODO are packages types?
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(AstElementWithBody c) {
+        ImmutableMultimap.Builder<String, TypeLink> result = ImmutableSetMultimap.builder();
+        WScope s = (WScope) c;
+        addTypeParametersIfAny(result, s);
+        return result.build();
+    }
+
+
+    public static ImmutableMultimap<String, TypeLink> calculate(EnumDef e) {
+        return ImmutableMultimap.of();
+    }
+
+    /** v1 type class instances have no type parameters of their own. */
+    public static ImmutableMultimap<String, TypeLink> calculate(InstanceDecl i) {
+        return ImmutableMultimap.of();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(InterfaceDef i) {
+        ImmutableMultimap.Builder<String, TypeLink> result = ImmutableSetMultimap.builder();
+        addTypeParametersIfAny(result, i);
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(NativeFunc nativeFunc) {
+        return ImmutableMultimap.of();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(TupleDef t) {
+        return ImmutableMultimap.of();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(WPackage p) {
+        ImmutableMultimap.Builder<String, TypeLink> result = ImmutableSetMultimap.builder();
+        for (WImport imp : p.getImports()) {
+            WPackage importedPackage = imp.attrImportedPackage();
+            if (importedPackage == null) {
+                continue;
+            }
+            result.putAll(importedPackage.attrExportedTypeNameLinks());
+        }
+        return result.build();
+    }
+
+    /** What {@code p.attrTypeNameLinks().get(name)} holds, without building that table; see NameLinks.importedNameLinks. */
+    public static ImmutableSet<TypeLink> importedTypeLinks(WPackage p, String name) {
+        ImmutableSet.Builder<TypeLink> result = null;
+        for (WImport imp : p.getImports()) {
+            WPackage importedPackage = imp.attrImportedPackage();
+            if (importedPackage == null) {
+                continue;
+            }
+            ImmutableCollection<TypeLink> links = importedPackage.attrExportedTypeNameLinks().get(name);
+            if (!links.isEmpty()) {
+                if (result == null) {
+                    result = ImmutableSet.builder();
+                }
+                result.addAll(links);
+            }
+        }
+        return result == null ? ImmutableSet.of() : result.build();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(WEntities wEntities) {
+        ImmutableMultimap.Builder<String, TypeLink> result = ImmutableSetMultimap.builder();
+        for (WEntity e : wEntities) {
+            if (e instanceof TypeDef n) {
+                result.put(n.getName(), TypeLink.create(n, wEntities));
+            }
+        }
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(WurstModel model) {
+        ImmutableMultimap.Builder<String, TypeLink> result = ImmutableSetMultimap.builder();
+        for (CompilationUnit cu : model) {
+            result.putAll(cu.attrTypeNameLinks());
+        }
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, TypeLink> calculate(WStatements statements) {
+        return ImmutableMultimap.of();
+    }
+
+    private static void addTypeParametersIfAny(ImmutableMultimap.Builder<String, TypeLink> result, WScope c) {
+        for (TypeParamDef i : declaredTypeParameters(c)) {
+            result.put(i.getName(), TypeLink.create(i, c));
+        }
+    }
+
+    /**
+     * The type parameter names a scope introduces.
+     * <p>
+     * A module instantiation declares the module's parameters so that a receiver written on one
+     * still resolves once the body has been copied out of the module's scope. It is not an
+     * {@link AstElementWithTypeParameters}: the arguments are recorded on the instantiation, so
+     * these are names to look up rather than variables for a call to infer.
+     */
+    private static List<TypeParamDef> declaredTypeParameters(WScope c) {
+        if (c instanceof AstElementWithTypeParameters wtp) {
+            return wtp.getTypeParameters();
+        }
+        if (c instanceof ModuleInstanciation mi) {
+            return mi.getTypeParameters();
+        }
+        return Collections.emptyList();
+    }
+
+    private static void addJassTypes(ImmutableMultimap.Builder<String, TypeLink> result, CompilationUnit cu) {
+        for (JassToplevelDeclaration jd : cu.getJassDecls()) {
+            if (jd instanceof TypeDef def) {
+                result.put(def.getName(), TypeLink.create(def, cu));
+            }
+        }
+    }
+
+
+    public static ImmutableMultimap<String, TypeLink> calculate(ExprClosure exprClosure) {
+        return ImmutableMultimap.of();
+    }
+}

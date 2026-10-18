@@ -1,0 +1,116 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/JASS-Tree-sitter-Rust"
+source_path: "src/lng/jass/kind.rs"
+ref: HEAD
+---
+
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+
+/// Node type IDs from `ts_symbol_identifiers` enum in tree-sitter-jass `parser.c`.
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive, IntoPrimitive)]
+pub enum Kind {
+    // anonymous / terminal symbols
+    Id = 1,
+    Loop = 2,
+    Endloop = 3,
+    Constant = 4,
+    Array = 5,
+    Comma = 6,
+    Equal = 7,
+    LeftBracket = 8,
+    RightBracket = 9,
+    PlusPlus = 10,
+    MinusMinus = 11,
+    Not = 12,
+    Minus = 13,
+    Plus = 14,
+    Star = 15,
+    Slash = 16,
+    Lt = 17,
+    Gt = 18,
+    Le = 19,
+    Ge = 20,
+    EqEq = 21,
+    Neq = 22,
+    And = 23,
+    Or = 24,
+    Number = 25,
+    Float = 26,
+    Quote = 27,
+    Return = 28,
+    Exitwhen = 29,
+    Local = 30,
+    Set = 31,
+    Call = 32,
+    If = 33,
+    Then = 34,
+    Elseif = 35,
+    Else = 36,
+    Endif = 37,
+    Native = 38,
+    Takes = 39,
+    Nothing = 40,
+    Returns = 41,
+    Type = 42,
+    Extends = 43,
+    Function = 44,
+    Endfunction = 45,
+    Globals = 46,
+    Endglobals = 47,
+    LeftParen = 48,
+    RightParen = 49,
+    Comment = 50,
+    StringContent = 51,
+    EscapeSequence = 52,
+    Rawcode = 53,
+
+    // virtual closing tokens emitted by the external scanner
+    VirtualEndloop = 54,
+    VirtualEndglobals = 55,
+    VirtualEndfunction = 56,
+    VirtualEndif = 57,
+
+    // named / non-terminal symbols
+    Program = 58,
+    //_Statement = 59,
+    LoopStatement = 60,
+    VarStmt = 61,
+    VarDecl = 62,
+    Expr = 63,
+    StringLiteral = 64,
+    ReturnStatement = 65,
+    ExitwhenStatement = 66,
+    LocalStatement = 67,
+    SetStatement = 68,
+    CallStatement = 69,
+    IfStatement = 70,
+    NativeStatement = 71,
+    TypeStatement = 72,
+    FunctionStatement = 73,
+    GlobalsBlock = 74,
+    ParameterList = 75,
+    Parameter = 76,
+    FunctionRef = 77,
+    Parens = 78,
+    FunctionCall = 79,
+    FunctionArguments = 80,
+}
+
+/// Field IDs from `ts_field_identifiers` enum in tree-sitter-jass `parser.c`.
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive, IntoPrimitive)]
+pub enum Field {
+    Args = 1,
+    Base = 2,
+    Condition = 3,
+    Index = 4,
+    Name = 5,
+    Parameters = 6,
+    ReturnType = 7,
+    Type = 8,
+    Value = 9,
+    Variable = 10,
+}
+

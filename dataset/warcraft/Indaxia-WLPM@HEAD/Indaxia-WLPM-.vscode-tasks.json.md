@@ -1,0 +1,43 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Indaxia/WLPM"
+source_path: ".vscode/tasks.json"
+ref: HEAD
+---
+
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/wlpm.csproj"
+            ],
+            "problemMatcher": "$tsc"
+        },
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "publish",
+                "${workspaceFolder}/wlpm.csproj"
+            ],
+            "problemMatcher": "$tsc"
+        },
+        {
+            "label": "watch",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "watch",
+                "run",
+                "${workspaceFolder}/wlpm.csproj"
+            ],
+            "problemMatcher": "$tsc"
+        }
+    ]
+}

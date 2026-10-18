@@ -1,0 +1,44 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/thegraydot/mpqcli"
+source_path: "src/mpq/rename.cpp"
+ref: HEAD
+---
+
+#include "mpq/rename.h"
+
+#include <ostream>
+#include <string>
+
+#include <StormLib.h>
+
+#include "mpq/query.h"
+#include "util/locales.h"
+#include "util/path.h"
+
+namespace mpqcli {
+
+int RenameFile(HANDLE archive, const std::string &old_archive_file_path,
+               const std::string &new_archive_file_path, LCID locale, std::ostream &err) {
+    SFileSetLocale(locale);
+    const std::string new_stored_path = WindowsifyFilePath(new_archive_file_path);
+    err << "[~] Renaming file" << PrettyPrintLocale(locale, " for locale ") << ": "
+        << old_archive_file_path << " -> " << new_stored_path << std::endl;
+
+    if (!FileExistsInArchiveForLocale(archive, old_archive_file_path, locale)) {
+        err << "[!] Failed: File doesn't exist" << PrettyPrintLocale(locale, " for locale ", true)
+            << ": " << old_archive_file_path << std::endl;
+        return 1;
+    }
+
+    if (!SFileRenameFile(archive, old_archive_file_path.c_str(), new_stored_path.c_str())) {
+        err << "[!] Failed: File cannot be renamed"
+            << PrettyPrintLocale(locale, " for locale ", true) << ": " << old_archive_file_path
+            << " -> " << new_stored_path << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
+
+} // namespace mpqcli

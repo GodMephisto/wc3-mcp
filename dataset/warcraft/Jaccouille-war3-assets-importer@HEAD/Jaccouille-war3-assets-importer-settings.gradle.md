@@ -1,0 +1,20 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Jaccouille/war3-assets-importer"
+source_path: "settings.gradle"
+ref: HEAD
+---
+
+rootProject.name = 'War3AssetsImporter'
+
+// When the sibling wc3libs checkout exists (local development), use it as a
+// composite build and redirect the JitPack coordinate to the local project so
+// that no network fetch is needed. In CI the directory is absent and Gradle
+// resolves 'com.github.Jaccouille:wc3libs' from JitPack normally.
+if (file('../wc3libs').exists()) {
+    includeBuild('../wc3libs') {
+        dependencySubstitution {
+            substitute module('com.github.Jaccouille:wc3libs') using project(':')
+        }
+    }
+}

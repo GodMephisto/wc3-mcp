@@ -1,0 +1,97 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Widget/UnitData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Widget
+{
+    public sealed partial class UnitData : WidgetData
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UnitData"/> class.
+        /// </summary>
+        public UnitData()
+        {
+        }
+
+        public byte Flags { get; set; }
+
+        public int OwnerId { get; set; }
+
+        public byte Unk1 { get; set; }
+
+        public byte Unk2 { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public uint GroupId { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int Unk4 { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int Unk5 { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int Unk6 { get; set; }
+
+        /// <summary>
+        /// Set to -1 to use the default value.
+        /// </summary>
+        public int HP { get; set; } = -1;
+
+        /// <summary>
+        /// Set to -1 to use the default value.
+        /// </summary>
+        public int MP { get; set; } = -1;
+
+        public int GoldAmount { get; set; }
+
+        /// <summary>
+        /// Set to -1 for default, and -2 for camp.
+        /// </summary>
+        public float TargetAcquisition { get; set; } = -1f;
+
+        /// <summary>
+        /// Non-hero units are level 1, items are level 0.
+        /// </summary>
+        public int HeroLevel { get; set; }
+
+        /// <summary>
+        /// Set to 0 to use the default value.
+        /// </summary>
+        public int HeroStrength { get; set; }
+
+        /// <summary>
+        /// Set to 0 to use the default value.
+        /// </summary>
+        public int HeroAgility { get; set; }
+
+        /// <summary>
+        /// Set to 0 to use the default value.
+        /// </summary>
+        public int HeroIntelligence { get; set; }
+
+        public List<InventoryItemData> InventoryData { get; init; } = new();
+
+        public List<ModifiedAbilityData> AbilityData { get; init; } = new();
+
+        public RandomUnitDataMode RandomDataMode => RandomData switch
+        {
+            RandomUnitAny => RandomUnitDataMode.Any,
+            RandomUnitGlobalTable => RandomUnitDataMode.GlobalTable,
+            RandomUnitCustomTable => RandomUnitDataMode.CustomTable,
+            _ => RandomUnitDataMode.None,
+        };
+
+        public RandomUnitData? RandomData { get; set; }
+
+        public int CustomPlayerColorId { get; set; } = -1;
+
+        /// <summary>
+        /// The <see cref="Environment.Region.CreationNumber"/> of the waygate's target region.
+        /// </summary>
+        public int WaygateDestinationRegionId { get; set; } = -1;
+    }
+}

@@ -2,28 +2,21 @@
 
 The Warcraft III corpus, downloaded rather than committed. `wc3ctl rag install` fetches it from the release and extracts it here, so the MCP package stays small and the corpus is versioned on its own.
 
-2,381 markdown documents across three groups.
+12,571 documents across three groups, code and configuration included, not only prose.
 
-- `warcraft/` GitHub repositories and tools at HEAD.
-- `wc3/` the core libraries, StormLib, CascLib, War3Net, MDX, pjass, HiveWE.
-- `warcraft-editor/` sites, forums and tutorials.
+- `warcraft/` GitHub repositories and tools at HEAD, 11,255 documents.
+- `wc3/` the core libraries, StormLib, CascLib, War3Net, MDX, pjass, HiveWE, 607 documents.
+- `warcraft-editor/` sites, forums and tutorials, 709 documents.
 
-Release asset `wc3-corpus.tgz`, sha256 `40fb3c94a4f3c85c85f4f10b27f4bf3fb2868a2918ef7dceba1511d4fa2b4e1a`, 30,303,265 bytes. The installer verifies the digest before extracting.
+Release asset `wc3-corpus.tgz`, sha256 `e0b05042af853e46d2d72c9a95d3c4ef7d938c5145d56a248a6ee18903ce7716`, 51,629,461 bytes. The installer verifies the digest before extracting.
 
-## What changed from the first corpus
+## The history of this corpus
 
-The first corpus held 3,521 documents and 982 of them were `.mdx.md`, the binary
-Warcraft III model format read as text, so their bodies were MDLX headers and raw
-bytes. `mdx` is markdown-JSX on the web and a binary model in a game repository,
-and the extractor keyed on the extension rather than the content.
+The first held 3,521 documents and 982 of them were `.mdx.md`, the binary Warcraft III model format read as text, so their bodies were MDLX headers and raw bytes.
 
-This corpus drops the binary model and asset files, 1,140 fewer documents, and
-keeps the 8 `.mdx` that really are prose, WC3 Forge site content. Every body is
-also decoded strictly, since a lossy `utf-8, replace` had turned GBK Chinese into
-mojibake.
+The second dropped the binary, 2,381 documents, and every body decoded strictly.
 
-`_v1-bak/` holds the previous set until the new one is published, and is not part
-of the corpus.
+This one adds the code and configuration, `.cs`, `.java`, `.h`, `.ts`, `.py`, `.json` and the rest. A docs-only corpus described a repository by its README, and 290 of about 400 packages had only a README. A `W3x.Sort` that was one file is now fourteen. The acquirer keeps text files and still drops the real assets, so the model bytes never return.
 
 This folder's contents are not in git. Only this file and `.gitignore` are tracked.
 

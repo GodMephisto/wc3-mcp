@@ -1,0 +1,37 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Script/CustomTextTrigger.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Script
+{
+    public sealed partial class CustomTextTrigger
+    {
+        internal CustomTextTrigger(BinaryReader reader, Encoding encoding, MapCustomTextTriggersFormatVersion formatVersion, MapCustomTextTriggersSubVersion? subVersion)
+        {
+            ReadFrom(reader, encoding, formatVersion, subVersion);
+        }
+
+        internal void ReadFrom(BinaryReader reader, Encoding encoding, MapCustomTextTriggersFormatVersion formatVersion, MapCustomTextTriggersSubVersion? subVersion)
+        {
+            var length = reader.ReadInt32();
+            if (length == 0)
+            {
+                Code = string.Empty;
+            }
+            else
+            {
+                var bytes = reader.ReadBytes(length);
+                Code = encoding.GetString(bytes, 0, bytes.Length);
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer, Encoding encoding, MapCustomTextTriggersFormatVersion formatVersion, MapCustomTextTriggersSubVersion? subVersion)
+        {
+            writer.Write(encoding.GetBytes(Code ?? string.Empty).Length);
+            writer.WriteString(Code, false);
+        }
+    }
+}

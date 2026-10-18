@@ -1,0 +1,23 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Grimgrents2/WarsmashModEngine"
+source_path: "core/src/com/etheller/warsmash/viewer5/handlers/w3x/simulation/abilities/generic/GenericSingleIconActiveAbility.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.viewer5.handlers.w3x.simulation.abilities.generic;
+
+import com.etheller.warsmash.util.War3ID;
+import com.etheller.warsmash.viewer5.handlers.w3x.simulation.abilities.CAbility;
+
+public interface GenericSingleIconActiveAbility extends CAbility {
+	War3ID getAlias();
+
+	int getBaseOrderId();
+
+	boolean isToggleOn();
+
+	int getUIGoldCost();
+
+	int getUILumberCost();
+}

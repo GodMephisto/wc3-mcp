@@ -1,0 +1,24 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/lluiscab/MPQTT"
+source_path: "debian/config.yaml"
+ref: HEAD
+---
+
+debug: true
+
+inverter:
+  path: /dev/hidraw0
+
+mqtt:
+  host: localhost
+  port: 1883
+  username: mpqtt
+  password: mpqtt
+  client_id: mpqtt
+  topic: mpqtt/status
+  discovery:
+    prefix: homeassistant
+    node_name: mpqtt
+    device_name: MPQTT
+    device_id: mpqtt

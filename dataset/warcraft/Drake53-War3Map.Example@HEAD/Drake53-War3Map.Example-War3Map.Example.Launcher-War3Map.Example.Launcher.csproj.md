@@ -1,0 +1,38 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Map.Example"
+source_path: "War3Map.Example.Launcher/War3Map.Example.Launcher.csproj"
+ref: HEAD
+---
+
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <ApplicationIcon />
+    <StartupObject />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\War3Map.Example.Source\War3Map.Example.Source.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="War3Net.Build" Version="0.2.1" />
+    <PackageReference Include="War3Net.CSharpLua" Version="1.3.0.1" />
+    <PackageReference Include="War3Net.CSharpLua.CoreSystem" Version="1.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Assets\**" />
+    <Content Include="Assets\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Remove="LuaLibs\**" />
+    <Content Include="LuaLibs\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

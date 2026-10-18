@@ -1,0 +1,118 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/WarsmashModEngine"
+source_path: "build.gradle"
+ref: HEAD
+---
+
+buildscript {
+    repositories {
+        mavenLocal()
+		flatDir {
+			dirs "$rootProject.projectDir/jars"
+		}
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://maven.nikr.net/" }
+        google()
+    }
+}
+
+allprojects {
+    apply plugin: "eclipse"
+    apply plugin: "idea"
+
+    version = '1.0'
+    ext {
+        appName = "warsmash"
+        gdxVersion = '1.12.1'
+        antlrVersion = '4.7'
+        xstreamVersion = '1.4.19'
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+        gradlePluginPortal()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+        maven { url "https://maven.nikr.net/" }
+        maven { url "https://jitpack.io" }
+    }
+}
+
+project(":server") {
+    apply plugin: "java-library"
+
+
+    dependencies {
+        implementation project(":shared")
+        api "com.thoughtworks.xstream:xstream:$xstreamVersion"
+        api "commons-codec:commons-codec:1.9"
+    }
+}
+
+project(":desktop") {
+    apply plugin: "java-library"
+
+    dependencies {
+        implementation project(":core")
+        api "com.badlogicgames.gdx:gdx-backend-lwjgl:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+        api "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+        api "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
+        api "com.google.guava:guava:23.5-jre"
+        api "org.apache.commons:commons-compress:1.20"
+        api "net.nikr:dds:1.0.0"
+    }
+}
+
+project(":core") {
+    apply plugin: "java-library"
+
+    dependencies {
+        api project(":shared")
+        api project(":fdfparser")
+        api project(":jassparser")
+        api "com.badlogicgames.gdx:gdx:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+        api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+        api "com.google.guava:guava:23.5-jre"
+        api "org.apache.commons:commons-compress:1.20"
+        api "net.nikr:dds:1.0.0"
+        api files(fileTree(dir:'../jars', includes: ['*.jar']))
+    }
+}
+
+project(":shared") {
+    apply plugin: "java-library"
+
+    dependencies {
+    }
+}
+
+project(":fdfparser") {
+    apply plugin: "antlr"
+
+
+    dependencies {
+        antlr "org.antlr:antlr4:$antlrVersion" // use antlr version 4
+    }
+}
+
+project(":jassparser") {
+    apply plugin: "antlr"
+    apply plugin: "java-library"
+
+
+    dependencies {
+        implementation project(":shared")
+        antlr "org.antlr:antlr4:$antlrVersion" // use antlr version 4
+    }
+}
+
+tasks.eclipse.doLast {
+    delete ".project"
+}

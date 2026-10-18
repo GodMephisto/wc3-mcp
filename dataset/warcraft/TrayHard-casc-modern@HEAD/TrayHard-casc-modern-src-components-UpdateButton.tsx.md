@@ -1,0 +1,278 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/TrayHard/casc-modern"
+source_path: "src/components/UpdateButton.tsx"
+ref: HEAD
+---
+
+import { useEffect, useMemo, useState } from "react";
+import { Badge, Button, Modal, Popover, Progress, Tooltip, message } from "antd";
+import {
+  CheckCircleOutlined,
+  CloudDownloadOutlined,
+  LoadingOutlined,
+} from "@ant-design/icons";
+import { check, Update } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { api, errMsg } from "../lib/api";
+import { entriesNewerThan, parseChangelog } from "../lib/changelog";
+
+/// 20 minutes — slow enough not to hammer GitHub, frequent enough that
+/// the user usually sees a fresh release within minutes of starting work.
+const CHECK_INTERVAL_MS = 20 * 60 * 1000;
+
+/// Render inline `**bold**` / `` `code` `` spans within a changelog line.
+function renderInline(text: string): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  const re = /(\*\*[^*]+\*\*|`[^`]+`)/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let key = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    const tok = m[0];
+    if (tok.startsWith("**")) {
+      out.push(<strong key={key++}>{tok.slice(2, -2)}</strong>);
+    } else {
+      out.push(
+        <code
+          key={key++}
+          style={{ background: "rgba(255,255,255,0.1)", padding: "0 3px", borderRadius: 3 }}
+        >
+          {tok.slice(1, -1)}
+        </code>
+      );
+    }
+    last = m.index + tok.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+/// Render a Keep-a-Changelog entry body (### headings, `-` bullets, wrapped
+/// lines) as compact JSX. Avoids pulling in a full markdown dependency, which
+/// the webview CSP would also have to allow.
+function renderChangelogBody(body: string): React.ReactNode {
+  type Block = { type: "h" | "li" | "p"; text: string };
+  const blocks: Block[] = [];
+  for (const raw of body.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line === "") continue;
+    const h = line.match(/^#{1,6}\s+(.*)$/);
+    if (h) {
+      blocks.push({ type: "h", text: h[1] });
+      continue;
+    }
+    const b = line.match(/^[-*]\s+(.*)$/);
+    if (b) {
+      blocks.push({ type: "li", text: b[1] });
+      continue;
+    }
+    const prev = blocks[blocks.length - 1];
+    if (prev && (prev.type === "li" || prev.type === "p")) {
+      prev.text += " " + line; // continuation of a wrapped bullet/paragraph
+    } else {
+      blocks.push({ type: "p", text: line });
+    }
+  }
+  return blocks.map((bl, i) => {
+    if (bl.type === "h") {
+      return (
+        <div key={i} style={{ fontWeight: 600, marginTop: i ? 6 : 0 }}>
+          {renderInline(bl.text)}
+        </div>
+      );
+    }
+    if (bl.type === "li") {
+      return (
+        <div key={i} style={{ display: "flex", gap: 6 }}>
+          <span style={{ opacity: 0.6 }}>•</span>
+          <span>{renderInline(bl.text)}</span>
+        </div>
+      );
+    }
+    return <div key={i}>{renderInline(bl.text)}</div>;
+  });
+}
+
+/// Public releases page. Used as the manual-download fallback for portable
+/// users (whose running .exe lives outside Program Files and so can't be
+/// silently replaced by the MSI installer the updater runs).
+const RELEASES_URL = "https://github.com/TrayHard/casc-modern/releases/latest";
+
+export function UpdateButton() {
+  const [installed, setInstalled] = useState<boolean | null>(null);
+  const [pending, setPending] = useState<Update | null>(null);
+  const [installing, setInstalling] = useState(false);
+  const [percent, setPercent] = useState(0);
+
+  useEffect(() => {
+    api.isInstalled().then(setInstalled).catch(() => setInstalled(false));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const ping = async () => {
+      try {
+        const u = await check();
+        if (cancelled) return;
+        setPending(u?.available ? u : null);
+      } catch (e) {
+        // In dev mode the updater plugin throws — fine to swallow.
+        if (!cancelled) console.warn("update check skipped:", e);
+      }
+    };
+    ping();
+    const id = setInterval(ping, CHECK_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  // The release manifest embeds the changelog in its `notes`, so we can show
+  // exactly what changed since the running version and how many releases the
+  // user skipped.
+  const newer = useMemo(() => {
+    if (!pending?.body) return [];
+    try {
+      return entriesNewerThan(parseChangelog(pending.body), pending.currentVersion);
+    } catch {
+      return [];
+    }
+  }, [pending]);
+
+  async function install() {
+    if (installing || !pending) return;
+    setInstalling(true);
+    setPercent(0);
+    try {
+      let downloaded = 0;
+      let total = 0;
+      await pending.downloadAndInstall((event) => {
+        if (event.event === "Started") {
+          total = event.data.contentLength ?? 0;
+        } else if (event.event === "Progress") {
+          downloaded += event.data.chunkLength;
+          if (total > 0) setPercent(Math.floor((downloaded / total) * 100));
+        } else if (event.event === "Finished") {
+          setPercent(100);
+        }
+      });
+      await relaunch();
+    } catch (e) {
+      message.error(`Update failed: ${errMsg(e)}`);
+      setInstalling(false);
+    }
+  }
+
+  async function openReleases() {
+    try {
+      await openUrl(RELEASES_URL);
+    } catch (e) {
+      message.error(`Open failed: ${errMsg(e)}`);
+    }
+  }
+
+  // Wait until we know the install mode before showing anything — avoids a
+  // flicker between "manual download" and "in-app install".
+  if (installed === null) return null;
+
+  if (!pending) {
+    return (
+      <Tooltip title="Up to date" placement="bottom">
+        <Button
+          icon={<CheckCircleOutlined />}
+          type="text"
+          disabled
+          style={{ color: "#888" }}
+        />
+      </Tooltip>
+    );
+  }
+
+  const changelog = (
+    <div style={{ maxWidth: 380, maxHeight: 340, overflowY: "auto" }}>
+      <div style={{ fontWeight: 600, marginBottom: 8 }}>
+        {newer.length > 1
+          ? `${newer.length} updates available`
+          : `Update available — v${pending.version}`}
+        {pending.currentVersion && (
+          <span style={{ fontWeight: 400, opacity: 0.65 }}>
+            {"  "}(you're on v{pending.currentVersion})
+          </span>
+        )}
+      </div>
+      {newer.length > 0 ? (
+        newer.map((e) => (
+          <div key={e.version} style={{ marginBottom: 10 }}>
+            <div style={{ fontWeight: 600 }}>
+              v{e.version}
+              {e.date ? ` — ${e.date}` : ""}
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.88, marginTop: 2 }}>
+              {renderChangelogBody(e.body)}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div style={{ fontSize: 12, opacity: 0.88 }}>
+          {renderChangelogBody(
+            pending.body || `Version ${pending.version} is available.`
+          )}
+        </div>
+      )}
+      {!installed && (
+        <div style={{ marginTop: 8, opacity: 0.7, fontSize: 12 }}>
+          Portable build can't auto-update — click to download manually.
+        </div>
+      )}
+    </div>
+  );
+
+  // Portable .exe path: the updater would install the MSI alongside the
+  // running portable binary and leave the user with two parallel copies.
+  // Surface a button that just opens the releases page so they pick the
+  // right artifact themselves.
+  if (!installed) {
+    return (
+      <Popover content={changelog} placement="bottomRight" mouseLeaveDelay={0.3}>
+        <Badge count={newer.length > 1 ? newer.length : 0} size="small">
+          <Button icon={<CloudDownloadOutlined />} onClick={openReleases}>
+            Update available
+          </Button>
+        </Badge>
+      </Popover>
+    );
+  }
+
+  return (
+    <>
+      <Popover content={changelog} placement="bottomRight" mouseLeaveDelay={0.3}>
+        <Badge count={newer.length > 1 ? newer.length : 0} size="small">
+          <Button
+            type="primary"
+            icon={installing ? <LoadingOutlined /> : <CloudDownloadOutlined />}
+            onClick={install}
+            disabled={installing}
+          >
+            Update
+          </Button>
+        </Badge>
+      </Popover>
+      <Modal
+        open={installing}
+        title="Installing update…"
+        footer={null}
+        closable={false}
+        maskClosable={false}
+      >
+        <Progress percent={percent} status="active" />
+        <p style={{ marginTop: 12 }}>
+          App will restart automatically when the install completes.
+        </p>
+      </Modal>
+    </>
+  );
+}

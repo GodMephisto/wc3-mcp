@@ -1,0 +1,71 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/sgraf812/BananaMpq"
+source_path: "BananaMpq.sln"
+ref: HEAD
+---
+
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BananaMpq.View", "BananaMpq.View\BananaMpq.View.csproj", "{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BananaMpq", "BananaMpq\BananaMpq.csproj", "{082737BB-07C5-4129-9BCF-1B1193591FB7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{C5DB972E-6FB8-421B-A0B7-534739C8E93C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BananaMpq.Dumper", "BananaMpq.Dumper\BananaMpq.Dumper.csproj", "{C3622848-6E23-48C9-BA13-1D0EB49A4615}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{D22D446F-9DAC-46A4-BA11-5E120B5C3ADE}"
+	ProjectSection(SolutionItems) = preProject
+		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Debug|x86.ActiveCfg = Debug|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Debug|x86.Build.0 = Debug|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Release|Any CPU.ActiveCfg = Release|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Release|Mixed Platforms.Build.0 = Release|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Release|x86.ActiveCfg = Release|x86
+		{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}.Release|x86.Build.0 = Release|x86
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{082737BB-07C5-4129-9BCF-1B1193591FB7}.Release|x86.ActiveCfg = Release|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615}.Release|x86.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C3622848-6E23-48C9-BA13-1D0EB49A4615} = {C5DB972E-6FB8-421B-A0B7-534739C8E93C}
+	EndGlobalSection
+EndGlobal

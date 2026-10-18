@@ -1,0 +1,535 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/dc114154qq/war3-reforged-trainer"
+source_path: "tools/war3_bridge_24268.c"
+ref: HEAD
+---
+
+#include <windows.h>
+#include <stdint.h>
+#include "war3_bridge_profile.h"
+#include "war3_bridge_objects.h"
+
+int _fltused = 0;
+void *memset(void *destination, int value, size_t count) {
+    unsigned char *bytes = (unsigned char *)destination;
+    while (count--) *bytes++ = (unsigned char)value;
+    return destination;
+}
+
+typedef struct BridgeCommand {
+    HWND window;
+    HHOOK (WINAPI *set_hook)(int, HOOKPROC, HINSTANCE, DWORD);
+    BOOL (WINAPI *unhook)(HHOOK);
+    LRESULT (WINAPI *next_hook)(HHOOK, int, WPARAM, LPARAM);
+    DWORD (WINAPI *current_tid)(void);
+    DWORD (WINAPI *get_error)(void);
+    HHOOK hook;
+    DWORD target_tid, message;
+    uintptr_t nonce;
+    volatile LONG stage;
+    DWORD last_error, callback_tid;
+    volatile LONG callback_count, detached, active;
+    void (WINAPI *sleep_ms)(DWORD);
+    volatile LONG stop_requested;
+    DWORD hook_kind;
+    LPVOID (WINAPI *get_tls)(DWORD);
+    BOOLEAN (WINAPI *add_table)(PRUNTIME_FUNCTION,DWORD,DWORD64);
+    BOOLEAN (WINAPI *delete_table)(PRUNTIME_FUNCTION);
+    PRUNTIME_FUNCTION unwind_table;
+    DWORD64 image_base;
+    uint64_t (*query)(void);
+    uint64_t query_result;
+    LPVOID tls_value;
+    void *specific_handler;
+    DWORD unwind_count, tls_index, query_stage, exception_code, unwind_registered, unwind_removed;
+    void *work;
+} BridgeCommand;
+_Static_assert(sizeof(BridgeCommand) == 216, "BridgeCommand ABI");
+#define BRIDGE_PERSISTENT_HOOK 0x80000000u
+#define BRIDGE_NATIVE_HOOK 0x40000000u
+#define BRIDGE_THREAD_MESSAGE 0x20000000u
+#define BRIDGE_HOOK_FLAGS (BRIDGE_PERSISTENT_HOOK | BRIDGE_NATIVE_HOOK | BRIDGE_THREAD_MESSAGE)
+__declspec(dllexport) const uint32_t bridge_native_hook_abi[3]={0x24268049u,216u,6u};
+static BridgeCommand *g_dispatch;
+typedef EXCEPTION_DISPOSITION (*BridgeHandler)(PEXCEPTION_RECORD,void *,PCONTEXT,PDISPATCHER_CONTEXT);
+EXCEPTION_DISPOSITION BridgeSpecificHandler(PEXCEPTION_RECORD e,void *f,PCONTEXT c,PDISPATCHER_CONTEXT d) {
+    return ((BridgeHandler)g_dispatch->specific_handler)(e,f,c,d);
+}
+typedef struct BridgeFault {
+    uint32_t magic,version,code,access;
+    uint64_t instruction,address,rcx,rdx,r8,r9,rax,rbx,rsp,rbp;
+} BridgeFault;
+_Static_assert(sizeof(BridgeFault)==96,"BridgeFault ABI");
+__declspec(dllexport) BridgeFault bridge_fault;
+__declspec(dllexport) uint32_t bridge_recovered_faults;
+static LONG BridgeExceptionFilter(EXCEPTION_POINTERS *info) {
+    EXCEPTION_RECORD *e=info->ExceptionRecord;
+    CONTEXT *r=info->ContextRecord;
+    bridge_fault.magic=0x24268012u;bridge_fault.version=1;bridge_fault.code=e->ExceptionCode;
+    bridge_fault.instruction=(uint64_t)(uintptr_t)e->ExceptionAddress;
+    if (e->NumberParameters>=2 && (e->ExceptionCode==EXCEPTION_ACCESS_VIOLATION || e->ExceptionCode==EXCEPTION_IN_PAGE_ERROR)) {
+        bridge_fault.access=(uint32_t)e->ExceptionInformation[0];bridge_fault.address=e->ExceptionInformation[1];
+    }
+    bridge_fault.rcx=r->Rcx;bridge_fault.rdx=r->Rdx;bridge_fault.r8=r->R8;bridge_fault.r9=r->R9;
+    bridge_fault.rax=r->Rax;bridge_fault.rbx=r->Rbx;bridge_fault.rsp=r->Rsp;bridge_fault.rbp=r->Rbp;
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
+static void BridgeDetach(BridgeCommand *cmd) {
+    DWORD error;
+    if (!cmd->hook || cmd->detached) return;
+    if (cmd->unhook(cmd->hook)) {
+        InterlockedExchange(&cmd->detached, 1);
+        return;
+    }
+    error = cmd->get_error();
+    /* A competing cleanup path may have removed the one-shot hook first. */
+    if (error == ERROR_INVALID_HOOK_HANDLE) {
+        InterlockedExchange(&cmd->detached, 1);
+        return;
+    }
+    cmd->last_error = error;
+}
+
+typedef struct BridgeCallbackLifecycle {
+    volatile LONG phase, owned_messages, forwarded_messages, forward_exception;
+    DWORD cleanup_wait_ms, cleanup_timed_out;
+    volatile LONG callback_exits;
+    DWORD reserved;
+} BridgeCallbackLifecycle;
+_Static_assert(sizeof(BridgeCallbackLifecycle)==32,"Callback lifecycle ABI");
+__declspec(dllexport) const uint32_t bridge_callback_lifecycle_abi[3]={0x2426804au,216u,32u};
+__declspec(dllexport) BridgeCallbackLifecycle bridge_callback_lifecycle;
+
+static LRESULT CALLBACK BridgeCallback(int code, WPARAM w, LPARAM l) {
+    BridgeCommand *cmd = g_dispatch;
+    DWORD hook_kind;
+    LRESULT result = 0;
+    int owned = 0, completed = 0;
+    if (!cmd) return 0;
+    hook_kind = cmd->hook_kind & ~BRIDGE_HOOK_FLAGS;
+    InterlockedIncrement(&cmd->active);
+    __try {
+        __try {
+            bridge_callback_lifecycle.phase=1;
+            if (code >= 0 && l) {
+                HWND hwnd;
+                UINT message;
+                WPARAM nonce;
+                if (hook_kind == WH_GETMESSAGE) {
+                    const MSG *msg=(const MSG *)l;
+                    hwnd=msg->hwnd;message=msg->message;nonce=msg->wParam;
+                } else {
+                    const CWPSTRUCT *msg=(const CWPSTRUCT *)l;
+                    hwnd=msg->hwnd;message=msg->message;nonce=msg->wParam;
+                }
+                owned = message==cmd->message && nonce==cmd->nonce &&
+                    ((cmd->hook_kind & BRIDGE_THREAD_MESSAGE) ? !hwnd : hwnd==cmd->window);
+                if (owned && cmd->stage==2 &&
+                    (hook_kind!=WH_GETMESSAGE || w==PM_REMOVE)) {
+                    cmd->callback_tid=cmd->current_tid();
+                    InterlockedIncrement(&cmd->callback_count);
+                    InterlockedIncrement(&bridge_callback_lifecycle.owned_messages);
+                    bridge_callback_lifecycle.phase=2;
+                    __try {
+                        cmd->tls_value=cmd->get_tls(cmd->tls_index);
+                        if (cmd->query) {
+                            cmd->query_stage=1;
+                            cmd->query_result=cmd->query();
+                            cmd->query_stage=2;
+                        }
+                    } __except (BridgeExceptionFilter(GetExceptionInformation())) {
+                        cmd->exception_code=GetExceptionCode();
+                        cmd->query_stage=3;
+                    }
+                    bridge_callback_lifecycle.phase=3;
+                    if (!(cmd->hook_kind & BRIDGE_PERSISTENT_HOOK)) BridgeDetach(cmd);
+                    completed=1;
+                }
+            }
+            /* Consume only our registered private message with matching nonce.
+               Thread-posted dispatches have no HWND and do not depend on a
+               visible window. Its query has completed; forwarding it after detach
+               needlessly re-enters foreign hooks/SHIM code. Negative hook
+               codes and all unrelated messages still traverse the hook chain. */
+            if (!owned) {
+                bridge_callback_lifecycle.phase=4;
+                InterlockedIncrement(&bridge_callback_lifecycle.forwarded_messages);
+                result=cmd->next_hook(NULL,code,w,l);
+                bridge_callback_lifecycle.phase=5;
+            }
+        } __except (BridgeExceptionFilter(GetExceptionInformation())) {
+            cmd->exception_code=GetExceptionCode();
+            bridge_callback_lifecycle.forward_exception=GetExceptionCode();
+            bridge_callback_lifecycle.phase=6;
+        }
+    } __finally {
+        InterlockedIncrement(&bridge_callback_lifecycle.callback_exits);
+        InterlockedDecrement(&cmd->active);
+        if (completed) InterlockedExchange(&cmd->stage,3);
+    }
+    return result;
+}
+
+static void BridgeDrainCallbacks(BridgeCommand *cmd) {
+    ULONGLONG start=GetTickCount64();
+    while (InterlockedCompareExchange(&cmd->active,0,0)!=0) {
+        if (GetTickCount64()-start>=500) {
+            bridge_callback_lifecycle.cleanup_timed_out=1;
+            break;
+        }
+        cmd->sleep_ms(1);
+    }
+    bridge_callback_lifecycle.cleanup_wait_ms=(DWORD)(GetTickCount64()-start);
+}
+
+__declspec(dllexport) DWORD WINAPI BridgeInstall(BridgeCommand *cmd) {
+    DWORD hook_kind = cmd->hook_kind & ~BRIDGE_HOOK_FLAGS;
+    memset(&bridge_fault, 0, sizeof(bridge_fault));
+    memset(&bridge_callback_lifecycle,0,sizeof(bridge_callback_lifecycle));
+    InterlockedExchange(&cmd->stage, 1);
+    cmd->query_result = 1; /* install entered */
+    g_dispatch = cmd;
+    cmd->query_result = 2; /* dispatch pointer published */
+    if (cmd->unwind_count) {
+        cmd->query_result = 3; /* registering the manually mapped image */
+        __try {
+            cmd->unwind_registered = cmd->add_table(cmd->unwind_table, cmd->unwind_count, cmd->image_base);
+        } __except (BridgeExceptionFilter(GetExceptionInformation())) {
+            cmd->exception_code = GetExceptionCode();
+            cmd->last_error = cmd->get_error();
+            cmd->query_result = 0x100u | 3u;
+            InterlockedExchange(&cmd->stage, 2);
+            return 0;
+        }
+        if (!cmd->unwind_registered) {
+            cmd->last_error = cmd->get_error();
+            InterlockedExchange(&cmd->stage, 2);
+            return 0;
+        }
+    } else {
+        /* A normally loaded DLL is already registered by the loader. */
+        cmd->unwind_registered = 0;
+        cmd->query_result = 4; /* using loader-registered unwind metadata */
+    }
+    cmd->query_result = 5; /* installing the thread hook */
+    __try {
+        /* A loader-owned image must identify its registered module to
+           USER32. A SEC_IMAGE fallback is deliberately not in the target's
+           loader list, so passing its mapped base makes SetWindowsHookExW
+           reject the hook with ERROR_MOD_NOT_FOUND; preserve the validated
+           NULL-handle behavior for that route. */
+        HINSTANCE hook_module = cmd->unwind_count
+            ? NULL
+            : (HINSTANCE)(uintptr_t)cmd->image_base;
+        if (cmd->hook_kind & BRIDGE_NATIVE_HOOK) {
+            /* Called inside the target process, for its already verified
+               window thread only. Mirror USER32's six-argument Unicode call
+               using the OS export; no hardcoded syscall number or OS patch. */
+            struct { USHORT length, maximum; wchar_t *buffer; } empty_name={0,0,NULL};
+            typedef HHOOK (WINAPI *NativeSetHook)(HINSTANCE,void *,DWORD,int,HOOKPROC,BOOL);
+            if (!cmd->target_tid || !cmd->set_hook ||
+                (hook_kind!=WH_GETMESSAGE && hook_kind!=WH_CALLWNDPROC)) {
+                cmd->last_error=ERROR_INVALID_PARAMETER;
+                cmd->hook=NULL;
+            } else {
+                cmd->hook=((NativeSetHook)(uintptr_t)cmd->set_hook)(
+                    NULL,&empty_name,cmd->target_tid,(int)hook_kind,BridgeCallback,FALSE);
+            }
+        } else {
+            cmd->hook = cmd->set_hook(
+                hook_kind == WH_GETMESSAGE ? WH_GETMESSAGE : WH_CALLWNDPROC,
+                BridgeCallback,
+                hook_module,
+                cmd->target_tid);
+        }
+    } __except (BridgeExceptionFilter(GetExceptionInformation())) {
+        cmd->exception_code = GetExceptionCode();
+        cmd->last_error = cmd->get_error();
+        cmd->query_result = 0x100u | 5u;
+        cmd->hook = NULL;
+    }
+    if (!cmd->hook && !cmd->exception_code) {
+        cmd->last_error = cmd->get_error();
+        cmd->query_result = 0x100u | 6u; /* hook call returned NULL */
+    } else if (cmd->hook) {
+        cmd->query_result = 6; /* hook call returned a handle */
+    }
+    InterlockedExchange(&cmd->stage, 2);
+    /* Hooks belong to the installing thread; keep it alive through dispatch. */
+    if (cmd->hook) {
+        while (!cmd->stop_requested) cmd->sleep_ms(1);
+        BridgeDetach(cmd);
+        if (cmd->detached) BridgeDrainCallbacks(cmd);
+    }
+    if ((!cmd->hook || cmd->detached) && !cmd->active && cmd->unwind_registered)
+        cmd->unwind_removed = cmd->delete_table(cmd->unwind_table);
+    return 0;
+}
+
+__declspec(dllexport) DWORD WINAPI BridgeUninstall(BridgeCommand *cmd) {
+    BridgeDetach(cmd);
+    return 0;
+}
+
+/* Keep a DIR64 relocation in release builds so base relocation is explicit. */
+__declspec(dllexport) const void *bridge_relocation_anchor = (const void *)&BridgeInstall;
+
+typedef struct BridgeLoadDiagnostic {
+    const wchar_t *path;
+    HMODULE (WINAPI *load)(LPCWSTR);
+    DWORD (WINAPI *get_error)(void);
+    uint64_t module;
+    DWORD error;
+    DWORD stage;
+    LONG (NTAPI *ldr_load)(wchar_t *, DWORD *, void *, HMODULE *);
+    LONG ntstatus;
+} BridgeLoadDiagnostic;
+_Static_assert(sizeof(BridgeLoadDiagnostic) == 56, "BridgeLoadDiagnostic ABI");
+
+__declspec(dllexport) DWORD WINAPI BridgeDiagnoseLoad(BridgeLoadDiagnostic *probe) {
+    probe->stage = 1;
+    probe->module = (uint64_t)(uintptr_t)probe->load(probe->path);
+    probe->error = probe->module ? 0 : probe->get_error();
+    if (!probe->module && probe->ldr_load) {
+        struct { USHORT Length, MaximumLength; wchar_t *Buffer; } name;
+        size_t count = 0;
+        HMODULE module = NULL;
+        while (probe->path[count] && count < 32766) ++count;
+        name.Length = (USHORT)(count * sizeof(wchar_t));
+        name.MaximumLength = name.Length + (USHORT)sizeof(wchar_t);
+        name.Buffer = (wchar_t *)probe->path;
+        probe->ntstatus = probe->ldr_load(NULL, NULL, &name, &module);
+        probe->module = (uint64_t)(uintptr_t)module;
+    }
+    probe->stage = 2;
+    return 1;
+}
+
+/* SEC_IMAGE does not register .pdata with the loader.  Establish SEH before
+   re-entering the loader, and report manual registration independently. */
+typedef struct BridgeSafeLoadDiagnostic {
+    BridgeLoadDiagnostic load;
+    BOOLEAN (WINAPI *add_table)(PRUNTIME_FUNCTION,DWORD,DWORD64);
+    BOOLEAN (WINAPI *delete_table)(PRUNTIME_FUNCTION);
+    void *specific_handler;
+    PRUNTIME_FUNCTION table;
+    DWORD64 base;
+    DWORD count, registered, removed, exception_code;
+} BridgeSafeLoadDiagnostic;
+_Static_assert(sizeof(BridgeSafeLoadDiagnostic) == 112, "Safe loader diagnostic ABI");
+__declspec(dllexport) DWORD WINAPI BridgeDiagnoseLoadSafe(BridgeSafeLoadDiagnostic *p) {
+    BridgeCommand context;
+    DWORD result = 0;
+    memset(&context, 0, sizeof(context));
+    memset(&bridge_fault, 0, sizeof(bridge_fault));
+    if (!p || !p->add_table || !p->delete_table || !p->specific_handler ||
+        !p->table || !p->base || !p->count || !p->load.load || !p->load.get_error)
+        return 0;
+    context.specific_handler = p->specific_handler;
+    g_dispatch = &context;
+    p->registered = p->add_table(p->table, p->count, p->base);
+    if (!p->registered) { g_dispatch = NULL; return 0; }
+    __try {
+        result = BridgeDiagnoseLoad(&p->load);
+    } __except (BridgeExceptionFilter(GetExceptionInformation())) {
+        p->exception_code = GetExceptionCode();
+        p->load.stage = 3;
+    }
+    p->removed = p->delete_table(p->table);
+    g_dispatch = NULL;
+    return result;
+}
+
+/* Current-engine selection query. Included after BridgeCommand/g_dispatch. */
+typedef struct SelectionRow { uint64_t unit; uint32_t rawcode; int32_t level; } SelectionRow;
+typedef struct SelectionWork {
+    uint64_t (*local_player)(void);
+    uint64_t (*create_group)(void);
+    void (*enum_selected)(uint64_t,uint64_t,uint64_t);
+    uint64_t (*first_of_group)(uint64_t);
+    void (*remove_from_group)(uint64_t,uint64_t);
+    void (*destroy_group)(uint64_t);
+    uint32_t (*unit_type_id)(uint64_t);
+    int32_t (*hero_level)(uint64_t);
+    uint64_t player, temporary_group;
+    uint32_t count, error, destroyed, reserved;
+    SelectionRow rows[24];
+} SelectionWork;
+_Static_assert(sizeof(SelectionWork) == 480, "SelectionWork ABI");
+
+__declspec(dllexport) const uint32_t probe_selection_abi[3] = {0x24268003u, 216u, 480u};
+
+__declspec(dllexport) uint64_t BridgeSelect(void) {
+    SelectionWork *work = (SelectionWork *)g_dispatch->work;
+    int32_t index, prior;
+    uint64_t group, unit;
+    if (!work) return 0;
+    work->count = 0;
+    if (!work->local_player || !work->create_group || !work->enum_selected ||
+        !work->first_of_group || !work->remove_from_group || !work->destroy_group ||
+        !work->unit_type_id || !work->hero_level) { work->error = 5; return 0; }
+    work->player = work->local_player();
+    group = work->create_group();
+    work->temporary_group = group;
+    if (!group) { work->error = 1; return 0; }
+    __try {
+        work->enum_selected(group, work->player, 0);
+        for (index = 0; index <= 24; ++index) {
+            unit = work->first_of_group(group);
+            if (!unit) break;
+            if (index == 24) { work->error = 2; return 0; }
+            SelectionRow *row = &work->rows[index];
+            row->unit = unit;
+            for (prior = 0; prior < index; ++prior)
+                if (work->rows[prior].unit == row->unit) { work->error = 4; return 0; }
+            row->rawcode = work->unit_type_id(row->unit);
+            row->level = work->hero_level(row->unit);
+            work->remove_from_group(group, unit);
+        }
+        work->count = (uint32_t)index;
+        return (uint64_t)index;
+    } __finally {
+        work->destroy_group(group);
+        work->destroyed = 1;
+    }
+}
+
+typedef struct HeroWork {
+    SelectionWork selection;
+    void (*set_level)(uint64_t,int32_t,uint32_t);
+    uint8_t (*strip_level)(uint64_t,int32_t);
+    void (*suspend_xp)(uint64_t,uint32_t);
+    uint8_t (*is_suspended_xp)(uint64_t);
+    void *expected_tls;
+    uint32_t target,changed,error,reserved;
+    int32_t after[24];
+} HeroWork;
+_Static_assert(sizeof(HeroWork)==632,"HeroWork ABI");
+__declspec(dllexport) const uint32_t bridge_abi[3]={0x2426801Cu,216u,632u};
+__declspec(dllexport) uint64_t BridgeHeroQuery(void) {
+    HeroWork *w=(HeroWork *)g_dispatch->work;
+    uint32_t i,heroes=0;
+    uint64_t count;
+    if (!w) return 0;
+    if (g_dispatch->tls_value!=w->expected_tls || !w->set_level || !w->strip_level ||
+        !w->suspend_xp || !w->is_suspended_xp || w->target>100000) {
+        w->error=10;return 0;
+    }
+    count=BridgeSelect();
+    if (w->selection.error || !w->selection.destroyed || count!=w->selection.count) {
+        w->error=11;return count;
+    }
+    /* Validate all hero rows before the first write. Nonheroes are untouched. */
+    for (i=0;i<count;++i) {
+        SelectionRow *row=&w->selection.rows[i];
+        if (row->level<=0) continue;
+        ++heroes;
+        if (w->selection.unit_type_id(row->unit)!=row->rawcode ||
+            w->selection.hero_level(row->unit)!=row->level) {w->error=12;return count;}
+    }
+    if (!heroes) {w->error=13;return count;}
+    for (i=0;i<count;++i) {
+        SelectionRow *row=&w->selection.rows[i];
+        if (row->level<=0) continue;
+        if (w->selection.unit_type_id(row->unit)!=row->rawcode ||
+            w->selection.hero_level(row->unit)!=row->level) {w->error=14;return count;}
+        if (w->target && row->level!=(int32_t)w->target) {
+            uint32_t operation_error=0;
+            uint8_t restore_xp=0;
+            __try {
+                if (w->target > (uint32_t)row->level) {
+                    if (w->is_suspended_xp(row->unit)) {
+                        w->suspend_xp(row->unit,0);
+                        restore_xp=1;
+                    }
+                    w->set_level(row->unit,(int32_t)w->target,1);
+                } else {
+                    if (!w->strip_level(row->unit,row->level-(int32_t)w->target))
+                        operation_error=16;
+                }
+            } __except(EXCEPTION_EXECUTE_HANDLER) {
+                operation_error=GetExceptionCode();
+            }
+            if (restore_xp) {
+                __try { w->suspend_xp(row->unit,1); }
+                __except(EXCEPTION_EXECUTE_HANDLER) {
+                    if (!operation_error) operation_error=GetExceptionCode();
+                }
+            }
+            w->after[i]=w->selection.hero_level(row->unit);
+            /* A current-build setter may fault after changing the object. The
+               readback is authoritative; reject only when it missed target. */
+            if (w->after[i]!=(int32_t)w->target) {
+                w->error=operation_error ? operation_error : 15;
+                return count;
+            }
+            ++w->changed;
+        }
+        w->after[i]=w->selection.hero_level(row->unit);
+        if (w->after[i]!=(w->target ? (int32_t)w->target : row->level)) {w->error=15;return count;}
+    }
+    return count;
+}
+BOOL WINAPI DllMain(HINSTANCE module,DWORD reason,LPVOID reserved) {
+    (void)module;(void)reason;(void)reserved;return TRUE;
+}
+#include "war3_bridge_native_journal.h"
+#include "war3_bridge_ability.h"
+#include "war3_bridge_hero_attributes.h"
+#include "war3_bridge_attack_speed.h"
+#include "war3_bridge_ability_field.h"
+#include "war3_bridge_item_field.h"
+#include "war3_bridge_bulk.h"
+#include "war3_bridge_effect.h"
+#include "war3_bridge_world_effect.h"
+#include "war3_bridge_world_cast.h"
+#include "war3_bridge_direct_cast.h"
+#include "war3_bridge_item.h"
+#include "war3_bridge_item_ability.h"
+#include "war3_bridge_item_catalog.h"
+#include "war3_bridge_clone.h"
+#include "war3_bridge_unit_bindings.h"
+#include "war3_bridge_unit_action.h"
+#include "war3_bridge_unit_stats.h"
+#include "war3_bridge_world.h"
+#include "war3_bridge_game_speed.h"
+#include "war3_bridge_spawn.h"
+#include "war3_bridge_mouse.h"
+#include "war3_bridge_screen.h"
+#include "war3_bridge_camera.h"
+#include "war3_bridge_position.h"
+#include "war3_bridge_terrain.h"
+#include "war3_bridge_map_bounds.h"
+#include "war3_bridge_equipment.h"
+#include "war3_bridge_equipment_effect.h"
+#include "war3_bridge_item_safety.h"
+#include "war3_bridge_extension.h"
+#include "war3_bridge_stat_details.h"
+#include "war3_bridge_talent_icon_control.h"
+#ifdef BRIDGE_DIAGNOSTIC
+#include "war3_bridge_cooldown_probe.h"
+#endif
+#ifdef BRIDGE_DIAGNOSTIC
+#include "war3_bridge_talent_probe.h"
+#include "war3_bridge_inherited_probe.h"
+#include "war3_equipment_attribute_probe.h"
+#endif
+#include "war3_bridge_talent_order.h"
+#ifdef BRIDGE_TEST
+#include "war3_bridge_test_fixture.h"
+#include "war3_equipment_effect_fixture.h"
+#include "war3_item_safety_fixture.h"
+#include "war3_stat_flat_fixture.h"
+#include "war3_unit_bindings_fixture.h"
+#include "war3_camera_fixture.h"
+#include "war3_ability_compat_fixture.h"
+#endif
+
+#ifdef BRIDGE_TEST
+__declspec(dllexport) uint64_t BridgeTestResolveProfileOwner(uint64_t base, uint64_t handle) {
+    __try { return AttackSpeedResolveOwner(base, handle); }
+    __except(EXCEPTION_EXECUTE_HANDLER) { return 0; }
+}
+#endif

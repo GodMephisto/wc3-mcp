@@ -1,0 +1,71 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/danielsreichenbach/mopaq"
+source_path: "Cargo.toml"
+ref: HEAD
+---
+
+[workspace]
+# mopaq: Core MPQ library (named after Mo'PaQ format)
+# storm-ffi: StormLib-compatible FFI bindings
+# storm-cli: Command-line interface tool
+members = ["mopaq", "storm-ffi", "storm-cli"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Daniel S. Reichenbach <daniel@kogito.network>"]
+edition = "2021"
+rust-version = "1.86"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/danielsreichenbach/mopaq"
+homepage = "https://github.com/danielsreichenbach/mopaq"
+documentation = "https://docs.rs/mopaq"
+keywords = ["mpq", "blizzard", "archive", "stormlib", "gaming"]
+categories = [
+  "compression",
+  "filesystem",
+  "game-development",
+  "parser-implementations",
+]
+
+[workspace.dependencies]
+# Common dependencies used by multiple members
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Testing
+tempfile = "3.20"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# CLI (used by storm-cli)
+clap = { version = "4.5", features = ["derive", "color", "suggestions"] }
+colored = "3"
+indicatif = "0.17"
+
+# FFI (used by storm-ffi)
+libc = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
+
+[profile.bench]
+debug = true
+
+[profile.dev]
+opt-level = 0
+
+[profile.test]
+opt-level = 2

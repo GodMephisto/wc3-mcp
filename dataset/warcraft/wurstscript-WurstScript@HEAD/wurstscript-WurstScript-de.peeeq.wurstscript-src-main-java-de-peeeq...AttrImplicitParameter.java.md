@@ -1,0 +1,194 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/attributes/AttrImplicitParameter.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.attributes;
+
+import de.peeeq.wurstscript.ast.*;
+import de.peeeq.wurstscript.attributes.names.FuncLink;
+import de.peeeq.wurstscript.attributes.names.NameLink;
+import de.peeeq.wurstscript.attributes.names.OtherLink;
+import de.peeeq.wurstscript.types.WurstType;
+import de.peeeq.wurstscript.types.WurstTypeTypeParam;
+import org.eclipse.jdt.annotation.Nullable;
+import de.peeeq.wurstscript.types.WurstTypeBoundTypeParam;
+
+public class AttrImplicitParameter {
+
+    public static OptExpr getImplicitParameter(ExprMemberVar e) {
+        Expr result = getImplicitParameterUsingLeft(e, isDynamicVariable(e));
+        if (result == null) {
+            return getImplicitParamterCaseNormalVar(e);
+        } else {
+            return result;
+        }
+    }
+
+    public static OptExpr getImplicitParameter(ExprMemberArrayVar e) {
+        Expr result = getImplicitParameterUsingLeft(e, isDynamicVariable(e));
+        if (result == null) {
+            return getImplicitParamterCaseNormalVar(e);
+        } else {
+            return result;
+        }
+    }
+
+    public static OptExpr getImplicitParameter(ExprVarAccess e) {
+        return getImplicitParamterCaseNormalVar(e);
+    }
+
+    public static OptExpr getImplicitParameter(ExprVarArrayAccess e) {
+        return getImplicitParamterCaseNormalVar(e);
+    }
+
+
+    public static OptExpr getImplicitParameter(ExprFunctionCall e) {
+        return getImplicitParameterCaseNormalFunctionCall(e);
+    }
+
+    public static OptExpr getImplicitParameter(ExprMemberMethod e) {
+        FuncLink calledFunc = e.attrFuncLink();
+        boolean requiresReceiver = calledFunc != null
+            && (calledFunc.getDef().attrIsDynamicClassMember()
+                || calledFunc.getDef() instanceof ExtensionFuncDef);
+        Expr result = getImplicitParameterUsingLeft(e, requiresReceiver);
+        if (result == null) {
+            return getImplicitParameterCaseNormalFunctionCall(e);
+        } else {
+            if (calledFunc != null
+                    && !calledFunc.getDef().attrIsDynamicClassMember()
+                    && !(calledFunc.getDef() instanceof ExtensionFuncDef)) {
+                e.addError("Cannot call static method " + e.getFuncName() + " on an object.");
+            }
+
+            return result;
+        }
+    }
+
+    private static @Nullable Expr getImplicitParameterUsingLeft(HasReceiver e, boolean requiresReceiver) {
+        if (e.getLeft().attrTyp().isStaticRef()) {
+            // Module-instance qualifiers are static references, but a final dynamic member in an
+            // access such as object.Module.member still uses object as its receiver.
+            if (requiresReceiver && e.getLeft() instanceof HasReceiver qualifiedLeft) {
+                return getImplicitParameterUsingLeft(qualifiedLeft, true);
+            }
+            // we have a static ref like Math.sqrt()
+            // this will be handled like if we just have sqrt()
+            // if we have an implicit parameter depends on whether sqrt is static or not
+            return null;
+        }
+        return e.getLeft();
+    }
+
+    private static boolean isDynamicVariable(NameRef e) {
+        NameLink nameLink = e.attrNameLink();
+        return nameLink != null
+            && nameLink.getDef() instanceof VarDef variable
+            && variable.attrIsDynamicClassMember();
+    }
+
+    private static OptExpr getImplicitParameterCaseNormalFunctionCall(FunctionCall e) {
+        FuncLink calledFunc = e.attrFuncLink();
+        return getFunctionCallImplicitParameter(e, calledFunc, true);
+    }
+
+    /**
+     * True for a call whose receiver is a bounded type parameter standing for itself, as in
+     * {@code T.toIndex(x)}. Such a call resolves through the type class instance chosen for T and
+     * therefore takes no implicit {@code this}.
+     */
+    public static boolean isTypeClassDispatch(Element e) {
+        if (!(e instanceof HasReceiver hasReceiver)) {
+            return false;
+        }
+        Expr left = hasReceiver.getLeft();
+        if (left == null) {
+            return false;
+        }
+        WurstType leftType = left.attrTyp();
+        if (leftType instanceof WurstTypeTypeParam tp) {
+            return tp.isStaticRef();
+        }
+        // A parameter of a module instantiation denotes the argument bound to it, so the receiver is
+        // a binding rather than the parameter itself. It still names a type parameter, which is what
+        // makes this a dispatch.
+        return leftType instanceof WurstTypeBoundTypeParam bound && bound.isStaticRef();
+    }
+
+    static OptExpr getFunctionCallImplicitParameter(FunctionCall e, FuncLink calledFunc, boolean showError) {
+        if (e instanceof HasReceiver hasReceiver) {
+            boolean requiresReceiver = calledFunc != null
+                && (calledFunc.getDef().attrIsDynamicClassMember()
+                    || calledFunc.getDef() instanceof ExtensionFuncDef);
+            Expr res = getImplicitParameterUsingLeft(hasReceiver, requiresReceiver);
+            if (res != null) {
+                return res;
+            }
+        }
+        if (calledFunc == null) {
+            return Ast.NoExpr();
+        }
+        if (isTypeClassDispatch(e)) {
+            // T.f(x): the bound supplies the implementation and the value is an ordinary
+            // argument, so there is no receiver to pass even though f is declared as a method.
+            return Ast.NoExpr();
+        }
+        if (calledFunc.getDef().attrIsDynamicClassMember()) {
+            // dynamic function call
+            if (e.attrIsDynamicContext()) {
+                // dynamic context means we have a 'this':
+                ExprThis t = Ast.ExprThis(e.getSource());
+                t.setParent(e);
+                // check if 'this' has correct type
+                if (showError && !t.attrTyp().isSubtypeOf(calledFunc.getReceiverType(), e)) {
+                    e.addError("Cannot access dynamic function " + e.getFuncName() + " from context of type " +
+                            t.attrTyp() + ".");
+                }
+                return t;
+            } else {
+                if (showError) {
+                    e.addError("Cannot call dynamic function " + e.getFuncName() + " from static context.");
+                }
+                return Ast.NoExpr();
+            }
+        } else {
+
+            // static function:
+            return Ast.NoExpr();
+        }
+    }
+
+    private static OptExpr getImplicitParamterCaseNormalVar(NameRef e) {
+        NameLink def = e.attrNameLink();
+        if (def instanceof OtherLink) {
+            return Ast.NoExpr();
+        }
+        if (def != null && def.getDef() instanceof VarDef) {
+            VarDef varDef = (VarDef) def.getDef();
+            if (varDef.attrIsDynamicClassMember()) {
+                // dynamic var access
+                if (e.attrIsDynamicContext()) {
+                    // dynamic context means we have a 'this':
+                    ExprThis t = Ast.ExprThis(e.getSource());
+                    t.setParent(e);
+                    // check if 'this' has correct type
+                    WurstType thisType = t.attrTyp();
+                    if (!def.receiverCompatibleWith(thisType, e)) {
+                        e.addError("Cannot access dynamic variable " + varDef.getName() + " from context of type " +
+                                thisType + ".");
+                    }
+                    return t;
+                } else {
+                    e.addError("Cannot access dynamic variable " + varDef.getName() + " from static context.");
+                    return Ast.NoExpr();
+                }
+            }
+        }
+        return Ast.NoExpr();
+    }
+
+
+}

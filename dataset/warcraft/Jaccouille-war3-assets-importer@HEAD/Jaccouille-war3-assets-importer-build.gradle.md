@@ -1,0 +1,204 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Jaccouille/war3-assets-importer"
+source_path: "build.gradle"
+ref: HEAD
+---
+
+import org.apache.tools.ant.taskdefs.condition.Os
+
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group 'com.hiveworkshop'
+version '1.0.0'
+
+// Use Java toolchain so Gradle auto-detects (or downloads) the correct JDK
+// on any OS — no need for org.gradle.java.home in gradle.properties.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+application {
+    mainClass = 'com.hiveworkshop.war3assetsimporter.Main'
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    maven { url 'http://maven.nikr.net/'; allowInsecureProtocol = true }
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+
+    // wc3libs: resolved from JitPack in CI using Jaccouille's fork (doo-units-subversion-9
+    // branch); substituted by the local composite build (../wc3libs) when that directory
+    // exists — see settings.gradle.
+    implementation 'com.github.Jaccouille:wc3libs:doo-units-subversion-9-SNAPSHOT'
+//    implementation "com.github.DrSuperGood:blp-iio-plugin:master"
+    implementation files('libs/blp-iio-plugin.jar')
+    // Water's wc3 libs
+    implementation 'com.github.inwc3:JMPQ3:1.7.14'
+
+    // CLI framework
+    implementation 'info.picocli:picocli:4.7.5'
+
+    // JSON (keybindings config)
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Modern Swing Look & Feel (FlatLight, FlatDark, FlatIntelliJ, FlatDarcula)
+    implementation 'com.formdev:flatlaf:3.5.1'
+
+    // TGA (and other formats) support for ImageIO
+    implementation 'com.twelvemonkeys.imageio:imageio-tga:3.10.1'
+
+    // DDS support for ImageIO
+    implementation 'net.nikr:dds:1.0.0'
+}
+
+shadowJar {
+    archiveBaseName = 'War3AssetsImporter'
+    archiveClassifier = ''
+    archiveVersion = ''
+    manifest {
+        attributes 'Main-Class': 'com.hiveworkshop.war3assetsimporter.Main'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Ensure source files are compiled as UTF-8 on all platforms (avoids garbled
+// characters when building on a Windows system whose default charset is not UTF-8)
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+// Preserve UTF-8 characters in .properties files (prevents Gradle from
+// re-encoding accented characters to  escapes during resource copy)
+tasks.withType(ProcessResources).configureEach {
+    filteringCharset = 'UTF-8'
+}
+
+// Stamp the project version into version.properties at build time
+processResources {
+    filesMatching('version.properties') {
+        expand(appVersion: project.version)
+    }
+}
+
+// ── Distribution tasks ────────────────────────────────────────────────────────
+//
+// Usage:
+//   ./gradlew jlinkTask     – build a trimmed JRE into build/runtime/
+//   ./gradlew jpackageTask  – build the native installer into build/dist/
+//
+// To refine the module list, run after shadowJar:
+//   jdeps --multi-release 17 --ignore-missing-deps --print-module-deps \
+//         build/libs/War3AssetsImporter.jar
+//
+// Add platform-specific icons once they are available:
+//   Windows : src/main/dist/icon.ico
+//   macOS   : src/main/dist/icon.icns
+//   Linux   : src/main/dist/icon.png  (current icon.png already works)
+
+def jlinkModules = [
+        'java.desktop',    // Swing / AWT
+        'java.logging',    // java.util.logging
+        'java.prefs',      // required by Swing internals
+        'java.xml',        // XML (wc3libs, various deps)
+        'jdk.unsupported', // sun.misc.Unsafe (Gson, JMPQ3, …)
+        'java.naming',     // JNDI (transitive deps)
+        'java.management', // JMX  (transitive deps)
+].join(',')
+
+// Resolves the bin/ directory of the toolchain JDK at execution time.
+def jdkBin = { ->
+    def home = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }.get().metadata.installationPath.asFile
+    return new File(home, 'bin')
+}
+
+// ── jlink ─────────────────────────────────────────────────────────────────────
+tasks.register('jlinkTask') {
+    group       = 'distribution'
+    description = 'Builds a trimmed JRE image via jlink into build/runtime/'
+    dependsOn shadowJar
+
+    def runtimeDir = layout.buildDirectory.dir('runtime')
+    outputs.dir(runtimeDir)
+
+    doLast {
+        def ext    = Os.isFamily(Os.FAMILY_WINDOWS) ? '.exe' : ''
+        def jlink  = new File(jdkBin(), "jlink${ext}").absolutePath
+        def outDir = runtimeDir.get().asFile
+        if (outDir.exists()) outDir.deleteDir()
+
+        exec {
+            executable = jlink
+            args '--add-modules', jlinkModules,
+                 '--output',      outDir.absolutePath,
+                 '--strip-debug',
+                 '--compress',    '2',
+                 '--no-header-files',
+                 '--no-man-pages'
+        }
+    }
+}
+
+// ── jpackage ──────────────────────────────────────────────────────────────────
+tasks.register('jpackageTask') {
+    group       = 'distribution'
+    description = 'Creates a portable app-image via jpackage into build/dist/'
+    dependsOn shadowJar, 'jlinkTask'
+
+    def stagingDir = layout.buildDirectory.dir('jpackage-input')
+    def destDir    = layout.buildDirectory.dir('dist')
+    outputs.dir(destDir)
+
+    doLast {
+        def ext      = Os.isFamily(Os.FAMILY_WINDOWS) ? '.exe' : ''
+        def jpackage = new File(jdkBin(), "jpackage${ext}").absolutePath
+
+        // app-image: portable self-contained directory — no installer wizard,
+        // no admin rights required, just extract and run.
+        // On Windows: build/dist/War3AssetsImporter/War3AssetsImporter.exe
+        // On macOS:   build/dist/War3AssetsImporter.app
+        // On Linux:   build/dist/War3AssetsImporter/War3AssetsImporter
+        def pkgType = 'app-image'
+
+        // Stage only the shadow JAR — avoids jpackage picking up the plain JAR
+        def staging = stagingDir.get().asFile
+        delete(staging)
+        staging.mkdirs()
+        copy {
+            from shadowJar.outputs.files
+            into staging
+        }
+
+        destDir.get().asFile.mkdirs()
+
+        exec {
+            executable = jpackage
+            args '--input',         staging.absolutePath,
+                 '--main-jar',      'War3AssetsImporter.jar',
+                 '--main-class',    'com.hiveworkshop.war3assetsimporter.Main',
+                 '--runtime-image', layout.buildDirectory.dir('runtime').get().asFile.absolutePath,
+                 '--name',          'War3AssetsImporter',
+                 '--app-version',   project.version,
+                 '--vendor',        'hiveworkshop',
+                 '--description',   'Import custom 3D models and textures into Warcraft 3 map files',
+                 '--dest',          destDir.get().asFile.absolutePath,
+                 '--type',          pkgType
+        }
+    }
+}

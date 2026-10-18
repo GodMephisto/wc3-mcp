@@ -1,0 +1,73 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Widget/MapDoodads.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Widget
+{
+    public sealed partial class MapDoodads
+    {
+        internal MapDoodads(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            if (reader.ReadInt32() != FileFormatSignature)
+            {
+                throw new InvalidDataException($"Expected file header signature at the start of a .doo file.");
+            }
+
+            FormatVersion = reader.ReadInt32<MapWidgetsFormatVersion>();
+            SubVersion = reader.ReadInt32<MapWidgetsSubVersion>();
+
+            nint doodadCount = reader.ReadInt32();
+            if (doodadCount > 0)
+            {
+                Doodads.Add(reader.ReadMapDoodadData(FormatVersion, SubVersion, out var useNewFormat));
+                UseNewFormat = useNewFormat;
+
+                for (nint i = 1; i < doodadCount; i++)
+                {
+                    Doodads.Add(reader.ReadMapDoodadData(FormatVersion, SubVersion, out useNewFormat));
+                    if (useNewFormat != UseNewFormat)
+                    {
+                        throw new InvalidDataException();
+                    }
+                }
+            }
+
+            SpecialDoodadVersion = reader.ReadInt32<SpecialDoodadVersion>();
+
+            nint specialDoodads = reader.ReadInt32();
+            for (nint i = 0; i < specialDoodads; i++)
+            {
+                SpecialDoodads.Add(reader.ReadMapSpecialDoodadData(FormatVersion, SubVersion, SpecialDoodadVersion));
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write(FileFormatSignature);
+            writer.Write((int)FormatVersion);
+            writer.Write((int)SubVersion);
+
+            writer.Write(Doodads.Count);
+            foreach (var doodad in Doodads)
+            {
+                writer.Write(doodad, FormatVersion, SubVersion, UseNewFormat);
+            }
+
+            writer.Write((int)SpecialDoodadVersion);
+
+            writer.Write(SpecialDoodads.Count);
+            foreach (var specialDoodad in SpecialDoodads)
+            {
+                writer.Write(specialDoodad, FormatVersion, SubVersion, SpecialDoodadVersion);
+            }
+        }
+    }
+}

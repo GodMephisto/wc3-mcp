@@ -1,0 +1,47 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/mpq-rs"
+source_path: "Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "mpq-rs"
+description = "A pure-rust implementation of a MoPaQ archive reader and writer"
+version = "0.1.0"
+authors = ["ElusiveMori <mori@reu.moe>", "nazarpunk <nazarpunk@gmail.com>"]
+edition = "2024"
+readme = "README.md"
+repository = "https://github.com/WarRaft/mpq-rs"
+keywords = ["mpq", "blizzard", "mopaq", "warcraft"]
+categories = ["encoding", "parsing"]
+license = "MIT"
+exclude = [
+    "preview/*",
+    "test-data/*",
+    "assets/fonts/*",
+    "assets/icon.png",
+    "assets/generated/icons/*",
+    "assets/generated/app.ico",
+    "assets/generated/AppIcon.icns",
+    "build/build-info.txt",
+    "*.sh",
+]
+
+
+[dependencies]
+byteorder = "1.5.0"
+lazy_static = "1.3.0"
+byte-slice-cast = "1.2.3"
+flate2 = "1.1.4"
+bzip2 = "0.6.0"
+indexmap = "2.11.4"
+
+[[bin]]
+name = "blp-cli"
+path = "src/bin/mpq-cli.rs"
+required-features = ["cli"]
+
+[lib]
+name = "mpq_rs"
+path = "src/lib.rs"

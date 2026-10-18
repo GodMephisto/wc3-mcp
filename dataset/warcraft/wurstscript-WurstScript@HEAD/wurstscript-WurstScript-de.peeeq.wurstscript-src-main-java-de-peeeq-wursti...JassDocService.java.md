@@ -1,0 +1,1128 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/languageserver/JassDocService.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio.languageserver;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.ast.FunctionDefinition;
+import de.peeeq.wurstscript.ast.NameDef;
+import de.peeeq.wurstscript.utils.Utils;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Stream;
+
+public final class JassDocService {
+
+    // Optional JassDoc configuration (environment variable or system property):
+    // WURST_JASSDOC_DB_AUTO_UPDATE=false keeps an existing latest DB indefinitely.
+    // WURST_JASSDOC_DB_PROXY overrides HTTPS_PROXY/HTTP_PROXY for JassDoc requests.
+
+    public enum SymbolKind {
+        FUNCTION, VARIABLE
+    }
+
+    public static final class LookupKey {
+        private final String symbolName;
+        private final SymbolKind symbolKind;
+        private final String sourceFile;
+
+        public LookupKey(String symbolName, SymbolKind symbolKind, String sourceFile) {
+            this.symbolName = symbolName;
+            this.symbolKind = symbolKind;
+            this.sourceFile = sourceFile;
+        }
+
+        public String symbolName() {
+            return symbolName;
+        }
+
+        public SymbolKind symbolKind() {
+            return symbolKind;
+        }
+
+        public String sourceFile() {
+            return sourceFile;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof LookupKey other)) {
+                return false;
+            }
+            return symbolName.equals(other.symbolName)
+                && symbolKind == other.symbolKind
+                && sourceFile.equals(other.sourceFile);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = symbolName.hashCode();
+            result = 31 * result + symbolKind.hashCode();
+            result = 31 * result + sourceFile.hashCode();
+            return result;
+        }
+    }
+
+    private static final JassDocService INSTANCE = new JassDocService();
+    private static final ExecutorService BACKGROUND = Executors.newSingleThreadExecutor(task -> {
+        Thread thread = new Thread(task, "JassDoc");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private static final Duration DEFAULT_LATEST_MAX_AGE = Duration.ofHours(24);
+    private static final String RELEASES_LATEST_API = "https://api.github.com/repos/wurstscript/wurst-jassdoc-build/releases/latest";
+    private static final String RELEASES_API = "https://api.github.com/repos/wurstscript/wurst-jassdoc-build/releases?per_page=20";
+    private static final String RELEASES_DOWNLOAD_BASE = "https://github.com/wurstscript/wurst-jassdoc-build/releases";
+
+    private final Map<LookupKey, Optional<String>> lookupCache = new ConcurrentHashMap<>();
+    private volatile @Nullable CachedDb cachedDb;
+    private volatile boolean initFailed;
+    private volatile boolean missingSourceWarningShown;
+    private final AtomicBoolean initRequested = new AtomicBoolean(false);
+    private volatile @Nullable Connection sharedConnection;
+    private volatile @Nullable Path sharedConnectionPath;
+    private static volatile @Nullable Function<LookupKey, @Nullable String> testLookup;
+
+    private static final class CachedDb {
+        private final Path dbPath;
+        private final List<TableSchema> schemas;
+
+        private CachedDb(Path dbPath, List<TableSchema> schemas) {
+            this.dbPath = dbPath;
+            this.schemas = schemas;
+        }
+    }
+
+    private static final class TableSchema {
+        private final String table;
+        private final String nameColumn;
+        private final String docColumn;
+        private final @Nullable String kindColumn;
+        private final @Nullable String patchColumn;
+
+        private TableSchema(String table, String nameColumn, String docColumn, @Nullable String kindColumn, @Nullable String patchColumn) {
+            this.table = table;
+            this.nameColumn = nameColumn;
+            this.docColumn = docColumn;
+            this.kindColumn = kindColumn;
+            this.patchColumn = patchColumn;
+        }
+    }
+
+    public static JassDocService getInstance() {
+        return INSTANCE;
+    }
+
+    public static void setTestLookup(@Nullable Function<LookupKey, @Nullable String> testLookupFn) {
+        testLookup = testLookupFn;
+    }
+
+    public @Nullable String documentationForFunction(FunctionDefinition f) {
+        return documentationFor(f.getName(), SymbolKind.FUNCTION, f.getSource().getFile());
+    }
+
+    public @Nullable String documentationForFunctionQuick(FunctionDefinition f) {
+        return documentationForQuick(f.getName(), SymbolKind.FUNCTION, f.getSource().getFile());
+    }
+
+    public @Nullable String documentationForVariable(NameDef n) {
+        return documentationFor(n.getName(), SymbolKind.VARIABLE, n.getSource().getFile());
+    }
+
+    public @Nullable String documentationForVariableQuick(NameDef n) {
+        return documentationForQuick(n.getName(), SymbolKind.VARIABLE, n.getSource().getFile());
+    }
+
+    /** Waits for cold database initialization without occupying the language worker. */
+    public CompletableFuture<String> documentationForAsync(LookupKey key) {
+        if (testLookup == null && !isJassBuiltinSource(key.sourceFile())) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return CompletableFuture.supplyAsync(
+                () -> documentationFor(key.symbolName(), key.symbolKind(), key.sourceFile()), BACKGROUND);
+    }
+
+    public @Nullable String documentationFor(String symbolName, SymbolKind symbolKind, String sourceFile) {
+        Function<LookupKey, @Nullable String> override = testLookup;
+        LookupKey key = new LookupKey(symbolName, symbolKind, sourceFile);
+        if (override != null) {
+            Optional<String> computed = Optional.ofNullable(trimToNull(override.apply(key)));
+            Optional<String> prev = lookupCache.putIfAbsent(key, computed);
+            return (prev != null ? prev : computed).orElse(null);
+        }
+        if (!isJassBuiltinSource(sourceFile)) {
+            return null;
+        }
+        Optional<String> cached = lookupCache.computeIfAbsent(key, this::lookupDocumentation);
+        return cached.orElse(null);
+    }
+
+    /**
+     * Non-blocking lookup for latency-sensitive paths (autocomplete):
+     * if DB is not ready, triggers async init and returns null immediately.
+     */
+    public @Nullable String documentationForQuick(String symbolName, SymbolKind symbolKind, String sourceFile) {
+        LookupKey key = new LookupKey(symbolName, symbolKind, sourceFile);
+        Function<LookupKey, @Nullable String> override = testLookup;
+        if (override != null) {
+            Optional<String> computed = Optional.ofNullable(trimToNull(override.apply(key)));
+            Optional<String> prev = lookupCache.putIfAbsent(key, computed);
+            return (prev != null ? prev : computed).orElse(null);
+        }
+        if (!isJassBuiltinSource(sourceFile)) {
+            return null;
+        }
+        Optional<String> cached = lookupCache.get(key);
+        if (cached != null) {
+            return cached.orElse(null);
+        }
+        CachedDb db = cachedDb;
+        if (db == null) {
+            triggerAsyncInit();
+            return null;
+        }
+        Optional<String> computed = Optional.ofNullable(lookupFromDb(db, key));
+        Optional<String> prev = lookupCache.putIfAbsent(key, computed);
+        return (prev != null ? prev : computed).orElse(null);
+    }
+
+    public void clearCacheForTests() {
+        lookupCache.clear();
+        closeSharedConnection();
+        cachedDb = null;
+        initFailed = false;
+        missingSourceWarningShown = false;
+        initRequested.set(false);
+    }
+
+    private Optional<String> lookupDocumentation(LookupKey key) {
+        Function<LookupKey, @Nullable String> override = testLookup;
+        if (override != null) {
+            return Optional.ofNullable(trimToNull(override.apply(key)));
+        }
+
+        CachedDb db = getOrInitDb();
+        if (db == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(lookupFromDb(db, key));
+    }
+
+    private @Nullable CachedDb getOrInitDb() {
+        if (initFailed) {
+            return null;
+        }
+        CachedDb existing = cachedDb;
+        if (existing != null) {
+            return existing;
+        }
+        synchronized (this) {
+            if (cachedDb != null) {
+                return cachedDb;
+            }
+            if (initFailed) {
+                return null;
+            }
+            try {
+                Optional<Path> dbPath = ensureDbAvailable();
+                if (!dbPath.isPresent()) {
+                    initFailed = true;
+                    return null;
+                }
+                try (Connection conn = open(dbPath.get())) {
+                    List<TableSchema> schemas = discoverSchemas(conn);
+                    boolean hasLegacySchema = hasCompatibleLegacyJassdocSchema(conn);
+                    if (schemas.isEmpty() && !hasLegacySchema) {
+                        WLogger.warning("JassDoc DB found, but no compatible documentation tables were detected.");
+                        initFailed = true;
+                        return null;
+                    }
+                    cachedDb = new CachedDb(dbPath.get(), schemas);
+                    return cachedDb;
+                }
+            } catch (Exception e) {
+                initFailed = true;
+                WLogger.warning("Could not initialize JassDoc DB: " + e.getMessage());
+                return null;
+            }
+        }
+    }
+
+    private synchronized @Nullable String lookupFromDb(CachedDb db, LookupKey key) {
+        try {
+            Connection conn = getSharedConnection(db.dbPath);
+            String legacyDoc = lookupFromLegacyJassdocTables(conn, key);
+            if (legacyDoc != null) {
+                return legacyDoc;
+            }
+            String bestDoc = null;
+            int bestScore = Integer.MIN_VALUE;
+            for (TableSchema schema : db.schemas) {
+                String sql = "SELECT "
+                    + q(schema.docColumn)
+                    + (schema.kindColumn == null ? "" : ", " + q(schema.kindColumn))
+                    + (schema.patchColumn == null ? "" : ", " + q(schema.patchColumn))
+                    + " FROM " + q(schema.table)
+                    + " WHERE lower(" + q(schema.nameColumn) + ") = lower(?) LIMIT 10";
+                try (PreparedStatement st = conn.prepareStatement(sql)) {
+                    st.setString(1, key.symbolName());
+                    try (ResultSet rs = st.executeQuery()) {
+                        while (rs.next()) {
+                            String doc = trimToNull(rs.getString(1));
+                            if (doc == null) {
+                                continue;
+                            }
+                            String kind = schema.kindColumn == null ? null : rs.getString(2);
+                            String patch = schema.patchColumn == null
+                                ? null
+                                : rs.getString(schema.kindColumn == null ? 2 : 3);
+                            int score = score(kind, key.symbolKind());
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestDoc = formatDoc(doc, patch);
+                            }
+                        }
+                    }
+                }
+            }
+            return bestDoc;
+        } catch (SQLException e) {
+            WLogger.warning("JassDoc lookup failed for '" + key.symbolName() + "': " + e.getMessage());
+            return null;
+        }
+    }
+
+    private Connection getSharedConnection(Path dbPath) throws SQLException {
+        synchronized (this) {
+            if (sharedConnection != null) {
+                try {
+                    if (!sharedConnection.isClosed() && dbPath.equals(sharedConnectionPath)) {
+                        return sharedConnection;
+                    }
+                } catch (SQLException ignored) {
+                    // reconnect below
+                }
+                closeSharedConnection();
+            }
+            sharedConnection = open(dbPath);
+            sharedConnectionPath = dbPath;
+            return sharedConnection;
+        }
+    }
+
+    private void closeSharedConnection() {
+        synchronized (this) {
+            if (sharedConnection != null) {
+                try {
+                    sharedConnection.close();
+                } catch (SQLException ignored) {
+                }
+            }
+            sharedConnection = null;
+            sharedConnectionPath = null;
+        }
+    }
+
+    private void triggerAsyncInit() {
+        if (!initRequested.compareAndSet(false, true)) {
+            return;
+        }
+        BACKGROUND.execute(() -> {
+            try {
+                getOrInitDb();
+            } finally {
+                initRequested.set(false);
+            }
+        });
+    }
+
+    private @Nullable String lookupFromLegacyJassdocTables(Connection conn, LookupKey key) throws SQLException {
+        if (!hasCompatibleLegacyJassdocSchema(conn)) {
+            return null;
+        }
+        Map<String, String> params = readKeyValueRows(conn, "parameters", "fnname", "param", "value", key.symbolName());
+        Map<String, String> anns = tableExists(conn, "annotations")
+            ? readKeyValueRows(conn, "annotations", "fnname", "anname", "value", key.symbolName())
+            : java.util.Collections.emptyMap();
+        String sourceFile = firstValue(params, anns, "source-file");
+        if (!matchesRequestedSource(sourceFile, key.sourceFile())) {
+            return null;
+        }
+
+        Map<String, String> paramDescriptions = new LinkedHashMap<>(params);
+        if (tableExists(conn, "params_extra")) {
+            mergeParamDetails(conn, key.symbolName(), paramDescriptions);
+        }
+
+        String doc = firstValue(params, anns,
+            "description", "desc", "documentation", "doc", "comment", "details", "notes", "help", "summary");
+        String note = firstValue(params, anns, "note");
+        String patch = firstValue(params, anns,
+            "patch", "since", "introduced", "introduced_patch", "version");
+
+        String paramDoc = renderParameterDocs(paramDescriptions);
+        if (doc == null && note == null && paramDoc == null) {
+            return null;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        appendBlock(sb, doc);
+        appendBlock(sb, note);
+        appendBlock(sb, paramDoc);
+        String result = trimToNull(sb.toString());
+        if (result == null) {
+            return null;
+        }
+        return formatDoc(result, patch);
+    }
+
+    private void mergeParamDetails(Connection conn, String fnName, Map<String, String> paramDescriptions) throws SQLException {
+        String sql = "SELECT param, anname, value FROM params_extra WHERE lower(fnname) = lower(?)";
+        Map<String, ParamDetails> details = new LinkedHashMap<>();
+        try (PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setString(1, fnName);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    String param = trimToNull(rs.getString(1));
+                    String key = trimToNull(rs.getString(2));
+                    String value = trimToNull(rs.getString(3));
+                    if (param == null || key == null || value == null) {
+                        continue;
+                    }
+                    ParamDetails pd = details.computeIfAbsent(param, k -> new ParamDetails(param));
+                    String k = key.toLowerCase(Locale.ROOT);
+                    if (k.equals("param_order")) {
+                        try {
+                            pd.order = Integer.parseInt(value);
+                        } catch (NumberFormatException ignored) {
+                            // ignore malformed order
+                        }
+                    } else if (k.equals("param_type") || k.equals("type")) {
+                        pd.type = value;
+                    }
+                }
+            }
+        }
+
+        List<ParamDetails> ordered = new ArrayList<>(details.values());
+        ordered.sort(Comparator.comparingInt(p -> p.order == null ? Integer.MAX_VALUE : p.order));
+        LinkedHashMap<String, String> reordered = new LinkedHashMap<>();
+        for (ParamDetails p : ordered) {
+            String desc = paramDescriptions.get(p.name);
+            if (desc != null) {
+                String combined = p.type == null ? desc : "(" + p.type + ") " + desc;
+                reordered.put(p.name, combined);
+            }
+        }
+        for (Map.Entry<String, String> e : paramDescriptions.entrySet()) {
+            reordered.putIfAbsent(e.getKey(), e.getValue());
+        }
+        paramDescriptions.clear();
+        paramDescriptions.putAll(reordered);
+    }
+
+    private @Nullable String renderParameterDocs(Map<String, String> paramDescriptions) {
+        if (paramDescriptions.isEmpty()) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder("Parameters:");
+        for (Map.Entry<String, String> e : paramDescriptions.entrySet()) {
+            String name = trimToNull(e.getKey());
+            String value = trimToNull(e.getValue());
+            if (name == null || value == null) {
+                continue;
+            }
+            sb.append("\n- ").append(name).append(": ").append(value);
+        }
+        return trimToNull(sb.toString());
+    }
+
+    private boolean matchesRequestedSource(@Nullable String dbSourceFile, String requestedSourceFile) {
+        String db = basename(dbSourceFile);
+        if (db == null) {
+            return true;
+        }
+        String req = basename(requestedSourceFile);
+        if (req == null) {
+            return true;
+        }
+        return db.equalsIgnoreCase(req);
+    }
+
+    private @Nullable String basename(@Nullable String path) {
+        String p = trimToNull(path);
+        if (p == null) {
+            return null;
+        }
+        p = p.replace('\\', '/');
+        int i = p.lastIndexOf('/');
+        return i >= 0 ? p.substring(i + 1) : p;
+    }
+
+    private void appendBlock(StringBuilder sb, @Nullable String text) {
+        String t = trimToNull(text);
+        if (t == null) {
+            return;
+        }
+        if (sb.length() > 0) {
+            sb.append("\n\n");
+        }
+        sb.append(t);
+    }
+
+    private static final class ParamDetails {
+        private final String name;
+        private @Nullable Integer order;
+        private @Nullable String type;
+
+        private ParamDetails(String name) {
+            this.name = name;
+        }
+    }
+
+    private Optional<Path> ensureDbAvailable() throws IOException {
+        Optional<String> explicitPath = Utils.getEnvOrConfig("WURST_JASSDOC_DB_PATH");
+        if (explicitPath.isPresent()) {
+            Path p = Path.of(explicitPath.get());
+            if (Files.exists(p)) {
+                return Optional.of(p);
+            }
+            WLogger.warning("WURST_JASSDOC_DB_PATH points to a missing file: " + p);
+        }
+
+        Path userHome = Path.of(System.getProperty("user.home"));
+        Path dbDir = userHome.resolve(".wurst").resolve("jassdoc");
+        Files.createDirectories(dbDir);
+
+        String revision = sanitizeRevision(Utils.getEnvOrConfig("WURST_JASSDOC_DB_REV").orElse("latest"));
+        Path dbPath = dbDir.resolve("jassdoc-" + revision + ".db");
+        if (!Files.exists(dbPath)) {
+            Optional<Path> fallback = findFirstExisting(dbDir,
+                "jassdoc-" + revision + ".db",
+                "jassdoc-" + revision + ".sqlite",
+                "jass.db",
+                "jassdoc.db",
+                "jassdoc.sqlite");
+            if (fallback.isPresent()) {
+                return fallback;
+            }
+        }
+
+        boolean needsDownload = !Files.exists(dbPath);
+        if (!needsDownload && "latest".equals(revision) && autoUpdateEnabled()) {
+            needsDownload = isStaleLatest(dbPath);
+        }
+
+        if (!needsDownload) {
+            return Optional.of(dbPath);
+        }
+
+        List<String> urls = Utils.getEnvOrConfig("WURST_JASSDOC_DB_URL")
+            .map(List::of)
+            .orElseGet(() -> defaultDbUrlsForRevision(revision));
+
+        if (urls.isEmpty()) {
+            showMissingSourceWarning();
+            return Optional.empty();
+        }
+
+        List<String> errors = new ArrayList<>();
+        for (String url : urls) {
+            try {
+                download(url, dbPath);
+                WLogger.info("Downloaded JassDoc DB from " + url + " to " + dbPath);
+                return Optional.of(dbPath);
+            } catch (IOException e) {
+                errors.add(url + " -> " + e.getMessage());
+            }
+        }
+
+        if (Files.exists(dbPath)) {
+            return Optional.of(dbPath);
+        }
+        if (!errors.isEmpty()) {
+            throw new IOException("Could not download JassDoc DB. Tried: " + String.join("; ", errors));
+        }
+        return Optional.empty();
+    }
+
+    private List<String> defaultDbUrlsForRevision(String revision) {
+        List<String> urls = new ArrayList<>();
+        if ("latest".equals(revision)) {
+            urls.addAll(resolveLatestReleaseAssetUrls());
+            urls.add(RELEASES_DOWNLOAD_BASE + "/latest/download/jass.db");
+        } else {
+            urls.add(RELEASES_DOWNLOAD_BASE + "/download/" + revision + "/jass.db");
+            urls.add(RELEASES_DOWNLOAD_BASE + "/download/" + revision + "/jassdoc.db");
+            urls.add(RELEASES_DOWNLOAD_BASE + "/download/" + revision + "/jassdoc.sqlite");
+        }
+        return urls;
+    }
+
+    private List<String> resolveLatestReleaseAssetUrls() {
+        List<String> urls = new ArrayList<>();
+        urls.addAll(readReleaseAssetUrls(RELEASES_LATEST_API));
+        if (!urls.isEmpty()) {
+            return urls;
+        }
+        urls.addAll(readNewestReleaseAssetUrlsFromList());
+        return urls;
+    }
+
+    private List<String> readNewestReleaseAssetUrlsFromList() {
+        List<String> urls = new ArrayList<>();
+        try {
+            HttpURLConnection con = openHttpConnection(new URL(RELEASES_API));
+            con.setConnectTimeout(10_000);
+            con.setReadTimeout(20_000);
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Accept", "application/vnd.github+json");
+            con.setRequestProperty("User-Agent", "WurstScript-LSP");
+            int code = con.getResponseCode();
+            if (code >= 200 && code < 300) {
+                String body;
+                try (InputStream in = con.getInputStream()) {
+                    body = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                }
+                JsonArray releases = JsonParser.parseString(body).getAsJsonArray();
+                for (JsonElement e : releases) {
+                    if (!e.isJsonObject()) {
+                        continue;
+                    }
+                    JsonObject rel = e.getAsJsonObject();
+                    List<String> relUrls = extractDbAssetUrls(rel);
+                    if (!relUrls.isEmpty()) {
+                        urls.addAll(relUrls);
+                        break;
+                    }
+                }
+            }
+            con.disconnect();
+        } catch (Exception e) {
+            WLogger.info("Could not query releases list for JassDoc DB: " + e.getMessage());
+        }
+        return urls;
+    }
+
+    private List<String> readReleaseAssetUrls(String apiUrl) {
+        List<String> urls = new ArrayList<>();
+        try {
+            HttpURLConnection con = openHttpConnection(new URL(apiUrl));
+            con.setConnectTimeout(10_000);
+            con.setReadTimeout(20_000);
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Accept", "application/vnd.github+json");
+            con.setRequestProperty("User-Agent", "WurstScript-LSP");
+            int code = con.getResponseCode();
+            if (code >= 200 && code < 300) {
+                String body;
+                try (InputStream in = con.getInputStream()) {
+                    body = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                }
+                JsonObject obj = JsonParser.parseString(body).getAsJsonObject();
+                urls.addAll(extractDbAssetUrls(obj));
+            }
+            con.disconnect();
+        } catch (Exception e) {
+            WLogger.info("Could not query latest JassDoc release API: " + e.getMessage());
+        }
+        return urls;
+    }
+
+    private List<String> extractDbAssetUrls(JsonObject releaseObj) {
+        List<String> urls = new ArrayList<>();
+        JsonArray assets = releaseObj.getAsJsonArray("assets");
+        if (assets == null) {
+            return urls;
+        }
+        for (JsonElement e : assets) {
+            if (!e.isJsonObject()) {
+                continue;
+            }
+            JsonObject asset = e.getAsJsonObject();
+            String name = getString(asset, "name");
+            String browserDownload = getString(asset, "browser_download_url");
+            if (browserDownload == null || name == null) {
+                continue;
+            }
+            String n = name.toLowerCase(Locale.ROOT);
+            if (n.endsWith(".db") || n.endsWith(".sqlite")) {
+                urls.add(browserDownload);
+            }
+        }
+        return urls;
+    }
+
+    private @Nullable String getString(JsonObject obj, String key) {
+        if (!obj.has(key) || obj.get(key).isJsonNull()) {
+            return null;
+        }
+        try {
+            return obj.get(key).getAsString();
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private void showMissingSourceWarning() {
+        if (missingSourceWarningShown) {
+            return;
+        }
+        missingSourceWarningShown = true;
+        WLogger.warning(
+            "No JassDoc DB source configured. "
+                + "Set WURST_JASSDOC_DB_PATH to a local jass.db/sqlite file, "
+                + "or WURST_JASSDOC_DB_URL to a downloadable DB artifact."
+        );
+    }
+
+    private Optional<Path> findFirstExisting(Path dir, String... names) {
+        return Stream.of(names)
+            .map(dir::resolve)
+            .filter(Files::exists)
+            .findFirst();
+    }
+
+    private boolean isStaleLatest(Path dbPath) throws IOException {
+        FileTime modified = Files.getLastModifiedTime(dbPath);
+        Duration maxAge = Utils.getEnvOrConfig("WURST_JASSDOC_DB_MAX_AGE")
+            .map(this::parseDurationOrDefault)
+            .orElse(DEFAULT_LATEST_MAX_AGE);
+        Instant cutoff = Instant.now().minus(maxAge);
+        return modified.toInstant().isBefore(cutoff);
+    }
+
+    boolean autoUpdateEnabled() {
+        return Utils.getEnvOrConfig("WURST_JASSDOC_DB_AUTO_UPDATE")
+            .map(value -> !value.equalsIgnoreCase("false")
+                && !value.equalsIgnoreCase("no")
+                && !value.equals("0"))
+            .orElse(true);
+    }
+
+    private Duration parseDurationOrDefault(String text) {
+        try {
+            return Duration.parse(text);
+        } catch (Exception e) {
+            return DEFAULT_LATEST_MAX_AGE;
+        }
+    }
+
+    private void download(String urlString, Path target) throws IOException {
+        URL url = new URL(urlString);
+        HttpURLConnection con = openHttpConnection(url);
+        con.setConnectTimeout(10_000);
+        con.setReadTimeout(20_000);
+        con.setInstanceFollowRedirects(true);
+        con.setRequestMethod("GET");
+        con.setRequestProperty("User-Agent", "WurstScript-LSP");
+        int code = con.getResponseCode();
+        if (code < 200 || code >= 300) {
+            throw new IOException("HTTP " + code + " for " + urlString);
+        }
+        Path tmp = Files.createTempFile(target.getParent(), "jassdoc-", ".tmp");
+        try {
+            try (InputStream in = con.getInputStream()) {
+                Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            }
+            installDownloadedDatabase(tmp, target);
+        } finally {
+            con.disconnect();
+            Files.deleteIfExists(tmp);
+        }
+    }
+
+    void installDownloadedDatabase(Path downloaded, Path target) throws IOException {
+        validateDownloadedDatabase(downloaded);
+
+        Path backup = target.resolveSibling(target.getFileName() + ".bak");
+        if (Files.exists(target)) {
+            Path backupTmp = Files.createTempFile(target.getParent(), "jassdoc-backup-", ".tmp");
+            try {
+                Files.copy(target, backupTmp, StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.COPY_ATTRIBUTES);
+                replaceAtomically(backupTmp, backup);
+            } finally {
+                Files.deleteIfExists(backupTmp);
+            }
+        }
+
+        try {
+            replaceAtomically(downloaded, target);
+        } catch (IOException installFailure) {
+            if (Files.exists(backup)) {
+                restoreBackup(backup, target, installFailure);
+            }
+            throw installFailure;
+        }
+    }
+
+    void restoreBackup(Path backup, Path target, IOException installFailure) {
+        Path restoreTmp = null;
+        try {
+            restoreTmp = Files.createTempFile(target.getParent(), "jassdoc-restore-", ".tmp");
+            Files.copy(backup, restoreTmp, StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.COPY_ATTRIBUTES);
+            replaceAtomically(restoreTmp, target);
+        } catch (IOException restoreFailure) {
+            installFailure.addSuppressed(restoreFailure);
+        } finally {
+            if (restoreTmp != null) {
+                try {
+                    Files.deleteIfExists(restoreTmp);
+                } catch (IOException cleanupFailure) {
+                    installFailure.addSuppressed(cleanupFailure);
+                }
+            }
+        }
+    }
+
+    private void validateDownloadedDatabase(Path downloaded) throws IOException {
+        try (Connection conn = open(downloaded)) {
+            if (!passesIntegrityCheck(conn)) {
+                throw new IOException("Downloaded JassDoc database failed SQLite integrity check");
+            }
+            if (discoverSchemas(conn).isEmpty() && !hasCompatibleLegacyJassdocSchema(conn)) {
+                throw new IOException("Downloaded file is not a compatible JassDoc database");
+            }
+        } catch (SQLException e) {
+            throw new IOException("Downloaded file is not a valid JassDoc database", e);
+        }
+    }
+
+    private boolean passesIntegrityCheck(Connection conn) throws SQLException {
+        try (Statement statement = conn.createStatement();
+             ResultSet result = statement.executeQuery("PRAGMA integrity_check")) {
+            return result.next()
+                && "ok".equalsIgnoreCase(result.getString(1))
+                && !result.next();
+        }
+    }
+
+    private void replaceAtomically(Path source, Path target) throws IOException {
+        try {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private HttpURLConnection openHttpConnection(URL url) throws IOException {
+        Optional<String> proxySetting = selectProxySetting(url, Utils::getEnvOrConfig);
+        if (proxySetting.isEmpty()) {
+            return (HttpURLConnection) url.openConnection();
+        }
+
+        URI proxyUri = parseHttpProxyUri(proxySetting.get());
+        int port = proxyUri.getPort() >= 0 ? proxyUri.getPort() : 80;
+        Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyUri.getHost(), port));
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection(proxy);
+        if (proxyUri.getUserInfo() != null) {
+            String credentials = Base64.getEncoder().encodeToString(
+                proxyUri.getUserInfo().getBytes(StandardCharsets.UTF_8));
+            connection.setRequestProperty("Proxy-Authorization", "Basic " + credentials);
+        }
+        return connection;
+    }
+
+    static Optional<String> selectProxySetting(URL url,
+                                                Function<String, Optional<String>> lookup) {
+        Optional<String> proxySetting = lookup.apply("WURST_JASSDOC_DB_PROXY");
+        if (proxySetting.isPresent()) {
+            return proxySetting;
+        }
+        Optional<String> noProxy = firstConfigured(lookup, "NO_PROXY", "no_proxy");
+        if (noProxy.isPresent() && shouldBypassProxy(url.getHost(), noProxy.get())) {
+            return Optional.empty();
+        }
+        if ("https".equalsIgnoreCase(url.getProtocol())) {
+            return firstConfigured(lookup, "HTTPS_PROXY", "https_proxy");
+        }
+        if ("http".equalsIgnoreCase(url.getProtocol())) {
+            return firstConfigured(lookup, "HTTP_PROXY", "http_proxy");
+        }
+        return Optional.empty();
+    }
+
+    static URI parseHttpProxyUri(String value) throws IOException {
+        URI proxyUri;
+        try {
+            proxyUri = URI.create(value.contains("://") ? value : "http://" + value);
+        } catch (IllegalArgumentException e) {
+            throw new IOException("Invalid JassDoc proxy URL", e);
+        }
+        if (proxyUri.getHost() == null) {
+            throw new IOException("Invalid JassDoc proxy URL: missing host");
+        }
+        if (!"http".equalsIgnoreCase(proxyUri.getScheme())) {
+            throw new IOException("Unsupported JassDoc proxy scheme '" + proxyUri.getScheme()
+                + "'; use an http:// proxy URL");
+        }
+        return proxyUri;
+    }
+
+    static boolean shouldBypassProxy(String host, String noProxySetting) {
+        String normalizedHost = host.toLowerCase(Locale.ROOT);
+        for (String rawEntry : noProxySetting.split(",")) {
+            String entry = rawEntry.trim().toLowerCase(Locale.ROOT);
+            if (entry.equals("*")) {
+                return true;
+            }
+            int portSeparator = entry.lastIndexOf(':');
+            if (portSeparator > 0 && entry.indexOf(':') == portSeparator) {
+                entry = entry.substring(0, portSeparator);
+            }
+            if (entry.startsWith("*.")) {
+                entry = entry.substring(1);
+            }
+            if (entry.startsWith(".")) {
+                if (normalizedHost.endsWith(entry)
+                    || normalizedHost.equals(entry.substring(1))) {
+                    return true;
+                }
+            } else if (!entry.isEmpty() && (normalizedHost.equals(entry)
+                || normalizedHost.endsWith("." + entry))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static Optional<String> firstConfigured(
+        Function<String, Optional<String>> lookup, String... names) {
+        return Stream.of(names)
+            .map(lookup)
+            .flatMap(Optional::stream)
+            .findFirst();
+    }
+
+    private Connection open(Path dbPath) throws SQLException {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException ignored) {
+            // Driver may still be auto-loaded by JDBC.
+        }
+        return DriverManager.getConnection("jdbc:sqlite:" + dbPath.toAbsolutePath());
+    }
+
+    private List<TableSchema> discoverSchemas(Connection conn) throws SQLException {
+        List<TableSchema> result = new ArrayList<>();
+        DatabaseMetaData md = conn.getMetaData();
+        try (ResultSet tables = md.getTables(null, null, "%", new String[]{"TABLE"})) {
+            while (tables.next()) {
+                String table = tables.getString("TABLE_NAME");
+                if (table == null) {
+                    continue;
+                }
+                Map<String, String> cols = new ConcurrentHashMap<>();
+                try (ResultSet columns = md.getColumns(null, null, table, "%")) {
+                    while (columns.next()) {
+                        String c = columns.getString("COLUMN_NAME");
+                        if (c != null) {
+                            cols.put(c.toLowerCase(Locale.ROOT), c);
+                        }
+                    }
+                }
+                String nameCol = first(cols, "name", "native", "identifier", "symbol");
+                String docCol = first(cols, "documentation", "description", "doc", "comment", "notes", "help");
+                if (nameCol == null || docCol == null) {
+                    continue;
+                }
+                String kindCol = first(cols, "kind", "type", "symbol_type", "category");
+                String patchCol = first(cols, "patch", "introduced", "since", "version", "introduced_patch");
+                result.add(new TableSchema(table, nameCol, docCol, kindCol, patchCol));
+            }
+        }
+        return result;
+    }
+
+    private boolean hasCompatibleLegacyJassdocSchema(Connection conn) throws SQLException {
+        return tableHasColumns(conn, "parameters", "fnname", "param", "value")
+            && (!tableExists(conn, "annotations")
+                || tableHasColumns(conn, "annotations", "fnname", "anname", "value"))
+            && (!tableExists(conn, "params_extra")
+                || tableHasColumns(conn, "params_extra", "fnname", "param", "anname", "value"));
+    }
+
+    private boolean tableHasColumns(Connection conn, String tableName, String... requiredColumns)
+            throws SQLException {
+        Set<String> columns = new HashSet<>();
+        DatabaseMetaData md = conn.getMetaData();
+        try (ResultSet result = md.getColumns(null, null, tableName, "%")) {
+            while (result.next()) {
+                String name = result.getString("COLUMN_NAME");
+                if (name != null) {
+                    columns.add(name.toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        for (String required : requiredColumns) {
+            if (!columns.contains(required)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean tableExists(Connection conn, String tableName) throws SQLException {
+        DatabaseMetaData md = conn.getMetaData();
+        try (ResultSet tables = md.getTables(null, null, tableName, new String[]{"TABLE"})) {
+            while (tables.next()) {
+                String name = tables.getString("TABLE_NAME");
+                if (name != null && name.equalsIgnoreCase(tableName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private Map<String, String> readKeyValueRows(Connection conn, String table, String symbolCol, String keyCol, String valueCol, String symbolName) throws SQLException {
+        Map<String, String> result = new ConcurrentHashMap<>();
+        String sql = "SELECT " + q(keyCol) + ", " + q(valueCol)
+            + " FROM " + q(table)
+            + " WHERE lower(" + q(symbolCol) + ") = lower(?)";
+        try (PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setString(1, symbolName);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    String key = rs.getString(1);
+                    String value = trimToNull(rs.getString(2));
+                    if (key == null || value == null) {
+                        continue;
+                    }
+                    result.putIfAbsent(key.toLowerCase(Locale.ROOT), value);
+                }
+            }
+        }
+        return result;
+    }
+
+    private @Nullable String firstValue(Map<String, String> primary, Map<String, String> secondary, String... keys) {
+        for (String key : keys) {
+            String k = key.toLowerCase(Locale.ROOT);
+            String value = trimToNull(primary.get(k));
+            if (value != null) {
+                return value;
+            }
+            value = trimToNull(secondary.get(k));
+            if (value != null) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private @Nullable String first(Map<String, String> cols, String... names) {
+        for (String name : names) {
+            String found = cols.get(name.toLowerCase(Locale.ROOT));
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    private int score(@Nullable String dbKind, SymbolKind requested) {
+        if (dbKind == null || dbKind.isBlank()) {
+            return 0;
+        }
+        String kind = dbKind.toLowerCase(Locale.ROOT);
+        if (requested == SymbolKind.FUNCTION && (kind.contains("func") || kind.contains("native"))) {
+            return 2;
+        }
+        if (requested == SymbolKind.VARIABLE && (kind.contains("var") || kind.contains("global") || kind.contains("const"))) {
+            return 2;
+        }
+        return -1;
+    }
+
+    private String formatDoc(String doc, @Nullable String patch) {
+        String p = trimToNull(patch);
+        if (p == null) {
+            return doc;
+        }
+        return doc + "\n\n_Since " + p + "_";
+    }
+
+    private static boolean isJassBuiltinSource(String sourceFile) {
+        String s = sourceFile.replace('\\', '/').toLowerCase(Locale.ROOT);
+        return s.endsWith("/common.j") || s.endsWith("/blizzard.j") || s.equals("common.j") || s.equals("blizzard.j");
+    }
+
+    private static @Nullable String trimToNull(@Nullable String s) {
+        if (s == null) {
+            return null;
+        }
+        String trimmed = s.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static String sanitizeRevision(String revision) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < revision.length(); i++) {
+            char c = revision.charAt(i);
+            if (Character.isLetterOrDigit(c) || c == '-' || c == '_' || c == '.') {
+                sb.append(c);
+            }
+        }
+        if (sb.length() == 0) {
+            return "latest";
+        }
+        return sb.toString();
+    }
+
+    private static String q(String identifier) {
+        return "\"" + identifier.replace("\"", "\"\"") + "\"";
+    }
+}

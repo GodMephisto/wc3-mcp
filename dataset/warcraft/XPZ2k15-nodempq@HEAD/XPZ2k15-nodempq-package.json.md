@@ -1,0 +1,24 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/XPZ2k15/nodempq"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "name": "@clearvisiongg/nodempq",
+  "version": "1.0.0",
+  "main": "example.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node example"
+  },
+  "keywords": [],
+  "author": "XPZ2K15",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "node-pkware": "^5.1.0",
+    "wav": "^1.0.2"
+  }
+}

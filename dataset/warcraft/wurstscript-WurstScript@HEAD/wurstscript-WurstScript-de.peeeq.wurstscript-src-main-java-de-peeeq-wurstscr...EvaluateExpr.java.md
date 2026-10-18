@@ -1,0 +1,545 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/intermediatelang/interpreter/EvaluateExpr.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.intermediatelang.interpreter;
+
+import de.peeeq.wurstio.jassinterpreter.InterpreterException;
+import de.peeeq.wurstscript.CompilerIntrinsics;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.WurstOperator;
+import de.peeeq.wurstscript.ast.PackageOrGlobal;
+import de.peeeq.wurstscript.ast.VarDef;
+import de.peeeq.wurstscript.ast.WPackage;
+import de.peeeq.wurstscript.intermediatelang.*;
+import de.peeeq.wurstscript.jassIm.*;
+import de.peeeq.wurstscript.jassinterpreter.ExitwhenException;
+import de.peeeq.wurstscript.jassinterpreter.ReturnException;
+import de.peeeq.wurstscript.translation.imtranslation.CallType;
+import de.peeeq.wurstscript.translation.imtranslation.ImPrinter;
+import de.peeeq.wurstscript.types.TypesHelper;
+import io.vavr.control.Either;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+public class EvaluateExpr {
+
+    private static void mark(Element e, ProgramState globalState) {
+        globalState.setLastElement(e);
+    }
+
+    public static ILconst eval(ImBoolVal e, ProgramState globalState, LocalState localState) {
+        return ILconstBool.instance(e.getValB());
+    }
+
+    public static ILconst eval(ImFuncRef e, ProgramState globalState, LocalState localState) {
+        return new ILconstFuncRef(e.getFunc());
+    }
+
+    public static @Nullable ILconst eval(ImFunctionCall e, ProgramState globalState, LocalState localState) {
+        mark(e, globalState);
+
+        ImFunction f = e.getFunc();
+        if (CompilerIntrinsics.NEW_MARKER.equals(f.getName()) && f.getParent() == null) {
+            return evaluateGenericNew(e, globalState);
+        }
+        ImExprs arguments = e.getArguments();
+
+        ILconst[] args = new ILconst[arguments.size()];
+        for (int i = 0; i < arguments.size(); i++) {
+            args[i] = arguments.get(i).evaluate(globalState, localState);
+        }
+
+        return ILInterpreter.runFunc(globalState, f, e, args).getReturnVal();
+    }
+
+    private static ILconst evaluateGenericNew(ImFunctionCall markerCall, ProgramState globalState) {
+        if (markerCall.getTypeArguments().size() != 1) {
+            throw new InterpreterException(markerCall.attrTrace(),
+                CompilerIntrinsics.NEW + " expects exactly one type argument.");
+        }
+        ImType resolved = globalState.resolveType(markerCall.getTypeArguments().get(0).getType());
+        if (!(resolved instanceof ImClassType classType)) {
+            throw new InterpreterException(markerCall.attrTrace(),
+                CompilerIntrinsics.NEW + " requires a concrete class type, but found " + resolved + ".");
+        }
+
+        ImFunction constructor = null;
+        for (ImFunction candidate : classType.getClassDef().getFunctions()) {
+            if (candidate.getTrace() instanceof de.peeeq.wurstscript.ast.ConstructorDef
+                && candidate.getParameters().isEmpty()
+                && !(candidate.getReturnType() instanceof ImVoid)) {
+                constructor = candidate;
+                break;
+            }
+        }
+        if (constructor == null) {
+            throw new InterpreterException(markerCall.attrTrace(),
+                CompilerIntrinsics.NEW + " could not find the zero-argument constructor for "
+                    + classType.getClassDef().getName() + ".");
+        }
+
+        ImTypeArguments constructorTypeArguments = JassIm.ImTypeArguments();
+        for (ImTypeArgument argument : classType.getTypeArguments()) {
+            constructorTypeArguments.add(argument.copy());
+        }
+        ImFunctionCall constructorCall = JassIm.ImFunctionCall(markerCall.getTrace(), constructor,
+            constructorTypeArguments, JassIm.ImExprs(), false, CallType.NORMAL);
+        return ILInterpreter.runFunc(globalState, constructor, constructorCall, new ILconst[0]).getReturnVal();
+    }
+
+    public static @Nullable ILconst evaluateFunc(ProgramState globalState,
+                                                 LocalState localState, ImFunction f, List<ImExpr> args2, Element trace) {
+        ILconst[] args = new ILconst[args2.size()];
+        for (int i = 0; i < args2.size(); i++) {
+            args[i] = args2.get(i).evaluate(globalState, localState);
+        }
+        return evaluateFunc(globalState, f, trace, args);
+    }
+
+    @Nullable
+    private static ILconst evaluateFunc(ProgramState globalState, ImFunction f, Element trace, ILconst[] args) {
+        LocalState r = ILInterpreter.runFunc(globalState, f, trace, args);
+        return r.getReturnVal();
+    }
+
+    public static ILconst eval(ImIntVal e, ProgramState globalState, LocalState localState) {
+        return new ILconstInt(e.getValI());
+    }
+
+    public static ILconst eval(ImNull e, ProgramState globalState, LocalState localState) {
+        // Resolve generics / type variables according to the current frame (pre-elimination run).
+        ImType resolved = globalState.resolveType(e.getType());
+        return resolved.defaultValue();
+    }
+
+
+    public static ILconst eval(ImOperatorCall e, final ProgramState globalState, final LocalState localState) {
+        final ImExprs arguments = e.getArguments();
+        WurstOperator op = e.getOp();
+        if (arguments.size() == 2 && op.isBinaryOp()) {
+            return op.evaluateBinaryOperator(arguments.get(0).evaluate(globalState, localState), () -> arguments.get(1).evaluate(globalState, localState));
+        } else if (arguments.size() == 1 && op.isUnaryOp()) {
+            return op.evaluateUnaryOperator(arguments.get(0).evaluate(globalState, localState));
+        } else {
+            throw new Error();
+        }
+    }
+
+    public static ILconst eval(ImRealVal e, ProgramState globalState, LocalState localState) {
+        return new ILconstReal(e.getValR());
+    }
+
+    public static ILconst eval(ImStatementExpr e, ProgramState globalState, LocalState localState) {
+        e.getStatements().runStatements(globalState, localState);
+        leaveByException(localState);
+        return e.getExpr().evaluate(globalState, localState);
+    }
+
+    public static ILaddress evaluateLvalue(ImStatementExpr e, ProgramState globalState, LocalState localState) {
+        e.getStatements().runStatements(globalState, localState);
+        leaveByException(localState);
+        return ((ImLExpr) e.getExpr()).evaluateLvalue(globalState, localState);
+    }
+
+    /**
+     * A return or exitwhen inside a statement expression cannot stop the expression around it by a flag, so
+     * it leaves by the exception which the call and the loop still catch.
+     */
+    private static void leaveByException(LocalState localState) {
+        if (localState.hasReturned()) {
+            throw new ReturnException(localState.takeReturn());
+        }
+        if (localState.consumeExit()) {
+            throw ExitwhenException.instance();
+        }
+    }
+
+    public static ILconst eval(ImStringVal e, ProgramState globalState, LocalState localState) {
+        return ILconstString.fromText(e.getValS());
+    }
+
+    public static ILconst eval(ImTupleExpr e, ProgramState globalState, LocalState localState) {
+        ILconst[] values = new ILconst[e.getExprs().size()];
+        for (int i = 0; i < e.getExprs().size(); i++) {
+            values[i] = e.getExprs().get(i).evaluate(globalState, localState);
+        }
+        return new ILconstTuple(values);
+    }
+
+    public static ILconst eval(ImTupleSelection e, ProgramState globalState, LocalState localState) {
+        ILconst tupleE = e.getTupleExpr().evaluate(globalState, localState);
+        if (tupleE instanceof ILconstTuple t) {
+            if (e.getTupleIndex() >= t.values().size()) {
+                throw new InterpreterException(globalState, "Trying to get element " + e.getTupleIndex() + " of tuple value " + t);
+            }
+            return t.getValue(e.getTupleIndex());
+        } else {
+            throw new InterpreterException(globalState, "Tuple " + e + " evaluated to " + tupleE);
+        }
+
+    }
+
+    public static ILconst eval(ImVarAccess e, ProgramState globalState, LocalState localState) {
+        ImVar var = e.getVar();
+        if (var.isGlobal()) {
+            if (isMagicCompiletimeConstant(var)) {
+                return ILconstBool.instance(globalState.isCompiletime());
+            }
+            ILconst r = globalState.getVal(var);
+            if (r == null) {
+                List<ImSet> initExpr = globalState.getProg().getGlobalInits().get(var);
+                if (initExpr != null) {
+                    r = globalState.evaluateUntracked(initExpr.get(0).getRight(), localState);
+                } else {
+                    throw new InterpreterException(globalState, "Variable " + var.getName() + " is not initialized.");
+                }
+                globalState.setValUntracked(var, r);
+            }
+            return r;
+        } else {
+            ILconst val = localState.getVal(var);
+            if (val == null) {
+                // The message is built only here: printing the variable on every read dominated allocation.
+                throw new InterpreterException("Local variable " + var + " is null.");
+            }
+            return val;
+        }
+    }
+
+    private static boolean isMagicCompiletimeConstant(ImVar var) {
+        if (var.getTrace() instanceof VarDef) {
+            VarDef varDef = (VarDef) var.getTrace();
+            if (varDef.getName().equals("compiletime")) {
+                PackageOrGlobal nearestPackage = varDef.attrNearestPackage();
+                if (nearestPackage instanceof WPackage p) {
+                    return p.getName().equals("MagicFunctions");
+                }
+            }
+        }
+        return false;
+    }
+
+    /** The value of an array element nobody has written: the type's default, with a warning. */
+    private static ILconst defaultForMissingElement(ImVar var) {
+        WLogger.warning("Variable " + var.getName() + " is null.");
+        return var.getType().defaultValue();
+    }
+
+    public static ILconst eval(ImVarArrayAccess e, ProgramState globalState, LocalState localState) {
+        List<Integer> indexes = new ArrayList<>();
+        for (ImExpr ie : e.getIndexes()) {
+            Integer val = ((ILconstInt) ie.evaluate(globalState, localState)).getVal();
+            indexes.add(val);
+        }
+
+        if (e.getVar().isGlobal()) {
+            ILconst val = globalState.getArrayVal(e.getVar(), indexes);
+            return globalState.resolveDefault(val != null ? val : defaultForMissingElement(e.getVar()));
+        } else {
+            ILconst val = localState.getArrayVal(e.getVar(), indexes);
+            return globalState.resolveDefault(val != null ? val : defaultForMissingElement(e.getVar()));
+        }
+    }
+
+    public static @Nullable ILconst eval(ImMethodCall mc,
+                                         ProgramState globalState, LocalState localState) {
+        ImType receiverType = globalState.resolveType(mc.getReceiver().attrTyp());
+        ImClassType receiverClassType = receiverType instanceof ImClassType imClassType
+            ? imClassType
+            : mc.getMethod().getMethodClass();
+        ILconstObject receiver = globalState.toObject(mc.getReceiver().evaluate(globalState, localState), receiverClassType);
+        globalState.assertAllocated(receiver, mc.attrTrace());
+        mark(mc, globalState);
+
+        List<ImExpr> args = mc.getArguments();
+
+        ImMethod mostPrecise = globalState.dispatch(mc.getMethod(), receiver.getImClass());
+
+        ILconst[] eargs = new ILconst[args.size() + 1];
+        eargs[0] = receiver;
+        for (int i = 0; i < args.size(); i++) {
+            eargs[i + 1] = args.get(i).evaluate(globalState, localState);
+        }
+
+        return evaluateFunc(globalState, mostPrecise.getImplementation(), mc, eargs);
+    }
+
+
+    public static ILconst eval(ImMemberAccess ma, ProgramState globalState, LocalState localState) {
+        ImType receiverType = globalState.resolveType(ma.getReceiver().attrTyp());
+        ImClassType receiverClassType = receiverType instanceof ImClassType imClassType ? imClassType : null;
+        if (receiverClassType == null) {
+            de.peeeq.wurstscript.jassIm.Element parent = ma.getVar().getParent();
+            while (parent != null && !(parent instanceof ImClass)) {
+                parent = parent.getParent();
+            }
+            if (parent instanceof ImClass) {
+                receiverClassType = JassIm.ImClassType((ImClass) parent, JassIm.ImTypeArguments());
+            }
+        }
+
+        ILconstObject receiver = globalState.toObject(ma.getReceiver().evaluate(globalState, localState), receiverClassType);
+        if (receiver == null) {
+            throw new InterpreterException(ma.getTrace(), "Null pointer dereference: " + ImPrinter.asString(ma.getReceiver()));
+        }
+        List<Integer> indexes = new ArrayList<>();
+        for (ImExpr i : ma.getIndexes()) {
+            Integer val = ((ILconstInt) i.evaluate(globalState, localState)).getVal();
+            indexes.add(val);
+        }
+        return globalState.resolveDefault(
+            receiver.get(ma.getVar(), indexes).orElseGet(() -> ma.attrTyp().defaultValue()));
+    }
+
+    public static ILconst eval(ImAlloc e, ProgramState globalState, LocalState localState) {
+        ImClassType genericType = e.getClazz();
+        ImClassType concreteType = (ImClassType) globalState.resolveType(genericType);
+
+        ILconstObject obj = globalState.allocate(concreteType, e.attrTrace());
+        obj.captureTypeSubstitutions(globalState.snapshotResolvedTypeSubstitutions());
+        return obj;
+    }
+
+    public static ILconst eval(ImDealloc imDealloc, ProgramState globalState,
+                               LocalState localState) {
+        ILconstObject obj = globalState.toObject(imDealloc.getObj().evaluate(globalState, localState), imDealloc.getClazz());
+        globalState.deallocate(obj, imDealloc.getClazz().getClassDef(), imDealloc.attrTrace());
+        return ILconstNull.instance();
+    }
+
+    public static ILconst eval(ImInstanceof e, ProgramState globalState,
+                               LocalState localState) {
+        ILconstObject obj = globalState.toObject(e.getObj().evaluate(globalState, localState), e.getClazz());
+        return ILconstBool.instance(globalState.isInstanceOf(obj, e.getClazz().getClassDef(), e.attrTrace()));
+    }
+
+    public static ILconst eval(ImTypeIdOfClass e,
+                               ProgramState globalState, LocalState localState) {
+        return new ILconstInt(e.getClazz().getClassDef().attrTypeId());
+    }
+
+    public static ILconst eval(ImTypeIdOfObj e,
+                               ProgramState globalState, LocalState localState) {
+        ILconstObject obj = globalState.toObject(e.getObj().evaluate(globalState, localState), e.getClazz());
+        return new ILconstInt(globalState.getTypeId(obj, e.attrTrace()));
+    }
+
+
+    public static ILconst eval(ImGetStackTrace e, ProgramState globalState,
+                               LocalState localState) {
+        StringBuilder sb = new StringBuilder();
+        globalState.getStackFrames().appendTo(sb);
+        return ILconstString.fromText(sb.toString());
+    }
+
+    public static ILconst eval(ImCompiletimeExpr expr, ProgramState globalState, LocalState localState) {
+        // make sure that compiletime expression is only evaluated once
+        ILconst res = expr.evaluationResult().get();
+        if (res == null) {
+            res = expr.getExpr().evaluate(globalState, localState);
+            expr.evaluationResult().set(res);
+        }
+        return res;
+    }
+
+    public static AtomicReference<ILconst> compiletimeEvaluationResult(ImCompiletimeExpr imCompiletimeExpr) {
+        return new AtomicReference<>();
+    }
+
+    public static ILaddress evaluateLvalue(ImVarAccess va, ProgramState globalState, LocalState localState) {
+        ImVar v = va.getVar();
+        State state;
+        state = v.isGlobal() ? globalState : localState;
+        return new ILaddress() {
+            @Override
+            public void set(ILconst value) {
+                state.setVal(v, value);
+            }
+
+            @Override
+            public ILconst get() {
+                return state.getVal(v);
+            }
+        };
+    }
+
+
+    public static ILaddress evaluateLvalue(ImVarArrayAccess va, ProgramState globalState, LocalState localState) {
+        ImVar v = va.getVar();
+        State state;
+        state = v.isGlobal() ? globalState : localState;
+        List<Integer> indexes = new ArrayList<>();
+        for (ImExpr ie : va.getIndexes()) {
+            Integer val = ((ILconstInt) ie.evaluate(globalState, localState)).getVal();
+            indexes.add(val);
+        }
+        return new ILaddress() {
+            @Override
+            public void set(ILconst value) {
+                state.setArrayVal(v, indexes, value);
+            }
+
+            @Override
+            public ILconst get() {
+                return state.getArrayVal(v, indexes);
+            }
+        };
+    }
+
+    public static ILaddress evaluateLvalue(ImTupleSelection ts, ProgramState globalState, LocalState localState) {
+        ImExpr tupleExpr = ts.getTupleExpr();
+        int tupleIndex = ts.getTupleIndex();
+        if (tupleExpr instanceof ImLExpr imLExpr) {
+            ILaddress addr = imLExpr.evaluateLvalue(globalState, localState);
+            return new ILaddress() {
+                @Override
+                public void set(ILconst value) {
+                    ILconst val = addr.get();
+                    ILconstTuple tuple = (ILconstTuple) val;
+                    ILconstTuple updated = tuple.updated(tupleIndex, value);
+                    addr.set(updated);
+                }
+
+                @Override
+                public ILconst get() {
+                    ILconstTuple tuple = (ILconstTuple) addr.get();
+                    return tuple.getValue(tupleIndex);
+                }
+            };
+        } else {
+            ILconstTuple tupleValue = (ILconstTuple) tupleExpr.evaluate(globalState, localState);
+            return new ILaddress() {
+                @Override
+                public void set(ILconst value) {
+                    throw new InterpreterException(ts.attrTrace(), "Not a valid L-value in tuple-selection");
+                }
+
+                @Override
+                public ILconst get() {
+                    return tupleValue.getValue(tupleIndex);
+                }
+            };
+        }
+    }
+
+    public static ILaddress evaluateLvalue(ImMemberAccess va, ProgramState globalState, LocalState localState) {
+        ImVar v = va.getVar();
+        ImType receiverType = globalState.resolveType(va.getReceiver().attrTyp());
+        ImClassType receiverClassType = receiverType instanceof ImClassType imClassType ? imClassType : null;
+        ILconst receiverVal = va.getReceiver().evaluate(globalState, localState);
+        ILconstObject receiver = globalState.toObject(receiverVal, receiverClassType);
+        if (receiver == null && receiverVal instanceof ILconstInt iLconstInt && receiverClassType != null) {
+            int objectId = iLconstInt.getVal();
+            if (objectId != 0) {
+                receiver = globalState.ensureObject(receiverClassType, objectId, va.attrTrace());
+            }
+        }
+        if (receiver == null) {
+            throw new InterpreterException(va.attrTrace(), "Null pointer dereference: " + ImPrinter.asString(va.getReceiver()));
+        }
+        ILconstObject receiverFinal = receiver;
+        List<Integer> indexes =
+            va.getIndexes().stream()
+                .map(ie -> ((ILconstInt) ie.evaluate(globalState, localState)).getVal())
+                .collect(Collectors.toList());
+        List<Integer> indexesFinal = indexes;
+        return new ILaddress() {
+            @Override
+            public void set(ILconst value) {
+                receiverFinal.set(v, indexesFinal, value);
+            }
+
+            @Override
+            public ILconst get() {
+                return receiverFinal.get(v, indexesFinal)
+                    .orElseGet(() -> va.attrTyp().defaultValue());
+            }
+        };
+    }
+
+
+    public static ILaddress evaluateLvalue(ImTupleExpr e, ProgramState globalState, LocalState localState) {
+        List<ILaddress> addresses = new ArrayList<>();
+        for (ImExpr lexpr : e.getExprs()) {
+            ILaddress addr = ((ImLExpr) lexpr).evaluateLvalue(globalState, localState);
+            addresses.add(addr);
+        }
+        return new ILaddress() {
+            @Override
+            public void set(ILconst value) {
+                if (value instanceof ILconstTuple te) {
+                    for (int i = 0; i < addresses.size(); i++) {
+                        addresses.get(i).set(te.getValue(i));
+                    }
+                }
+            }
+
+            @Override
+            public ILconst get() {
+                return new ILconstTuple(addresses.stream()
+                    .map(ILaddress::get)
+                    .toArray(ILconst[]::new));
+            }
+        };
+    }
+
+
+    public static ILconst eval(ImTypeVarDispatch e, ProgramState globalState, LocalState localState) {
+        mark(e, globalState);
+        ImTypeArgument typeArgument = localState.getTypeArgument(e.getTypeVariable());
+        if (typeArgument == null) {
+            throw new InterpreterException(e.attrTrace(),
+                "No type argument bound for " + e.getTypeVariable().getName()
+                    + ", so " + e.getTypeClassFunc().getName() + " cannot be dispatched.");
+        }
+        Either<ImMethod, ImFunction> impl = typeArgument.getTypeClassBinding().get(e.getTypeClassFunc());
+        if (impl == null) {
+            throw new InterpreterException(e.attrTrace(),
+                "No type class instance bound for " + e.getTypeClassFunc().getName()
+                    + " on type argument " + typeArgument.getType() + ".");
+        }
+        ImFunction target = impl.isRight() ? impl.get() : impl.getLeft().getImplementation();
+
+        ImExprs arguments = e.getArguments();
+        ILconst[] args = new ILconst[arguments.size()];
+        for (int i = 0; i < arguments.size(); i++) {
+            args[i] = arguments.get(i).evaluate(globalState, localState);
+        }
+        return ILInterpreter.runFunc(globalState, target, e, args).getReturnVal();
+    }
+
+    public static ILconst eval(ImCast imCast, ProgramState globalState, LocalState localState) {
+        ILconst res = imCast.getExpr().evaluate(globalState, localState);
+        ImType targetType = globalState.resolveType(imCast.getToType());
+
+        if (TypesHelper.isIntType(targetType)) {
+            if (res instanceof ILconstObject iLconstObject) {
+                return ILconstInt.create(iLconstObject.getObjectId());
+            }
+            if (res instanceof IlConstHandle ilConstHandle) {
+                int id = globalState.getHandleMap().size() + 1;
+                globalState.getHandleMap().put(id, ilConstHandle);
+                return ILconstInt.create(id);
+            }
+        }
+        if (res instanceof ILconstInt iLconstInt) {
+            if (targetType instanceof ImClassType imClassType) {
+                // 0 is the null reference, and an id without a live object stays the integer, as on Jass.
+                ILconstObject obj = globalState.getObjectByIndex(iLconstInt.getVal(), imClassType);
+                return obj == null ? res : obj;
+            }
+            if (targetType instanceof IlConstHandle) {
+                return globalState.getHandleByIndex(iLconstInt.getVal());
+            }
+        }
+        return res;
+    }
+}

@@ -1,0 +1,69 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Json/Environment/Region.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Environment
+{
+    public sealed partial class Region
+    {
+        internal Region(JsonElement jsonElement, MapRegionsFormatVersion formatVersion)
+        {
+            GetFrom(jsonElement, formatVersion);
+        }
+
+        internal Region(ref Utf8JsonReader reader, MapRegionsFormatVersion formatVersion)
+        {
+            ReadFrom(ref reader, formatVersion);
+        }
+
+        internal void GetFrom(JsonElement jsonElement, MapRegionsFormatVersion formatVersion)
+        {
+            Left = jsonElement.GetSingle(nameof(Left));
+            Bottom = jsonElement.GetSingle(nameof(Bottom));
+            Right = jsonElement.GetSingle(nameof(Right));
+            Top = jsonElement.GetSingle(nameof(Top));
+            Name = jsonElement.GetString(nameof(Name));
+            CreationNumber = jsonElement.GetInt32(nameof(CreationNumber));
+            WeatherType = jsonElement.GetInt32<WeatherType>(nameof(WeatherType));
+            AmbientSound = jsonElement.GetString(nameof(AmbientSound));
+            Color = jsonElement.GetColor(nameof(Color));
+
+            if (formatVersion >= MapRegionsFormatVersion.v7)
+            {
+                CameraBlocker = jsonElement.GetInt32(nameof(CameraBlocker));
+                AlphaTileMinimapColor = jsonElement.GetColor(nameof(AlphaTileMinimapColor));
+            }
+        }
+
+        internal void ReadFrom(ref Utf8JsonReader reader, MapRegionsFormatVersion formatVersion)
+        {
+            GetFrom(JsonDocument.ParseValue(ref reader).RootElement, formatVersion);
+        }
+
+        internal void WriteTo(Utf8JsonWriter writer, JsonSerializerOptions options, MapRegionsFormatVersion formatVersion)
+        {
+            writer.WriteStartObject();
+
+            writer.WriteNumber(nameof(Left), Left);
+            writer.WriteNumber(nameof(Bottom), Bottom);
+            writer.WriteNumber(nameof(Right), Right);
+            writer.WriteNumber(nameof(Top), Top);
+            writer.WriteString(nameof(Name), Name);
+            writer.WriteNumber(nameof(CreationNumber), CreationNumber);
+            writer.WriteObject(nameof(WeatherType), WeatherType, options);
+            writer.WriteString(nameof(AmbientSound), AmbientSound);
+            writer.Write(nameof(Color), Color);
+
+            if (formatVersion >= MapRegionsFormatVersion.v7)
+            {
+                writer.WriteNumber(nameof(CameraBlocker), CameraBlocker);
+                writer.Write(nameof(AlphaTileMinimapColor), AlphaTileMinimapColor);
+            }
+
+            writer.WriteEndObject();
+        }
+    }
+}

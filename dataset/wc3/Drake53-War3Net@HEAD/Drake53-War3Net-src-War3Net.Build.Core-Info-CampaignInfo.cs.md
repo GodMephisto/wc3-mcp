@@ -1,0 +1,88 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Info/CampaignInfo.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Info
+{
+    public sealed partial class CampaignInfo
+    {
+        public const string FileExtension = ".w3f";
+        public const string FileName = "war3campaign.w3f";
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CampaignInfo"/> class.
+        /// </summary>
+        /// <param name="formatVersion"></param>
+        public CampaignInfo(CampaignInfoFormatVersion formatVersion)
+        {
+            FormatVersion = formatVersion;
+        }
+
+        public CampaignInfoFormatVersion FormatVersion { get; set; }
+
+        public int CampaignVersion { get; set; }
+
+        public int EditorVersion { get; set; }
+
+        public string CampaignName { get; set; }
+
+        public string CampaignDifficulty { get; set; }
+
+        public string CampaignAuthor { get; set; }
+
+        public string CampaignDescription { get; set; }
+
+        public CampaignFlags CampaignFlags { get; set; }
+
+        public int CampaignBackgroundNumber { get; set; }
+
+        public string BackgroundScreenPath { get; set; }
+
+        public string MinimapPath { get; set; }
+
+        public int AmbientSoundNumber { get; set; }
+
+        public string AmbientSoundPath { get; set; }
+
+        public FogStyle FogStyle { get; set; }
+
+        public float FogStartZ { get; set; }
+
+        public float FogEndZ { get; set; }
+
+        public float FogDensity { get; set; }
+
+        public Color FogColor { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogHeightStart { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogHeightEnd { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogLinearStart { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogLinearEnd { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogMaxOpacity { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int FogDrawFogOverSky { get; set; }
+
+        public CampaignRace Race { get; set; }
+
+        public CampaignBackgroundVersion BackgroundVersion { get; set; }
+
+        public List<CampaignMapButton> MapButtons { get; init; } = new();
+
+        public List<CampaignMap> Maps { get; init; } = new();
+
+        public override string ToString() => FileName;
+    }
+}

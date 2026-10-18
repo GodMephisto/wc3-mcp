@@ -1,0 +1,30 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/thegraydot/mpqcli"
+source_path: "src/commands/read.h"
+ref: HEAD
+---
+
+#ifndef COMMANDS_READ_H
+#define COMMANDS_READ_H
+
+#include <filesystem>
+#include <optional>
+#include <ostream>
+#include <string>
+
+namespace mpqcli {
+
+/// Settled arguments for the read subcommand
+struct ReadOptions {
+    std::filesystem::path archive;
+    std::string file;
+    std::optional<std::string> locale;
+};
+
+/// Writes one archived file's bytes to out, returning false if it could not be read
+bool Read(const ReadOptions &options, std::ostream &out, std::ostream &err);
+
+} // namespace mpqcli
+
+#endif

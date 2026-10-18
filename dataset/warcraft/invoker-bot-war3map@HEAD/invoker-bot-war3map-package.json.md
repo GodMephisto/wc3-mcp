@@ -1,0 +1,79 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/invoker-bot/war3map"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "name": "war3map",
+  "version": "0.1.2",
+  "description": "To translate between `war3map` and `json` formats for WarCraft III .w3x maps.",
+  "main": "dist/src/index.js",
+  "homepage": "https://invoker-bot.github.io/war3map/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/invoker-bot/war3map.git"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:local-maps": "npm run build && node scripts/roundtrip-local-maps.js",
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint . --ext .ts",
+    "doc": "typedoc --disableOutputCheck",
+    "prepublishOnly": "npm run build",
+    "coveralls": "jest --coverage && coveralls < coverage/lcov.info "
+  },
+  "files": [
+    "src/**/*",
+    "dist/src/**/*"
+  ],
+  "keywords": [
+    "wc3",
+    "warcraft",
+    "frozen throne",
+    "reign of chaos",
+    "war3map",
+    "w3x"
+  ],
+  "author": {
+    "name": "Invoker Bot",
+    "email": "invoker-bot@outlook.com",
+    "url": "https://github.com/invoker-bot"
+  },
+  "publisher": "invoker-godder",
+  "bugs": {
+    "url": "https://github.com/invoker-bot/war3map/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.14",
+    "@types/jpeg-js": "^0.3.0",
+    "@types/node": "^14.11.5",
+    "@types/pngjs": "^6.0.5",
+    "@types/typescript": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.4.0",
+    "@typescript-eslint/parser": "^4.4.0",
+    "coveralls": "^3.1.0",
+    "eslint": "^7.10.0",
+    "eslint-config-prettier": "^6.12.0",
+    "eslint-plugin-jest": "^24.1.0",
+    "fs": "0.0.1-security",
+    "jest": "^26.5.2",
+    "path": "^0.12.7",
+    "prettier": "^2.1.2",
+    "ts-jest": "^26.4.1",
+    "tsutils": "^3.17.1",
+    "typedoc": "^0.19.2",
+    "typescript": "^4.0.3"
+  },
+  "dependencies": {
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0"
+  }
+}

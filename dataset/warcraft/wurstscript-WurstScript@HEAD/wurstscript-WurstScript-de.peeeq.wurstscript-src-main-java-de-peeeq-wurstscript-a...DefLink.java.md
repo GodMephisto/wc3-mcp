@@ -1,0 +1,99 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/attributes/names/DefLink.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.attributes.names;
+
+import de.peeeq.wurstscript.ast.*;
+import de.peeeq.wurstscript.types.VariableBinding;
+import de.peeeq.wurstscript.types.VariablePosition;
+import de.peeeq.wurstscript.types.WurstType;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.util.List;
+import java.util.stream.Stream;
+
+
+public abstract class DefLink extends NameLink {
+    private final @Nullable WurstType receiverType;
+
+
+    public DefLink(Visibility visibility, WScope definedIn, List<TypeParamDef> typeParams, @Nullable WurstType receiverType) {
+        super(visibility, definedIn, typeParams);
+        this.receiverType = receiverType;
+    }
+
+    /**
+     *
+     * Replace with instanceof check
+     */
+    @Deprecated
+    public abstract NameLinkType getType();
+
+
+    protected static @Nullable WurstType getReceiverType(WScope definedIn) {
+        if (definedIn instanceof ClassDef classDef) {
+            return classDef.attrTyp();
+        } else if (definedIn instanceof InterfaceDef interfaceDef) {
+            return interfaceDef.attrTyp();
+        } else if (definedIn instanceof ModuleInstanciation moduleInstanciation) {
+            return moduleInstanciation.attrTyp();
+        } else if (definedIn instanceof ModuleDef moduleDef) {
+            return moduleDef.attrTyp();
+        }
+        return null;
+    }
+
+
+    protected static Stream<TypeParamDef> typeParams(Element scope) {
+        if (scope instanceof AstElementWithTypeParameters astElementWithTypeParameters) {
+            return astElementWithTypeParameters.getTypeParameters().stream();
+        }
+        return Stream.of();
+    }
+
+    public @Nullable WurstType getReceiverType() {
+        return receiverType;
+    }
+
+    public DefLink hidingPrivate() {
+        return (DefLink) super.hidingPrivate();
+    }
+
+    public DefLink hidingPrivateAndProtected() {
+        return (DefLink) super.hidingPrivateAndProtected();
+    }
+
+    @Override
+    public boolean receiverCompatibleWith(WurstType receiverType, Element location) {
+        if (this.receiverType == null) {
+            return receiverType == null;
+        } else if (receiverType == null) {
+            return false;
+        }
+        return receiverType.isSubtypeOf(this.receiverType, location);
+    }
+
+    /**
+     * Tries to adapt this function to the given receiver
+     * Setting type arguments appropriately
+     */
+    public @Nullable DefLink adaptToReceiverType(WurstType receiverType) {
+        if (this.receiverType == null) {
+            return receiverType == null ? this : null;
+        }
+        NameDef def = getDef();
+        VariableBinding seed = VariableBinding.emptyMapping().withTypeVariables(typeParams);
+        VariableBinding match = receiverType.matchAgainstSupertype(this.receiverType, def, seed, VariablePosition.RIGHT);
+        if (match == null) return null;
+        return withTypeArgBinding(def, match);
+    }
+
+    @Override
+    public abstract DefLink withTypeArgBinding(Element context, VariableBinding binding);
+
+    public abstract DefLink withGenericTypeParams(List<TypeParamDef> typeParams);
+}

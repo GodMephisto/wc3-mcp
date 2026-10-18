@@ -1,0 +1,44 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Map.Example"
+source_path: "War3Map.Example.sln"
+ref: HEAD
+---
+
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29215.179
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "War3Map.Example.Launcher", "War3Map.Example.Launcher\War3Map.Example.Launcher.csproj", "{9D9F8AB0-6A9D-44F3-967F-1DFE62FD5F0F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "War3Map.Example.Source", "War3Map.Example.Source\War3Map.Example.Source.csproj", "{9274D82E-98E3-4729-B010-9B40FC7F6E66}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "War3Map.Example.Source.Dependency", "War3Map.Example.Source.Dependency\War3Map.Example.Source.Dependency.csproj", "{ADB743E0-ED95-4EFC-B553-CA92C7C9BDD8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9D9F8AB0-6A9D-44F3-967F-1DFE62FD5F0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D9F8AB0-6A9D-44F3-967F-1DFE62FD5F0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D9F8AB0-6A9D-44F3-967F-1DFE62FD5F0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D9F8AB0-6A9D-44F3-967F-1DFE62FD5F0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9274D82E-98E3-4729-B010-9B40FC7F6E66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9274D82E-98E3-4729-B010-9B40FC7F6E66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9274D82E-98E3-4729-B010-9B40FC7F6E66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9274D82E-98E3-4729-B010-9B40FC7F6E66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADB743E0-ED95-4EFC-B553-CA92C7C9BDD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADB743E0-ED95-4EFC-B553-CA92C7C9BDD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADB743E0-ED95-4EFC-B553-CA92C7C9BDD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADB743E0-ED95-4EFC-B553-CA92C7C9BDD8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FC9F76AC-81CB-487A-9120-A482B96AE679}
+	EndGlobalSection
+EndGlobal

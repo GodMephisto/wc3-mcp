@@ -1,0 +1,39 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Import/ImportedFiles.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Import
+{
+    public sealed partial class ImportedFiles
+    {
+        internal ImportedFiles(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            FormatVersion = reader.ReadInt32<ImportedFilesFormatVersion>();
+
+            nint importedFileCount = reader.ReadInt32();
+            for (nint i = 0; i < importedFileCount; i++)
+            {
+                Files.Add(reader.ReadImportedFile(FormatVersion));
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write((int)FormatVersion);
+
+            writer.Write(Files.Count);
+            foreach (var file in Files)
+            {
+                writer.Write(file, FormatVersion);
+            }
+        }
+    }
+}

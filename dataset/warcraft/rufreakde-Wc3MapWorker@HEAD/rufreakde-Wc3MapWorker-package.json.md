@@ -1,0 +1,47 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/rufreakde/Wc3MapWorker"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "name": "wc3mapworker",
+  "version": "1.0.0",
+  "description": "**Wc3MapWorker** is a npm package written in TypeScript to enable you to **export and import** your wc3 map files data easily **via ts/js**. Used only for the MPQ extraction and creation! If you are looking to extract the content of the extracted files into jason format use [WC3MapTranslator](https://github.com/ChiefOfGxBxL/WC3MapTranslator) instead.",
+  "main": "index.js",
+  "dependencies": {
+    "@types/mocha": "^5.2.7",
+    "mocha": "^6.2.2",
+    "wc3maptranslator": "^3.0.0"
+  },
+  "scripts": {
+    "prestart": "tsc --build",
+    "start": "node ./index.js",
+    "build": "tsc --build",
+    "pretest": "tsc --build",
+    "test": "mocha --timeout 9999"
+  },
+  "devDependencies": {
+    "@types/node": "^12.12.26"
+  },
+  "author": "rufreakde",
+  "license": "SEE LICENSE IN LICENSE",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rufreakde/Wc3MapWorker.git"
+  },
+  "keywords": [
+    "lua",
+    "TypeScript",
+    "Warcraft",
+    "3"
+  ],
+  "bugs": {
+    "url": "https://github.com/rufreakde/Wc3MapWorker/issues"
+  },
+  "homepage": "https://github.com/rufreakde/Wc3MapWorker#readme"
+}

@@ -1,0 +1,115 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/grolmash/HiveWE-mac"
+source_path: "src/models/single_model.h"
+ref: HEAD
+---
+
+#pragma once
+
+#include <QAbstractProxyModel>
+#include <QIdentityProxyModel>
+#include <QHeaderView>
+#include <QStyledItemDelegate>
+
+#include <string>
+#include <vector>
+
+import TableModel;
+import SLK;
+
+class SingleModel : public QAbstractProxyModel {
+	Q_OBJECT
+		
+public:
+	QModelIndex mapFromSource(const QModelIndex& sourceIndex) const override;
+	QModelIndex mapToSource(const QModelIndex& proxyIndex) const override;
+	
+	QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+	QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+
+	bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole) override;
+
+	int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+	int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+
+	QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
+	QModelIndex parent(const QModelIndex& child) const override;
+
+	void setSourceModel(QAbstractItemModel* sourceModel) override;
+
+	explicit SingleModel(TableModel* table, QObject* parent = nullptr);
+	void setID(const std::string id);
+	std::string getID() const;
+
+	struct Mapping {
+		std::string key;
+		std::string field;
+		int level;
+	};
+
+	const std::vector<Mapping>& getMapping() const {
+		return id_mapping;
+	}
+
+	slk::SLK* meta_slk;
+private:
+	void buildMapping();
+
+	slk::SLK* slk;
+
+	std::string id = "hpea";
+	std::vector<Mapping> id_mapping;
+
+	void sourceDataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles);
+
+};
+
+// Provides row headers that have alternate colors
+class AlterHeader : public QHeaderView {
+	Q_OBJECT
+
+public:
+	using QHeaderView::QHeaderView;
+protected:
+	void paintSection(QPainter* painter, const QRect& rect, int logicalIndex) const;
+};
+
+
+class TableDelegate : public QStyledItemDelegate {
+	Q_OBJECT
+
+	SingleModel* single_model;
+
+public:
+	TableDelegate(SingleModel* single_model, QWidget* parent = nullptr);
+
+	QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+	void setEditorData(QWidget* editor, const QModelIndex& index) const override;
+	void setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const override;
+
+	void updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+	QWidget* create_list_editor(QWidget* parent) const;
+	QWidget* create_model_editor(QWidget* parent) const;
+	QWidget* create_target_list_editor(QWidget* parent) const;
+	QWidget* create_upgrade_list_editor(QWidget* parent) const;
+	QWidget* create_unit_list_editor(QWidget* parent) const;
+	QWidget* create_ability_list_editor(QWidget* parent) const;
+	QWidget* create_icon_editor(QWidget* parent) const;
+
+	[[nodiscard]] QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+		QSize size = QStyledItemDelegate::sizeHint(option, index);
+
+		QVariant decoration = index.data(Qt::DecorationRole);
+		bool hasIcon = decoration.canConvert<QIcon>();
+
+		if (!hasIcon) {
+			size.rheight() += 8; // Add vertical padding (4px top + 4px bottom)
+		}
+
+
+		return size;
+	}
+};

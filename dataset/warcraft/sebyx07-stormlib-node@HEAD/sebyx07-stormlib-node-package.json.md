@@ -1,0 +1,59 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/sebyx07/stormlib-node"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "name": "stormlib-node-bindings",
+  "version": "1.0.1",
+  "description": "Node.js bindings for StormLib to work with MPQ archives",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "install": "node scripts/compile-stormlib.js && node-gyp rebuild",
+    "compile": "node scripts/compile-stormlib.js",
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebyx07/stormlib-node.git"
+  },
+  "keywords": [
+    "stormlib",
+    "mpq",
+    "warcraft",
+    "blizzard"
+  ],
+  "author": "sebi",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sebyx07/stormlib-node/issues"
+  },
+  "homepage": "https://github.com/sebyx07/stormlib-node#readme",
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.11.0",
+    "chai": "^4.3.7",
+    "eslint": "^9.11.0",
+    "globals": "^15.9.0",
+    "mocha": "^10.2.0",
+    "tmp-promise": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "src",
+    "ext",
+    "scripts",
+    "StormLib",
+    "binding.gyp",
+    "README.md",
+    "LICENSE"
+  ]
+}

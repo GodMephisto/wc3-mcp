@@ -1,0 +1,492 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/attributes/names/NameLinks.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.attributes.names;
+
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableMultimap.Builder;
+import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.ast.*;
+import de.peeeq.wurstscript.types.WurstTypeClass;
+import de.peeeq.wurstscript.types.WurstTypeInterface;
+import de.peeeq.wurstscript.utils.Utils;
+import de.peeeq.wurstscript.validation.WurstValidator;
+import org.eclipse.jdt.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Consumer;
+
+public class NameLinks {
+
+    static private class OverrideCheckResult {
+        // does this override some other function
+        boolean doesOverride = false;
+
+        // overrides a function from a class or module
+        // (for interfaces override modifier is optional)
+        boolean requiresOverrideMod = false;
+
+        // inherited functions used for override checks only, skip reporting
+        boolean skipErrorReporting = false;
+
+        // errors for functions with same name that it does not override
+        io.vavr.collection.List<String> overrideErrors = io.vavr.collection.List.empty();
+
+        public void addError(String error) {
+            this.overrideErrors = overrideErrors.prepend(error);
+        }
+    }
+
+    /**
+     * The links of one name come out in the order they were added: the structure's own names, then
+     * those of its module instantiations, its superclass and its interfaces. Callers which find
+     * several equally good candidates take the first one, so this order decides which function a
+     * call binds to. A link is hashed by the identity of its definition, so a hash set would hand
+     * them out in a different order in every compilation of the same source.
+     */
+    private static Multimap<String, DefLink> newLinkSet() {
+        return LinkedHashMultimap.create();
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(ClassOrModuleOrModuleInstanciation c) {
+        Multimap<String, DefLink> result = newLinkSet();
+        addDefinedNames(result, c);
+        Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults = initOverrideMap(result);
+        addNamesFromUsedModuleInstantiations(c, result, overrideCheckResults);
+
+        if (c instanceof ClassDef classDef) {
+            WurstTypeClass classType = classDef.attrTypC();
+            addNamesFromSuperClass(result, classType, overrideCheckResults);
+            addNamesFromImplementedInterfaces(result, classType, overrideCheckResults);
+        }
+
+        reportOverrideErrors(overrideCheckResults);
+        return ImmutableMultimap.copyOf(result);
+    }
+
+    @NotNull
+    private static Map<String, Map<FuncLink, OverrideCheckResult>> initOverrideMap(Multimap<String, DefLink> result) {
+        // LinkedHashMap, not Hashtable: nothing here is concurrent, and reportOverrideErrors
+        // iterates this map, so insertion order beats hash order for reproducible diagnostics.
+        Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults = new LinkedHashMap<>();
+        for (DefLink link : result.values()) {
+            if (link instanceof FuncLink funcLink) {
+                Map<FuncLink, OverrideCheckResult> map = overrideCheckResults.computeIfAbsent(link.getName(),
+                    s -> new HashMap<>());
+                map.put(funcLink, new OverrideCheckResult());
+            }
+        }
+        return overrideCheckResults;
+    }
+
+    private static void reportOverrideErrors(Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults) {
+        // report override errors
+        for (Map<FuncLink, OverrideCheckResult> map : overrideCheckResults.values()) {
+            for (Entry<FuncLink, OverrideCheckResult> e : map.entrySet()) {
+                FunctionDefinition f = e.getKey().getDef();
+                OverrideCheckResult check = e.getValue();
+                if (check.skipErrorReporting) {
+                    continue;
+                }
+                if (f.attrIsOverride() && !check.doesOverride) {
+                    StringBuilder msg = new StringBuilder("Function " + f.getName() + " does not override anything.");
+                    for (String overrideError : check.overrideErrors) {
+                        msg.append("\n  ");
+                        msg.append(overrideError);
+                    }
+                    f.addError(msg.toString());
+                } else if (!f.attrIsOverride() && check.doesOverride) {
+                    if (check.requiresOverrideMod) {
+                        f.addError("Function " + f.getName() + " must be marked with the 'override' modifier.");
+                    } else {
+                        f.addWarning("Function " + f.getName() + " should be marked with the 'override' modifier.");
+                    }
+                }
+
+            }
+        }
+    }
+
+    /**
+     * A type class instance only defines the functions written in its body. The instance methods
+     * are not inherited by anything, so no super-scope merging is required here.
+     */
+    public static ImmutableMultimap<String, DefLink> calculate(InstanceDecl i) {
+        Multimap<String, DefLink> result = newLinkSet();
+        addDefinedNames(result, i, i.getMethods());
+        return ImmutableMultimap.copyOf(result);
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(InterfaceDef i) {
+        Multimap<String, DefLink> result = newLinkSet();
+        addDefinedNames(result, i, i.getMethods());
+        Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults = initOverrideMap(result);
+        addNamesFromExtendedInterfaces(result, i.attrTypI(), overrideCheckResults);
+        reportOverrideErrors(overrideCheckResults);
+        return ImmutableMultimap.copyOf(result);
+    }
+
+    private static void addNamesFromExtendedInterfaces(Multimap<String, DefLink> result, WurstTypeInterface iType, Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults) {
+        for (WurstTypeInterface superI : iType.extendedInterfaces()) {
+            addNewNameLinks(result, overrideCheckResults, superI.nameLinks(), false, null);
+        }
+    }
+
+
+    private static void addNamesFromImplementedInterfaces(Multimap<String, DefLink> result, WurstTypeClass classDef, Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults) {
+        for (WurstTypeInterface interfaceType : classDef.implementedInterfaces()) {
+            addNewNameLinks(result, overrideCheckResults, interfaceType.nameLinks(), false, classDef.getClassDef());
+        }
+    }
+
+    private static void addNamesFromSuperClass(Multimap<String, DefLink> result, WurstTypeClass c, Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults) {
+        @Nullable WurstTypeClass superClass = c.extendedClass();
+        if (superClass != null) {
+            addNewNameLinks(result, overrideCheckResults, superClass.nameLinks(), false, c.getClassDef());
+        }
+    }
+
+    private static void addNewNameLinks(Multimap<String, DefLink> result, Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults, ImmutableMultimap<String, DefLink> newNameLinks, boolean allowStaticOverride, @Nullable ClassDef currentClass) {
+        for (Entry<String, DefLink> e : newNameLinks.entries()) {
+            DefLink def = e.getValue();
+            if (!def.getVisibility().isInherited()) {
+                continue;
+            }
+            if (currentClass != null && def instanceof FuncLink) {
+                DefLink adapted = ((FuncLink) def).adaptToReceiverType(currentClass.attrTyp());
+                if (adapted != null) {
+                    def = adapted;
+                }
+            }
+            String name = e.getKey();
+            boolean isOverridden = false;
+            if (def instanceof FuncLink) {
+                FuncLink func = (FuncLink) def;
+
+                // check if function is overridden by any other function in
+                Map<FuncLink, OverrideCheckResult> otherFuncs = overrideCheckResults.getOrDefault(name, Collections.emptyMap());
+                for (Entry<FuncLink, OverrideCheckResult> e2 : otherFuncs.entrySet()) {
+                    FuncLink otherFunc = e2.getKey();
+                    OverrideCheckResult checkResult = e2.getValue();
+
+                    String error = WurstValidator.checkOverride(otherFunc, func, allowStaticOverride);
+                    if (error == null) {
+                        checkResult.doesOverride = true;
+                        if (!(func.getReceiverType() instanceof WurstTypeInterface)) {
+                            checkResult.requiresOverrideMod = true;
+                        }
+                        isOverridden = true;
+                    } else {
+                        checkResult.addError(error);
+                    }
+
+
+                }
+
+            }
+            if (!isOverridden) {
+                result.put(name, def.hidingPrivate());
+                if (def instanceof FuncLink) {
+                    registerOverrideCandidate(overrideCheckResults, name, (FuncLink) def, currentClass);
+                }
+            }
+        }
+    }
+
+    private static void registerOverrideCandidate(Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults,
+                                                  String name, FuncLink funcLink, @Nullable ClassDef currentClass) {
+        if (currentClass == null) {
+            return;
+        }
+        FunctionDefinition def = funcLink.getDef();
+        if (!(def instanceof FuncDef)) {
+            return;
+        }
+        if (def.attrIsAbstract()) {
+            return;
+        }
+        if (def.attrNearestClassDef() == null) {
+            return;
+        }
+        if (currentClass != null) {
+            DefLink adapted = funcLink.adaptToReceiverType(currentClass.attrTyp());
+            if (adapted instanceof FuncLink funcLink2) {
+                funcLink = funcLink2;
+            }
+        }
+        Map<FuncLink, OverrideCheckResult> map = overrideCheckResults.computeIfAbsent(name, s -> new HashMap<>());
+        OverrideCheckResult check = map.get(funcLink);
+        if (check == null) {
+            check = new OverrideCheckResult();
+            check.skipErrorReporting = true;
+            map.put(funcLink, check);
+        }
+    }
+
+
+    public static ImmutableMultimap<String, DefLink> calculate(CompilationUnit cu) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        addJassNames(result, cu);
+        addPackages(result, cu);
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(AstElementWithBody c) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        WScope s = (WScope) c;
+        addVarDefIfAny(result, s);
+        addParametersIfAny(result, s);
+        return result.build();
+    }
+
+
+    private static void addVarDefIfAny(Builder<String, DefLink> result, WScope s) {
+        if (s instanceof LoopStatementWithVarDef l) {
+            result.put(l.getLoopVar().getName(), VarLink.create(l.getLoopVar(), s));
+        }
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(EnumDef e) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        addDefinedNames(result, e, e.getMembers());
+        return result.build();
+    }
+
+
+    public static ImmutableMultimap<String, DefLink> calculate(@SuppressWarnings("unused") NativeFunc nativeFunc) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(TupleDef t) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        addDefinedNames(result, t, t.getParameters());
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(WPackage p) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        for (WImport imp : p.getImports()) {
+            if (imp.getPackagename().equals("NoWurst")) {
+                continue;
+            }
+            WPackage importedPackage = imp.attrImportedPackage();
+            if (importedPackage == null) {
+                WLogger.info("could not resolve import: " + Utils.printElementWithSource(Optional.of(imp)));
+                continue;
+            }
+            if (p.getName().equals("WurstREPL")) {
+                // the REPL is special and can use all names
+                result.putAll(importedPackage.getElements().attrNameLinks());
+                result.putAll(importedPackage.attrNameLinks());
+            } else {
+                // normal packages can only use the exported names of a package
+                result.putAll(importedPackage.attrExportedNameLinks());
+            }
+        }
+
+        return result.build();
+    }
+
+    /**
+     * What {@code p.attrNameLinks().get(name)} holds, without building that table. The table of a package
+     * holds every name each of its imports exports, so building it for every package grows with the packages
+     * times the names they import, while a lookup asks for one name: it is asked of each import instead, in
+     * the order of the imports, keeping the first of equal links as the table does.
+     */
+    public static ImmutableSet<DefLink> importedNameLinks(WPackage p, String name) {
+        if (p.getName().equals("WurstREPL")) {
+            // the REPL can use all names, see calculate(WPackage)
+            return (ImmutableSet<DefLink>) p.attrNameLinks().get(name);
+        }
+        ImmutableSet.@Nullable Builder<DefLink> result = null;
+        for (WImport imp : p.getImports()) {
+            if (imp.getPackagename().equals("NoWurst")) {
+                continue;
+            }
+            WPackage importedPackage = imp.attrImportedPackage();
+            if (importedPackage == null) {
+                continue;
+            }
+            ImmutableCollection<DefLink> links = importedPackage.attrExportedNameLinks().get(name);
+            if (!links.isEmpty()) {
+                if (result == null) {
+                    result = ImmutableSet.builder();
+                }
+                result.addAll(links);
+            }
+        }
+        return result == null ? ImmutableSet.of() : result.build();
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(WEntities wEntities) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        for (WEntity e : wEntities) {
+            if (e instanceof NameDef n) {
+                addNameDefDefLink(result, n, wEntities);
+            }
+            if (e instanceof WScope scope && !(e instanceof ModuleDef)) {
+                List<TypeParamDef> typeParams;
+                if (scope instanceof AstElementWithTypeParameters astElementWithTypeParameters) {
+                    typeParams = astElementWithTypeParameters.getTypeParameters();
+                } else {
+                    typeParams = Collections.emptyList();
+                }
+                addHidingPrivate(result, scope.attrNameLinks(), typeParams);
+            }
+        }
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(WurstModel model) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        for (CompilationUnit cu : model) {
+            result.putAll(cu.attrNameLinks());
+        }
+        return result.build();
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(WStatements statements) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        for (WStatement s : statements) {
+            if (s instanceof LocalVarDef var) {
+                result.put(var.getName(), VarLink.create(var, statements));
+            }
+        }
+        return result.build();
+    }
+
+    private static void addParametersIfAny(Builder<String, DefLink> result, WScope s) {
+        if (s instanceof AstElementWithParameters withParams) {
+            for (WParameter p : withParams.getParameters()) {
+                result.put(p.getName(), VarLink.create(p, s));
+            }
+        }
+
+    }
+
+    private static void addPackages(Builder<String, DefLink> result, CompilationUnit cu) {
+        for (WPackage p : cu.getPackages()) {
+            result.put(p.getName(), PackageLink.create(p, cu));
+        }
+    }
+
+    private static void addJassNames(Builder<String, DefLink> result, CompilationUnit cu) {
+        for (JassToplevelDeclaration jd : cu.getJassDecls()) {
+            if (jd instanceof NameDef def) {
+                addNameDefDefLink(result, def, cu);
+            } else if (jd instanceof JassGlobalBlock jassGlobalBlock) {
+                addDefinedNames(result, cu, jassGlobalBlock);
+            }
+        }
+    }
+
+
+    private static void addNameDefDefLink(Consumer<DefLink> result, NameDef def, WScope scope) {
+        if (def instanceof VarDef varDef) {
+            result.accept(VarLink.create(varDef, scope));
+        } else if (def instanceof FunctionDefinition functionDefinition) {
+            result.accept(FuncLink.create(functionDefinition, scope));
+        } else if (def instanceof WPackage wPackage) {
+            result.accept(PackageLink.create(wPackage, scope));
+        } else if (def instanceof TypeDef typeDef) {
+            result.accept(TypeDefLink.create(typeDef, scope));
+        } else if (def instanceof EnumMember enumMember) {
+            result.accept(VarLink.create(enumMember, scope));
+        }
+    }
+
+    private static void addNameDefDefLink(Builder<String, DefLink> result, NameDef def, WScope scope) {
+        addNameDefDefLink(l -> result.put(l.getName(), l), def, scope);
+    }
+
+    private static void addNameDefDefLink(Multimap<String, DefLink> result, NameDef def, WScope scope) {
+        addNameDefDefLink(l -> result.put(l.getName(), l), def, scope);
+    }
+
+
+    private static void addNamesFromUsedModuleInstantiations(ClassOrModuleOrModuleInstanciation c,
+                                                             Multimap<String, DefLink> result, Map<String, Map<FuncLink, OverrideCheckResult>> overrideCheckResults) {
+        for (ModuleInstanciation m : c.getModuleInstanciations()) {
+            addNewNameLinks(result, overrideCheckResults, m.attrNameLinks(), true, null);
+        }
+    }
+
+    private static void addDefinedNames(Multimap<String, DefLink> result, ClassOrModuleOrModuleInstanciation c) {
+        addDefinedNames(result, c, c.getMethods());
+        addDefinedNames(result, c, c.getVars());
+        addDefinedNames(result, c, c.getModuleInstanciations());
+        addDefinedNames(result, c, c.getInnerClasses());
+    }
+
+    private static void addDefinedNames(Builder<String, DefLink> result, WScope definedIn, List<? extends NameDef> slots) {
+        for (NameDef n : slots) {
+            addNameDefDefLink(result, n, definedIn);
+        }
+    }
+
+    private static void addDefinedNames(Multimap<String, DefLink> result, WScope definedIn, List<? extends NameDef> slots) {
+        for (NameDef n : slots) {
+            addNameDefDefLink(result, n, definedIn);
+        }
+    }
+
+
+    public static void addHidingPrivate(Builder<String, DefLink> result, Multimap<String, DefLink> adding, List<TypeParamDef> typeParams) {
+        for (Entry<String, DefLink> e : adding.entries()) {
+            if (e.getValue().getVisibility() == Visibility.LOCAL) {
+                continue;
+            }
+            result.put(e.getKey(), e.getValue().hidingPrivate().withGenericTypeParams(typeParams));
+        }
+
+    }
+
+    public static void addHidingPrivate(Multimap<String, DefLink> result, Multimap<String, DefLink> adding) {
+        for (Entry<String, DefLink> e : adding.entries()) {
+            if (e.getValue().getVisibility() == Visibility.LOCAL) {
+                continue;
+            }
+            result.put(e.getKey(), e.getValue().hidingPrivate());
+        }
+
+    }
+
+    public static void addHidingPrivateAndProtected(ImmutableMultimap.Builder<String, DefLink> r, Multimap<String, ? extends DefLink> adding) {
+        for (Entry<String, ? extends DefLink> e : adding.entries()) {
+            if (e.getValue().getVisibility() == Visibility.LOCAL) {
+                continue;
+            }
+            r.put(e.getKey(), e.getValue().hidingPrivateAndProtected());
+        }
+    }
+
+    public static void addTypesHidingPrivateAndProtected(ImmutableMultimap.Builder<String, TypeLink> r, Multimap<String, TypeLink> adding) {
+        for (Entry<String, TypeLink> e : adding.entries()) {
+            if (e.getValue().getVisibility() == Visibility.LOCAL) {
+                continue;
+            }
+            r.put(e.getKey(), e.getValue().hidingPrivateAndProtected());
+        }
+    }
+
+    public static ImmutableMultimap<String, DefLink> calculate(ExprClosure e) {
+        ImmutableMultimap.Builder<String, DefLink> result = ImmutableSetMultimap.builder();
+        for (WShortParameter p : e.getShortParameters()) {
+            result.put(p.getName(), VarLink.create(p, e));
+        }
+        return result.build();
+    }
+
+}

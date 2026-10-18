@@ -1,0 +1,40 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Darithos/W3ModelViewer"
+source_path: "spike/MdxProbe/MdxProbe.csproj"
+ref: HEAD
+---
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>MdxProbe</AssemblyName>
+    <RootNamespace>MdxProbe</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- UseWPF swaps in the desktop implicit usings, which drop System.IO to keep System.Windows
+         .Shapes.Path unambiguous. The probe is a console tool and uses Path/File everywhere. -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Wc3ModelViewer.Core\Wc3ModelViewer.Core.csproj" />
+    <!-- The app's JPEG codec wiring, so the probe decodes BLP1-JPEG exactly as the viewer does. -->
+    <Compile Include="..\..\src\Wc3ModelViewer\BlpJpegCodec.cs" Link="BlpJpegCodec.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\native\CascLib.dll">
+      <Link>CascLib.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

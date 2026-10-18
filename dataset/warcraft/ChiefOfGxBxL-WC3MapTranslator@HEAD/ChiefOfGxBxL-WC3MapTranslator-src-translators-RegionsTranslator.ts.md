@@ -1,0 +1,122 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/ChiefOfGxBxL/WC3MapTranslator"
+source_path: "src/translators/RegionsTranslator.ts"
+ref: HEAD
+---
+
+import { HexBuffer } from '../HexBuffer';
+import { W3Buffer } from '../W3Buffer';
+import { WarResult, JsonResult, ITranslator, expectVersion } from '../CommonInterfaces';
+
+interface Region {
+    position: Rect;
+    name: string;
+    id: number;
+    weatherEffect?: string;
+    ambientSound?: string;
+    color: number[];
+}
+
+interface Rect {
+    left: number;
+    bottom: number;
+    right: number;
+    top: number;
+}
+
+export default abstract class RegionsTranslator extends ITranslator {
+    public static jsonToWar(regionsJson: Region[]): WarResult {
+        const outBufferToWar = new HexBuffer();
+
+        /*
+         * Header
+         */
+        outBufferToWar.addInt(5); // file version
+
+        /*
+         * Body
+         */
+        outBufferToWar.addInt(regionsJson.length);
+        for (const region of regionsJson) {
+            outBufferToWar.addFloat(region.position.left);
+            outBufferToWar.addFloat(region.position.bottom);
+            outBufferToWar.addFloat(region.position.right);
+            outBufferToWar.addFloat(region.position.top);
+
+            outBufferToWar.addString(region.name);
+            outBufferToWar.addInt(region.id);
+
+            // Weather effect name - lookup necessary: char[4]
+            if (region.weatherEffect) {
+                outBufferToWar.addChars(region.weatherEffect);
+            } else {
+                outBufferToWar.addByte(0);
+                outBufferToWar.addByte(0);
+                outBufferToWar.addByte(0);
+                outBufferToWar.addByte(0);
+            }
+
+            // Ambient sound - refer to names defined in .w3s file
+            outBufferToWar.addString(region.ambientSound || ''); // May be empty string
+
+            // Color of region used by editor
+            // Careful! The order in .w3r is BB GG RR, whereas the JSON spec order is [RR, GG, BB]
+            outBufferToWar.addByte(region.color[2]); // blue
+            outBufferToWar.addByte(region.color[1]); // green
+            outBufferToWar.addByte(region.color[0]); // red
+
+            // Value is set to 0xff based on observing the .w3r file, but not sure if it could be something else
+            outBufferToWar.addByte(0xff);
+        }
+
+        return {
+            buffer: outBufferToWar.getBuffer()
+        };
+    }
+
+    public static warToJson(buffer: Buffer): JsonResult<Region[]> {
+        const result = [];
+        const outBufferToJSON = new W3Buffer(buffer);
+        expectVersion(5, outBufferToJSON.readInt()); // File version
+
+        const numRegions = outBufferToJSON.readInt(); // # of regions
+        for (let i = 0; i < numRegions; i++) {
+            const region: Region = {
+                name: '',
+                id: 0,
+                weatherEffect: '',
+                ambientSound: '',
+                color: [0, 0, 0],
+                position: {
+                    left: 0,
+                    bottom: 0,
+                    right: 0,
+                    top: 0
+                }
+            };
+
+            region.position.left = outBufferToJSON.readFloat();
+            region.position.bottom = outBufferToJSON.readFloat();
+            region.position.right = outBufferToJSON.readFloat();
+            region.position.top = outBufferToJSON.readFloat();
+            region.name = outBufferToJSON.readString();
+            region.id = outBufferToJSON.readInt();
+            region.weatherEffect = outBufferToJSON.readChars(4, true);
+            region.ambientSound = outBufferToJSON.readString();
+            region.color = [
+                outBufferToJSON.readByte(), // blue
+                outBufferToJSON.readByte(), // green
+                outBufferToJSON.readByte() // red
+            ];
+            region.color.reverse(); // json wants it in RGB, but .w3r file stores it as BB GG RR
+            outBufferToJSON.readByte(); // end of region structure
+
+            result.push(region);
+        }
+
+        return {
+            json: result
+        };
+    }
+}

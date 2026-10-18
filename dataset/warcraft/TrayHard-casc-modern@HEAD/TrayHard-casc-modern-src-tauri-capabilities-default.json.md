@@ -1,0 +1,42 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/TrayHard/casc-modern"
+source_path: "src-tauri/capabilities/default.json"
+ref: HEAD
+---
+
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Main window capability",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        { "path": "$TEMP/casc-modern/*" },
+        { "path": "$TEMP/casc-modern/**" }
+      ]
+    },
+    "opener:allow-open-url",
+    "clipboard-manager:default",
+    "clipboard-manager:allow-write-text",
+    "dialog:default",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize",
+    "core:window:allow-close",
+    "core:window:allow-toggle-maximize",
+    "core:event:default",
+    "updater:default",
+    "updater:allow-check",
+    "updater:allow-download",
+    "updater:allow-install",
+    "updater:allow-download-and-install",
+    "process:default",
+    "process:allow-restart"
+  ]
+}

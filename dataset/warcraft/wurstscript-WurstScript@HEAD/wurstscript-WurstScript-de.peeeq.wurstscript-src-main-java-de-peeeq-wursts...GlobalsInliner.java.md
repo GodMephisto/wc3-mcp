@@ -1,0 +1,537 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/translation/imoptimizer/GlobalsInliner.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.translation.imoptimizer;
+
+import com.google.common.collect.Sets;
+import de.peeeq.wurstscript.attributes.CompileError;
+import de.peeeq.wurstscript.ast.GlobalVarDef;
+import de.peeeq.wurstscript.jassIm.*;
+import de.peeeq.wurstscript.translation.imtranslation.ImHelper;
+import de.peeeq.wurstscript.translation.imtranslation.ImTranslator;
+import de.peeeq.wurstscript.types.TypesHelper;
+import de.peeeq.wurstscript.utils.Utils;
+import de.peeeq.wurstscript.validation.NamePreservation;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+public class GlobalsInliner implements OptimizerPass {
+    @Override
+    public int optimize(ImTranslator trans) {
+        int obsoleteCount = 0;
+        ImProg prog = trans.getImProg();
+        prog.clearAttributes(); // TODO only clear read/write attributes
+        LiteralConstantAnalysis literalConstants = analyzeLiteralConstants(trans, prog);
+
+        Set<ImVar> obsoleteVars = Sets.newLinkedHashSet();
+        for (final ImVar v : prog.getGlobals()) {
+            if (trans.isUnitTestMode() && v.getName().equals("MagicFunctions_compiletime")) {
+                // in unit test mode we run tests and compiletime functions with optimizations,
+                // so it is important, that we do not optimize away the compiletime constant
+                continue;
+            }
+            if (v.getName().equals("MagicFunctions_isLua") && trans.isLuaTarget()) {
+                // In Lua mode, isLua must evaluate to true.
+                // Normal inlining would use the declared value (false); override it here.
+                for (ImVarRead read : new ArrayList<>(v.attrReads())) {
+                    read.replaceBy(JassIm.ImBoolVal(true));
+                }
+                for (ImVarWrite write : new ArrayList<>(v.attrWrites())) {
+                    if (write.getParent() != null) {
+                        write.replaceBy(ImHelper.nullExpr());
+                    }
+                }
+                obsoleteVars.add(v);
+                obsoleteCount++;
+                continue;
+            }
+            if (v.getType() instanceof ImArrayType
+                || v.getType() instanceof ImArrayTypeMulti) {
+                // cannot optimize arrays yet
+                continue;
+            }
+            if (NamePreservation.isPreserved(v)) {
+                // keep names which are part of the external Warcraft III API
+                continue;
+            }
+
+            boolean literalConstant = literalConstants.safeConstants.contains(v);
+            if (v.attrWrites().size() == 1 || literalConstant) {
+                ImExpr right = null;
+                ImVarWrite obs = null;
+                if (literalConstant) {
+                    obs = literalConstants.replacementWrites.get(v);
+                    right = obs.getRight();
+                } else {
+                    for (ImVarWrite write : v.attrWrites()) {
+                        ImFunction func = write.getNearestFunc();
+                        if (isInInitGlobals(trans, func)) {
+                            right = write.getRight();
+                            obs = write;
+                            break;
+                        }
+                    }
+                }
+                if (obs == null) {
+                    continue;
+                }
+
+                ImExpr replacement = findReplacement(right, obs, v.getType());
+                if (replacement != null) {
+                    for (ImVarRead v3 : v.attrReads()) {
+                        v3.replaceBy(replacement.copy());
+                    }
+                }
+                if ((replacement != null || v.attrReads().size() == 0) && v.attrWrites().size() == 1) {
+                    obsoleteVars.add(v);
+                }
+            } else if (v.attrWrites().size() > 1 && !(v.getType() instanceof ImTupleType)) {
+                List<ImVarWrite> initWrites = new ArrayList<>();
+                for (ImVarWrite imVarWrite : v.attrWrites()) {
+                    ImFunction nearestFunc = imVarWrite.getNearestFunc();
+                    if (isInInitGlobals(trans, nearestFunc)) {
+                        initWrites.add(imVarWrite);
+                    }
+                }
+                if (initWrites.size() == 1) {
+                    if(v.getType() instanceof ImSimpleType) {
+                        ImVarWrite initWrite = initWrites.get(0);
+                        ImExpr write = initWrite.getRight();
+                        try {
+                            ImExpr defaultValue = ImHelper.defaultValueForType((ImSimpleType) v.getType());
+                            boolean isDefault = defaultValue.structuralEquals(write);
+                            if (isDefault) {
+                                // Only remove the init write when it assigns the default value.
+                                // Never touch non-init writes here.
+                                initWrite.replaceBy(ImHelper.nullExpr());
+                            }
+                        } catch (Exception e) {
+                            throw new CompileError(write.attrTrace().attrErrorPos(),
+                                "Could not inline " + Utils.printElementWithSource(Optional.of(v.getTrace())),
+                                CompileError.ErrorType.ERROR, e);
+                        }
+                    }
+                }
+            }
+
+        }
+        obsoleteCount += obsoleteVars.size();
+        for (ImVar i : obsoleteVars) {
+            // remove the write
+            if (i.attrWrites().size() > 0) {
+                ImVarWrite write = Utils.getFirstAndOnly(i.attrWrites());
+                if (write.getParent() != null) {
+                    write.replaceBy(write.getRight().copy());
+                }
+            }
+        }
+        prog.getGlobals().removeAll(obsoleteVars);
+        return obsoleteCount;
+    }
+
+    @Nullable
+    private ImExpr findReplacement(ImExpr right, ImVarWrite obs, ImType varType) {
+        ImExpr replacement;
+        if (right instanceof ImIntVal val) {
+            // Jass converts an integer stored into a real, so the global holds a real.
+            // The integer in place of a read would make `g / m` an integer division.
+            replacement = TypesHelper.isRealType(varType)
+                ? JassIm.ImRealVal(val.getValI() + ".")
+                : JassIm.ImIntVal(val.getValI());
+            if (obs.getParent() != null)
+                obs.replaceBy(ImHelper.nullExpr());
+        } else if (right instanceof ImRealVal val) {
+            replacement = (JassIm.ImRealVal(val.getValR()));
+            if (obs.getParent() != null)
+                obs.replaceBy(ImHelper.nullExpr());
+        } else if (right instanceof ImStringVal val) {
+            replacement = (JassIm.ImStringVal(val.getValS()));
+            if (obs.getParent() != null)
+                obs.replaceBy(ImHelper.nullExpr());
+        } else if (right instanceof ImBoolVal val) {
+            replacement = (JassIm.ImBoolVal(val.getValB()));
+            if (obs.getParent() != null)
+                obs.replaceBy(ImHelper.nullExpr());
+        } else {
+            replacement = null;
+        }
+        return replacement;
+    }
+
+    private static boolean isLiteral(ImExpr expr) {
+        return expr instanceof ImIntVal || expr instanceof ImRealVal || expr instanceof ImStringVal || expr instanceof ImBoolVal;
+    }
+
+    @Override
+    public String getName() {
+        return "Globals Inlined";
+    }
+
+
+    /** The globals initialiser of the compiler, not a function which happens to have its name. */
+    private static boolean isInInitGlobals(ImTranslator trans, ImFunction func) {
+        return func != null && func == trans.getGlobalInitFunc();
+    }
+
+    /**
+     * A package constant is assigned at runtime in a package initializer. Replacing all reads is
+     * valid only when no startup path can observe the default value before that emitted assignment.
+     * Analyze the actual IM startup order once, including transitive calls and function references,
+     * rather than trying to reconstruct translation and dependency order from source positions.
+     */
+    private static LiteralConstantAnalysis analyzeLiteralConstants(ImTranslator trans, ImProg prog) {
+        List<ImFunction> initializationOrder = trans.getInitializationOrder();
+        IdentityHashMap<ImStmt, Integer> statementRanks = new IdentityHashMap<>();
+        IdentityHashMap<ImVarWrite, Long> writeRanks = new IdentityHashMap<>();
+        for (int functionRank = 0; functionRank < initializationOrder.size(); functionRank++) {
+            ImFunction initializer = initializationOrder.get(functionRank);
+            for (int statementRank = 0; statementRank < initializer.getBody().size(); statementRank++) {
+                statementRanks.put(initializer.getBody().get(statementRank), statementRank);
+            }
+            int[] writeRank = {0};
+            int currentFunctionRank = functionRank;
+            initializer.getBody().accept(new ImStmt.DefaultVisitor() {
+                @Override
+                public void visit(ImSet write) {
+                    long rank = ((long) currentFunctionRank << 32) | (writeRank[0]++ & 0xffffffffL);
+                    writeRanks.put(write, rank);
+                    super.visit(write);
+                }
+            });
+        }
+
+        List<ImVar> candidates = new ArrayList<>();
+        IdentityHashMap<ImVar, ImVarWrite> replacementWrites = new IdentityHashMap<>();
+        for (ImVar var : prog.getGlobals()) {
+            if (!isSourceConstant(var)) {
+                continue;
+            }
+            ImVarWrite replacementWrite = null;
+            ImExpr replacement = null;
+            long replacementRank = Long.MAX_VALUE;
+            boolean eligible = !var.attrWrites().isEmpty();
+            for (ImVarWrite write : var.attrWrites()) {
+                ImFunction initializer = write.getNearestFunc();
+                ImStmt statement = initializer == null ? null
+                    : topLevelStatement((de.peeeq.wurstscript.jassIm.Element) write, initializer);
+                Integer statementRank = statementRanks.get(statement);
+                Long writeRank = writeRanks.get(write);
+                if (statement == null || statementRank == null
+                    || writeRank == null || !isLiteral(write.getRight())) {
+                    eligible = false;
+                    break;
+                }
+                if (replacement == null) {
+                    replacement = write.getRight();
+                } else if (!replacement.structuralEquals(write.getRight())) {
+                    eligible = false;
+                    break;
+                }
+                if (writeRank < replacementRank) {
+                    replacementRank = writeRank;
+                    replacementWrite = write;
+                }
+            }
+            if (eligible) {
+                candidates.add(var);
+                replacementWrites.put(var, replacementWrite);
+            }
+        }
+        if (candidates.isEmpty()) {
+            return new LiteralConstantAnalysis(identitySet(), replacementWrites);
+        }
+
+        IdentityHashMap<ImFunction, Set<Integer>> readsByFunction = new IdentityHashMap<>();
+        IdentityHashMap<ImStmt, Set<Integer>> readsByStatement = new IdentityHashMap<>();
+        IdentityHashMap<ImStmt, Set<Integer>> writesByStatement = new IdentityHashMap<>();
+        IdentityHashMap<ImFunction, Set<Integer>> writesByInitializer = new IdentityHashMap<>();
+        BitSet unsafe = new BitSet(candidates.size());
+
+        for (int i = 0; i < candidates.size(); i++) {
+            ImVar candidate = candidates.get(i);
+            for (ImVarRead read : candidate.attrReads()) {
+                ImFunction function = read.getNearestFunc();
+                if (function == null) {
+                    unsafe.set(i);
+                    continue;
+                }
+                readsByFunction.computeIfAbsent(function, ignored -> new HashSet<>()).add(i);
+                ImStmt statement = topLevelStatement((de.peeeq.wurstscript.jassIm.Element) read, function);
+                if (statement != null) {
+                    readsByStatement.computeIfAbsent(statement, ignored -> new HashSet<>()).add(i);
+                }
+            }
+            for (ImVarWrite write : candidate.attrWrites()) {
+                ImFunction function = write.getNearestFunc();
+                ImStmt statement = function == null ? null
+                    : topLevelStatement((de.peeeq.wurstscript.jassIm.Element) write, function);
+                if (statement != null) {
+                    writesByStatement.computeIfAbsent(statement, ignored -> new HashSet<>()).add(i);
+                    writesByInitializer.computeIfAbsent(function, ignored -> new HashSet<>()).add(i);
+                }
+            }
+        }
+
+        BitSet pending = new BitSet(candidates.size());
+        pending.set(0, candidates.size());
+        StartupReach reachableFromStartup = new StartupReach();
+        ImFunction config = trans.getConfFunc();
+        if (config != null) {
+            scanStartupStatements(config.getBody(), pending, unsafe, readsByStatement, writesByStatement,
+                readsByFunction, reachableFromStartup, null);
+        }
+        if (!initializationOrder.isEmpty()) {
+            scanStartupStatements(initializationOrder.get(0).getBody(), pending, unsafe, readsByStatement,
+                writesByStatement, readsByFunction, reachableFromStartup, null);
+            scanMainPrefix(trans, initializationOrder, pending, unsafe, readsByStatement, writesByStatement,
+                readsByFunction, reachableFromStartup);
+        }
+        for (int i = 1; i < initializationOrder.size(); i++) {
+            ImFunction initializer = initializationOrder.get(i);
+            scanStartupStatements(initializer.getBody(), pending, unsafe, readsByStatement, writesByStatement,
+                readsByFunction, reachableFromStartup, writesByInitializer.get(initializer));
+        }
+        unsafe.or(pending);
+
+        Set<ImVar> safeConstants = identitySet();
+        for (int i = 0; i < candidates.size(); i++) {
+            if (!unsafe.get(i)) {
+                safeConstants.add(candidates.get(i));
+            }
+        }
+        return new LiteralConstantAnalysis(safeConstants, replacementWrites);
+    }
+
+    private static void scanMainPrefix(ImTranslator trans, List<ImFunction> initializationOrder,
+                                       BitSet pending, BitSet unsafe,
+                                       Map<ImStmt, Set<Integer>> readsByStatement,
+                                       Map<ImStmt, Set<Integer>> writesByStatement,
+                                       Map<ImFunction, Set<Integer>> readsByFunction,
+                                       StartupReach reachableFromStartup) {
+        Set<ImFunction> packageInitializers = identitySet();
+        packageInitializers.addAll(initializationOrder.subList(1, initializationOrder.size()));
+        for (ImStmt statement : trans.getMainFunc().getBody()) {
+            Set<ImFunction> usedFunctions = directlyUsedFunctions(statement);
+            if (!Collections.disjoint(usedFunctions, packageInitializers)) {
+                return;
+            }
+            scanStartupStatements(Collections.singleton(statement), pending, unsafe, readsByStatement,
+                writesByStatement, readsByFunction, reachableFromStartup, null);
+        }
+    }
+
+    private static void scanStartupStatements(Collection<ImStmt> statements, BitSet pending, BitSet unsafe,
+                                               Map<ImStmt, Set<Integer>> readsByStatement,
+                                               Map<ImStmt, Set<Integer>> writesByStatement,
+                                               Map<ImFunction, Set<Integer>> readsByFunction,
+                                               StartupReach reachableFromStartup,
+                                               @Nullable Set<Integer> writesInAbortableInitializer) {
+        for (ImStmt statement : statements) {
+            BitSet reads = new BitSet();
+            for (int candidate : readsByStatement.getOrDefault(statement, Collections.emptySet())) {
+                reads.set(candidate);
+            }
+            addNewlyReachableReads(statement, reachableFromStartup, readsByFunction, reads);
+            reads.and(pending);
+            unsafe.or(reads);
+            if (writesInAbortableInitializer != null && !isDefinitelyNonAbortingInitializerStatement(statement)) {
+                for (int candidate : writesInAbortableInitializer) {
+                    if (pending.get(candidate)) {
+                        unsafe.set(candidate);
+                    }
+                }
+            }
+            for (int candidate : writesByStatement.getOrDefault(statement, Collections.emptySet())) {
+                pending.clear(candidate);
+            }
+        }
+    }
+
+    private static void addNewlyReachableReads(ImStmt statement, StartupReach reach,
+                                                Map<ImFunction, Set<Integer>> readsByFunction, BitSet reads) {
+        reach.scan(statement);
+        ImFunction function;
+        while ((function = reach.nextFunction()) != null) {
+            for (int candidate : readsByFunction.getOrDefault(function, Collections.emptySet())) {
+                reads.set(candidate);
+            }
+            reach.scan(function);
+        }
+    }
+
+    /**
+     * What may have run by some point of startup. A function reference and a call are followed at
+     * once. A method call is followed only into implementations of classes that reached code has
+     * instantiated: an object of a class can only be dispatched on after an allocation of it (or of a
+     * subclass) ran, so an implementation of a class nothing has created yet cannot be the target.
+     * An implementation whose class is not live waits, and is reached when an allocation makes it so.
+     */
+    private static final class StartupReach {
+        private final Set<ImFunction> reached = identitySet();
+        private final Set<ImClass> liveClasses = identitySet();
+        private final Map<ImClass, List<ImFunction>> waiting = new IdentityHashMap<>();
+        private final ArrayDeque<ImFunction> unvisited = new ArrayDeque<>();
+
+        @Nullable ImFunction nextFunction() {
+            return unvisited.pollFirst();
+        }
+
+        void scan(de.peeeq.wurstscript.jassIm.Element element) {
+            element.accept(new de.peeeq.wurstscript.jassIm.Element.DefaultVisitor() {
+                @Override
+                public void visit(ImFunctionCall call) {
+                    super.visit(call);
+                    reach(call.getFunc());
+                }
+
+                @Override
+                public void visit(ImFuncRef ref) {
+                    super.visit(ref);
+                    reach(ref.getFunc());
+                }
+
+                @Override
+                public void visit(ImMethodCall call) {
+                    super.visit(call);
+                    dispatch(call.getMethod());
+                    for (ImMethod subMethod : call.getMethod().getSubMethods()) {
+                        dispatch(subMethod);
+                    }
+                }
+
+                @Override
+                public void visit(ImAlloc alloc) {
+                    super.visit(alloc);
+                    instantiate(alloc.getClazz().getClassDef());
+                }
+            });
+        }
+
+        private void reach(@Nullable ImFunction function) {
+            if (function != null && reached.add(function)) {
+                unvisited.addLast(function);
+            }
+        }
+
+        private void dispatch(ImMethod method) {
+            ImFunction implementation = method.getImplementation();
+            if (implementation == null) {
+                return;
+            }
+            ImClass owner = method.getMethodClass().getClassDef();
+            if (liveClasses.contains(owner)) {
+                reach(implementation);
+            } else {
+                waiting.computeIfAbsent(owner, ignored -> new ArrayList<>()).add(implementation);
+            }
+        }
+
+        /** The class and every class it extends or implements now has an instance to dispatch on. */
+        private void instantiate(ImClass clazz) {
+            if (!liveClasses.add(clazz)) {
+                return;
+            }
+            List<ImFunction> released = waiting.remove(clazz);
+            if (released != null) {
+                released.forEach(this::reach);
+            }
+            for (ImClassType superClass : clazz.getSuperClasses()) {
+                instantiate(superClass.getClassDef());
+            }
+        }
+    }
+
+    private static boolean isDefinitelyNonAbortingInitializerStatement(ImStmt statement) {
+        return statement instanceof ImSet set && set.getLeft() instanceof ImVarAccess && isLiteral(set.getRight());
+    }
+
+    private static Set<ImFunction> directlyUsedFunctions(ImStmt statement) {
+        Set<ImFunction> result = identitySet();
+        statement.accept(new ImStmt.DefaultVisitor() {
+            @Override
+            public void visit(ImFunctionCall call) {
+                super.visit(call);
+                result.add(call.getFunc());
+            }
+
+            @Override
+            public void visit(ImFuncRef ref) {
+                super.visit(ref);
+                result.add(ref.getFunc());
+            }
+
+            @Override
+            public void visit(ImMethodCall call) {
+                super.visit(call);
+                if (call.getMethod().getImplementation() != null) {
+                    result.add(call.getMethod().getImplementation());
+                }
+                for (ImMethod subMethod : call.getMethod().getSubMethods()) {
+                    if (subMethod.getImplementation() != null) {
+                        result.add(subMethod.getImplementation());
+                    }
+                }
+            }
+        });
+        return result;
+    }
+
+    @Nullable
+    @SuppressWarnings("ReferenceEquality")
+    private static ImStmt topLevelStatement(de.peeeq.wurstscript.jassIm.Element element, ImFunction function) {
+        de.peeeq.wurstscript.jassIm.Element current = element;
+        while (current != null && current.getParent() != function.getBody()) {
+            current = current.getParent();
+        }
+        return current instanceof ImStmt ? (ImStmt) current : null;
+    }
+
+    /**
+     * A {@code @configurable} constant counts too. Configuration is resolved at name resolution: a read of
+     * a configured constant already refers to the {@code @config} constant in the config package, which
+     * is a constant of its own, and the original is then read by nothing. So what is read here is final.
+     */
+    private static boolean isSourceConstant(ImVar var) {
+        if (!(var.getTrace() instanceof GlobalVarDef)) {
+            return false;
+        }
+        if (var.getName().equals("MagicFunctions_compiletime")
+            || var.getName().equals("MagicFunctions_isLua")) {
+            // These values depend on compiler execution context/backend and are lowered by their
+            // dedicated paths. They are not ordinary source literals for package-constant folding.
+            return false;
+        }
+        GlobalVarDef global = (GlobalVarDef) var.getTrace();
+        return global.attrIsConstant();
+    }
+
+    private static <T> Set<T> identitySet() {
+        return Collections.newSetFromMap(new IdentityHashMap<>());
+    }
+
+    private static final class LiteralConstantAnalysis {
+        private final Set<ImVar> safeConstants;
+        private final Map<ImVar, ImVarWrite> replacementWrites;
+
+        private LiteralConstantAnalysis(Set<ImVar> safeConstants, Map<ImVar, ImVarWrite> replacementWrites) {
+            this.safeConstants = safeConstants;
+            this.replacementWrites = replacementWrites;
+        }
+    }
+
+}

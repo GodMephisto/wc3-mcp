@@ -1,0 +1,97 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/ReterasModelStudio"
+source_path: "build.gradle"
+ref: HEAD
+---
+
+buildscript {
+    repositories {
+        mavenLocal()
+		flatDir {
+			dirs "$rootProject.projectDir/jars"
+		}
+        mavenCentral()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://maven.nikr.net/" }
+        gradlePluginPortal()
+        google()
+    }
+}
+
+
+repositories {
+    mavenCentral()
+}
+
+allprojects {
+    apply plugin: "eclipse"
+    apply plugin: "idea"
+
+    version = '0.4.5'
+    ext {
+        appName = "retera-jwc3"
+        jtattooVersion = '1.6.12'
+        miglayoutVersion = '4.2'
+		lwjglVersion = '2.9.3'
+		image4jVersion = '0.7'
+		rsyntaxtextareaVersion = '3.0.2'
+        nashornVersion = '15.3'
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+        gradlePluginPortal()
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+        maven { url "https://maven.nikr.net/" }
+        maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+    }
+}
+
+project(":matrixeater") {
+    apply plugin: "java-library"
+
+
+    dependencies {
+        implementation project(":craft3data")
+        implementation project(":craft3editor")
+        api "com.fifesoft:rsyntaxtextarea:$rsyntaxtextareaVersion"
+        api "org.openjdk.nashorn:nashorn-core:${nashornVersion}"
+    }
+}
+
+project(":craft3editor") {
+    apply plugin: "java-library"
+
+
+    dependencies {
+        implementation project(":craft3data")
+        api "org.jclarion:image4j:$image4jVersion"
+    }
+}
+
+project(":craft3data") {
+    apply plugin: "java-library"
+
+
+    dependencies {
+        api "com.jtattoo:JTattoo:$jtattooVersion"
+        api "com.miglayout:miglayout-swing:$miglayoutVersion"
+		api "org.lwjgl.lwjgl:lwjgl:${lwjglVersion}"
+		api "org.lwjgl.lwjgl:lwjgl-platform:${lwjglVersion}:natives-windows"
+		api "org.lwjgl.lwjgl:lwjgl-platform:${lwjglVersion}:natives-linux"
+		api "org.lwjgl.lwjgl:lwjgl-platform:${lwjglVersion}:natives-osx"
+		api "org.lwjgl.lwjgl:lwjgl_util:${lwjglVersion}"
+		api "net.nikr:dds:1.0.0"
+        api "com.glazedlists:glazedlists:1.11.0"
+//        compile "com.github.ebourg:infonode:master"
+//        compile "com.github.DrSuperGood:blp-iio-plugin:master"
+		api files(fileTree(dir:'../jars', includes: ['*.jar']))
+    }
+}
+
+tasks.eclipse.doLast {
+    delete ".project"
+}

@@ -1,0 +1,15 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/JassHelper-manual"
+source_path: "Writerside/writerside.cfg"
+ref: HEAD
+---
+
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE ihp SYSTEM "https://resources.jetbrains.com/writerside/1.0/ihp.dtd">
+
+<ihp version="2.0">
+    <topics dir="topics" web-path="topics"/>
+    <images dir="images" web-path="images"/>
+    <instance src="JassHelper.tree"/>
+</ihp>

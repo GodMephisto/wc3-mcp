@@ -1,0 +1,56 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Info/PlayerData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Info
+{
+    public sealed partial class PlayerData
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PlayerData"/> class.
+        /// </summary>
+        public PlayerData()
+        {
+            AllyLowPriorityFlags = new Bitmask32(0);
+            AllyHighPriorityFlags = new Bitmask32(0);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PlayerData"/> class.
+        /// </summary>
+        public PlayerData(int id)
+            : this()
+        {
+            Id = id;
+            Name = $"Player {id + 1}";
+        }
+
+        public int Id { get; set; }
+
+        public PlayerController Controller { get; set; }
+
+        public PlayerRace Race { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public PlayerRaceHud RaceHud { get; set; }
+
+        public PlayerFlags Flags { get; set; }
+
+        public string Name { get; set; }
+
+        public Vector2 StartPosition { get; set; }
+
+        public Bitmask32 AllyLowPriorityFlags { get; set; }
+
+        public Bitmask32 AllyHighPriorityFlags { get; set; }
+
+        public Bitmask32 EnemyLowPriorityFlags { get; set; }
+
+        public Bitmask32 EnemyHighPriorityFlags { get; set; }
+
+        public override string ToString() => Name;
+    }
+}

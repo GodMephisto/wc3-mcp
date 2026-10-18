@@ -1,0 +1,50 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/ReterasModelStudio"
+source_path: "craft3data/src/com/hiveworkshop/wc3/gui/datachooser/GetCascLanguageList.java"
+ref: HEAD
+---
+
+package com.hiveworkshop.wc3.gui.datachooser;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
+
+import com.hiveworkshop.blizzard.casc.io.WarcraftIIICASC;
+import com.hiveworkshop.blizzard.casc.io.WarcraftIIICASC.FileSystem;
+import com.hiveworkshop.nio.ByteBufferInputStream;
+
+public class GetCascLanguageList {
+	public static void main(final String[] args) {
+		try {
+			final WarcraftIIICASC casc = new WarcraftIIICASC(Paths.get("C:/Program Files/Warcraft III"), true, CascDataSource.Product.WARCRAFT_III.getKey());
+			final FileSystem rootFileSystem = casc.getRootFileSystem();
+			if (rootFileSystem.isFile("index") && rootFileSystem.isFileAvailable("index")) {
+				final ByteBuffer buffer = rootFileSystem.readFileData("index");
+				final Set<String> categories = new HashSet<>();
+				try (BufferedReader reader = new BufferedReader(
+						new InputStreamReader(new ByteBufferInputStream(buffer)))) {
+					String line;
+					while ((line = reader.readLine()) != null) {
+						final String[] splitLine = line.split("\\|");
+						if (splitLine.length >= 3) {
+							final String category = splitLine[2];
+							categories.add(category);
+						}
+					}
+				}
+				for (final String category : categories) {
+					System.out.println(category);
+				}
+			}
+		} catch (final IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+}

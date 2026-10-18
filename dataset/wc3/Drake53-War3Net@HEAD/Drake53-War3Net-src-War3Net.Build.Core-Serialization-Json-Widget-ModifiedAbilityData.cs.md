@@ -1,0 +1,45 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Json/Widget/ModifiedAbilityData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Widget
+{
+    public sealed partial class ModifiedAbilityData
+    {
+        internal ModifiedAbilityData(JsonElement jsonElement, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            GetFrom(jsonElement, formatVersion, subVersion, useNewFormat);
+        }
+
+        internal ModifiedAbilityData(ref Utf8JsonReader reader, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            ReadFrom(ref reader, formatVersion, subVersion, useNewFormat);
+        }
+
+        internal void GetFrom(JsonElement jsonElement, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            AbilityId = jsonElement.GetInt32(nameof(AbilityId));
+            IsAutocastActive = jsonElement.GetBoolean(nameof(IsAutocastActive));
+            HeroAbilityLevel = jsonElement.GetInt32(nameof(HeroAbilityLevel));
+        }
+
+        internal void ReadFrom(ref Utf8JsonReader reader, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            GetFrom(JsonDocument.ParseValue(ref reader).RootElement, formatVersion, subVersion, useNewFormat);
+        }
+
+        internal void WriteTo(Utf8JsonWriter writer, JsonSerializerOptions options, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            writer.WriteStartObject();
+
+            writer.WriteNumber(nameof(AbilityId), AbilityId);
+            writer.WriteBoolean(nameof(IsAutocastActive), IsAutocastActive);
+            writer.WriteNumber(nameof(HeroAbilityLevel), HeroAbilityLevel);
+
+            writer.WriteEndObject();
+        }
+    }
+}

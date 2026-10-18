@@ -1,0 +1,121 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/attributes/CompilationUnitInfo.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.attributes;
+
+import de.peeeq.wurstscript.SyntacticSugar;
+import de.peeeq.wurstscript.parser.TriviaIndex;
+import de.peeeq.wurstscript.utils.Utils;
+
+/**
+ *
+ */
+public class CompilationUnitInfo {
+    private String file = "";
+    private de.peeeq.wurstscript.attributes.ErrorHandler cuErrorHandler;
+    private IndentationMode indentationMode = IndentationMode.spaces(4);
+    private TriviaIndex triviaIndex = TriviaIndex.empty();
+    private boolean library;
+    private SyntacticSugar.DirectFieldIterationState directFieldIterationState;
+
+    public CompilationUnitInfo(ErrorHandler cuErrorHandler) {
+        this.cuErrorHandler = cuErrorHandler;
+    }
+
+    public String getFile() {
+        return file;
+    }
+
+    public void setFile(String file) {
+        this.file = file;
+    }
+
+    public ErrorHandler getCuErrorHandler() {
+        return cuErrorHandler;
+    }
+
+    public void setCuErrorHandler(ErrorHandler errorHandler) {
+        this.cuErrorHandler = errorHandler;
+    }
+
+    public IndentationMode getIndentationMode() {
+        return indentationMode;
+    }
+
+    public void setIndentationMode(IndentationMode indentationMode) {
+        this.indentationMode = indentationMode;
+    }
+
+    public TriviaIndex getTriviaIndex() {
+        return triviaIndex;
+    }
+
+    public void setTriviaIndex(TriviaIndex triviaIndex) {
+        this.triviaIndex = triviaIndex == null ? TriviaIndex.empty() : triviaIndex;
+    }
+
+    public boolean isLibrary() {
+        return library;
+    }
+
+    public void setLibrary(boolean library) {
+        this.library = library;
+    }
+
+    public SyntacticSugar.DirectFieldIterationState getDirectFieldIterationState() {
+        return directFieldIterationState;
+    }
+
+    public void setDirectFieldIterationState(SyntacticSugar.DirectFieldIterationState state) {
+        this.directFieldIterationState = state;
+    }
+
+    public interface IndentationMode {
+
+        static IndentationMode tabs() {
+            return new IndentationMode() {
+                @Override
+                public String getIndent() {
+                    return "\t";
+                }
+
+                @Override
+                public int countIndents(int startColumn) {
+                    return startColumn;
+                }
+            };
+        }
+
+        static IndentationMode spaces(int num) {
+            String indent = Utils.repeat(' ', num);
+            return new IndentationMode() {
+                @Override
+                public String getIndent() {
+
+                    return indent;
+                }
+
+                @Override
+                public int countIndents(int startColumn) {
+                    return startColumn / num;
+                }
+            };
+        }
+        String getIndent();
+
+        int countIndents(int startColumn);
+
+        default void appendIndent(StringBuilder sb, int counts) {
+            for (int i = 0; i < counts; i++) {
+                sb.append(getIndent());
+            }
+
+        }
+    }
+
+
+}

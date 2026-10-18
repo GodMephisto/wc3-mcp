@@ -1,0 +1,31 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/JASS-Tree-sitter-Rust"
+source_path: "package.nls.json"
+ref: HEAD
+---
+
+{
+  "command.importGraph.show": "Show Import Graph",
+  "command.callGraph.show": "Show Call Graph",
+  "command.typeGraph.show": "Show Type Graph",
+  "command.exportTable.show": "Show Exported Symbols",
+  "command.diagnosticSummary.show": "Show Diagnostic Summary",
+  "command.rescan.execute": "Rescan All Files",
+  "command.build.execute": "Build",
+  "command.ujapi.download": "Download UjAPI common.j",
+  "command.mpq.browse": "Browse MPQ Archive",
+  "command.mpq.openFile": "Open File from MPQ Archive",
+  "command.mpq.extractHere": "Extract Here",
+  "command.mpq.extractTo": "Extract To…",
+  "command.jass.restartServer": "Restart JASS LSP Server",
+  "customEditor.mdx.displayName": "MDX Model Viewer",
+  "customEditor.blp.displayName": "BLP Image Viewer",
+  "customEditor.doo.displayName": "DOO Placement Viewer",
+  "customEditor.w3i.displayName": "W3I Map Info Viewer",
+  "customEditor.w3e.displayName": "Map Editor",
+  "customEditor.slk.displayName": "SLK Table Editor",
+  "command.slk.openTable": "Open as Table",
+  "command.slk.openText": "Open as Text"
+}
+

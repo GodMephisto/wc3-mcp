@@ -1,0 +1,34 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/invoker-bot/war3map"
+source_path: "src/index.ts"
+ref: HEAD
+---
+
+export * from "./BinaryBuffer";
+export * from "./AiScriptObject";
+export * from "./AudioFileObject";
+export * from "./BlpImageObject";
+export * from "./CamerasObject";
+export * from "./CustomTextTriggerObject";
+export * from "./DdsImageObject";
+export * from "./EnvironmentObject";
+export * from "./DoodadsObject";
+export * from "./GameConfigurationObject";
+export * from "./InfoObject";
+export * from "./ImportsObject";
+export * from "./ImageData";
+export * from "./MapArchiveObject";
+export * from "./MenuMinimapObject";
+export * from "./MdxModelObject";
+export * from "./ObjectsObject";
+export * from "./PathmapObject";
+export * from "./RawFileObject";
+export * from "./RegionObject";
+export * from "./ShadowObject";
+export * from "./SoundsObject";
+export * from "./StringsObject";
+export * from "./TextFileObject";
+export * from "./TgaImageObject";
+export * from "./TriggerNamesObject";
+export * from "./UnitsObject";

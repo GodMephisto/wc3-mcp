@@ -1,0 +1,102 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/danielsreichenbach/mopaq"
+source_path: "mopaq/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "mopaq"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/mopaq"
+keywords.workspace = true
+categories.workspace = true
+description = "A high-performance, safe Rust implementation of the MPQ (Mo'PaQ) archive format"
+readme = "../README.md"
+
+[dependencies]
+# Error handling
+thiserror = { workspace = true }
+
+# Data structures and utilities
+bytes = "1.10"
+tempfile = { workspace = true }
+
+# Hashing and cryptography
+sha1 = "0.10"
+md-5 = "0.10"
+crc32fast = "1.4"
+adler = "1.0"
+rsa = "0.9"
+num-bigint = "0.4"
+num-traits = "0.2"
+
+# Compression algorithms
+flate2 = "1.1"
+bzip2 = "0.5"
+lzma-rs = "0.3"
+pklib = "0.1"
+
+# I/O and performance
+memmap2 = { version = "0.9", optional = true }
+
+# Serialization (for debug features)
+serde = { workspace = true, optional = true }
+
+# Async support (optional)
+tokio = { version = "1.45", features = ["rt", "io-util"], optional = true }
+
+# Logging
+log = { workspace = true }
+
+[dev-dependencies]
+criterion = { version = "0.6", features = ["html_reports"] }
+proptest = "1.6"
+pretty_assertions = "1.4"
+env_logger = { workspace = true }
+tempfile = "3.20"
+rand = "0.9"
+
+[[bench]]
+name = "hash"
+harness = false
+
+[[bench]]
+name = "crypto"
+harness = false
+
+[[bench]]
+name = "compression"
+harness = false
+
+[[bench]]
+name = "builder"
+harness = false
+
+[[bench]]
+name = "archive_creation"
+harness = false
+
+[[bench]]
+name = "archive_extraction"
+harness = false
+
+[features]
+default = ["mmap", "all-compressions"]
+mmap = ["memmap2"]
+async = ["tokio"]
+serde = ["dep:serde", "bytes/serde"]
+all-compressions = ["compression-bzip2", "compression-lzma"]
+compression-bzip2 = []
+compression-lzma = []
+
+# Enable all features for docs.rs
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

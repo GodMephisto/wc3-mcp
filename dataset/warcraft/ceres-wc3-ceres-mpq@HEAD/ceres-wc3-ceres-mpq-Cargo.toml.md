@@ -1,0 +1,30 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/ceres-wc3/ceres-mpq"
+source_path: "Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "ceres-mpq"
+description = "A pure-rust implementation of a MoPaQ archive reader and writer"
+version = "0.1.10-alpha.0"
+authors = ["ElusiveMori <mori@reu.moe>"]
+edition = "2018"
+readme = "README.md"
+repository = "https://github.com/ElusiveMori/ceres-mpq"
+keywords = ["mpq", "blizzard", "mopaq", "warcraft"]
+categories = ["encoding", "parsing"]
+license = "MIT"
+
+[badges]
+travis-ci = { repository = "ElusiveMori/ceres-mpq", branch = "master" }
+
+[dependencies]
+byteorder = "1.3.2"
+lazy_static = "1.3.0"
+err-derive = "0.2.3"
+byte-slice-cast = "0.3.2"
+flate2 = "1.0.9"
+bzip2 = "0.3.3"
+indexmap = "1.0.2"

@@ -1,0 +1,22 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/ChiefOfGxBxL/Ice-Sickle"
+source_path: "windows/mapProperties.json"
+ref: HEAD
+---
+
+{
+    "name": "mapProperties",
+    "path": "map-properties.html",
+    "description": "",
+
+    "width": 400,
+    "height": 652,
+
+    "parent": "root",
+    "modal": true,
+    "frame": false,
+    "resizable": false,
+    "allowMultiple": false,
+    "requiresTemplate": true
+}

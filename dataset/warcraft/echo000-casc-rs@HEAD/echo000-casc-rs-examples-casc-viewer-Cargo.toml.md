@@ -1,0 +1,30 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/echo000/casc-rs"
+source_path: "examples/casc-viewer/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "casc-viewer"
+version = "0.1.8"
+edition = "2024"
+authors = ["echo000"]
+license = "GPL-3.0"
+
+[[bin]]
+name = "casc_viewer"
+path = "src/main.rs"
+
+[build-dependencies]
+embed-manifest = "1.4"
+
+[dependencies]
+casc-rs = { path = "../../casc-rs" }
+porter-app = { git = "https://github.com/dtzxporter/porter-lib" }
+porter-utils = { git = "https://github.com/dtzxporter/porter-lib" }
+porter-threads = { git = "https://github.com/dtzxporter/porter-lib" }
+rayon = "1.10.0"
+
+[patch.crates-io]
+iced = { git = "https://github.com/dtzxporter/iced", rev = "9329aa3fd34f70cda4eef678cc024eb845918f85" }

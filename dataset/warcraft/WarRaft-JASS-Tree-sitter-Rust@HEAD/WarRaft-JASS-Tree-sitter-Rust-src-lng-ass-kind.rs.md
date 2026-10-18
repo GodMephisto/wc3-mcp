@@ -1,0 +1,234 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/JASS-Tree-sitter-Rust"
+source_path: "src/lng/ass/kind.rs"
+ref: HEAD
+---
+
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+
+/// Node type IDs from `ts_symbol_identifiers` enum in tree-sitter-as `parser.c`.
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive, IntoPrimitive)]
+pub enum Kind {
+    // ── terminal / anonymous symbols ─────────────────────────────────────
+    Identifier = 1,       // sym_identifier
+    HashInclude = 2,      // anon_sym_POUNDinclude
+    Import = 3,           // anon_sym_import
+    LeftParen = 4,        // anon_sym_LPAREN
+    RightParen = 5,       // anon_sym_RPAREN
+    From = 6,             // anon_sym_from
+    Using = 7,            // anon_sym_using
+    Namespace = 8,        // anon_sym_namespace
+    LeftBrace = 9,        // anon_sym_LBRACE
+    RightBrace = 10,      // anon_sym_RBRACE
+    Typedef = 11,         // anon_sym_typedef
+    Shared = 12,          // anon_sym_shared
+    Funcdef = 13,         // anon_sym_funcdef
+    External = 14,        // anon_sym_external
+    Enum = 15,            // anon_sym_enum
+    Comma = 16,           // anon_sym_COMMA
+    Equal = 17,           // anon_sym_EQ
+    Interface = 18,       // anon_sym_interface
+    Colon = 19,           // anon_sym_COLON
+    Mixin = 20,           // anon_sym_mixin
+    Abstract = 21,        // anon_sym_abstract
+    Final = 22,           // anon_sym_final
+    Class = 23,           // anon_sym_class
+    Private = 24,         // anon_sym_private
+    Protected = 25,       // anon_sym_protected
+    Public = 26,          // anon_sym_public
+    Tilde = 27,           // anon_sym_TILDE
+    Override = 28,        // anon_sym_override
+    Explicit = 29,        // anon_sym_explicit
+    Const = 30,           // anon_sym_const
+    Delete = 31,          // anon_sym_delete
+    LeftBracket = 32,     // anon_sym_LBRACK
+    RightBracket = 33,    // anon_sym_RBRACK
+    If = 34,              // anon_sym_if
+    Else = 35,            // anon_sym_else
+    While = 36,           // anon_sym_while
+    Do = 37,              // anon_sym_do
+    For = 38,             // anon_sym_for
+    In = 39,              // anon_sym_in
+    Switch = 40,          // anon_sym_switch
+    Case = 41,            // anon_sym_case
+    Default = 42,         // anon_sym_default
+    Return = 43,          // anon_sym_return
+    Break = 44,           // anon_sym_break
+    Continue = 45,        // anon_sym_continue
+    Try = 46,             // anon_sym_try
+    Catch = 47,           // anon_sym_catch
+    Throw = 48,           // anon_sym_throw
+    PlusEq = 49,          // anon_sym_PLUS_EQ
+    MinusEq = 50,         // anon_sym_DASH_EQ
+    StarEq = 51,          // anon_sym_STAR_EQ
+    SlashEq = 52,         // anon_sym_SLASH_EQ
+    PercentEq = 53,       // anon_sym_PERCENT_EQ
+    StarStarEq = 54,      // anon_sym_STAR_STAR_EQ
+    AmpEq = 55,           // anon_sym_AMP_EQ
+    PipeEq = 56,          // anon_sym_PIPE_EQ
+    CaretEq = 57,         // anon_sym_CARET_EQ
+    LtLtEq = 58,          // anon_sym_LT_LT_EQ
+    GtGtEq = 59,          // anon_sym_GT_GT_EQ
+    GtGtGtEq = 60,        // anon_sym_GT_GT_GT_EQ
+    Is = 61,              // anon_sym_is
+    Bang = 62,            // anon_sym_BANG
+    Question = 63,        // anon_sym_QMARK
+    PipePipe = 64,        // anon_sym_PIPE_PIPE
+    Or = 65,              // anon_sym_or
+    AmpAmp = 66,          // anon_sym_AMP_AMP
+    And = 67,             // anon_sym_and
+    Pipe = 68,            // anon_sym_PIPE
+    Caret = 69,           // anon_sym_CARET
+    Amp = 70,             // anon_sym_AMP
+    EqEq = 71,            // anon_sym_EQ_EQ
+    BangEq = 72,          // anon_sym_BANG_EQ
+    Lt = 73,              // anon_sym_LT
+    Gt = 74,              // anon_sym_GT
+    LtEq = 75,            // anon_sym_LT_EQ
+    GtEq = 76,            // anon_sym_GT_EQ
+    Xor = 77,             // anon_sym_xor
+    LtLt = 78,            // anon_sym_LT_LT
+    GtGt = 79,            // anon_sym_GT_GT
+    GtGtGt = 80,          // anon_sym_GT_GT_GT
+    Plus = 81,            // anon_sym_PLUS
+    Minus = 82,           // anon_sym_DASH
+    Star = 83,            // anon_sym_STAR
+    Slash = 84,           // anon_sym_SLASH
+    Percent = 85,         // anon_sym_PERCENT
+    StarStar = 86,        // anon_sym_STAR_STAR
+    Not = 87,             // anon_sym_not
+    PlusPlus = 88,        // anon_sym_PLUS_PLUS
+    MinusMinus = 89,      // anon_sym_DASH_DASH
+    At = 90,              // anon_sym_AT
+    Cast = 91,            // anon_sym_cast
+    OpImplCast = 92,      // anon_sym_opImplCast
+    Dot = 93,             // anon_sym_DOT
+    AtDot = 94,           // anon_sym_AT_DOT
+    ColonColon = 95,      // anon_sym_COLON_COLON
+    Function = 96,        // anon_sym_function
+    New = 97,             // anon_sym_new
+    Out = 98,             // anon_sym_out
+    Inout = 99,           // anon_sym_inout
+    IntegerLiteral = 100, // sym_integer_literal
+    HexLiteral = 101,     // sym_hex_literal
+    BitsLiteral = 102,    // sym_bits_literal
+    FloatLiteral = 103,   // sym_float_literal
+    CharLiteral = 104,    // sym_char_literal
+    Comment = 105,        // sym_comment
+    BlockComment = 106,   // sym_block_comment
+    Semicolon = 107,      // sym_semicolon
+    //_AdjacentStrings = 108, // sym__adjacent_strings
+
+    // ── named / non-terminal symbols ─────────────────────────────────────
+    Script = 109,                       // sym_script
+    //_TopLevelStatement = 110,         // sym__top_level_statement
+    IncludeDirective = 111,             // sym_include_directive
+    ImportDeclaration = 112,            // sym_import_declaration
+    UsingNamespaceDeclaration = 113,    // sym_using_namespace_declaration
+    NamespaceDeclaration = 114,         // sym_namespace_declaration
+    TypedefDeclaration = 115,           // sym_typedef_declaration
+    FuncdefDeclaration = 116,           // sym_funcdef_declaration
+    EnumDeclaration = 117,              // sym_enum_declaration
+    EnumBody = 118,                     // sym_enum_body
+    EnumMember = 119,                   // sym_enum_member
+    InterfaceDeclaration = 120,         // sym_interface_declaration
+    //_InterfaceMember = 121,           // sym__interface_member
+    InterfaceMethod = 122,              // sym_interface_method
+    MixinDeclaration = 123,             // sym_mixin_declaration
+    ClassDeclaration = 124,             // sym_class_declaration
+    BaseList = 125,                     // sym_base_list
+    //_ClassMember = 126,               // sym__class_member
+    AccessModifier = 127,               // sym_access_modifier
+    FunctionDeclaration = 128,          // sym_function_declaration
+    DestructorName = 129,               // sym_destructor_name
+    //_Modifier = 130,                  // sym__modifier
+    ConstQualifier = 131,               // sym_const_qualifier
+    OverrideQualifier = 132,            // sym_override_qualifier
+    ParameterList = 133,                // sym_parameter_list
+    Parameter = 134,                    // sym_parameter
+    Metadata = 135,                     // sym_metadata
+    Block = 136,                        // sym_block
+    //_Statement = 137,                 // sym__statement
+    IfStatement = 138,                  // sym_if_statement
+    WhileStatement = 139,               // sym_while_statement
+    DoWhileStatement = 140,             // sym_do_while_statement
+    ForStatement = 141,                 // sym_for_statement
+    ForeachStatement = 142,             // sym_foreach_statement
+    SwitchStatement = 143,              // sym_switch_statement
+    SwitchCase = 144,                   // sym_switch_case
+    ReturnStatement = 145,              // sym_return_statement
+    BreakStatement = 146,               // sym_break_statement
+    ContinueStatement = 147,            // sym_continue_statement
+    TryStatement = 148,                 // sym_try_statement
+    ThrowStatement = 149,               // sym_throw_statement
+    VariableDeclarationStatement = 150, // sym_variable_declaration_statement
+    VariableDeclaration = 151,          // sym_variable_declaration
+    Declarator = 152,                   // sym_declarator
+    ExpressionStatement = 153,          // sym_expression_statement
+    ExpressionList = 154,               // sym_expression_list
+    Expression = 155,                   // sym_expression
+    AssignmentExpression = 156,         // sym_assignment_expression
+    AssignmentOperator = 157,           // sym_assignment_operator
+    IsOperator = 158,                   // sym_is_operator
+    NotIsOperator = 159,                // sym_not_is_operator
+    TernaryExpression = 160,            // sym_ternary_expression
+    BinaryExpression = 161,             // sym_binary_expression
+    UnaryExpression = 162,              // sym_unary_expression
+    PostfixExpression = 163,            // sym_postfix_expression
+    CastExpression = 164,              // sym_cast_expression
+    ConstructExpression = 165,          // sym_construct_expression
+    FunctionCall = 166,                 // sym_function_call
+    ArgumentList = 167,                 // sym_argument_list
+    SubscriptExpression = 168,          // sym_subscript_expression
+    MemberAccess = 169,                 // sym_member_access
+    NamespaceAccess = 170,              // sym_namespace_access
+    HandleOfExpression = 171,           // sym_handle_of_expression
+    LambdaExpression = 172,             // sym_lambda_expression
+    PrimaryExpression = 173,            // sym_primary_expression
+    ParenthesizedExpression = 174,      // sym_parenthesized_expression
+    InitializerList = 175,              // sym_initializer_list
+    NewExpression = 176,                // sym_new_expression
+    Type = 177,                         // sym_type
+    ArrayTypeSuffix = 178,              // sym_array_type_suffix
+    ScopedName = 179,                   // sym_scoped_name
+    StringLiteral = 180,                // sym_string_literal
+}
+
+/// Field IDs from `ts_field_identifiers` enum in tree-sitter-as `parser.c`.
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, TryFromPrimitive, IntoPrimitive)]
+pub enum Field {
+    Alias = 1,       // field_alias
+    Alternative = 2, // field_alternative
+    Args = 3,        // field_args
+    Base = 4,        // field_base
+    Bases = 5,       // field_bases
+    Body = 6,        // field_body
+    Callee = 7,      // field_callee
+    Class = 8,       // field_class
+    Condition = 9,   // field_condition
+    Consequence = 10,// field_consequence
+    Default = 11,    // field_default
+    Exception = 12,  // field_exception
+    Handler = 13,    // field_handler
+    Index = 14,      // field_index
+    Init = 15,       // field_init
+    Iterable = 16,   // field_iterable
+    Left = 17,       // field_left
+    Member = 18,     // field_member
+    Module = 19,     // field_module
+    Name = 20,       // field_name
+    Namespace = 21,  // field_namespace
+    Object = 22,     // field_object
+    Operand = 23,    // field_operand
+    Operator = 24,   // field_operator
+    Params = 25,     // field_params
+    Path = 26,       // field_path
+    ReturnType = 27, // field_return_type
+    Right = 28,      // field_right
+    Type = 29,       // field_type
+    Update = 30,     // field_update
+    Value = 31,      // field_value
+}

@@ -1,0 +1,52 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/JASS-Tree-sitter-Rust"
+source_path: "syntaxes/as.tmLanguage.json"
+ref: HEAD
+---
+
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "AngelScript",
+    "scopeName": "source.angelscript",
+    "patterns": [
+        { "include": "#block-comment" },
+        { "include": "#comment" },
+        { "include": "#string-double" },
+        { "include": "#string-single" }
+    ],
+    "repository": {
+        "block-comment": {
+            "name": "comment.block.angelscript",
+            "begin": "/\\*",
+            "end": "\\*/"
+        },
+        "comment": {
+            "name": "comment.line.double-slash.angelscript",
+            "match": "//.*$"
+        },
+        "string-double": {
+            "name": "string.quoted.double.angelscript",
+            "begin": "\"",
+            "end": "\"|$",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.angelscript",
+                    "match": "\\\\."
+                }
+            ]
+        },
+        "string-single": {
+            "name": "constant.character.angelscript",
+            "begin": "'",
+            "end": "'|$",
+            "patterns": [
+                {
+                    "name": "constant.character.escape.angelscript",
+                    "match": "\\\\."
+                }
+            ]
+        }
+    }
+}
+

@@ -1,0 +1,197 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Info/MapInfo.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Info
+{
+    public sealed partial class MapInfo
+    {
+        public const string FileExtension = ".w3i";
+        public const string FileName = "war3map.w3i";
+
+        private bool _skipData;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MapInfo"/> class.
+        /// </summary>
+        /// <param name="formatVersion"></param>
+        public MapInfo(MapInfoFormatVersion formatVersion)
+        {
+            FormatVersion = formatVersion;
+        }
+
+        public MapInfoFormatVersion FormatVersion { get; set; }
+
+        public int MapVersion { get; set; }
+
+        public EditorVersion EditorVersion { get; set; }
+
+        public Version? GameVersion { get; set; }
+
+        public string? MapName { get; set; }
+
+        public string? MapAuthor { get; set; }
+
+        public string? MapDescription { get; set; }
+
+        public string? RecommendedPlayers { get; set; }
+
+        public float Unk1 { get; set; }
+
+        public int Unk2 { get; set; }
+
+        public float Unk3 { get; set; }
+
+        public float Unk4 { get; set; }
+
+        public float Unk5 { get; set; }
+
+        public int Unk6 { get; set; }
+
+        public Quadrilateral CameraBounds { get; set; }
+
+        public RectangleMargins? CameraBoundsComplements { get; set; }
+
+        // Equal to entire map width minus cameraBoundsComplement[0] and [1]
+        public int PlayableMapAreaWidth { get; set; }
+
+        // Equal to entire map minus height cameraBoundsComplement[2] and [3]
+        public int PlayableMapAreaHeight { get; set; }
+
+        public int Unk7 { get; set; }
+
+        public MapFlags MapFlags { get; set; }
+
+        public Tileset Tileset { get; set; }
+
+        // RoC
+        public int CampaignBackgroundNumber { get; set; }
+
+        public int LoadingScreenBackgroundNumber { get; set; }
+
+        public string? LoadingScreenPath { get; set; }
+
+        public string? LoadingScreenText { get; set; }
+
+        public string? LoadingScreenTitle { get; set; }
+
+        public string? LoadingScreenSubtitle { get; set; }
+
+        // RoC
+        public int LoadingScreenNumber { get; set; }
+
+        public GameDataSet GameDataSet { get; set; }
+
+        public string? PrologueScreenPath { get; set; }
+
+        public string? PrologueScreenText { get; set; }
+
+        public string? PrologueScreenTitle { get; set; }
+
+        public string? PrologueScreenSubtitle { get; set; }
+
+        public FogStyle FogStyle { get; set; }
+
+        public float FogStartZ { get; set; }
+
+        public float FogEndZ { get; set; }
+
+        public float FogDensity { get; set; }
+
+        public Color FogColor { get; set; }
+
+        public WeatherType GlobalWeather { get; set; }
+
+        public string? SoundEnvironment { get; set; }
+
+        public Tileset LightEnvironment { get; set; }
+
+        public Color WaterTintingColor { get; set; }
+
+        /// <summary>Introduced in patch 1.31.</summary>
+        public ScriptLanguage ScriptLanguage { get; set; }
+
+        /// <summary>Introduced in patch 1.32.</summary>
+        public SupportedModes SupportedModes { get; set; }
+
+        /// <summary>Introduced in patch 1.32.</summary>
+        public GameDataVersion GameDataVersion { get; set; }
+
+        /// <summary>Introduced in patch 2.0.3.</summary>
+        public int ForceDefaultCameraZoom { get; set; }
+
+        /// <summary>Introduced in patch 2.0.3.</summary>
+        public int ForceMaxCameraZoom { get; set; }
+
+        /// <summary>Introduced in patch 2.0.3.</summary>
+        public int ForceMinCameraZoom { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogHeightStart { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogHeightEnd { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogLinearStart { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogLinearEnd { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public float FogMaxOpacity { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int FogDrawFogOverSky { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int HDWaterMinOpacity { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int HDWaterMaxOpacity { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int HDWaterReflectivity { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int HDWaterEmissivity { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int HDWaterEdgeSoftness { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int HDWaterWavesVertexDisplacement { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int HDWaterWavesNormalMapStrength { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public Color HDWaterOverrideColor { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public int HDWaterEnvmapReflectivity { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public PlayerRaceHud RaceHud { get; set; }
+
+        /// <summary>Introduced in patch 3.0.0.</summary>
+        public Color AlphaTileMinimapColor { get; set; }
+
+        public List<PlayerData> Players { get; init; } = new();
+
+        public List<ForceData> Forces { get; init; } = new();
+
+        public List<UpgradeData> UpgradeData { get; init; } = new();
+
+        public List<TechData> TechData { get; init; } = new();
+
+        public List<RandomUnitTable>? RandomUnitTables { get; init; } = new();
+
+        public List<RandomItemTable>? RandomItemTables { get; init; } = new();
+
+        public override string ToString() => FileName;
+    }
+}

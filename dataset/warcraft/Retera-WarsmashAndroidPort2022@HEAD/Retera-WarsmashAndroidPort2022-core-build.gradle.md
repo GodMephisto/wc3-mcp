@@ -1,0 +1,18 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/WarsmashAndroidPort2022"
+source_path: "core/build.gradle"
+ref: HEAD
+---
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+eclipse.project.name = appName + '-core'
+
+dependencies {
+	api "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+	api "com.badlogicgames.gdx:gdx:$gdxVersion"
+	implementation 'org.antlr:antlr4-runtime:4.7'
+	api "com.google.guava:guava:24.1-android"
+	api "org.apache.commons:commons-compress:1.20"
+	api files(fileTree(dir:'../jars', includes: ['*.jar']))
+}

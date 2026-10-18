@@ -1,0 +1,50 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/voces/w3xdata"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "name": "w3xdata",
+  "version": "3.1.1",
+  "description": "Exact data from Warcraft III maps",
+  "author": "verit",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build",
+    "sandbox-debug": "node -r ts-node/register --inspect-brk src/sandbox.ts",
+    "sandbox": "ts-node src/sandbox.ts",
+    "test-debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
+    "test-lint": "deno lint . --ignore=node_modules,dist",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.12.4",
+    "@types/pako": "^2.0.4",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voces/w3xdata.git"
+  },
+  "bugs": {
+    "url": "https://github.com/voces/w3xdata/issues"
+  },
+  "homepage": "https://github.com/voces/w3xdata#readme",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "dependencies": {
+    "mdx-m3-viewer-th": "^5.13.4",
+    "wc3data": "^3.0.0"
+  }
+}

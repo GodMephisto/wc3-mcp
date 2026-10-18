@@ -7,6 +7,90 @@ ref: HEAD
 
 # Changelog
 
+## 0.13.0 - 2026-10-16
+
+### Added
+
+- Accept several files, or a list read from stdin, in create and extract
+- Add a flat option to extract
+- Add short flags -e, -j, -q and -x for the locale, flat, property and print options
+
+### Changed
+
+- Take the archive as the first argument in every subcommand, including create and read
+- Keep folders when extracting named files
+- Rename the create version option to format-version
+- Reject an unknown locale in extract and read instead of using the default locale
+
+### Fixed
+
+- Show the encryption keys of encrypted files listed without their names
+- Accept Windows line endings in paths read from stdin
+- Stop add and create from storing an archive inside itself
+- Leave no archive behind when create cannot add every file
+
+### Removed
+
+- Remove create -o, extract -f and -k, and the -p flag from info, list and verify
+
+### Thanks
+
+- Thanks to @sjoblomj for the contributions in this release
+- Thanks to @MikaMika for reporting the inconsistent subcommand arguments
+
+## 0.12.0 - 2026-10-04
+
+### Added
+
+- Stop cleanly on Ctrl-C, leaving no partial archive behind
+
+### Changed
+
+- Ship one static musl Linux binary per architecture, with the release assets renamed by OS and architecture
+- Publish install scripts and a signed checksums file with each release
+- Run the Docker image in /data so mounted paths need no prefix
+- Print progress and warnings on stderr, leaving stdout for results alone
+- Mark an overwritten file as changed rather than added when adding
+
+### Fixed
+
+- Fail with a non-zero exit code on an unknown subcommand, a missing argument or an internal error
+- Fail with a non-zero exit code when closing, signing, listing or printing a signature fails
+- Complete every locale, game profile and archive path in the zsh, fish and PowerShell scripts
+
+### Removed
+
+- Remove the install scripts from the repository; each release now carries its own
+
+## 0.11.0 - 2026-09-21
+
+### Added
+
+- Add rename subcommand to rename a file inside an archive
+
+### Changed
+
+- Compare timestamps and checksums when updating files, not size alone
+- Accept the update flag for single files as well as directories
+- Reject the update and overwrite flags on add when both are given
+
+### Fixed
+
+- Report filesystem errors instead of aborting when a path cannot be resolved
+- Add to and create archives on volumes that cannot report real paths
+- Block path traversal in extract before anything is written to disk
+
+### Updated
+
+- Update StormLib for a variety of fixes
+- Add hash-library as a submodule dependency
+- Build with StormLib's bundled compression libraries instead of system packages
+- Require CMake 3.25 or later
+
+### Thanks
+
+- Thanks to @sjoblomj for the contributions in this release
+
 ## 0.10.2 - 2026-07-03
 
 ### Fixed

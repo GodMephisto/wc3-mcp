@@ -1,0 +1,46 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/dimonp/assets_mpq_importer"
+source_path: "thirdparty/compressonator/applications/_libs/cmp_mesh/souptomesh.cpp"
+ref: HEAD
+---
+
+/************************************************************************************/ /**
+// Copyright (c) 2006-2024 Advanced Micro Devices, Inc. All rights reserved.
+/// \author AMD Developer Tools Team
+/// \file
+****************************************************************************************/
+#include "tootlepch.h"
+#include "souptomesh.h"
+
+int SoupToMesh(Soup* soup, Mesh* mesh)
+{
+    if (soup->v().size() > 0)
+    {
+        mesh->v(soup->v());
+    }
+
+    if (soup->n().size() > 0)
+    {
+        mesh->n(soup->n());
+    }
+
+    if (soup->c().size() > 0)
+    {
+        mesh->c(soup->c());
+    }
+
+    if (soup->vc().size() > 0)
+    {
+        mesh->vc(soup->vc());
+    }
+
+    if (soup->t().size() > 0)
+    {
+        mesh->t(soup->t());
+    }
+
+    mesh->ae().resize(0);
+    mesh->vv().resize(0);
+    return 1;
+}

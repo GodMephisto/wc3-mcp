@@ -1,0 +1,51 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Object/DoodadObjectData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Object
+{
+    public sealed partial class DoodadObjectData
+    {
+        internal DoodadObjectData(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            FormatVersion = reader.ReadInt32<ObjectDataFormatVersion>();
+
+            nint baseDoodadsCount = reader.ReadInt32();
+            for (nint i = 0; i < baseDoodadsCount; i++)
+            {
+                BaseDoodads.Add(reader.ReadVariationObjectModification(FormatVersion));
+            }
+
+            nint newDoodadsCount = reader.ReadInt32();
+            for (nint i = 0; i < newDoodadsCount; i++)
+            {
+                NewDoodads.Add(reader.ReadVariationObjectModification(FormatVersion));
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write((int)FormatVersion);
+
+            writer.Write(BaseDoodads.Count);
+            foreach (var doodad in BaseDoodads)
+            {
+                writer.Write(doodad, FormatVersion);
+            }
+
+            writer.Write(NewDoodads.Count);
+            foreach (var doodad in NewDoodads)
+            {
+                writer.Write(doodad, FormatVersion);
+            }
+        }
+    }
+}

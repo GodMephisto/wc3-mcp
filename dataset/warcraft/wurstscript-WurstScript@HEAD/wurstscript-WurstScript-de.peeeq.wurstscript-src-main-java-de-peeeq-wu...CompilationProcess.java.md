@@ -1,0 +1,221 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/CompilationProcess.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio;
+
+import org.wurstscript.projectconfig.WurstProjectConfigData;
+import de.peeeq.wurstio.languageserver.requests.RunTests;
+import de.peeeq.wurstio.mpq.MpqEditor;
+import de.peeeq.wurstio.utils.FileUtils;
+import de.peeeq.wurstscript.RunArgs;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.ast.WurstModel;
+import de.peeeq.wurstscript.attributes.CompileError;
+import de.peeeq.wurstscript.gui.WurstGui;
+import de.peeeq.wurstscript.intermediatelang.interpreter.ILStackFrame;
+import de.peeeq.wurstscript.jassAst.JassProg;
+import de.peeeq.wurstscript.jassprinter.JassPrinter;
+import de.peeeq.wurstscript.luaAst.LuaCompilationUnit;
+import de.peeeq.wurstscript.translation.imtranslation.ImTranslator;
+import de.peeeq.wurstscript.translation.lua.translation.LuaAssertions;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.function.Supplier;
+
+/**
+ *
+ */
+public class CompilationProcess {
+
+    private final WurstGui gui;
+    private final RunArgs runArgs;
+    private final TimeTaker timeTaker;
+
+    public CompilationProcess(WurstGui gui, RunArgs runArgs) {
+        this.gui = gui;
+        this.runArgs = runArgs;
+        if (runArgs.isMeasureTimes()) {
+            this.timeTaker = new TimeTaker.Recording();
+        } else {
+            this.timeTaker = new TimeTaker.Default();
+        }
+    }
+
+    @Nullable CharSequence doCompilation(@Nullable MpqEditor mpqEditor, boolean isProd) throws IOException {
+        return doCompilation(mpqEditor, null, isProd);
+    }
+
+    @Nullable CharSequence doCompilation(@Nullable MpqEditor mpqEditor, @Nullable File projectFolder, boolean isProd) throws IOException {
+        WurstCompilerJassImpl compiler = new WurstCompilerJassImpl(timeTaker, projectFolder, gui, mpqEditor, runArgs);
+        gui.sendProgress("Check input map");
+        if (mpqEditor != null && !mpqEditor.canWrite()) {
+            WLogger.severe("The supplied map is invalid/corrupted/protected and Wurst cannot write to it.\n" +
+                    "Please supply a valid .w3x input map that can be opened in the world editor.");
+        }
+
+        for (String file : runArgs.getFiles()) {
+            compiler.loadFiles(file);
+        }
+        WurstModel model = timeTaker.measure("parse files",
+            compiler::parseFiles);
+
+        if (gui.getErrorCount() > 0) {
+            return null;
+        }
+        if (model == null) {
+            return null;
+        }
+
+        timeTaker.measure("Typecheck program",
+                () -> compiler.checkProg(model));
+
+        if (gui.getErrorCount() > 0) {
+            return null;
+        }
+
+        timeTaker.measure("Translate program to Im",
+                () -> compiler.translateProgToIm(model));
+
+        if (gui.getErrorCount() > 0) {
+            return null;
+        }
+
+        if (runArgs.isRunTests()) {
+            timeTaker.measure("Run tests",
+                    () -> runTests(gui, compiler, runArgs));
+        }
+
+        timeTaker.measure("Run compiletime functions", () ->compiler.runCompiletime(WurstProjectConfigData.empty(), isProd, false));
+
+        CharSequence mapScript;
+        File outputMapscript;
+        if (runArgs.isLua()) {
+            LuaCompilationUnit luaCode = timeTaker.measure("Transform program to Lua",
+                compiler::transformProgToLua);
+            if (luaCode == null || gui.getErrorCount() > 0) {
+                return null;
+            }
+
+            gui.sendProgress("Printing Lua");
+            StringBuilder luaOutput = new StringBuilder();
+            timeTaker.measure("Print Lua", () -> luaCode.print(luaOutput, 0));
+            mapScript = luaOutput;
+            LuaAssertions.assertNoLeakedNativeCalls(mapScript.toString());
+            CharSequence compiledLua = mapScript;
+            outputMapscript = timeTaker.measure("Write Lua",
+                () -> writeMapscript(compiledLua));
+        } else {
+            JassProg jassProg = timeTaker.measure("Transform program to Jass",
+                compiler::transformProgToJass);
+
+            if (jassProg == null || gui.getErrorCount() > 0) {
+                return null;
+            }
+
+            boolean withSpace = !runArgs.isOptimize();
+            gui.sendProgress("Printing Jass");
+
+            JassPrinter printer = new JassPrinter(withSpace, jassProg);
+            mapScript = timeTaker.measure("Print Jass",
+                (Supplier<String>) printer::printProg);
+
+            CharSequence compiledJass = mapScript;
+            outputMapscript = timeTaker.measure("Write Jass",
+                () -> writeMapscript(compiledJass));
+
+            if (!runArgs.isDisablePjass() && !runArgs.isLegacyJassTypeChecks()) {
+                boolean pjassError = timeTaker.measure("Run PJass",
+                    () -> runPjass(outputMapscript));
+                if (pjassError) return null;
+            }
+        }
+        timeTaker.printReport();
+        return mapScript;
+    }
+
+    private boolean runPjass(File outputMapscript) {
+        File commonJ = new File(outputMapscript.getParent(), "common.j");
+        File blizzJ = new File(outputMapscript.getParent(), "blizzard.j");
+
+        Pjass.Result pJassResult;
+        if (commonJ.exists() && blizzJ.exists()) {
+            pJassResult = Pjass.runPjass(outputMapscript, commonJ.getAbsolutePath(), blizzJ.getAbsolutePath());
+        } else {
+            pJassResult = Pjass.runPjass(outputMapscript);
+        }
+        WLogger.info(pJassResult.getLogMessage());
+        if (!pJassResult.isOk()) {
+            for (CompileError err : pJassResult.getErrors()) {
+                gui.sendError(err);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private File writeMapscript(CharSequence mapScript) {
+        gui.sendProgress("Writing output file");
+        File outputMapscript;
+        File staleJassOutput = null;
+        if (runArgs.getOutFile() != null) {
+            String outputPath = runArgs.getOutFile();
+            if (runArgs.isLua() && outputPath.toLowerCase(Locale.ROOT).endsWith(".j")) {
+                staleJassOutput = new File(outputPath);
+                outputPath = outputPath.substring(0, outputPath.length() - 2) + ".lua";
+            }
+            outputMapscript = new File(outputPath);
+        } else {
+            outputMapscript = new File("./temp/output." + (runArgs.isLua() ? "lua" : "j"));
+        }
+        outputMapscript.getParentFile().mkdirs();
+        try {
+            if (staleJassOutput != null) {
+                java.nio.file.Files.deleteIfExists(staleJassOutput.toPath());
+            }
+            FileUtils.write(mapScript, outputMapscript);
+            return outputMapscript;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void runTests(WurstGui gui, WurstCompilerJassImpl compiler, RunArgs runArgs) {
+        ImTranslator translator = compiler.getImTranslator();
+        PrintStream out = System.out;
+        // tests
+        gui.sendProgress("Running tests");
+        if (!runArgs.isCompactOutput()) {
+            System.out.println("Running tests");
+        }
+        RunTests runTests = new RunTests(Optional.empty(), 0, 0, Optional.empty(), runArgs.getTestTimeout(), runArgs.getTestFilter(), runArgs.isCompactOutput()) {
+            @Override
+            protected void print(String message) {
+                out.print(message);
+            }
+        };
+        runTests.runTests(translator, compiler.getImProg(), Optional.empty(), Optional.empty());
+
+        for (RunTests.TestFailure e : runTests.getFailTests()) {
+            gui.sendError(new CompileError(e.getFunction(), e.getMessage()));
+            if (runArgs.isGui()) {
+                // when using graphical user interface, send stack trace to GUI
+                for (ILStackFrame sf : e.getStackTrace().getStackFrames().reversed()) {
+                    gui.sendError(sf.makeCompileError());
+                }
+            }
+        }
+
+        if (!runArgs.isCompactOutput()) {
+            System.out.println("Finished running tests");
+        }
+    }
+}

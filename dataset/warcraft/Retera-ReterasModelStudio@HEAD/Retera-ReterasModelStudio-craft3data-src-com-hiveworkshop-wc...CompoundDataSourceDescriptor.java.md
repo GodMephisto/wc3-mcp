@@ -1,0 +1,42 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/ReterasModelStudio"
+source_path: "craft3data/src/com/hiveworkshop/wc3/gui/datachooser/CompoundDataSourceDescriptor.java"
+ref: HEAD
+---
+
+package com.hiveworkshop.wc3.gui.datachooser;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class CompoundDataSourceDescriptor implements DataSourceDescriptor {
+	private final List<DataSourceDescriptor> dataSourceDescriptors;
+
+	public CompoundDataSourceDescriptor(final List<DataSourceDescriptor> dataSourceDescriptors) {
+		this.dataSourceDescriptors = dataSourceDescriptors;
+	}
+
+	@Override
+	public DataSource createDataSource() {
+		final List<DataSource> dataSources = new ArrayList<>();
+		for (final DataSourceDescriptor descriptor : this.dataSourceDescriptors) {
+			dataSources.add(descriptor.createDataSource());
+		}
+		return new CompoundDataSource(dataSources);
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "CompoundDataSourceDescriptor";
+	}
+
+	public List<DataSourceDescriptor> getDataSourceDescriptors() {
+		return dataSourceDescriptors;
+	}
+
+	@Override
+	public DataSourceDescriptor duplicate() {
+		return new CompoundDataSourceDescriptor(new ArrayList<>(dataSourceDescriptors));
+	}
+}

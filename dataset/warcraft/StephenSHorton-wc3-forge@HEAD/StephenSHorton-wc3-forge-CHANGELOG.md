@@ -11,6 +11,36 @@ All notable changes to wc3-forge are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2026-09-05
+
+### Fixed
+
+- **Water missing on latest-Reforged maps.** The Terrain Cell inspector could
+  say "Has water: yes" while the viewport drew none. Two causes, both
+  triggered by maps saved in current Reforged World Editor:
+  - The water mesh used 16-bit indices and **bailed out entirely** on maps
+    with more than 65535 corners (anything around 256×256 and up). Water
+    now uses 32-bit indices, same as terrain and pathing.
+  - CASC lookups never tried the per-tileset `_tilesets/<letter>.w3mod:`
+    mounts that patch 2.0.3+ stores animated water (and other tileset art)
+    under, so frames 404'd and the leftover color-only plane was nearly
+    invisible. Lookups now follow HiveWE's tileset-mount order, and water
+    textures are requested as `.dds` (with `.blp` sibling fallback) like
+    the rest of the terrain. ([#35](https://github.com/StephenSHorton/wc3-forge/issues/35))
+- **`f` types in the Trigger Editor script pane.** The Frame Selection
+  hotkey (`f`) no longer swallows the key while a custom-script (or any
+  Monaco) editor is focused, so you can type `function` instead of
+  `unction`. The input-focus gate now recognizes Monaco's EditContext
+  surface — not just `<input>` / `<textarea>` — and viewport hotkeys
+  (`f`, `m`, `1`/`2`/`3`, Tab, Delete) stay quiet while an editor dialog
+  is open. ([#34](https://github.com/StephenSHorton/wc3-forge/issues/34))
+- **Import Manager on macOS.** Folder-backed `ReadFile` / `delete` joined
+  WC3 backslash paths (`war3mapImported\foo.blp`) as a single filename on
+  POSIX, so add succeeded but list/rename/reopen said the file was missing.
+  All three `folderSource` operations now go through `resolve()`. CI's
+  Windows catalog-sync step also used the invalid flag `git diff
+  --exit-status` (now `--exit-code`).
+
 ## [1.0.6] - 2026-07-06
 
 ### Fixed

@@ -1,0 +1,99 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/mbroemme/libmpq"
+source_path: "fuzz/fuzz-codec-decode.c"
+ref: HEAD
+---
+
+/*
+ *  fuzz-codec-decode.c -- Focused bounded decoder target for one MPQ codec.
+ *
+ *  Copyright (c) 2026-2026 Maik Broemme <mbroemme@libmpq.org>
+ *
+ *  This file is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation; either version 2.1 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This file is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with this file; if not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "mpq-compression.h"
+
+#include <libmpq/mpq.h>
+
+#include <stdint.h>
+#include <stdlib.h>
+
+#define LIBMPQ_FUZZ_CODEC_FRAME_SIZE 2U
+#define LIBMPQ_FUZZ_CODEC_MAX_OUTPUT 65536U
+
+#ifndef LIBMPQ_FUZZ_CODEC
+#error "LIBMPQ_FUZZ_CODEC must select one focused decoder"
+#endif
+
+/* Decode one codec-specific framed payload with a bounded output allocation. */
+int
+LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    uint32_t output_size;
+    uint8_t *output;
+
+    if (size < LIBMPQ_FUZZ_CODEC_FRAME_SIZE) {
+        return 0;
+    }
+
+    output_size = 1U + (uint32_t)data[0] + ((uint32_t)data[1] << 8);
+    if (output_size > LIBMPQ_FUZZ_CODEC_MAX_OUTPUT) {
+        return 0;
+    }
+
+    output = malloc(output_size);
+    if (output == NULL) {
+        return 0;
+    }
+
+#if LIBMPQ_FUZZ_CODEC == LIBMPQ_COMPRESSION_PKZIP
+    (void)libmpq__compression_decompress_pkzip(
+        (uint8_t *)(data + LIBMPQ_FUZZ_CODEC_FRAME_SIZE),
+        (uint32_t)(size - LIBMPQ_FUZZ_CODEC_FRAME_SIZE), output, output_size
+    );
+#elif LIBMPQ_FUZZ_CODEC == LIBMPQ_COMPRESSION_HUFFMAN
+    (void)libmpq__compression_decompress_huffman(
+        (uint8_t *)(data + LIBMPQ_FUZZ_CODEC_FRAME_SIZE),
+        (uint32_t)(size - LIBMPQ_FUZZ_CODEC_FRAME_SIZE), output, output_size
+    );
+#elif LIBMPQ_FUZZ_CODEC == LIBMPQ_COMPRESSION_ZLIB
+    (void)libmpq__compression_decompress_zlib(
+        (uint8_t *)(data + LIBMPQ_FUZZ_CODEC_FRAME_SIZE),
+        (uint32_t)(size - LIBMPQ_FUZZ_CODEC_FRAME_SIZE), output, output_size
+    );
+#elif LIBMPQ_FUZZ_CODEC == LIBMPQ_COMPRESSION_BZIP2
+    (void)libmpq__compression_decompress_bzip2(
+        (uint8_t *)(data + LIBMPQ_FUZZ_CODEC_FRAME_SIZE),
+        (uint32_t)(size - LIBMPQ_FUZZ_CODEC_FRAME_SIZE), output, output_size
+    );
+#elif LIBMPQ_FUZZ_CODEC == LIBMPQ_COMPRESSION_SPARSE
+    (void)libmpq__compression_decompress_sparse(
+        (uint8_t *)(data + LIBMPQ_FUZZ_CODEC_FRAME_SIZE),
+        (uint32_t)(size - LIBMPQ_FUZZ_CODEC_FRAME_SIZE), output, output_size
+    );
+#elif LIBMPQ_FUZZ_CODEC == LIBMPQ_COMPRESSION_LZMA
+    (void)libmpq__compression_decompress_multi(
+        (uint8_t *)(data + LIBMPQ_FUZZ_CODEC_FRAME_SIZE),
+        (uint32_t)(size - LIBMPQ_FUZZ_CODEC_FRAME_SIZE), output, output_size,
+        LIBMPQ_ARCHIVE_VERSION_TWO
+    );
+#else
+#error "Unsupported focused codec"
+#endif
+
+    free(output);
+    return 0;
+}

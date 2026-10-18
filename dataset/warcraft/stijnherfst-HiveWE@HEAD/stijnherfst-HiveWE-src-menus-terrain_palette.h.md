@@ -1,0 +1,95 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/stijnherfst/HiveWE"
+source_path: "src/menus/terrain_palette.h"
+ref: HEAD
+---
+
+#pragma once
+
+#include "ui_terrain_palette.h"
+
+#include <QDialog>
+#include <QScrollArea>
+
+#include "palette.h"
+#include "terrain_brush.h"
+
+import QRibbon;
+import FlowLayout;
+import TextureButton;
+import Terrain;
+import Tileset;
+import Units;
+import WorldUndoManager;
+
+class TerrainPalette: public Palette {
+	Q_OBJECT
+
+  public:
+	TerrainPalette(
+		QWidget* parent,
+		Brush*& active_brush,
+		Terrain& terrain,
+		Units& units,
+		TilesetData& tilesets,
+		WorldUndoManager& world_undo
+	);
+	~TerrainPalette() override;
+
+	void refresh();
+
+  private:
+	bool event(QEvent* e) override;
+
+	Terrain& terrain;
+	TilesetData& tilesets;
+
+	Ui::TerrainPalette ui;
+
+	TerrainBrush brush;
+
+	QButtonGroup* textures_group = new QButtonGroup;
+	FlowLayout* textures_layout = new FlowLayout;
+
+	QButtonGroup* cliff_group = new QButtonGroup;
+	FlowLayout* cliff_layout = new FlowLayout;
+
+	QRibbonTab* ribbon_tab = new QRibbonTab;
+	QRibbonButton* selection_mode = new QRibbonButton;
+
+	QShortcut* change_mode_this;
+	QShortcut* change_mode_parent;
+
+	// GUI creation functions
+	void update_operator_gui();
+
+	// textures
+	void update_texture_operator_gui();
+	void setup_texture_operator();
+	void create_terrain_buttons();
+	TextureButton* terrain_button(const TerrainTexture* tex);
+	CliffButton* cliff_button(const CliffType* cliff, const TerrainTexture* tex);
+	int get_scroll_view_height(const QScrollArea* scroll_area, const FlowLayout* layout, const int rows) const;
+
+	// cliff
+	void update_cliff_operator_gui();
+	void setup_cliff_operator();
+
+	// deformation
+	void update_deformation_operator_gui();
+	void setup_deformation_operator();
+
+	// cell operator (boundaries, water, holes)
+	void update_cell_operator_gui();
+	void setup_cell_operator();
+
+	// ribbon
+	void create_ribbon();
+
+	// brush menu
+	void setup_brush_menu();
+
+  public slots:
+	void deactivate(QRibbonTab* tab) override;
+};

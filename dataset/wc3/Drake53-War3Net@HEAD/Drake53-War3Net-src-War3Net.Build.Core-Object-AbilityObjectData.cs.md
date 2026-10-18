@@ -1,0 +1,35 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Object/AbilityObjectData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Object
+{
+    public sealed partial class AbilityObjectData
+    {
+        public const string FileExtension = ".w3a";
+        public const string CampaignFileName = "war3campaign.w3a";
+        public const string CampaignSkinFileName = "war3campaignSkin.w3a";
+        public const string MapFileName = "war3map.w3a";
+        public const string MapSkinFileName = "war3mapSkin.w3a";
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AbilityObjectData"/> class.
+        /// </summary>
+        /// <param name="formatVersion"></param>
+        public AbilityObjectData(ObjectDataFormatVersion formatVersion)
+        {
+            FormatVersion = formatVersion;
+        }
+
+        public ObjectDataFormatVersion FormatVersion { get; set; }
+
+        public List<LevelObjectModification> BaseAbilities { get; init; } = new();
+
+        public List<LevelObjectModification> NewAbilities { get; init; } = new();
+
+        public override string ToString() => $"{FileExtension} file";
+    }
+}

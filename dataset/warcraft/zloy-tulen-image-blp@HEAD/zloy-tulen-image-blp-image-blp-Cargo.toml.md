@@ -1,0 +1,35 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/zloy-tulen/image-blp"
+source_path: "image-blp/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "image-blp"
+version = "1.2.0"
+edition = "2021"
+license = "MIT"
+description = "Library to encode/decode Blizzard BLP texture format"
+repository = "https://github.com/zloy-tulen/image-blp.git"
+documentation = "https://docs.rs/image-blp"
+authors = ["zloy_tulen <zloy_tulen@proton.me>"]
+readme = "../README.md"
+keywords = ["blp", "texture", "war3", "warcraft", "wow"]
+categories = ["multimedia::images", "multimedia::encoding"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+image = "0.24.3"
+log = "0.4.17"
+nom = "7.1.1"
+color_quant = "1.1.0"
+thiserror = "1.0.33"
+texpresso = { version = "2.0.1", features = ["rayon"] }
+spin = "0.9.8"
+
+[dev-dependencies]
+env_logger = "0.9.0"
+tempfile = "3.3.0"
+test-log = "0.2.8"

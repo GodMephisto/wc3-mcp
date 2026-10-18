@@ -1,0 +1,81 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/ChiefOfGxBxL/Ice-Sickle"
+source_path: "package.json"
+ref: HEAD
+---
+
+{
+  "name": "icesickle",
+  "version": "0.1.5",
+  "description": "Next-generation WC3 map editor built in Electron",
+  "homepage": "https://github.com/ChiefOfGxBxL/Ice-Sickle#readme",
+  "main": "app.js",
+  "author": "ChiefOfGxBxL",
+  "engines": {
+    "node": "8.11.1",
+    "npm": "5.8.0",
+    "electron": "1.6.16"
+  },
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pack": "build --dir",
+    "release": "build"
+  },
+  "build": {
+    "appId": "com.github.chiefofgxbxl.icesickle",
+    "productName": "Ice Sickle",
+    "publish": {
+      "owner": "ChiefOfGxBxL",
+      "provider": "github",
+      "repo": "Ice-Sickle"
+    },
+    "target": {
+      "arch": "x64",
+      "target": "win"
+    },
+    "files": [
+      "*.js",
+      "enum",
+      "assets",
+      "WEdata",
+      "windows",
+      "views",
+      "mpqedit",
+      "classes",
+      ".build/icon.*",
+      "node_modules",
+      "**/node_modules/**/*",
+      "bootstrap"
+    ],
+    "extraResources": [
+      "node_modules/wc3-jass"
+    ]
+  },
+  "dependencies": {
+    "electron-is-dev": "^0.3.0",
+    "electron-updater": "^2.21.10",
+    "fs-extra": "^2.0.0",
+    "handlebars": "^4.0.11",
+    "klaw-sync": "^2.1.0",
+    "mime": "^1.6.0",
+    "mini.css": "^2.3.7",
+    "targz": "^1.0.1",
+    "wc3maptranslator": "^0.5.5"
+  },
+  "devDependencies": {
+    "electron": "2.0.0",
+    "electron-builder": "^18.8.1",
+    "electron-log": "^2.2.14",
+    "wc3-jass": "0.0.3"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "github:ChiefOfGxBxL/Ice-Sickle.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ChiefOfGxBxL/Ice-Sickle/issues"
+  }
+}

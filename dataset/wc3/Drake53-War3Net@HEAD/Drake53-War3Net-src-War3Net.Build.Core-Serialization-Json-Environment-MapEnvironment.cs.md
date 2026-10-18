@@ -1,0 +1,82 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Json/Environment/MapEnvironment.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Environment
+{
+    [JsonConverter(typeof(JsonMapEnvironmentConverter))]
+    public sealed partial class MapEnvironment
+    {
+        internal MapEnvironment(JsonElement jsonElement)
+        {
+            GetFrom(jsonElement);
+        }
+
+        internal MapEnvironment(ref Utf8JsonReader reader)
+        {
+            ReadFrom(ref reader);
+        }
+
+        internal void GetFrom(JsonElement jsonElement)
+        {
+            FormatVersion = jsonElement.GetInt32<MapEnvironmentFormatVersion>(nameof(FormatVersion));
+            Tileset = jsonElement.GetByte<Tileset>(nameof(Tileset));
+            IsCustomTileset = jsonElement.GetBoolean(nameof(IsCustomTileset));
+
+            foreach (var element in jsonElement.EnumerateArray(nameof(TerrainTypes)))
+            {
+                TerrainTypes.Add(element.GetInt32<TerrainType>());
+            }
+
+            foreach (var element in jsonElement.EnumerateArray(nameof(CliffTypes)))
+            {
+                CliffTypes.Add(element.GetInt32<CliffType>());
+            }
+
+            Width = jsonElement.GetUInt32(nameof(Width)) - 1;
+            Height = jsonElement.GetUInt32(nameof(Height)) - 1;
+            Left = jsonElement.GetSingle(nameof(Left));
+            Bottom = jsonElement.GetSingle(nameof(Bottom));
+
+            foreach (var element in jsonElement.EnumerateArray(nameof(TerrainTiles)))
+            {
+                TerrainTiles.Add(element.GetTerrainTile(FormatVersion));
+            }
+        }
+
+        internal void ReadFrom(ref Utf8JsonReader reader)
+        {
+            GetFrom(JsonDocument.ParseValue(ref reader).RootElement);
+        }
+
+        internal void WriteTo(Utf8JsonWriter writer, JsonSerializerOptions options)
+        {
+            writer.WriteStartObject();
+
+            writer.WriteObject(nameof(FormatVersion), FormatVersion, options);
+            writer.WriteObject(nameof(Tileset), Tileset, options);
+            writer.WriteBoolean(nameof(IsCustomTileset), IsCustomTileset);
+
+            writer.WriteObject(nameof(TerrainTypes), TerrainTypes, options);
+            writer.WriteObject(nameof(CliffTypes), CliffTypes, options);
+
+            writer.WriteNumber(nameof(Width), Width + 1);
+            writer.WriteNumber(nameof(Height), Height + 1);
+            writer.WriteNumber(nameof(Left), Left);
+            writer.WriteNumber(nameof(Bottom), Bottom);
+
+            writer.WriteStartArray(nameof(TerrainTiles));
+            foreach (var terrainTile in TerrainTiles)
+            {
+                writer.Write(terrainTile, options, FormatVersion);
+            }
+
+            writer.WriteEndArray();
+
+            writer.WriteEndObject();
+        }
+    }
+}

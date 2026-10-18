@@ -1,0 +1,141 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/dc114154qq/war3-reforged-trainer"
+source_path: "tools/verify_engine_bridge.py"
+ref: HEAD
+---
+
+"""Verify the exported ABI markers of the current engine bridge."""
+from pathlib import Path
+import json
+import struct
+import sys
+
+import pefile
+
+
+def main() -> None:
+    if len(sys.argv) != 3:
+        raise SystemExit("usage: verify_engine_bridge.py <dll> <fixture>")
+    path = sys.argv[1]
+    fixture = sys.argv[2] == "True"
+    pe = pefile.PE(path)
+    exports = {
+        symbol.name: symbol.address
+        for symbol in pe.DIRECTORY_ENTRY_EXPORT.symbols
+        if symbol.name is not None
+    }
+    if pe.FILE_HEADER.Machine != 0x8664:
+        raise AssertionError("bridge must be x64")
+    if not fixture:
+        reloc = pe.OPTIONAL_HEADER.DATA_DIRECTORY[5]
+        if not reloc.VirtualAddress or not reloc.Size:
+            raise AssertionError("production bridge is missing loader relocations")
+        if not any(
+            entry.type == 10
+            for block in getattr(pe, "DIRECTORY_ENTRY_BASERELOC", ())
+            for entry in block.entries
+        ):
+            raise AssertionError("production bridge has no DIR64 relocation")
+
+    root=Path(__file__).resolve().parents[1]
+    sys.path.insert(0,str(root))
+    from war3_game_profile import load_profile
+    expected=load_profile(root/'profiles/3.0.0.24268.json').bridge_bytes()
+    if pe.get_data(exports[b'bridge_profile_abi'],8)!=expected[:8]:raise AssertionError('Bridge profile ABI mismatch')
+    if pe.get_data(exports[b'bridge_profile'],len(expected))!=expected:raise AssertionError('Bridge profile defaults differ')
+    required = (
+        b"BridgeInstall",
+        b"BridgeUninstall",
+        b"BridgeDiagnoseLoad",
+        b"BridgeDiagnoseLoadSafe",
+        b"bridge_native_hook_abi",
+        b"bridge_callback_lifecycle_abi",
+        b"bridge_callback_lifecycle",
+        b"BridgeHeroQuery",
+        b"BridgeHeroAttributesQuery",
+        b"BridgeAttackSpeedQuery",
+        b"BridgeAbilityQuery",
+        b"BridgeAbilityFieldQuery",
+        b"BridgeItemQuery",
+        b"BridgeItemAbilityQuery",
+        b"BridgeItemCatalogQuery",
+        b"BridgeItemFieldQuery",
+        b"BridgeCloneQuery",
+        b"BridgeWorldQuery",
+        b"BridgeBulkQuery",
+        b"BridgeEffectQuery",
+        b"BridgeWorldEffectQuery",
+        b"BridgeWorldCastQuery",
+        b"BridgeSpawnQuery",
+        b"BridgeMouseQuery",
+        b"BridgeScreenMouseQuery",
+        b"BridgeCameraQuery",
+        b"BridgePositionQuery",
+        b"BridgeTerrainQuery",
+        b"BridgeMapBoundsQuery",
+        b"BridgeEquipmentQuery",
+        b"BridgeEquipmentEffectQuery",
+        b"BridgeExtensionQuery",
+        b"BridgeStatDetailsQuery",
+    )
+    missing = [name.decode("ascii") for name in required if name not in exports]
+    if missing:
+        raise AssertionError("missing exports: " + ", ".join(missing))
+
+    def marker(name: bytes, values: tuple[int, int, int]) -> None:
+        address = exports[name]
+        actual = pe.get_data(address, 12)
+        expected = struct.pack("<3I", *values)
+        if actual != expected:
+            raise AssertionError(f"{name.decode('ascii')} ABI mismatch: {actual.hex()}")
+
+    marker(b"bridge_abi", (0x2426801C, 216, 632))
+    marker(b"bridge_native_hook_abi", (0x24268049, 216, 6))
+    marker(b"bridge_callback_lifecycle_abi", (0x2426804a, 216, 32))
+    marker(b"hero_attributes_batch_abi", (0x24268030, 216, 1144))
+    marker(b"attack_speed_batch_abi", (0x24268032, 216, 640))
+    marker(b"ability_batch_abi", (0x2426806c, 216, 58856))
+    marker(b"ability_field_batch_abi", (0x24268021, 216, 7688))
+    marker(b"item_batch_abi", (0x2426806f, 216, 63432))
+    marker(b"item_ability_abi", (0x24268070, 216, 58632))
+    marker(b"equipment_effect_abi", (0x2426805b, 216, 1672))
+    marker(b"item_safety_abi", (0x24268056, 216, 600))
+    marker(b"item_catalog_batch_abi", (0x2426802B, 216, 0))
+    marker(b"item_field_batch_abi", (0x24268022, 216, 5136))
+    marker(b"clone_batch_abi", (0x24268063, 216, 1888))
+    marker(b"clone_bound_abi", (0x24268064, 216, 2680))
+    marker(b"unit_bindings_abi", (0x24268065, 216, 1280))
+    marker(b"unit_action_batch_abi", (0x24268016, 216, 1432))
+    marker(b"world_batch_abi", (0x2426805c, 216, 160))
+    marker(b"bulk_batch_abi", (0x2426803A, 216, 656))
+    marker(b"effect_batch_abi", (0x24268027, 216, 1168))
+    marker(b"world_effect_batch_abi", (0x24268028, 216, 656))
+    marker(b"world_cast_abi", (0x24268048, 216, 760))
+    marker(b"direct_cast_abi", (0x2426806d, 216, 58360))
+    marker(b"game_speed_abi", (0x24268051, 216, 104))
+    marker(b"spawn_batch_abi", (0x24268018, 216, 128))
+    marker(b"mouse_batch_abi", (0x24268019, 216, 128))
+    marker(b"screen_mouse_batch_abi", (0x2426801A, 216, 128))
+    marker(b"camera_batch_abi", (0x2426801B, 216, 256))
+    marker(b"position_batch_abi", (0x24268020, 216, 1312))
+    marker(b"terrain_batch_abi", (0x2426802A, 216, 128))
+    marker(b"map_bounds_batch_abi", (0x2426802C, 216, 128))
+    marker(b"equipment_batch_abi", (0x2426802E, 216, 872))
+    marker(b"extension_batch_abi", (0x2426803A, 216, 1848))
+    marker(b"stat_details_batch_abi", (0x24268058, 216, 1056))
+    marker(b"talent_order_abi", (0x24268041, 216, 544))
+    if b"equipment_probe_abi" in exports:
+        if b"BridgeEquipmentProbeQuery" not in exports:
+            raise AssertionError("missing diagnostic equipment probe export")
+        marker(b"equipment_probe_abi", (0x24268043, 216, 3816))
+    for name in (b"BridgeUnitActionQuery",):
+        if name not in exports:
+            raise AssertionError("missing export: " + name.decode("ascii"))
+    if (b"BridgeTestRun" in exports) != fixture:
+        raise AssertionError("fixture export state does not match -Fixture")
+    print("x64 bridge ABI verified")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,32 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Widget/SpecialDoodadData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Widget
+{
+    public sealed partial class SpecialDoodadData
+    {
+        internal SpecialDoodadData(BinaryReader reader, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, SpecialDoodadVersion specialDoodadVersion)
+        {
+            ReadFrom(reader, formatVersion, subVersion, specialDoodadVersion);
+        }
+
+        internal void ReadFrom(BinaryReader reader, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, SpecialDoodadVersion specialDoodadVersion)
+        {
+            TypeId = reader.ReadInt32();
+            Variation = reader.ReadInt32();
+            Position = new Point(reader.ReadInt32(), reader.ReadInt32());
+        }
+
+        internal void WriteTo(BinaryWriter writer, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, SpecialDoodadVersion specialDoodadVersion)
+        {
+            writer.Write(TypeId);
+            writer.Write(Variation);
+            writer.Write(Position.X);
+            writer.Write(Position.Y);
+        }
+    }
+}

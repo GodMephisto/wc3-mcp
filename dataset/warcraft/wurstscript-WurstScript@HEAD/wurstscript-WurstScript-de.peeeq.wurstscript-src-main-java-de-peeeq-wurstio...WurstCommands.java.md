@@ -1,0 +1,178 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/languageserver/WurstCommands.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio.languageserver;
+
+import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import de.peeeq.wurstio.languageserver.requests.*;
+import de.peeeq.wurstscript.WLogger;
+import org.eclipse.lsp4j.ExecuteCommandParams;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+/**
+ *
+ */
+public class WurstCommands {
+
+    public static final String WURST_RESTART = "wurst.restart";
+    public static final String WURST_CLEAN = "wurst.clean";
+    public static final String WURST_STARTMAP = "wurst.startmap";
+    public static final String WURST_HOTSTARTMAP = "wurst.hotstartmap";
+    public static final String WURST_HOTRELOAD = "wurst.hotreload";
+    public static final String WURST_BUILDMAP = "wurst.buildmap";
+    public static final String WURST_EXPORT_W3O = "wurst.exportw3o";
+    public static final String WURST_STARTLAST = "wurst.startlast";
+    public static final String WURST_TESTS = "wurst.tests";
+    public static final String WURST_TESTS_FILE = "wurst.tests_file";
+    public static final String WURST_TESTS_FUNC = "wurst.tests_func";
+    public static final String WURST_PERFORM_CODE_ACTION = "wurst.perform_code_action";
+
+    static List<String> providedCommands() {
+        // Commands are registered by the VS Code extension itself.
+        // Advertising them here causes duplicate command registration in vscode-languageclient.
+        return List.of();
+    }
+
+    public static CompletableFuture<Object> execute(WurstLanguageServer server, ExecuteCommandParams params) {
+        switch (params.getCommand()) {
+            case WURST_CLEAN:
+                return server.worker().handle(new CleanProject()).thenApply(x -> x);
+            case WURST_STARTMAP:
+                return startMap(server, params);
+            case WURST_HOTSTARTMAP:
+                return startMap(server, params, "-hotstart");
+            case WURST_HOTRELOAD:
+                return startMap(server, params, "-hotreload");
+            case WURST_TESTS:
+            case WURST_TESTS_FILE:
+            case WURST_TESTS_FUNC:
+                return testMap(server, params);
+            case WURST_PERFORM_CODE_ACTION:
+                return server.worker().handle(new PerformCodeActionRequest(server, params));
+            case WURST_BUILDMAP:
+                return buildMap(server, params, false);
+            case WURST_EXPORT_W3O:
+                return buildMap(server, params, true);
+        }
+        WLogger.info("unhandled command: " + params.getCommand());
+        throw new RuntimeException("unhandled command: " + params.getCommand());
+    }
+
+
+    private static CompletableFuture<Object> testMap(WurstLanguageServer server, ExecuteCommandParams params) {
+        JsonObject options = (JsonObject) params.getArguments().get(0);
+        Optional<String> filename = getString(options, "filename");
+        int line = options.has("line") ? options.get("line").getAsInt() : -1;
+        int column = options.has("column") ? options.get("column").getAsInt() : -1;
+        int testTimeout = options.has("testTimeout") ? options.get("testTimeout").getAsInt() : 20;
+        Optional<String> testName = getString(options, "testName");
+
+        return server.worker().handle(new RunTests(filename, line, column, testName, testTimeout));
+    }
+
+    private static CompletableFuture<Object> buildMap(WurstLanguageServer server, ExecuteCommandParams params, boolean exportObjects) {
+        WFile workspaceRoot = server.getRootUri();
+        if (params.getArguments().isEmpty()) {
+            throw new RuntimeException("Missing arguments");
+        }
+        JsonObject options = (JsonObject) params.getArguments().get(0);
+        Optional<String> mapPath = getString(options, "mappath");
+        Optional<String> wc3Path = getString(options, "wc3path");
+        if (!mapPath.isPresent()) {
+            throw new RuntimeException("No mappath given");
+        }
+
+        Optional<File> map = mapPath.map(File::new);
+        List<String> compileArgs = getCompileArgs(workspaceRoot, true);
+        BuildMap request = new BuildMap(server, workspaceRoot, wc3Path, map, compileArgs, exportObjects);
+        request.setWorkDoneToken(params.getWorkDoneToken());
+        return server.worker().handle(request);
+    }
+
+    private static CompletableFuture<Object> startMap(WurstLanguageServer server, ExecuteCommandParams params, String... additionalArgs) {
+        WFile workspaceRoot = server.getRootUri();
+        if (params.getArguments().isEmpty()) {
+            throw new RuntimeException("Missing arguments");
+        }
+        JsonObject options = (JsonObject) params.getArguments().get(0);
+        Optional<String> mapPath = getString(options,  "mappath");
+        Optional<String> wc3Path = getString(options, "wc3path");
+        Optional<String> gameExePath = getString(options, "gameExePath");
+
+        Optional<File> map = mapPath.map(File::new);
+        List<String> compileArgs = getCompileArgs(workspaceRoot, additionalArgs);
+        RunMap request = new RunMap(server, workspaceRoot, wc3Path, map, compileArgs, gameExePath);
+        request.setWorkDoneToken(params.getWorkDoneToken());
+        return server.worker().handle(request);
+    }
+
+    private static Optional<String> getString(JsonObject options, String key) {
+        try {
+            return Optional.ofNullable(options.get(key)).map(JsonElement::getAsString);
+        } catch (ClassCastException | IllegalStateException e) {
+            WLogger.warning("Invalid configuration", e);
+            return Optional.empty();
+        }
+    }
+
+    private static final List<String> defaultArgs = ImmutableList.of("-runcompiletimefunctions", "-injectobjects", "-stacktraces");
+
+    public static List<String> getCompileArgs(WFile rootPath, String... additionalArgs) {
+        return getCompileArgs(rootPath, false, additionalArgs);
+    }
+
+    /**
+     * Reads the workspace run-args file. A leading '-' is shared by run and build;
+     * a leading '+' is build-only and is normalized to '-' for the compiler.
+     */
+    public static List<String> getCompileArgs(WFile rootPath, boolean forBuild, String... additionalArgs) {
+        try {
+            Path configFile = Paths.get(rootPath.toString(), "wurst_run.args");
+            if (Files.exists(configFile)) {
+                try (Stream<String> lines = Files.lines(configFile)) {
+                    List<String> args = new ArrayList<>(lines
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty() && !s.startsWith("#"))
+                        .filter(s -> s.startsWith("-") || (forBuild && s.startsWith("+")))
+                        .map(s -> forBuild && s.startsWith("+") ? "-" + s.substring(1) : s)
+                        .collect(Collectors.toList()));
+                    args.addAll(List.of(additionalArgs));
+                    return WurstBuildConfig.fromWorkspaceRoot(rootPath).applyToCompileArgs(args);
+                }
+            } else {
+                String cfg = String.join("\n", defaultArgs)
+                    + "\n+opt\n+inline\n+localOptimizations\n";
+                Files.write(configFile, cfg.getBytes(Charsets.UTF_8));
+                List<String> args = new ArrayList<>(defaultArgs);
+                if (forBuild) {
+                    args.add("-opt");
+                    args.add("-inline");
+                    args.add("-localOptimizations");
+                }
+                args.addAll(List.of(additionalArgs));
+                return WurstBuildConfig.fromWorkspaceRoot(rootPath).applyToCompileArgs(args);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Could not access wurst_run.args config file", e);
+        }
+    }
+
+}

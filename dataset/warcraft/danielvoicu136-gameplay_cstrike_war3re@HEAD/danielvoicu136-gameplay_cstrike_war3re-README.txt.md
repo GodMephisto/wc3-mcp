@@ -5,9 +5,9 @@ source_path: "README.txt"
 ref: HEAD
 ---
 
-For all documentation, please go here:
-Original 
-http://www.war3ft.net
-
-Custom
-http://www.daeva.ro
+For all documentation, please go here:
+Original 
+http://www.war3ft.net
+
+Custom
+http://www.daeva.ro

@@ -1,0 +1,58 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/LeoYawoo/warsmash_ar"
+source_path: "core/src/com/etheller/warsmash/viewer5/handlers/mdx/SetupSimpleGroups.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.viewer5.handlers.mdx;
+
+import java.util.List;
+
+public class SetupSimpleGroups {
+    private static final float[] alphaHeap = new float[1];
+
+    public static boolean isBatchSimple(final Batch batch) {
+        final GeosetAnimation geosetAnimation = batch.geoset.geosetAnimation;
+
+        if (geosetAnimation != null) {
+            geosetAnimation.getAlpha(alphaHeap, 0, 0, 0);
+
+            if (alphaHeap[0] <= 0.01) {
+                return false;
+            }
+        }
+
+        Layer layer;
+
+        layer = batch.layer;
+
+        layer.getAlpha(alphaHeap, 0, 0, 0);
+
+        return !(alphaHeap[0] < 0.01);
+    }
+
+    public static void setupSimpleGroups(final MdxModel model) {
+        final List<Batch> batches = model.batches;
+        final List<GenericGroup> simpleGroups = model.simpleGroups;
+
+        for (final GenericGroup group : model.opaqueGroups) {
+            GenericGroup simpleGroup;
+
+            if (group instanceof BatchGroup) {
+                simpleGroup = new BatchGroup(model, ((BatchGroup) group).skinningType, ((BatchGroup) group).hd);
+            } else {
+                throw new IllegalStateException("reforged?"); // TODO
+                // simpleGroup = new ReforgedBatchGroup(model, group.shader);
+            }
+
+            for (final Integer object : group.objects) {
+                if (isBatchSimple(batches.get(object))) {
+                    simpleGroup.objects.add(object);
+                }
+            }
+
+            simpleGroups.add(simpleGroup);
+        }
+    }
+}

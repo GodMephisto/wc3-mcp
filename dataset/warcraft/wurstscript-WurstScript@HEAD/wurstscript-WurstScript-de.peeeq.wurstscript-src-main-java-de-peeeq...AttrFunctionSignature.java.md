@@ -1,0 +1,239 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/attributes/AttrFunctionSignature.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.attributes;
+
+import de.peeeq.wurstscript.CompilerIntrinsics;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.ast.*;
+import de.peeeq.wurstscript.types.FunctionSignature;
+import de.peeeq.wurstscript.types.VariableBinding;
+import de.peeeq.wurstscript.types.WurstType;
+import de.peeeq.wurstscript.types.WurstTypeCode;
+import de.peeeq.wurstscript.types.WurstTypeUnknown;
+import de.peeeq.wurstscript.utils.Utils;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+public class AttrFunctionSignature {
+
+    public static FunctionSignature calculate(StmtCall fc) {
+        if (fc instanceof ExprFunctionCall call && CompilerIntrinsics.isNew(call)) {
+            WurstType returnType = call.getTypeArgs().size() == 1
+                ? call.getTypeArgs().get(0).attrTyp()
+                : WurstTypeUnknown.instance();
+            return new FunctionSignature(null, VariableBinding.emptyMapping(), null,
+                CompilerIntrinsics.NEW, Collections.emptyList(), Collections.emptyList(), returnType);
+        }
+        Collection<FunctionSignature> sigs = fc.attrPossibleFunctionSignatures();
+        List<WurstType> at = argTypes(fc);
+
+        FunctionSignature sig = filterSigs(sigs, at, fc);
+
+        // ---- DEBUG: what did we pick, and what did we bind? ----
+        if (fc instanceof FunctionCall) {
+            WLogger.trace(() -> "[IMPLCONV] call=" + name(fc) + " args=" + at);
+            WLogger.trace(() -> "[IMPLCONV] mapping=" + sig.getMapping()
+                + " unbound=" + sig.getMapping().printUnboundTypeVars());
+            if (fc instanceof ExprMemberMethodDot emmd) {
+                WLogger.trace(() -> "[IMPLCONV] receiver=" + emmd.getLeft().attrTyp()
+                    + " raw=" + emmd.getLeft().attrTypRaw()
+                    + " member=" + emmd.getFuncName());
+            }
+        }
+        // --------------------------------------------------------
+
+        VariableBinding mapping = sig.getMapping();
+        for (CompileError error : mapping.getErrors()) {
+            fc.getErrorHandler().sendError(error);
+        }
+
+        // If any argument is a closure, let it be typed using the selected signature’s
+        // expected parameter types before complaining about unbound type variables.
+        boolean hasClosureArg = false;
+        if (fc instanceof AstElementWithArgs astElementWithArgs) {
+            for (Expr a : astElementWithArgs.getArgs()) {
+                if (a instanceof ExprClosure) {
+                    hasClosureArg = true;
+                    break;
+                }
+            }
+        }
+
+        if (mapping.hasUnboundTypeVars() && !hasClosureArg) {
+            fc.addError("Cannot infer type for type parameter " + mapping.printUnboundTypeVars());
+        }
+
+        checkCodeClosureCaptures(fc, sig);
+
+        return sig;
+    }
+
+    private static void checkCodeClosureCaptures(StmtCall fc, FunctionSignature sig) {
+        if (!sig.isValidParameterNumber(fc.getArgs().size())) {
+            return;
+        }
+        for (int i = 0; i < fc.getArgs().size(); i++) {
+            Expr arg = fc.getArgs().get(i);
+            if (!(arg instanceof ExprClosure closure)) {
+                continue;
+            }
+            if (!(sig.getParamType(i) instanceof WurstTypeCode)) {
+                continue;
+            }
+            if (!closure.attrCapturedVariables().isEmpty()) {
+                String codeLambdaContext = codeLambdaContext(fc);
+                closure.attrCapturedVariables().entries().forEach(entry ->
+                    entry.getKey().addError("Cannot capture local variable '" + entry.getValue().getName()
+                        + "' in anonymous function" + codeLambdaContext + ". This is only possible with closures."));
+            }
+        }
+    }
+
+    private static String codeLambdaContext(StmtCall stmtCall) {
+        String funcName = stmtCall instanceof FunctionCall fc ? fc.getFuncName() : "<unknown>";
+        if (stmtCall instanceof ExprMemberMethod) {
+            return " passed as code to ." + funcName + "() ->";
+        }
+        return " passed as code to " + funcName + "() ->";
+    }
+
+    private static FunctionSignature filterSigs(
+            Collection<FunctionSignature> sigs,
+            List<WurstType> argTypes, StmtCall location) {
+        if (sigs.isEmpty()) {
+            if (location instanceof ExprFunctionCall exprFunctionCall && AttrFuncDef.isConstructorThisCall(exprFunctionCall)) {
+                return FunctionSignature.empty;
+            }
+            if (!isInitTrigFunc(location)) {
+                if (location instanceof ExprMemberMethodDot emmd) {
+                    WLogger.trace(() -> "[IMPLCONV] receiver typRaw=" + emmd.getLeft().attrTypRaw()
+                        + " typ=" + emmd.getLeft().attrTyp()
+                        + " for call ." + emmd.getFuncName());
+                }
+                location.addError("Could not find " + name(location) + ".");
+            }
+            return FunctionSignature.empty;
+        }
+
+        List<FunctionSignature> candidates = filterByArgumentTypes(sigs, argTypes, location);
+        if (candidates.isEmpty()) {
+            // parameters match for no element, just return the first signature
+            return Utils.getFirst(sigs);
+        } else if (candidates.size() == 1) {
+            return candidates.get(0);
+        }
+
+        candidates = filterByIfNotDefinedAnnotation(candidates);
+        if (candidates.isEmpty()) {
+            // parameters match for no element, just return the first signature
+            return Utils.getFirst(sigs);
+        } else if (candidates.size() == 1) {
+            return candidates.get(0);
+        }
+
+        candidates = filterPreferNonAbstract(candidates);
+        if (candidates.size() == 1) {
+            return candidates.get(0);
+        }
+
+
+        boolean b = true;
+        for (WurstType t : argTypes) {
+            if (t instanceof WurstTypeUnknown) {
+                b = false;
+                break;
+            }
+        }
+        if (b) {
+            // only show overloading error, if type for all arguments could be determined
+            // sorted, because the candidates come in the order of the compilation units in the model
+            StringBuilder alternatives = new StringBuilder();
+            candidates.stream().map(FunctionSignature::toString).sorted().forEach(s -> {
+                alternatives.append("\n");
+                alternatives.append(s);
+            });
+            location.addError("Call to " + name(location) + " is ambiguous, alternatives are: " + alternatives);
+        }
+        return candidates.get(0);
+    }
+
+    private static List<FunctionSignature> filterByIfNotDefinedAnnotation(List<FunctionSignature> candidates) {
+        List<FunctionSignature> list = new ArrayList<>();
+        for (FunctionSignature sig : candidates) {
+            if (!sig.hasIfNotDefinedAnnotation()) {
+                list.add(sig);
+            }
+        }
+        return list;
+    }
+
+    static List<FunctionSignature> filterPreferNonAbstract(List<FunctionSignature> candidates) {
+        List<FunctionSignature> nonAbstract = new ArrayList<>();
+        for (FunctionSignature sig : candidates) {
+            FunctionDefinition def = sig.getDef();
+            if (def != null && !def.attrIsAbstract()) {
+                nonAbstract.add(sig);
+            }
+        }
+        if (!nonAbstract.isEmpty()) {
+            return nonAbstract;
+        }
+        return candidates;
+    }
+
+    @NotNull
+    private static List<FunctionSignature> filterByArgumentTypes(
+        Collection<FunctionSignature> sigs, List<WurstType> argTypes, StmtCall location) {
+
+        List<FunctionSignature> candidates = new ArrayList<>();
+        for (FunctionSignature sig : sigs) {
+            WLogger.trace(() -> "[IMPLCONV] trySig=" + sig + " argTypes=" + argTypes);
+
+            FunctionSignature matched = sig.matchAgainstArgs(argTypes, location);
+
+            if (matched != null) {
+                WLogger.trace(() -> "[IMPLCONV]   -> matched, mapping=" + matched.getMapping()
+                    + " unbound=" + matched.getMapping().printUnboundTypeVars());
+                candidates.add(matched);
+            } else {
+                WLogger.trace("[IMPLCONV]   -> no match");
+            }
+        }
+        return candidates;
+    }
+
+    private static boolean isInitTrigFunc(StmtCall e) {
+        if (e instanceof ExprFunctionCall e2) {
+            return e2.getFuncName().startsWith("InitTrig_");
+        }
+        return false;
+    }
+
+    private static String name(StmtCall s) {
+        if (s instanceof ExprNewObject e) {
+            return "constructor for " + e.getTypeName();
+        } else if (s instanceof FunctionCall e) {
+            return "function " + e.getFuncName();
+        }
+        return Utils.printElement(s);
+    }
+
+    private static List<WurstType> argTypes(AstElementWithArgs fc) {
+        List<WurstType> result = new ArrayList<>();
+        for (Expr arg : fc.getArgs()) {
+            result.add(arg.attrTyp());
+        }
+        return result;
+    }
+
+
+}

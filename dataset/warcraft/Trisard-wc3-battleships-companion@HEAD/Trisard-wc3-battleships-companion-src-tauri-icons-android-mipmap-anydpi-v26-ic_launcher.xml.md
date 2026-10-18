@@ -1,0 +1,12 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Trisard/wc3-battleships-companion"
+source_path: "src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml"
+ref: HEAD
+---
+
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+  <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+  <background android:drawable="@color/ic_launcher_background"/>
+</adaptive-icon>

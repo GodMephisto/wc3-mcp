@@ -1,0 +1,34 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/annouwn/HiveWE"
+source_path: "src/object_editor/model_view.h"
+ref: HEAD
+---
+
+#pragma once
+
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+#include <QComboBox>
+#include <QLineEdit>
+#include <QPushButton>
+
+class ModelView : public QWidget {
+	Q_OBJECT
+
+	QLineEdit* search = new QLineEdit;
+	QLineEdit* finalPath = new QLineEdit;
+	QPushButton* open_in_model_editor = new QPushButton;
+	QComboBox* preview_animation = new QComboBox;
+
+public:
+	ModelView(QWidget* parent = nullptr);
+
+	QString current_model_path();
+	void set_current_model_path(const QString& path);
+
+signals:
+	void doubleClicked(const fs::path& path);
+};

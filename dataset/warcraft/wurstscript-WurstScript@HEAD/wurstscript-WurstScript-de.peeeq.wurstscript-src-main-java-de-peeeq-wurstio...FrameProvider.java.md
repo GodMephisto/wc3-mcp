@@ -1,0 +1,45 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/jassinterpreter/providers/FrameProvider.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio.jassinterpreter.providers;
+
+import de.peeeq.wurstscript.intermediatelang.ILconstInt;
+import de.peeeq.wurstscript.intermediatelang.ILconstReal;
+import de.peeeq.wurstscript.intermediatelang.ILconstString;
+import de.peeeq.wurstscript.intermediatelang.IlConstHandle;
+import de.peeeq.wurstscript.intermediatelang.interpreter.AbstractInterpreter;
+
+/**
+ * Some functions for frames, so that StdLib tests work.
+ */
+public class FrameProvider extends Provider {
+
+
+    public FrameProvider(AbstractInterpreter interpreter) {
+        super(interpreter);
+    }
+
+    public IlConstHandle BlzGetOriginFrame(IlConstHandle frameType, ILconstInt index) {
+        return new IlConstHandle("framehandle", new FrameHandle());
+    }
+
+    public IlConstHandle BlzCreateFrameByType(ILconstString typeName, ILconstString name, IlConstHandle owner, ILconstString inherits, ILconstInt createContext) {
+        return new IlConstHandle("framehandle", new FrameHandle());
+    }
+
+    public void BlzFrameSetSize(IlConstHandle frame, ILconstReal width, ILconstReal height) {
+    }
+
+    static class FrameHandle {
+    }
+
+
+    public IlConstHandle BlzGetFrameByName(ILconstString name, ILconstInt createContext) {
+        return new IlConstHandle("framehandle", new FrameHandle());
+    }
+
+}

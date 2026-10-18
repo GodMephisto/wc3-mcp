@@ -1,0 +1,74 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/mbroemme/libmpq"
+source_path: "bindings/python/pyproject.toml"
+ref: HEAD
+---
+
+[build-system]
+requires = ["setuptools>=77", "wheel", "packaging"]
+build-backend = "_build_backend"
+backend-path = ["."]
+
+[project]
+name = "libmpq"
+version = "0.8.1"
+description = "Python ctypes bindings for libmpq"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "LGPL-2.1-or-later"
+license-files = ["COPYING", "COPYING.LESSER"]
+authors = [{ name = "Maik Broemme", email = "mbroemme@libmpq.org" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+]
+
+[tool.setuptools]
+py-modules = ["mpq"]
+packages = ["mpq_libs"]
+
+[tool.setuptools.package-data]
+mpq_libs = ["*.so", "*.dylib", "*.dll"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.cibuildwheel]
+archs = ["native"]
+test-requires = ["pytest"]
+test-command = "LIBMPQ_EXPECT_BUNDLED=1 python -m pytest {package}/tests"
+
+[tool.cibuildwheel.windows]
+before-build = "python -m pip install delvewheel"
+repair-wheel-command = 'python -m delvewheel repair --analyze-existing --custom-patch --add-path "%LIBMPQ_RUNTIME%" -w {dest_dir} {wheel}'
+test-command = "set LIBMPQ_EXPECT_BUNDLED=1&& python -m pytest {package}/tests"
+
+[[tool.cibuildwheel.overrides]]
+select = "*-manylinux_x86_64"
+manylinux-x86_64-image = "manylinux2014"
+before-all = "yum install -y bzip2-devel xz-devel zlib-devel && auditwheel --version"
+repair-wheel-command = "auditwheel repair --plat manylinux_2_17_x86_64 --only-plat -w {dest_dir} {wheel} && auditwheel show {dest_dir}/*.whl"
+
+[[tool.cibuildwheel.overrides]]
+select = "*-manylinux_aarch64"
+manylinux-aarch64-image = "manylinux2014"
+before-all = "yum install -y bzip2-devel xz-devel zlib-devel && auditwheel --version"
+repair-wheel-command = "auditwheel repair --plat manylinux_2_17_aarch64 --only-plat -w {dest_dir} {wheel} && auditwheel show {dest_dir}/*.whl"
+
+[[tool.cibuildwheel.overrides]]
+select = "*-musllinux_x86_64"
+musllinux-x86_64-image = "musllinux_1_2"
+before-all = "apk add --no-cache bzip2-dev xz-dev zlib-dev && auditwheel --version"
+repair-wheel-command = "auditwheel repair --plat musllinux_1_2_x86_64 --only-plat -w {dest_dir} {wheel} && auditwheel show {dest_dir}/*.whl"
+
+[[tool.cibuildwheel.overrides]]
+select = "*-musllinux_aarch64"
+musllinux-aarch64-image = "musllinux_1_2"
+before-all = "apk add --no-cache bzip2-dev xz-dev zlib-dev && auditwheel --version"
+repair-wheel-command = "auditwheel repair --plat musllinux_1_2_aarch64 --only-plat -w {dest_dir} {wheel} && auditwheel show {dest_dir}/*.whl"

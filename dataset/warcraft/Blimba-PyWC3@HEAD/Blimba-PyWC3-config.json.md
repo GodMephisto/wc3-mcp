@@ -1,0 +1,26 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Blimba/PyWC3"
+source_path: "config.json"
+ref: HEAD
+---
+
+{
+    "WAR3_EXE": "E:\\Games\\Warcraft III\\_retail_\\x86_64\\Warcraft III.exe",
+    "WE_EXE": "E:\\Games\\Warcraft III\\_retail_\\x86_64\\World Editor.exe",
+    "WINDOWMODE": "windowed",
+
+    "MPQ_EXE": "mpqeditor\\mpqeditor.exe",
+    "SAVE_AS_MPQ": false,
+
+    "MAP_FOLDER": "maps",
+    "DIST_FOLDER": "dist",
+    "TEMP_FOLDER": "temp",
+    "JASS_FOLDER": "jass",
+
+    "PYTHON_SOURCE_FOLDER": "pysrc",
+    "DEF_SUBFOLDER": "df",
+
+    "READ_DOO": true,
+    "SHOW_AST": false
+}

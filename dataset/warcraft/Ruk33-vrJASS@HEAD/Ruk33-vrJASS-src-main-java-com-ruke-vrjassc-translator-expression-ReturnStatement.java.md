@@ -1,0 +1,43 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Ruk33/vrJASS"
+source_path: "src/main/java/com/ruke/vrjassc/translator/expression/ReturnStatement.java"
+ref: HEAD
+---
+
+package com.ruke.vrjassc.translator.expression;
+
+import com.ruke.vrjassc.vrjassc.symbol.Symbol;
+
+public class ReturnStatement extends Statement {
+
+	protected Expression value;
+	
+	public ReturnStatement(Expression value) {
+		this.value = value;
+		
+		if (this.value != null) {
+			this.value.setParent(this);
+		}
+	}
+
+	public Expression getValue() {
+		return this.value;
+	}
+	
+	@Override
+	public String translate() {
+		if (this.value != null) {
+			return "return " + this.value.translate();
+		}
+		
+		return "return";
+	}
+	
+	@Override
+	public Symbol getSymbol() {
+		if (this.value != null) return this.value.getSymbol();
+		return null;
+	}
+	
+}

@@ -1,0 +1,117 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Info/CampaignInfo.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Info
+{
+    public sealed partial class CampaignInfo
+    {
+        internal CampaignInfo(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            FormatVersion = reader.ReadInt32<CampaignInfoFormatVersion>();
+            CampaignVersion = reader.ReadInt32();
+            EditorVersion = reader.ReadInt32();
+            CampaignName = reader.ReadChars();
+            CampaignDifficulty = reader.ReadChars();
+            CampaignAuthor = reader.ReadChars();
+            CampaignDescription = reader.ReadChars();
+            CampaignFlags = reader.ReadInt32<CampaignFlags>();
+            CampaignBackgroundNumber = reader.ReadInt32();
+            BackgroundScreenPath = reader.ReadChars();
+            MinimapPath = reader.ReadChars();
+            AmbientSoundNumber = reader.ReadInt32();
+            AmbientSoundPath = reader.ReadChars();
+            FogStyle = reader.ReadInt32<FogStyle>();
+            FogStartZ = reader.ReadSingle();
+            FogEndZ = reader.ReadSingle();
+            FogDensity = reader.ReadSingle();
+            FogColor = reader.ReadColorBgra();
+            Race = reader.ReadInt32<CampaignRace>();
+
+            if (FormatVersion >= CampaignInfoFormatVersion.v3)
+            {
+                FogHeightStart = reader.ReadSingle();
+                FogHeightEnd = reader.ReadSingle();
+                FogLinearStart = reader.ReadSingle();
+                FogLinearEnd = reader.ReadSingle();
+                FogMaxOpacity = reader.ReadSingle();
+                FogDrawFogOverSky = reader.ReadInt32();
+            }
+
+            if (FormatVersion >= CampaignInfoFormatVersion.v2)
+            {
+                BackgroundVersion = reader.ReadInt32<CampaignBackgroundVersion>();
+            }
+
+            nint mapCount = reader.ReadInt32();
+            for (nint i = 0; i < mapCount; i++)
+            {
+                MapButtons.Add(reader.ReadCampaignMapButton(FormatVersion));
+            }
+
+            nint mapOrderCount = reader.ReadInt32();
+            for (nint i = 0; i < mapOrderCount; i++)
+            {
+                Maps.Add(reader.ReadCampaignMap(FormatVersion));
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write((int)FormatVersion);
+            writer.Write(CampaignVersion);
+            writer.Write(EditorVersion);
+            writer.WriteString(CampaignName);
+            writer.WriteString(CampaignDifficulty);
+            writer.WriteString(CampaignAuthor);
+            writer.WriteString(CampaignDescription);
+            writer.Write((int)CampaignFlags);
+            writer.Write(CampaignBackgroundNumber);
+            writer.WriteString(BackgroundScreenPath);
+            writer.WriteString(MinimapPath);
+            writer.Write(AmbientSoundNumber);
+            writer.WriteString(AmbientSoundPath);
+            writer.Write((int)FogStyle);
+            writer.Write(FogStartZ);
+            writer.Write(FogEndZ);
+            writer.Write(FogDensity);
+            writer.Write(FogColor.ToBgra());
+            writer.Write((int)Race);
+
+            if (FormatVersion >= CampaignInfoFormatVersion.v3)
+            {
+                writer.Write(FogHeightStart);
+                writer.Write(FogHeightEnd);
+                writer.Write(FogLinearStart);
+                writer.Write(FogLinearEnd);
+                writer.Write(FogMaxOpacity);
+                writer.Write(FogDrawFogOverSky);
+            }
+
+            if (FormatVersion >= CampaignInfoFormatVersion.v2)
+            {
+                writer.Write((int)BackgroundVersion);
+            }
+
+            writer.Write(MapButtons.Count);
+            foreach (var mapButton in MapButtons)
+            {
+                writer.Write(mapButton, FormatVersion);
+            }
+
+            writer.Write(Maps.Count);
+            foreach (var map in Maps)
+            {
+                writer.Write(map, FormatVersion);
+            }
+        }
+    }
+}

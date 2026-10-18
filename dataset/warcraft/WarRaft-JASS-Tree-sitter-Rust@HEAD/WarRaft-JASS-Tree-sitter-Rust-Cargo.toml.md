@@ -1,0 +1,58 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WarRaft/JASS-Tree-sitter-Rust"
+source_path: "Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "JASS-Tree-sitter-Rust"
+version = "0.1.0"
+authors = ["nazarpunk <nazarpunk@gmail.com>"]
+repository = "https://github.com/WarRaft/JASS-Tree-sitter-rust"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.8.8", features = ["ws"] }
+futures-util = "0.3.32"
+base64 = "0.22.1"
+blp = { path = "./../blp-rs" }
+tree-sitter = "0.26.8"
+tree-sitter-bni = { path = "./../tree-sitter-bni" }
+tree-sitter-jass = { path = "./../tree-sitter-jass" }
+tree-sitter-as = { path = "./../tree-sitter-as" }
+tree-sitter-wts = { path = "./../tree-sitter-wts" }
+tree-sitter-slk = { path = "./../tree-sitter-slk" }
+storm-rs = { path = "./../storm-rs" }
+strum = "0.28.0"
+strum_macros = "0.28.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+serde_repr = "0.1.20"
+tokio = { version = "1.51.1", features = ["full"] }
+env_logger = "0.11.10"
+image = "0.25.10"
+lapce-xi-rope = "0.4.0"
+log = "0.4.29"
+url = { version = "2.5.8", features = ["serde"] }
+once_cell = "1.21.4"
+num_enum = "0.7.6"
+async-trait = "0.1.89"
+bitcode = { version = "0.6.9", features = ["serde"] }
+dashmap = "7.0.0-rc2"
+dirs = "6.0.0"
+petgraph = "0.8.3"
+reqwest = { version = "0.13.2", default-features = false, features = ["rustls", "blocking", "json"] }
+redb = "4.0.0"
+sha2 = "0.11.0"
+tokio-util = "0.7.18"
+tokio-stream = "0.1.18"
+tower-http = { version = "0.6.6", features = ["cors"] }
+jpeg-decoder = "0.3.2"
+
+[build-dependencies]
+serde_json = "1.0.149"
+
+[dev-dependencies]
+jpeg-decoder = "0.3.2"
+

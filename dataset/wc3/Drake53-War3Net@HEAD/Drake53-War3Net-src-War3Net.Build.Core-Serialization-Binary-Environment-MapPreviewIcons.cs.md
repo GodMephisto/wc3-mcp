@@ -1,0 +1,39 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Environment/MapPreviewIcons.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Environment
+{
+    public sealed partial class MapPreviewIcons
+    {
+        internal MapPreviewIcons(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            FormatVersion = reader.ReadInt32<MapPreviewIconsFormatVersion>();
+
+            nint iconCount = reader.ReadInt32();
+            for (nint i = 0; i < iconCount; i++)
+            {
+                Icons.Add(reader.ReadPreviewIcon(FormatVersion));
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write((int)FormatVersion);
+
+            writer.Write(Icons.Count);
+            foreach (var icon in Icons)
+            {
+                writer.Write(icon, FormatVersion);
+            }
+        }
+    }
+}

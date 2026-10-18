@@ -1,0 +1,33 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/Directory.Build.targets"
+ref: HEAD
+---
+
+<Project>
+  <Target Name="SetProjectVersionsFromCentralPackageManagement" Condition="'$(ManagePackageVersionsCentrally)' == 'true'" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+      <ThisProjectPackageVersion Include="@(PackageVersion)" Condition="'%(PackageVersion.Identity)' == $(PackageId)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <PackageVersion>%(ThisProjectPackageVersion.Version)</PackageVersion>
+    </PropertyGroup>
+    <GetAssemblyVersion Condition="'$(AssemblyVersion)' == '' And '$(PackageVersion)' != '' And '$(GenerateAssemblyInfo)' != 'false'" NuGetVersion="$(PackageVersion)">
+      <Output TaskParameter="AssemblyVersion" PropertyName="AssemblyVersion" />
+    </GetAssemblyVersion>
+    <PropertyGroup Condition="'$(GenerateAssemblyInfo)' != 'false'">
+      <FileVersion Condition="'$(FileVersion)' == ''">$(AssemblyVersion)</FileVersion>
+      <InformationalVersion Condition="'$(InformationalVersion)' == ''">$(PackageVersion)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="SetPackageVersionFromCentralPackageManagement" Condition="'$(ManagePackageVersionsCentrally)' == 'true'" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <ThisProjectPackageVersion Include="@(PackageVersion)" Condition="'%(PackageVersion.Identity)' == $(PackageId)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <PackageVersion>%(ThisProjectPackageVersion.Version)</PackageVersion>
+    </PropertyGroup>
+  </Target>
+</Project>

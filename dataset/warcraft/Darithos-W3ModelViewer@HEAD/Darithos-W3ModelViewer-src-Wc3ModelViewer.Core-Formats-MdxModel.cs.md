@@ -1,0 +1,778 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Darithos/W3ModelViewer"
+source_path: "src/Wc3ModelViewer.Core/Formats/MdxModel.cs"
+ref: HEAD
+---
+
+using System.Numerics;
+
+namespace Wc3ModelViewer.Core.Formats;
+
+/// <summary>How a keyframe track interpolates between keys.</summary>
+public enum MdxInterpolation
+{
+    None = 0,
+    Linear = 1,
+    Hermite = 2,
+    Bezier = 3,
+}
+
+/// <summary>MDX layer filter mode — how the layer composites against what is behind it.</summary>
+public enum MdxFilterMode
+{
+    None = 0,          // opaque
+    Transparent = 1,   // alpha test (cutout)
+    Blend = 2,
+    Additive = 3,
+    AddAlpha = 4,
+    Modulate = 5,
+    Modulate2x = 6,
+}
+
+/// <summary>Shading flag bits on an MDX layer.</summary>
+[Flags]
+public enum MdxShadingFlags
+{
+    None = 0,
+    Unshaded = 0x1,
+    SphereEnvironmentMap = 0x2,
+    WrapWidth = 0x4,
+    WrapHeight = 0x8,
+    TwoSided = 0x10,
+    Unfogged = 0x20,
+    NoDepthTest = 0x40,
+    NoDepthSet = 0x80,
+    /// <summary>
+    /// Reforged's <c>Unlit</c> (the name mdx-m3-viewer and the MDL keyword use; older notes here
+    /// called it NoFallback). Blizzard's HD art puts it on walk planes, sky spheres, portrait
+    /// backdrops and glows alike, so it does not by itself mean a geoset is hidden.
+    /// </summary>
+    Unlit = 0x100,
+}
+
+/// <summary>Node flag bits shared by every object in the MDX hierarchy.</summary>
+[Flags]
+public enum MdxNodeFlags
+{
+    None = 0,
+    DontInheritTranslation = 0x1,
+    DontInheritScaling = 0x2,
+    DontInheritRotation = 0x4,
+    Billboarded = 0x8,
+    BillboardLockX = 0x10,
+    BillboardLockY = 0x20,
+    BillboardLockZ = 0x40,
+    CameraAnchored = 0x80,
+    Bone = 0x100,
+    Light = 0x200,
+    EventObject = 0x400,
+    Attachment = 0x800,
+    ParticleEmitter = 0x1000,
+    CollisionShape = 0x2000,
+    RibbonEmitter = 0x4000,
+
+    // Flags from 0x8000 up are PRE2-only and change what the emitter does rather than what the
+    // node is. The two low ones are overloaded — they mean something else entirely on a PREM.
+    ParticleUnshaded = 0x8000,
+    ParticleSortFarZ = 0x10000,
+    LineEmitter = 0x20000,
+    ParticleUnfogged = 0x40000,
+    ParticleModelSpace = 0x80000,
+    ParticleInheritScale = 0x100000,
+}
+
+/// <summary>The Reforged HD texture slots, as bound by an HD layer's texture-slot table.</summary>
+public enum MdxTextureSlot
+{
+    Diffuse = 0,
+    Normal = 1,
+    Orm = 2,          // R = occlusion, G = roughness, B = metallic
+    Emissive = 3,
+    TeamColor = 4,
+    EnvironmentMap = 5,
+}
+
+/// <summary>
+/// One animated property. Times are milliseconds on the model's single global timeline; a sequence
+/// is just the window <c>[IntervalStart, IntervalEnd]</c> of that timeline.
+/// </summary>
+/// <typeparam name="T">float, Vector3 or Quaternion.</typeparam>
+public sealed class MdxTrack<T>
+{
+    public required string Tag { get; init; }
+    public MdxInterpolation Interpolation { get; init; }
+
+    /// <summary>Index into <see cref="MdxModel.GlobalSequences"/>, or -1 when driven by the sequence timeline.</summary>
+    public int GlobalSequenceId { get; init; } = -1;
+
+    public required int[] Times { get; init; }
+    public required T[] Values { get; init; }
+
+    /// <summary>Tangents, only present when <see cref="Interpolation"/> is Hermite or Bezier.</summary>
+    public T[]? InTangents { get; init; }
+    public T[]? OutTangents { get; init; }
+
+    public int Count => Times.Length;
+    public bool IsEmpty => Times.Length == 0;
+}
+
+/// <summary>A named animation: a window on the model's global millisecond timeline.</summary>
+public sealed class MdxSequence
+{
+    public required string Name { get; init; }
+    public int IntervalStart { get; init; }
+    public int IntervalEnd { get; init; }
+    public float MoveSpeed { get; init; }
+    public uint Flags { get; init; }
+    public float Rarity { get; init; }
+    public uint SyncPoint { get; init; }
+    public float BoundsRadius { get; init; }
+    public Vector3 Min { get; init; }
+    public Vector3 Max { get; init; }
+
+    /// <summary>Bit 0 of <see cref="Flags"/>: the animation plays once instead of looping.</summary>
+    public bool NonLooping => (Flags & 1) != 0;
+
+    public int DurationMs => Math.Max(IntervalEnd - IntervalStart, 0);
+
+    public override string ToString() => $"{Name} [{IntervalStart}-{IntervalEnd}ms]";
+}
+
+/// <summary>A texture reference. Either a file path, or a replaceable-texture slot id.</summary>
+public sealed class MdxTexture
+{
+    public uint ReplaceableId { get; init; }
+    public required string FileName { get; init; }
+    public uint Flags { get; init; }
+
+    /// <summary>Team colour and team glow are supplied by the engine, not by a file.</summary>
+    public bool IsTeamColor => ReplaceableId == 1;
+    public bool IsTeamGlow => ReplaceableId == 2;
+
+    /// <summary>
+    /// Carries a replaceable ID. Tileset-bound IDs (cliff, trees) are given a default file name by
+    /// <see cref="Wc3ReplaceableTextures"/> at load, so a replaceable texture may still name a file
+    /// — test <see cref="IsTeamColor"/>/<see cref="IsTeamGlow"/> for the engine-generated ones.
+    /// </summary>
+    public bool IsReplaceable => ReplaceableId != 0;
+
+    public override string ToString() => IsReplaceable ? $"<replaceable {ReplaceableId}>" : FileName;
+}
+
+/// <summary>One layer of a material.</summary>
+public sealed class MdxLayer
+{
+    public MdxFilterMode FilterMode { get; init; }
+    public MdxShadingFlags ShadingFlags { get; init; }
+
+    /// <summary>TEXS index of the layer's primary (diffuse) texture.</summary>
+    public int TextureId { get; init; }
+    public int TextureAnimationId { get; init; } = -1;
+    public int CoordId { get; init; }
+
+    public float Alpha { get; init; } = 1f;
+    public float EmissiveMultiplier { get; init; }
+    public Vector3 FresnelColor { get; init; }
+    public float FresnelMultiplier { get; init; }
+    public float TeamColorMultiplier { get; init; }
+
+    /// <summary>
+    /// Texture bindings, slot → TEXS index. Build 2.0.4 writes this table on <i>every</i> layer:
+    /// HD layers bind all six PBR slots, SD layers bind only <see cref="MdxTextureSlot.Diffuse"/>.
+    /// See <c>docs/mdx-format-verified.md</c> §4.
+    /// </summary>
+    public IReadOnlyDictionary<MdxTextureSlot, int> TextureSlots { get; init; }
+        = new Dictionary<MdxTextureSlot, int>();
+
+    public MdxTrack<float>? AlphaTrack { get; init; }
+    public MdxTrack<float>? EmissiveTrack { get; init; }
+    /// <summary>KMTF flipbook selecting the diffuse texture over time, or null when static.</summary>
+    public MdxTrack<float>? TextureIdTrack { get; init; }
+
+    /// <summary>The matching flipbook for the normal map, when the layer animates one.</summary>
+    public MdxTrack<float>? NormalIdTrack { get; init; }
+
+    /// <summary>True when the layer binds the PBR maps, i.e. it is a Reforged HD layer.</summary>
+    public bool IsPbr => TextureSlots.ContainsKey(MdxTextureSlot.Normal)
+                      || TextureSlots.ContainsKey(MdxTextureSlot.Orm);
+
+    public int Slot(MdxTextureSlot slot) => TextureSlots.TryGetValue(slot, out int id) ? id : -1;
+
+    /// <summary>
+    /// The texture to sample for base colour, preferring the explicit diffuse binding.
+    /// </summary>
+    /// <remarks>
+    /// A <c>KMTF</c> track wins over both. Reforged animates water, waterfalls and similar surfaces
+    /// as a flipbook — the fountains carry fifty <c>War3_FountainWater_Diff_00nn</c> frames — and
+    /// selects the frame through that track while leaving the layer's static
+    /// <see cref="TextureId"/> at 0. Ignoring the track therefore does not just freeze the
+    /// animation, it samples whatever happens to be texture 0, which on every fountain is the rock
+    /// diffuse. See <see cref="TextureIdAt"/> for picking a specific frame.
+    /// </remarks>
+    public int DiffuseTextureId => TextureIdTrack is { Count: > 0 } t ? (int)t.Values[0]
+                                 : Slot(MdxTextureSlot.Diffuse) is var d && d >= 0 ? d
+                                 : TextureId;
+
+    /// <summary>
+    /// The flipbook frame this layer shows at <paramref name="timeMs"/>, or
+    /// <see cref="DiffuseTextureId"/> when the layer is not animated. <c>KMTF</c> keys are stepped,
+    /// never interpolated — a texture index between two frames is meaningless.
+    /// </summary>
+    public int TextureIdAt(int timeMs)
+    {
+        if (TextureIdTrack is not { Count: > 0 } t) return DiffuseTextureId;
+        int k = 0;
+        while (k + 1 < t.Count && t.Times[k + 1] <= timeMs) k++;
+        return (int)t.Values[k];
+    }
+
+    /// <summary>Distinct texture ids this layer cycles through, in key order. Empty when static.</summary>
+    public IEnumerable<int> FlipbookTextureIds =>
+        TextureIdTrack is { Count: > 0 } t ? t.Values.Select(v => (int)v).Distinct() : [];
+}
+
+public sealed class MdxMaterial
+{
+    public int PriorityPlane { get; init; }
+    public uint Flags { get; init; }
+    public required List<MdxLayer> Layers { get; init; }
+}
+
+/// <summary>A sub-mesh. Carries either classic matrix-group skinning or Reforged per-vertex skinning.</summary>
+public sealed class MdxGeoset
+{
+    public int Index { get; init; }
+
+    public required Vector3[] Positions { get; init; }
+    public required Vector3[] Normals { get; init; }
+    public required int[] Indices { get; init; }
+
+    /// <summary>UV layers; layer 0 is the one used for rendering. V is stored top-down (D3D convention).</summary>
+    public required List<Vector2[]> UvLayers { get; init; }
+
+    // ---- classic skinning: vertex -> group -> a set of equally-weighted bones ----
+    public byte[] VertexGroups { get; init; } = [];
+    public int[] MatrixGroupSizes { get; init; } = [];
+    public int[] MatrixIndices { get; init; } = [];
+
+    // ---- Reforged skinning: 4 weighted bones per vertex ----
+    public int[] SkinBoneIndices { get; init; } = [];    // 4 per vertex, index into the node list
+    public byte[] SkinBoneWeights { get; init; } = [];   // 4 per vertex, 0..255
+    public Vector4[] Tangents { get; init; } = [];
+
+    public int MaterialId { get; init; }
+    public int SectionGroupId { get; init; }
+    public int SectionGroupType { get; init; }
+    public int LodId { get; init; }
+    public string LodName { get; init; } = "";
+
+    public float BoundsRadius { get; init; }
+    public Vector3 Min { get; init; }
+    public Vector3 Max { get; init; }
+
+    public int VertexCount => Positions.Length;
+    public int TriangleCount => Indices.Length / 3;
+
+    /// <summary>True when the geoset carries a SKIN chunk, i.e. Reforged per-vertex weights.</summary>
+    public bool HasSkin => SkinBoneIndices.Length >= Positions.Length * 4;
+
+    public Vector2[] Uvs => UvLayers.Count > 0 ? UvLayers[0] : [];
+
+    /// <summary>
+    /// LOD 0 is the unoptimised mesh; Reforged units also ship LOD 1, which the guide recommends
+    /// for anything appearing in numbers.
+    /// </summary>
+    public override string ToString() => $"geoset {Index} ({VertexCount} verts, {LodName})";
+}
+
+/// <summary>Per-geoset animated alpha and colour — how Warcraft III hides and fades body parts.</summary>
+public sealed class MdxGeosetAnim
+{
+    public float Alpha { get; init; } = 1f;
+    public uint Flags { get; init; }
+    public Vector3 Color { get; init; } = Vector3.One;
+    public int GeosetId { get; init; } = -1;
+    public MdxTrack<float>? AlphaTrack { get; init; }
+    public MdxTrack<Vector3>? ColorTrack { get; init; }
+}
+
+/// <summary>What kind of thing a node is. Determines which extra fields followed it in the file.</summary>
+public enum MdxNodeKind { Bone, Helper, Attachment, Light, ParticleEmitter, ParticleEmitter2, RibbonEmitter, Event, CollisionShape, Camera, PopcornEmitter }
+
+/// <summary>
+/// A node in the model hierarchy. Bones, helpers, attachments, emitters and events all share this
+/// header, and <see cref="ObjectId"/> is the index into <see cref="MdxModel.Pivots"/>.
+/// </summary>
+public sealed class MdxNode
+{
+    public required string Name { get; init; }
+    public int ObjectId { get; init; } = -1;
+    public int ParentId { get; init; } = -1;
+    public MdxNodeFlags Flags { get; init; }
+    public MdxNodeKind Kind { get; init; }
+
+    public MdxTrack<Vector3>? Translation { get; init; }
+    public MdxTrack<Quaternion>? Rotation { get; init; }
+    public MdxTrack<Vector3>? Scale { get; init; }
+
+    // Bone-only.
+    public int GeosetId { get; init; } = -1;
+    public int GeosetAnimId { get; init; } = -1;
+
+    // Attachment-only.
+    public int AttachmentId { get; init; } = -1;
+    public string AttachmentPath { get; init; } = "";
+
+    /// <summary>
+    /// The node's rest position, taken from PIVT by <see cref="ObjectId"/>. Warcraft III bones have
+    /// no rest rotation or scale — the pivot is a pure translation and every animation key is an
+    /// offset from it. Resolved by the reader.
+    /// </summary>
+    public Vector3 Pivot { get; set; }
+
+    public bool IsBillboarded => (Flags & MdxNodeFlags.Billboarded) != 0;
+    public bool Animated => Translation is { Count: > 0 } || Rotation is { Count: > 0 } || Scale is { Count: > 0 };
+
+    public override string ToString() => $"{Kind} '{Name}' (id {ObjectId}, parent {ParentId})";
+}
+
+/// <summary>How a particle's texture is combined with what is behind it.</summary>
+public enum MdxParticleBlend { Blend = 0, Add = 1, Modulate = 2, Modulate2X = 3, AlphaKey = 4 }
+
+/// <summary>Head sprites, a stretched tail, or both.</summary>
+public enum MdxParticleType { Head = 0, Tail = 1, Both = 2 }
+
+/// <summary>
+/// How a particle's card is oriented. Warcraft III's own emitters only ever face the camera; the
+/// other two exist for PopcornFX layers, which draw beams along an axis and discs on the ground.
+/// </summary>
+public enum MdxParticleOrientation
+{
+    /// <summary>A square card facing the camera — every PRE2 head particle.</summary>
+    CameraFacing = 0,
+    /// <summary>A card stretched from where the particle was born to where it is now, facing the camera: a beam.</summary>
+    Ray = 1,
+    /// <summary>A card lying flat in the emitter's XY plane: a ground disc or rune.</summary>
+    Ground = 2,
+}
+
+public enum MdxLightType { Omni = 0, Directional = 1, Ambient = 2 }
+
+/// <summary>
+/// Fields shared by everything that hangs off a node — the emitters and lights all reference the
+/// node that positions them rather than duplicating its transform.
+/// </summary>
+public abstract class MdxNodeAttachedObject
+{
+    /// <summary>Index into <see cref="MdxModel.Nodes"/> of the node carrying this object's transform.</summary>
+    public int NodeIndex { get; init; } = -1;
+
+    /// <summary>Emitters are switched on and off per sequence through this track.</summary>
+    public MdxTrack<float>? VisibilityTrack { get; init; }
+}
+
+/// <summary>
+/// A PRE2 particle emitter — the one Warcraft III actually uses (PREM is deprecated).
+/// </summary>
+/// <remarks>
+/// Build 2.0.4 ships one 171-byte form of this struct in both the SD and HD trees — not the two
+/// variants the published spec describes. <see cref="Longitude"/> is only ever set by the legacy
+/// PREM path. See <c>MdxReader.ReadPre2</c> for how that was established from real bytes.
+/// </remarks>
+public sealed class MdxParticleEmitter2 : MdxNodeAttachedObject
+{
+    public required string Name { get; init; }
+
+    public float Speed { get; init; }
+    public float Variation { get; init; }
+    public float Latitude { get; init; }
+    public float Longitude { get; init; }
+    public float Gravity { get; init; }
+    public float Life { get; init; }
+    public float EmissionRate { get; init; }
+    public float Length { get; init; }
+    public float Width { get; init; }
+
+    public MdxParticleBlend Blend { get; init; }
+    public int Rows { get; init; } = 1;
+    public int Columns { get; init; } = 1;
+    public MdxParticleType ParticleType { get; init; }
+    public float TailLength { get; init; }
+    public float MiddleTime { get; init; }
+    /// <summary>
+    /// When the size ramp's middle falls, 0..1, where it differs from <see cref="MiddleTime"/>. A
+    /// PRE2 emitter has one middle for size, colour and alpha; a PopcornFX stand-in measures each
+    /// ramp's own, and StarCraft II keeps them apart. The fireball's trail wisps peak in alpha at
+    /// 0.2 of their life and shrink through 0.5 — on the colour's middle they were dots before
+    /// they were bright.
+    /// </summary>
+    public float? SizeMiddleTime { get; init; }
+
+    public Vector3 StartColor { get; init; } = Vector3.One;
+    public Vector3 MiddleColor { get; init; } = Vector3.One;
+    public Vector3 EndColor { get; init; } = Vector3.One;
+    public byte StartAlpha { get; init; } = 255;
+    public byte MiddleAlpha { get; init; } = 255;
+    public byte EndAlpha { get; init; } = 255;
+    public float StartScale { get; init; } = 1;
+    public float MiddleScale { get; init; } = 1;
+    public float EndScale { get; init; } = 1;
+
+    /// <summary>TEXS index, or -1. The particle sprite sheet.</summary>
+    public int TextureId { get; init; } = -1;
+
+    // Sprite-sheet cells a live particle walks through, indexed row-major across Rows x Columns.
+    public int HeadCellStart { get; init; }
+    public int HeadCellEnd { get; init; }
+    public int HeadCellRepeat { get; init; } = 1;
+    public int PriorityPlane { get; init; }
+    public int ReplaceableId { get; init; }
+    public bool Squirt { get; init; }
+
+    /// <summary>
+    /// The player's colour is this emitter's colour. A <c>PRE2</c> emitter says so with
+    /// <see cref="ReplaceableId"/> 1 or 2; a PopcornFX stand-in says so here, because its bake
+    /// declares nothing and only running the scripts reveals that they read
+    /// <c>__a_Game.TeamColor</c> — how Warcraft III colours an item's light beam.
+    /// </summary>
+    public bool TeamColoured { get; init; }
+
+    /// <summary>
+    /// How far past 1.0 this emitter's colour reaches, for a PopcornFX stand-in whose scripts write
+    /// HDR colour (Thunder Clap's sparks run to 10). The colour ramp is divided by it so it fits a
+    /// byte, and the export hands it back through the material's emissive HDR multiplier. 1 for
+    /// every PRE2 emitter.
+    /// </summary>
+    public float Intensity { get; init; } = 1f;
+
+    /// <summary>
+    /// A PopcornFX stand-in for a <em>ribbon</em> renderer: its particles are the points of one
+    /// continuous strip that a moving emitter draws behind it (a missile's flame trail). The viewer
+    /// draws its points as cards; the export writes a StarCraft II ribbon instead, since cards born
+    /// once per frame at missile speed read as a dotted line of separate sprites.
+    /// </summary>
+    public bool Ribbon { get; init; }
+
+    /// <summary>
+    /// Ribbons only: the speed its points carry away from the emitter, and the gravity pulling them
+    /// down, in StarCraft II units per second. Both are 0 for a pure trail, which draws only where
+    /// its bone has been. Blizzard's missile trails often set a small speed (1 on 302 of 585) so the
+    /// strip keeps extruding even while its emitter stands still.
+    /// </summary>
+    public float RibbonSpeed { get; init; }
+
+    /// <summary>
+    /// The SC2 <c>RIB_.ribbon_type</c> to write: 0 PlanarBillboarded, 1 Planar, 2 Cylinder,
+    /// 3 Star Shaped. 0 is what every export uses and what 509 of 610 Blizzard ribbons use; the
+    /// others exist so a test model can put them side by side.
+    /// </summary>
+    public int RibbonType { get; init; }
+
+    /// <summary>
+    /// The SC2 <c>RIB_.length</c> to write. We have always written 0; 97% of Blizzard's missile
+    /// ribbons write 1. Exposed so a test model can tell whether it does anything.
+    /// </summary>
+    public float RibbonLength { get; init; }
+    public float RibbonGravity { get; init; }
+
+    /// <summary>
+    /// The PopcornFX renderer this measured stand-in stands for. The export drops a stand-in whose
+    /// renderer an impostor bake has replaced, matched by identity rather than by name.
+    /// </summary>
+    public Popcorn.PkRendererDef? PopcornRenderer { get; init; }
+
+    /// <summary>
+    /// Export only: a sprite sheet rendered by the exporter itself — an impostor bake of a PopcornFX
+    /// effect, or a calibration card — written out in place of a texture looked up by
+    /// <see cref="TextureId"/>. Never set on emitters the viewer draws.
+    /// </summary>
+    public RgbaImage? BakedSprite { get; init; }
+
+    public MdxTrack<float>? SpeedTrack { get; init; }
+    public MdxTrack<float>? VariationTrack { get; init; }
+    public MdxTrack<float>? LatitudeTrack { get; init; }
+    public MdxTrack<float>? GravityTrack { get; init; }
+    public MdxTrack<float>? LifeTrack { get; init; }
+    public MdxTrack<float>? EmissionRateTrack { get; init; }
+    /// <summary>
+    /// Particles fired all at once when the value steps up from zero — StarCraft II's
+    /// <c>emit_count</c>, which has no Warcraft III form. Only PopcornFX stand-ins carry it, for a
+    /// measured burst; the viewer's own simulator ignores it, as the effect's scripts run there.
+    /// </summary>
+    public MdxTrack<float>? EmitCountTrack { get; init; }
+    public MdxTrack<float>? WidthTrack { get; init; }
+    public MdxTrack<float>? LengthTrack { get; init; }
+
+    /// <summary>Unshaded particles ignore scene lighting — the usual choice for glows and fire.</summary>
+    public bool Unshaded { get; init; }
+    public bool Unfogged { get; init; }
+    public bool ModelSpace { get; init; }
+    public bool LineEmitter { get; init; }
+
+    /// <summary>How the card is oriented. PRE2 emitters always face the camera.</summary>
+    public MdxParticleOrientation Orientation { get; init; }
+
+    /// <summary>
+    /// For a <see cref="MdxParticleOrientation.Ray"/> card: a fixed length in model units. The card
+    /// is then this long along the emission direction, centred on its spawn point, from the moment
+    /// it is born and never grows — a PopcornFX axis-aligned beam, which StarCraft II's fixed tail
+    /// also centres on the particle (confirmed in the SC2 editor). 0 means the ray is stretched
+    /// from its spawn point to wherever the moving particle is now.
+    /// </summary>
+    public float BeamLength { get; init; }
+
+    /// <summary>
+    /// Spawn the first particle the moment the emitter switches on instead of waiting for a full
+    /// particle's worth of rate to accrue. A PopcornFX layer that lives as long as the effect (a
+    /// hero glow) is one card renewed every ten seconds; without this it would first appear ten
+    /// seconds in. StarCraft II gets the same through the system's "simulate init" flag.
+    /// </summary>
+    public bool SpawnImmediately { get; init; }
+
+    /// <summary>
+    /// PopcornFX stand-ins only: where the particles are born relative to the node pivot, in model
+    /// units. A PRE2 emitter always emits at its node; a PopcornFX layer places its sprites anywhere
+    /// (Holy Light's rune floats 190 units up), so export gives such an emitter a bone of its own.
+    /// </summary>
+    public Vector3 SpawnOffset { get; init; }
+
+    /// <summary>PopcornFX stand-ins only: half extents of the box particles are born in, model units (0 = a point).</summary>
+    public Vector3 SpawnHalfExtents { get; init; }
+
+    /// <summary>PopcornFX stand-ins only: the direction particles travel, or a beam runs, in model space (unit).</summary>
+    public Vector3 EmitDirection { get; init; } = Vector3.UnitZ;
+
+    /// <summary>
+    /// PopcornFX stand-ins only: the particles circle the node's Z axis at this many radians per
+    /// second (counter-clockwise from above when positive), keeping their spawn offset as the radius.
+    /// A script orbit has no particle-system form; export gives such an emitter a spinning parent
+    /// bone and hosts the particles to it. 0 for everything else.
+    /// </summary>
+    public float OrbitAngularVelocity { get; init; }
+
+    /// <summary>
+    /// How many stand-ins share this orbit at even spacing (Unholy Aura's four runes). A looping
+    /// sequence can then end a whole number of <c>1/OrbitSymmetry</c> turns in, where the ring looks
+    /// the same, instead of jumping.
+    /// </summary>
+    public int OrbitSymmetry { get; init; } = 1;
+
+    /// <summary>
+    /// PopcornFX stand-ins only, for <see cref="MdxParticleOrientation.Ground"/> cards: the direction
+    /// the card faces, in model space, when it is not the node's Z (Unholy Aura's runes stand upright
+    /// facing outward). Export turns the emitter bone so its Z is this, with world up kept upward in
+    /// the card. Null means the card lies on the emitter's XY plane as usual.
+    /// </summary>
+    public Vector3? FaceDirection { get; init; }
+
+    /// <summary>
+    /// PopcornFX stand-ins only: the beam axis, travel direction or card facing stays put in model
+    /// space when the node turns — the layer's scripts write it without the effect transform, which
+    /// only moves where particles are born. An item's rarity beam stands straight up while the item
+    /// it hangs from tilts and sways. Export then hosts the emitter on a bone that follows the
+    /// node's position but not its rotation or scale.
+    /// </summary>
+    public bool WorldDirections { get; init; }
+
+    /// <summary>
+    /// Set when this emitter was synthesised from a PopcornFX layer rather than read from a PRE2
+    /// chunk — the exporter and the viewer report those separately, because they are approximations.
+    /// </summary>
+    public string? PopcornSource { get; init; }
+    public bool IsPopcorn => PopcornSource is not null;
+
+    /// <summary>The CORN emitter a PopcornFX stand-in was synthesised from; null for a PRE2 emitter.</summary>
+    public MdxPopcornEmitter? PopcornEmitter { get; init; }
+
+    public override string ToString() => $"{(IsPopcorn ? "CORN" : "PRE2")} '{Name}' ({Blend}, {EmissionRate:0.#}/s, life {Life:0.##}s)";
+}
+
+/// <summary>
+/// A CORN emitter — Reforged's PopcornFX hook. The chunk itself only names a <c>.pkfx</c> effect
+/// and says which sequences switch it on; the effect's content lives in the <c>.pkb</c> bake the
+/// archive ships beside the model, read by <see cref="PopcornBake"/>.
+/// </summary>
+public sealed class MdxPopcornEmitter : MdxNodeAttachedObject
+{
+    public required string Name { get; init; }
+
+    /// <summary>The <c>.pkfx</c> path as the model spells it, e.g. <c>Abilities/Spells/Human/HolyBolt/HolyBoltSpecialArt.pkfx</c>.</summary>
+    public required string EffectPath { get; init; }
+
+    /// <summary>
+    /// Comma-separated sequence gates, e.g. <c>Always=on, Death=off, Decay=off</c>. Blizzard's data
+    /// carries typos (<c>Alwyas=on</c>, <c>Always= On</c>), so consumers match loosely.
+    /// </summary>
+    public string PopcornFlags { get; init; } = "";
+
+    /// <summary>RGBA multiplied into every particle's colour. (1,1,1,1) is neutral.</summary>
+    public Vector4 ColorMultiplier { get; init; } = Vector4.One;
+
+    /// <summary>Team colour tint; alpha 0 (the default) means the effect is not team-coloured.</summary>
+    public Vector4 TeamColor { get; init; } = new(1, 1, 1, 0);
+
+    public MdxTrack<float>? AlphaTrack { get; init; }              // KPPA
+    public MdxTrack<Vector3>? ColorTrack { get; init; }            // KPPC
+    public MdxTrack<float>? EmissionRateTrack { get; init; }       // KPPE
+    public MdxTrack<float>? LifespanTrack { get; init; }           // KPPL
+    public MdxTrack<float>? SpeedTrack { get; init; }              // KPPS
+
+    /// <summary>The parsed bake, once something with archive access has resolved it. Null until then, or when the bake is missing.</summary>
+    public PopcornEffect? Effect { get; set; }
+
+    /// <summary>
+    /// The bake's compiled scripts, layer graph, samplers and renderers, which
+    /// <see cref="Popcorn.PkEffectInstance"/> runs to simulate the effect as PopcornFX would. Null when the
+    /// bake is missing or its scripts did not load.
+    /// </summary>
+    public Popcorn.PkEffectDef? Runtime { get; set; }
+
+    /// <summary>
+    /// What <see cref="PopcornApproximation.Attach"/> measured of each renderer in its headless
+    /// runs, kept so the exporter can decide which layers an impostor bake may replace without
+    /// running the scripts again. Empty until attached, or when the scripts did not load.
+    /// </summary>
+    public List<Popcorn.PkRendererStats> Stats { get; set; } = [];
+
+    /// <summary>Archive name the bake was read from, for diagnostics.</summary>
+    public string BakeName { get; set; } = "";
+
+    /// <summary>
+    /// The player-coloured glow every Reforged hero stands in. Recognised by its effect,
+    /// <c>SharedFX/Hero_Glow/Hero_Glow.pkfx</c>, because the emitter's own name varies: 97 of the 99
+    /// HD and DE heroes that carry it call it <c>Hero_Glow</c>, others <c>HeroGlow</c> or
+    /// <c>PKFX 1</c>. The weapon glows (<c>Weapon_Glow_*.pkfx</c>, some named <c>Hero_WeaponGlow</c>)
+    /// are separate effects and are not this. Classic heroes carry no glow in the model at all.
+    /// </summary>
+    public bool IsHeroGlow =>
+        Path.GetFileNameWithoutExtension(EffectPath.Replace('\\', '/')).Equals("Hero_Glow", StringComparison.OrdinalIgnoreCase);
+
+    public override string ToString() => $"CORN '{Name}' -> {EffectPath} [{PopcornFlags}]";
+}
+
+/// <summary>A RIBB ribbon emitter — a trailing strip of quads, used for weapon trails and banners.</summary>
+public sealed class MdxRibbonEmitter : MdxNodeAttachedObject
+{
+    public required string Name { get; init; }
+
+    public float HeightAbove { get; init; }
+    public float HeightBelow { get; init; }
+    public float Alpha { get; init; } = 1;
+    public Vector3 Color { get; init; } = Vector3.One;
+
+    /// <summary>Seconds an emitted edge survives. The client clamps this to a 0.25 s minimum.</summary>
+    public float EdgeLifetime { get; init; }
+    public int TextureSlot { get; init; }
+    public int EdgesPerSecond { get; init; } = 1;
+    public int Rows { get; init; } = 1;
+    public int Columns { get; init; } = 1;
+
+    /// <summary>MTLS index — unlike a particle emitter, a ribbon draws through a real material.</summary>
+    public int MaterialId { get; init; } = -1;
+    public float Gravity { get; init; }
+
+    public MdxTrack<float>? HeightAboveTrack { get; init; }
+    public MdxTrack<float>? HeightBelowTrack { get; init; }
+    public MdxTrack<float>? AlphaTrack { get; init; }
+    public MdxTrack<Vector3>? ColorTrack { get; init; }
+
+    public override string ToString() => $"RIBB '{Name}' (mat {MaterialId}, {EdgesPerSecond}/s, {EdgeLifetime:0.##}s)";
+}
+
+/// <summary>A LITE light source.</summary>
+public sealed class MdxLight : MdxNodeAttachedObject
+{
+    public required string Name { get; init; }
+
+    public MdxLightType LightType { get; init; }
+    public float AttenuationStart { get; init; }
+    public float AttenuationEnd { get; init; }
+    public Vector3 Color { get; init; } = Vector3.One;
+    public float Intensity { get; init; }
+    public Vector3 AmbientColor { get; init; } = Vector3.One;
+    public float AmbientIntensity { get; init; }
+
+    public MdxTrack<float>? AttenuationStartTrack { get; init; }
+    public MdxTrack<float>? AttenuationEndTrack { get; init; }
+    public MdxTrack<Vector3>? ColorTrack { get; init; }
+    public MdxTrack<float>? IntensityTrack { get; init; }
+
+    public override string ToString() => $"LITE '{Name}' ({LightType}, range {AttenuationEnd:0.#})";
+}
+
+/// <summary>A camera. Cameras are not nodes — they carry no objectId, parentId or pivot.</summary>
+public sealed class MdxCamera
+{
+    public required string Name { get; init; }
+    public Vector3 Position { get; init; }
+    public float FieldOfView { get; init; }
+    public float FarClip { get; init; }
+    public float NearClip { get; init; }
+    public Vector3 TargetPosition { get; init; }
+    public MdxTrack<Vector3>? TranslationTrack { get; init; }
+    public MdxTrack<Vector3>? TargetTranslationTrack { get; init; }
+    public MdxTrack<float>? RollTrack { get; init; }
+}
+
+/// <summary>A parsed Warcraft III model.</summary>
+public sealed class MdxModel
+{
+    public uint Version { get; set; }
+    public string Name { get; set; } = "";
+    public string AnimationFile { get; set; } = "";
+    public float BoundsRadius { get; set; }
+    public Vector3 Min { get; set; }
+    public Vector3 Max { get; set; }
+    public uint BlendTime { get; set; }
+
+    public List<MdxSequence> Sequences { get; } = [];
+    public List<uint> GlobalSequences { get; } = [];
+    public List<MdxMaterial> Materials { get; } = [];
+    public List<MdxTexture> Textures { get; } = [];
+    public List<MdxGeoset> Geosets { get; } = [];
+    public List<MdxGeosetAnim> GeosetAnims { get; } = [];
+    public List<MdxCamera> Cameras { get; } = [];
+    public List<Vector3> Pivots { get; } = [];
+
+    /// <summary>Every node, in file order. <see cref="MdxNode.ObjectId"/> indexes <see cref="Pivots"/>.</summary>
+    public List<MdxNode> Nodes { get; } = [];
+
+    // ---- effects. Each entry points back at the node in Nodes that positions it. ----
+
+    public List<MdxParticleEmitter2> ParticleEmitters { get; } = [];
+    public List<MdxRibbonEmitter> RibbonEmitters { get; } = [];
+    public List<MdxLight> Lights { get; } = [];
+
+    /// <summary>
+    /// Reforged PopcornFX emitters (CORN). A third of Warcraft III's effect models use these. The
+    /// referenced <c>.pkb</c> bakes ship in the archive; <c>PopcornApproximation.Attach</c> reads
+    /// them and appends one stand-in <see cref="MdxParticleEmitter2"/> per rendered layer to
+    /// <see cref="ParticleEmitters"/>, flagged through <see cref="MdxParticleEmitter2.PopcornSource"/>.
+    /// </summary>
+    public List<MdxPopcornEmitter> PopcornEmitters { get; } = [];
+
+    public int PopcornEmitterCount => PopcornEmitters.Count;
+
+    /// <summary>True when the model carries anything the effect pipeline cares about.</summary>
+    public bool HasEffects => ParticleEmitters.Count > 0 || RibbonEmitters.Count > 0
+                              || Lights.Count > 0 || PopcornEmitters.Count > 0;
+
+    /// <summary>Tags of chunks the reader skipped, for diagnostics.</summary>
+    public List<string> SkippedChunks { get; } = [];
+
+    /// <summary>
+    /// True when any geoset carries Reforged per-vertex skinning — the reliable way to tell HD from
+    /// SD, since both report VERS 1200. See <c>docs/mdx-format-verified.md</c> §2.
+    /// </summary>
+    public bool IsReforged => Geosets.Exists(g => g.HasSkin);
+
+    public IEnumerable<MdxNode> Bones => Nodes.Where(n => n.Kind == MdxNodeKind.Bone);
+    public IEnumerable<MdxNode> Attachments => Nodes.Where(n => n.Kind == MdxNodeKind.Attachment);
+
+    /// <summary>Distinct LOD levels present, ascending. LOD 0 is the highest detail.</summary>
+    public List<int> LodLevels => Geosets.Select(g => g.LodId).Distinct().Order().ToList();
+
+    public int TotalVertices => Geosets.Sum(g => g.VertexCount);
+    public int TotalTriangles => Geosets.Sum(g => g.TriangleCount);
+}

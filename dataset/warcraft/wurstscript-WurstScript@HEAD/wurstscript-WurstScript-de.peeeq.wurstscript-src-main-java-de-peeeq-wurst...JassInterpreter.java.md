@@ -1,0 +1,567 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/jassinterpreter/JassInterpreter.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio.jassinterpreter;
+
+import com.google.common.collect.Maps;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.WurstOperator;
+import de.peeeq.wurstscript.intermediatelang.*;
+import de.peeeq.wurstscript.intermediatelang.interpreter.AbstractInterpreter;
+import de.peeeq.wurstscript.intermediatelang.interpreter.TimerMockHandler;
+import de.peeeq.wurstscript.jassAst.*;
+import de.peeeq.wurstscript.jassIm.Element;
+import de.peeeq.wurstscript.jassIm.ImProg;
+import de.peeeq.wurstscript.jassinterpreter.ExitwhenException;
+import de.peeeq.wurstscript.jassinterpreter.ReturnException;
+import de.peeeq.wurstscript.utils.Utils;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public class JassInterpreter implements AbstractInterpreter {
+
+    private JassProg prog;
+    private static final ReturnException staticReturnException = new ReturnException(null);
+    private Map<String, ILconst> globalVarMap;
+    /** common.j and blizzard.j globals whose initialiser has not been evaluated yet. */
+    private final Map<String, JassInitializedVar> uninitializedBjGlobals = new HashMap<>();
+    private boolean trace = false;
+    private final Map<String, ExecutableJassFunction> functionCache = new HashMap<>();
+    private final TimerMockHandler timerMockHandler = new TimerMockHandler();
+    /** Names of the real globals, which convert an integer stored into them. */
+    private final Set<String> realGlobals = new HashSet<>();
+    /** Names of the real locals and parameters of each function. */
+    private final Map<JassFunction, Set<String>> realLocals = new IdentityHashMap<>();
+
+    public void loadProgram(JassProg prog) {
+        this.prog = prog;
+        globalVarMap = Maps.newLinkedHashMap();
+
+        List<JassVar> globals = prog.getGlobals();
+        // globals initialisieren
+        for (JassVar v : globals) {
+            if (!(v instanceof JassArrayVar) && v.getType().equals("real")) {
+                realGlobals.add(v.getName());
+            }
+            ILconst value = null;
+            if (v instanceof JassArrayVar) {
+                value = new JassArray(v.getType());
+            } else {
+                // --- not initialized
+            }
+            globalVarMap.put(v.getName(), value);
+        }
+
+    }
+
+    public static ILconst getDefaultValue(String type) {
+        switch (type) {
+            case "integer":
+                return new ILconstInt(0);
+            case "boolean":
+                return ILconstBool.FALSE;
+            case "real":
+                return new ILconstReal(0.0f);
+            default:
+                return ILconstNull.instance();
+        }
+    }
+
+    public ILconst executeFunction(String name, ILconst... arguments) {
+        if (trace) {
+            WLogger.trace(() -> name + "( " + Utils.join(arguments, ", ") + ")");
+        }
+
+        ExecutableJassFunction func = searchFunction(name);
+        return func.execute(this, arguments);
+
+    }
+
+    @Nullable
+    ILconst executeJassFunction(JassFunction func, ILconst... arguments) {
+        List<JassVar> locals = func.getLocals();
+
+
+        List<JassStatement> body = func.getBody();
+
+        Map<String, ILconst> localVarMap = Maps.newLinkedHashMap();
+        // locals initialisieren
+        for (JassVar v : locals) {
+            ILconst value = null;
+            if (v instanceof JassArrayVar) {
+                value = new JassArray(v.getType());
+            }
+            localVarMap.put(v.getName(), value);
+        }
+
+
+        if (func.getParams().size() != arguments.length) {
+            throw new InterpreterException("Wrong number of parameters: " + func.getParams().size() + " != " + arguments.length);
+        }
+        int i = 0;
+        for (JassSimpleVar v : func.getParams()) {
+            localVarMap.put(v.getName(), convertTo(v.getType(), arguments[i]));
+            i++;
+        }
+
+        try {
+            this.executeStatements(localVarMap, body);
+        } catch (ReturnException e) {
+            if (trace) {
+                WLogger.trace(() -> "end function " + func.getName() + " returns " + e.getVal());
+            }
+            return convertTo(func.getReturnType(), e.getVal());
+        }
+
+        if (trace) {
+            WLogger.trace(() -> "end function " + func.getName());
+        }
+        return null;
+    }
+
+    private void executeStatements(Map<String, ILconst> localVarMap, List<JassStatement> body) {
+        for (JassStatement s : body) {
+            executeStatement(localVarMap, s);
+        }
+    }
+
+
+    private void executeStatement(final Map<String, ILconst> localVarMap, JassStatement s) {
+        s.match(new JassStatement.MatcherVoid() {
+
+            @Override
+            public void case_JassStmtSetArray(JassStmtSetArray jassStmtSetArray) {
+                ILconst right = executeExpr(localVarMap, jassStmtSetArray.getRight());
+                ILconstInt index = (ILconstInt) executeExpr(localVarMap, jassStmtSetArray.getIndex());
+                JassArray v = (JassArray) getVarValue(localVarMap, jassStmtSetArray.getLeft());
+                v.set(index.getVal(), right);
+            }
+
+            @Override
+            public void case_JassStmtSet(JassStmtSet jassStmtSet) {
+                ILconst right = executeExpr(localVarMap, jassStmtSet.getRight());
+                if (right instanceof ILconstInt && isRealVariable(localVarMap, jassStmtSet)) {
+                    right = convertTo("real", right);
+                }
+                setVarValue(localVarMap, jassStmtSet.getLeft(), right);
+            }
+
+            @Override
+            public void case_JassStmtReturnVoid(JassStmtReturnVoid jassStmtReturnVoid) {
+                throw staticReturnException.setVal(null);
+            }
+
+            @Override
+            public void case_JassStmtReturn(JassStmtReturn jassStmtReturn) {
+                ILconst c = executeExpr(localVarMap, jassStmtReturn.getReturnValue());
+                throw staticReturnException.setVal(c);
+            }
+
+            @Override
+            public void case_JassStmtLoop(JassStmtLoop jassStmtLoop) {
+                try {
+                    while (true) {
+                        executeStatements(localVarMap, jassStmtLoop.getBody());
+                    }
+                } catch (ExitwhenException e) {
+                    // end loop
+                }
+            }
+
+            @Override
+            public void case_JassStmtIf(JassStmtIf jassStmtIf) {
+                ILconstBool cond = (ILconstBool) executeExpr(localVarMap, jassStmtIf.getCond());
+                if (cond.getVal()) {
+                    executeStatements(localVarMap, jassStmtIf.getThenBlock());
+                } else {
+                    executeStatements(localVarMap, jassStmtIf.getElseBlock());
+                }
+            }
+
+            @Override
+            public void case_JassStmtExitwhen(JassStmtExitwhen jassStmtExitwhen) {
+                ILconstBool cond = (ILconstBool) executeExpr(localVarMap, jassStmtExitwhen.getCond());
+                if (cond.getVal()) {
+                    throw ExitwhenException.instance();
+                }
+            }
+
+            @Override
+            public void case_JassStmtCall(JassStmtCall jassStmtCall) {
+                ILconst[] args = new ILconst[jassStmtCall.getArguments().size()];
+                int i = 0;
+                for (JassExpr arg : jassStmtCall.getArguments()) {
+                    args[i] = executeExpr(localVarMap, arg);
+                    i++;
+                }
+                executeFunction(jassStmtCall.getFuncName(), args);
+            }
+        });
+
+
+    }
+
+
+    private ILconst executeExpr(final Map<String, ILconst> localVarMap, JassExpr expr) {
+        return expr.match(new JassExpr.Matcher<ILconst>() {
+
+            @Override
+            public ILconst case_JassExprVarArrayAccess(JassExprVarArrayAccess e) {
+                JassArray ar = (JassArray) getVarValue(localVarMap, e.getVarName());
+                ILconstInt index = (ILconstInt) executeExpr(localVarMap, e.getIndex());
+                return ar.get(index.getVal());
+            }
+
+            @Override
+            public ILconst case_JassExprRealVal(JassExprRealVal e) {
+                return new ILconstReal(e.getValR());
+            }
+
+            @Override
+            public ILconst case_JassExprUnary(JassExprUnary e) {
+                final ILconst right = executeExpr(localVarMap, e.getRight());
+                return e.getOpU().match(new JassOpUnary.Matcher<ILconst>() {
+
+                    @Override
+                    public ILconst case_JassOpNot(JassOpNot jassOpNot) {
+                        ILconstBool b = (ILconstBool) right;
+                        return b.negate();
+                    }
+
+                    @Override
+                    public ILconst case_JassOpMinus(JassOpMinus jassOpMinus) {
+                        return ((ILconstNum) right).negate();
+                    }
+
+                });
+            }
+
+            @Override
+            public ILconst case_JassExprFuncRef(JassExprFuncRef e) {
+                return new ILconstFuncRef(e.getFuncName());
+            }
+
+            @Override
+            public ILconst case_JassExprBoolVal(JassExprBoolVal e) {
+                return ILconstBool.instance(e.getValB());
+            }
+
+            @Override
+            public ILconst case_JassExprBinary(final JassExprBinary e) {
+                return e.getOp().match(new JassOpBinary.Matcher<ILconst>() {
+
+                    ILconst getLeft() {
+                        return executeExpr(localVarMap, e.getLeftExpr());
+                    }
+
+                    ILconstNum getLeftNum() {
+                        return (ILconstNum) getLeft();
+                    }
+
+                    ILconstAddable getLeftAddable() {
+                        return (ILconstAddable) getLeft();
+                    }
+
+                    ILconstBool getLeftBool() {
+                        return (ILconstBool) getLeft();
+                    }
+
+                    ILconst getRight() {
+                        return executeExpr(localVarMap, e.getRight());
+                    }
+
+                    ILconstNum getRightNum() {
+                        return (ILconstNum) getRight();
+                    }
+
+                    ILconstAddable getRightAddable() {
+                        return (ILconstAddable) getRight();
+                    }
+
+                    ILconstBool getRightBool() {
+                        return (ILconstBool) getRight();
+                    }
+
+
+                    @Override
+                    public ILconst case_JassOpDiv(JassOpDiv jassOpDiv) {
+                        return getLeftNum().div(getRightNum());
+                    }
+
+                    @Override
+                    public ILconst case_JassOpMod(JassOpMod jassOpMod) {
+                        return new ILconstInt(WurstOperator.jassModuloInteger(
+                            ((ILconstInt) getLeft()).getVal(), ((ILconstInt) getRight()).getVal()));
+                    }
+
+                    @Override
+                    public ILconst case_JassOpLess(JassOpLess jassOpLess) {
+                        return getLeftNum().less(getRightNum());
+                    }
+
+                    @Override
+                    public ILconst case_JassOpAnd(JassOpAnd jassOpAnd) {
+                        if (getLeftBool().getVal()) {
+                            return getRightBool();
+                        } else {
+                            return ILconstBool.FALSE;
+                        }
+
+                    }
+
+                    @Override
+                    public ILconst case_JassOpUnequals(JassOpUnequals jassOpUnequals) {
+                        return ILconstBool.instance(!getLeft().isEqualTo(getRight()));
+                    }
+
+                    @Override
+                    public ILconst case_JassOpGreaterEq(JassOpGreaterEq jassOpGreaterEq) {
+                        return getLeftNum().greaterEq(getRightNum());
+                    }
+
+                    @Override
+                    public ILconst case_JassOpMinus(JassOpMinus jassOpMinus) {
+                        return getLeftNum().sub(getRightNum());
+                    }
+
+                    @Override
+                    public ILconst case_JassOpMult(JassOpMult jassOpMult) {
+                        return getLeftNum().mul(getRightNum());
+                    }
+
+                    @Override
+                    public ILconst case_JassOpGreater(JassOpGreater jassOpGreater) {
+                        return getLeftNum().greater(getRightNum());
+                    }
+
+                    @Override
+                    public ILconst case_JassOpPlus(JassOpPlus jassOpPlus) {
+                        return getLeftAddable().add(getRightAddable());
+                    }
+
+                    @Override
+                    public ILconst case_JassOpLessEq(JassOpLessEq jassOpLessEq) {
+                        return getLeftNum().lessEq(getRightNum());
+                    }
+
+                    @Override
+                    public ILconst case_JassOpOr(JassOpOr jassOpOr) {
+                        if (getLeftBool().getVal()) {
+                            return ILconstBool.TRUE;
+                        } else {
+                            return getRightBool();
+                        }
+                    }
+
+                    @Override
+                    public ILconst case_JassOpEquals(JassOpEquals jassOpEquals) {
+                        return ILconstBool.instance(WurstOperator.jassEquals(getLeft(), getRight()));
+                    }
+
+                });
+            }
+
+            @Override
+            public ILconst case_JassExprStringVal(JassExprStringVal e) {
+                return ILconstString.fromText(e.getValS());
+            }
+
+            @Override
+            public ILconst case_JassExprIntVal(JassExprIntVal e) {
+                return ILconstInt.create(Integer.parseInt(e.getValI()));
+            }
+
+            @Override
+            public ILconst case_JassExprFunctionCall(JassExprFunctionCall e) {
+                ILconst[] args = new ILconst[e.getArguments().size()];
+                int i = 0;
+                for (JassExpr arg : e.getArguments()) {
+                    args[i] = executeExpr(localVarMap, arg);
+                    i++;
+                }
+                return executeFunction(e.getFuncName(), args);
+            }
+
+            @Override
+            public ILconst case_JassExprVarAccess(JassExprVarAccess e) {
+                return getVarValue(localVarMap, e.getVarName());
+            }
+
+            @Override
+            public ILconst case_JassExprNull(JassExprNull e) {
+                return ILconstNull.instance();
+            }
+
+        });
+    }
+
+
+    /**
+     * The engine converts an integer to real where a real is declared: a variable it is stored into,
+     * a parameter it is passed to and a value a function returns.
+     */
+    private static @Nullable ILconst convertTo(String type, @Nullable ILconst value) {
+        if (value instanceof ILconstInt i && type.equals("real")) {
+            return new ILconstReal(i.getVal());
+        }
+        return value;
+    }
+
+    private boolean isRealVariable(Map<String, ILconst> localVarMap, JassStmtSet set) {
+        String name = set.getLeft();
+        if (!isLocal(localVarMap, name)) {
+            return realGlobals.contains(name);
+        }
+        de.peeeq.wurstscript.jassAst.Element e = set.getParent();
+        while (!(e instanceof JassFunction)) {
+            e = e.getParent();
+        }
+        return realLocals.computeIfAbsent((JassFunction) e, f -> {
+            Set<String> names = new HashSet<>();
+            for (JassVar v : f.getLocals()) {
+                if (!(v instanceof JassArrayVar) && v.getType().equals("real")) {
+                    names.add(v.getName());
+                }
+            }
+            for (JassSimpleVar v : f.getParams()) {
+                if (v.getType().equals("real")) {
+                    names.add(v.getName());
+                }
+            }
+            return names;
+        }).contains(name);
+    }
+
+    private void setVarValue(Map<String, ILconst> localVarMap, String varName, ILconst s) {
+        if (isLocal(localVarMap, varName)) {
+            localVarMap.put(varName, s);
+        } else if (isGlobal(varName)) {
+            globalVarMap.put(varName, s);
+        } else {
+            throw new InterpreterException("var " + varName + " is neither local nor global?");
+        }
+    }
+
+
+    private boolean isLocal(Map<String, ILconst> localVarMap, String varName) {
+        return localVarMap.containsKey(varName);
+
+    }
+
+    private boolean isGlobal(String varName) {
+        return globalVarMap.containsKey(varName);
+
+    }
+
+    private ILconst getVarValue(Map<String, ILconst> localVarMap, String name) {
+        ILconst value = localVarMap.get(name);
+        if (value == null) {
+            value = globalVarMap.get(name);
+            if (value == null) {
+                JassInitializedVar bjGlobal = uninitializedBjGlobals.remove(name);
+                if (bjGlobal == null) {
+                    throw new InterpreterException("Variable " + name + " not found.");
+                }
+                value = convertTo(bjGlobal.getType(), executeExpr(Collections.emptyMap(), bjGlobal.getVal()));
+                globalVarMap.put(name, value);
+            }
+        }
+        return value;
+    }
+
+    private ExecutableJassFunction searchFunction(String fname) {
+        return functionCache.computeIfAbsent(fname, name -> {
+            for (JassFunction f : prog.getFunctions()) {
+                if (f.getName().equals(name)) {
+                    if (!f.getIsCompiletimeNative()) {
+                        return new UserDefinedJassFunction(f);
+                    }
+                }
+            }
+            return searchNativeJassFunction(name);
+        });
+    }
+
+    private ExecutableJassFunction searchNativeJassFunction(String name) {
+        if (name.equals("ExecuteFunc")) {
+            return executeFuncNative();
+        }
+        ReflectionNativeProvider nf = new ReflectionNativeProvider(this);
+        ExecutableJassFunction functionPair = nf.getFunctionPair(name);
+        return functionPair != null ? functionPair : new UnknownJassFunction(name);
+    }
+
+    private ExecutableJassFunction executeFuncNative() {
+        return (jassInterpreter, arguments) -> {
+            ILconstString funcName = (ILconstString) arguments[0];
+            jassInterpreter.executeFunction(funcName.getVal());
+            return ILconstBool.TRUE;
+        };
+    }
+
+    public void trace(boolean b) {
+        trace = b;
+    }
+
+    @Override
+    public void runFuncRef(ILconstFuncRef f, @Nullable Element trace) {
+        if (f == null) {
+            throw new RuntimeException("Function was null in " + trace);
+        }
+        ExecutableJassFunction func = searchFunction(f.getFuncName());
+        func.execute(this);
+    }
+
+    @Override
+    public TimerMockHandler getTimerMockHandler() {
+        return timerMockHandler;
+    }
+
+    public void runProgram() {
+        for (JassVar var : prog.getGlobals()) {
+            if (var instanceof JassInitializedVar iVar) {
+                if (iVar.getIsBj()) {
+                    // Evaluated on first read, as the IM interpreter does, so that an initialiser without
+                    // a native mock only matters to a program that reads the global.
+                    uninitializedBjGlobals.put(iVar.getName(), iVar);
+                } else {
+                    globalVarMap.put(iVar.getName(), convertTo(iVar.getType(), executeExpr(Collections.emptyMap(), iVar.getVal())));
+                }
+            }
+        }
+        executeFunction("main");
+        timerMockHandler.completeTimers();
+    }
+
+
+    @Override
+    public void completeTimers() {
+        timerMockHandler.completeTimers();
+    }
+
+    @Override
+    public ImProg getImProg() {
+        throw new UnsupportedOperationException("Not supported in Jass interpreter.");
+    }
+
+    @Override
+    public int getInstanceCount(int val) {
+        throw new UnsupportedOperationException("Not supported in Jass interpreter.");
+    }
+
+    @Override
+    public int getMaxInstanceCount(int val) {
+        throw new UnsupportedOperationException("Not supported in Jass interpreter.");
+    }
+}

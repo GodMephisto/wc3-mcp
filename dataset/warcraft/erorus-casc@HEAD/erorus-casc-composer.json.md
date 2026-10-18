@@ -1,0 +1,36 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/erorus/casc"
+source_path: "composer.json"
+ref: HEAD
+---
+
+{
+    "name": "erorus/casc",
+    "description": "CASC extractor for World of Warcraft data",
+    "type": "project",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "Erorus",
+            "email": "github@everynothing.net"
+        }
+    ],
+    "minimum-stability": "dev",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/erorus/db2"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Erorus\\CASC\\": "src/Erorus/CASC/"
+        }
+    },
+    "require": {
+        "ext-curl": "*",
+        "ext-zlib": "*",
+        "erorus/db2": "*"
+    }
+}

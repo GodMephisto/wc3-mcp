@@ -1,0 +1,60 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/WiseOwlSoftware/WiseOwl.Casc"
+source_path: "Directory.Build.props"
+ref: HEAD
+---
+
+<Project>
+
+  <!--
+    Solution-wide build + package metadata for WiseOwl.Casc.
+
+    Published under the WiseOwlSoftware organization (Brent Rector, sole
+    owner/administrator of both that org and the BrentRector account). The
+    `WiseOwl.Casc` package id uses the reserved, verified `WiseOwl.*` NuGet
+    prefix — that reservation is what structurally prevents the `CascLib`
+    vs `CascLib.NET` style confusion that motivated this library: a
+    one-character-off impostor cannot publish under the prefix. See
+    docs/devlog and ARTICLE-SOURCE.md.
+  -->
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>          <!-- C# 14 on the .NET 10 SDK -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Full XML documentation is mandatory on every public type/member
+         (binding project preference). Missing-doc warnings stay visible. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+
+  <!-- Shared NuGet package metadata (applied to packable projects). -->
+  <PropertyGroup>
+    <Authors>Brent Rector</Authors>
+    <Company>Wise Owl Software</Company>
+    <Product>WiseOwl.Casc</Product>
+    <Copyright>Copyright © $([System.DateTime]::UtcNow.Year) Wise Owl Software</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/WiseOwlSoftware/WiseOwl.Casc</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/WiseOwlSoftware/WiseOwl.Casc.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReleaseNotes>See CHANGELOG.md in the repository for the release notes.</PackageReleaseNotes>
+    <PackageTags>casc;tact;tvfs;blte;blizzard;diablo4;wow;sno;tex;bc7;game-data;modding</PackageTags>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <Version>0.8.0</Version>
+    <!-- Unofficial-status disclaimer travels with every published package. -->
+    <Description>Unofficial, modern .NET library for Blizzard's CASC content-storage stack. Not affiliated with or endorsed by Blizzard Entertainment. World of Warcraft, Diablo, and related marks are trademarks of Blizzard Entertainment, Inc. Use only with your own legally-obtained game files.</Description>
+  </PropertyGroup>
+
+</Project>

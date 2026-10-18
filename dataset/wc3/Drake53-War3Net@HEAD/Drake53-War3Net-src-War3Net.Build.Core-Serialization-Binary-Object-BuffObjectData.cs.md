@@ -1,0 +1,51 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Binary/Object/BuffObjectData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Object
+{
+    public sealed partial class BuffObjectData
+    {
+        internal BuffObjectData(BinaryReader reader)
+        {
+            ReadFrom(reader);
+        }
+
+        internal void ReadFrom(BinaryReader reader)
+        {
+            FormatVersion = reader.ReadInt32<ObjectDataFormatVersion>();
+
+            nint baseBuffsCount = reader.ReadInt32();
+            for (nint i = 0; i < baseBuffsCount; i++)
+            {
+                BaseBuffs.Add(reader.ReadSimpleObjectModification(FormatVersion));
+            }
+
+            nint newBuffsCount = reader.ReadInt32();
+            for (nint i = 0; i < newBuffsCount; i++)
+            {
+                NewBuffs.Add(reader.ReadSimpleObjectModification(FormatVersion));
+            }
+        }
+
+        internal void WriteTo(BinaryWriter writer)
+        {
+            writer.Write((int)FormatVersion);
+
+            writer.Write(BaseBuffs.Count);
+            foreach (var buff in BaseBuffs)
+            {
+                writer.Write(buff, FormatVersion);
+            }
+
+            writer.Write(NewBuffs.Count);
+            foreach (var buff in NewBuffs)
+            {
+                writer.Write(buff, FormatVersion);
+            }
+        }
+    }
+}

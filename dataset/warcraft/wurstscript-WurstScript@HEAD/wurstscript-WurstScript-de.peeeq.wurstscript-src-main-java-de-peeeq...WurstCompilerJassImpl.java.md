@@ -1,0 +1,1161 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/WurstCompilerJassImpl.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio;
+
+import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.io.Files;
+import org.wurstscript.projectconfig.WurstProjectConfigData;
+import de.peeeq.wurstio.languageserver.requests.RequestFailedException;
+import de.peeeq.wurstio.map.importer.ImportFile;
+import de.peeeq.wurstio.mpq.MpqEditor;
+import de.peeeq.wurstio.utils.FileReading;
+import de.peeeq.wurstio.utils.FileUtils;
+import de.peeeq.wurstscript.*;
+import de.peeeq.wurstscript.ast.*;
+import de.peeeq.wurstscript.ast.Element;
+import de.peeeq.wurstscript.attributes.CompilationUnitInfo;
+import de.peeeq.wurstscript.attributes.CompileError;
+import de.peeeq.wurstscript.attributes.ErrorHandler;
+import de.peeeq.wurstscript.gui.WurstGui;
+import de.peeeq.wurstscript.jassAst.JassProg;
+import de.peeeq.wurstscript.jassIm.*;
+import de.peeeq.wurstscript.jassprinter.JassPrinter;
+import de.peeeq.wurstscript.luaAst.LuaCompilationUnit;
+import de.peeeq.wurstscript.parser.WPos;
+import de.peeeq.wurstscript.translation.imoptimizer.ImOptimizer;
+import de.peeeq.wurstscript.translation.imoptimizer.TreeShaker;
+import de.peeeq.wurstscript.translation.imtojass.ImAttrType;
+import de.peeeq.wurstscript.translation.imtojass.ImToJassTranslator;
+import de.peeeq.wurstscript.translation.imtranslation.*;
+import de.peeeq.wurstscript.translation.lua.translation.RemoveGarbage;
+import de.peeeq.wurstscript.translation.lua.translation.LuaTranslator;
+import de.peeeq.wurstscript.types.TypesHelper;
+import de.peeeq.wurstscript.utils.LineOffsets;
+import de.peeeq.wurstscript.utils.NotNullList;
+import de.peeeq.wurstscript.utils.Utils;
+import org.eclipse.jdt.annotation.Nullable;
+import org.eclipse.lsp4j.MessageType;
+import org.jetbrains.annotations.NotNull;
+
+import java.io.*;
+import java.lang.ref.WeakReference;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Function;
+
+import static de.peeeq.wurstio.CompiletimeFunctionRunner.FunctionFlagToRun.CompiletimeFunctions;
+import static de.peeeq.wurstscript.WurstOperator.PLUS;
+import static de.peeeq.wurstscript.translation.imtranslation.FunctionFlagEnum.IS_EXTERN;
+
+public class WurstCompilerJassImpl implements WurstCompiler {
+
+    private final List<File> files = Lists.newArrayList();
+    private final Map<String, Reader> otherInputs = Maps.newLinkedHashMap();
+    private @Nullable JassProg prog;
+    private final WurstGui gui;
+    private boolean hasCommonJ;
+    private RunArgs runArgs;
+    private Optional<File> mapFile = Optional.empty();
+    private @Nullable File objectDataSource;
+    private boolean importFiles = true;
+    private @Nullable File projectFolder;
+    private final ErrorHandler errorHandler;
+    private @Nullable Map<String, File> libCache = null;
+    private @Nullable ImProg imProg;
+    private final List<File> parsedFiles = Lists.newArrayList();
+    private final WurstParser parser;
+    private final WurstChecker checker;
+    private @Nullable ImTranslator imTranslator;
+    /** The translator of the last transformProgToLua, which knows the Lua name of each function. */
+    private @Nullable LuaTranslator luaTranslator;
+    private final List<File> dependencies = Lists.newArrayList();
+    private final @Nullable MpqEditor mapFileMpq;
+    private final TimeTaker timeTaker;
+
+    public WurstCompilerJassImpl(@Nullable File projectFolder, WurstGui gui, @Nullable MpqEditor mapFileMpq, RunArgs runArgs) {
+        this(new TimeTaker.Default(), projectFolder, gui, mapFileMpq, runArgs);
+    }
+
+    public WurstCompilerJassImpl(TimeTaker timeTaker, @Nullable File projectFolder, WurstGui gui, @Nullable MpqEditor mapFileMpq, RunArgs runArgs) {
+        this.timeTaker = timeTaker;
+        this.projectFolder = projectFolder;
+        this.gui = gui;
+        this.runArgs = runArgs;
+        this.errorHandler = new ErrorHandler(gui);
+        this.parser = new WurstParser(errorHandler, gui);
+        this.checker = new WurstChecker(gui, errorHandler, runArgs.isLegacyJassTypeChecks());
+        this.mapFileMpq = mapFileMpq;
+    }
+
+    /**
+     * Sets the map whose object data compiletime functions start from, when the compiled map is not
+     * a fresh copy of it (see {@link de.peeeq.wurstio.intermediateLang.interpreter.ProgramStateIO#setObjectDataSource}).
+     */
+    public void setObjectDataSource(@Nullable File objectDataSource) {
+        this.objectDataSource = objectDataSource;
+    }
+
+    /** Whether injecting objects also adds the project's imports; off when the caller imports them itself. */
+    public void setImportFiles(boolean importFiles) {
+        this.importFiles = importFiles;
+    }
+
+    @Override
+    public void loadFiles(String... filenames) {
+        gui.sendProgress("Loading Files");
+        for (String filename : filenames) {
+            File file = new File(filename);
+            if (!file.exists()) {
+                throw new Error("File " + filename + " does not exist.");
+            }
+            files.add(file);
+        }
+    }
+
+    @Override
+    public void loadFiles(File... files) {
+        gui.sendProgress("Loading Files");
+        for (File file : files) {
+            loadFile(file);
+        }
+    }
+
+    @Override
+    public void runCompiletime(WurstProjectConfigData projectConfigData, boolean isProd, boolean cache) {
+        if (runArgs.runCompiletimeFunctions()) {
+            removeUnreachableFunctionsBeforeCompiletime();
+            // compile & inject object-editor data
+            // TODO run optimizations later?
+            gui.sendProgress("Running compiletime functions");
+            timeTaker.beginPhase("run compiletime functions");
+            // Use try-with-resources to release open native resources (e.g., SQLite DB handles) after compiletime execution finishes.
+            try (CompiletimeFunctionRunner ctr = new CompiletimeFunctionRunner(imTranslator, getImProg(), getMapFile(), getMapfileMpqEditor(), gui,
+                CompiletimeFunctions, projectConfigData, isProd, cache)) {
+                ctr.setInjectObjects(runArgs.isInjectObjects());
+                ctr.getGlobalState().setExportW3o(runArgs.isExportW3o());
+                ctr.getGlobalState().setObjectDataSource(objectDataSource);
+                ctr.setOutputStream(new PrintStream(System.err));
+                ctr.run();
+            }
+            timeTaker.endPhase();
+        }
+
+        if (gui.getErrorCount() > 0) {
+            CompileError compileError = gui
+                .getErrorList().get(0);
+            throw new RequestFailedException(MessageType.Error, "Could not compile project (error in running compiletime functions/expressions): ", compileError);
+        }
+
+
+        if (runArgs.isInjectObjects() && importFiles) {
+            Preconditions.checkNotNull(mapFileMpq);
+            Preconditions.checkNotNull(projectFolder);
+            // add the imports
+            ImportFile.importFilesFromImports(projectFolder, mapFileMpq);
+        }
+    }
+
+    private void loadFile(File file) throws Error {
+        Preconditions.checkNotNull(file);
+        if (!file.exists()) {
+            throw new Error("File " + file + " does not exist.");
+        }
+        this.files.add(file);
+    }
+
+    public void loadWurstFilesInDir(File dir) {
+        File[] fileList = dir.listFiles();
+        if (fileList == null) {
+            WLogger.warning("Could not list directory " + dir);
+            return;
+        }
+        Arrays.sort(fileList, Comparator.comparing(File::getName));
+        for (File f : fileList) {
+            if (f.isDirectory()) {
+                loadWurstFilesInDir(f);
+            } else if (Utils.isWurstFile(f)) {
+                loadFile(f);
+            } else if ((!mapFile.isPresent() || runArgs.isNoExtractMapScript()) && f.getName().equals("war3map.j")) {
+                loadFile(f);
+            }
+        }
+    }
+
+    @Override
+    public @Nullable WurstModel parseFiles() {
+
+        // search mapFile
+        for (File file : files) {
+            if (file.getName().endsWith(".w3x") || file.getName().endsWith(".w3m")) {
+                mapFile = Optional.ofNullable(file);
+            } else if (file.isDirectory()) {
+                if (projectFolder != null && !file.getParent().equals(projectFolder.getAbsolutePath())) {
+                    throw new RuntimeException("Cannot set projectFolder to " + file + " because it is already set to non parent " + projectFolder);
+                }
+                projectFolder = file;
+            }
+        }
+
+
+        // import wurst folder if it exists
+        Optional<File> l_mapFile = mapFile;
+        if (l_mapFile.isPresent()) {
+            if (projectFolder == null) {
+                projectFolder = l_mapFile.get().getParentFile();
+            }
+            File relativeWurstDir = new File(projectFolder, "wurst");
+            if (relativeWurstDir.exists()) {
+                WLogger.info("Importing wurst files from " + relativeWurstDir);
+                loadWurstFilesInDir(relativeWurstDir);
+            } else {
+                WLogger.info("No wurst folder found in " + relativeWurstDir);
+            }
+            addDependenciesFromFolder(projectFolder, dependencies);
+        }
+
+        // add directories:
+        List<File> dirs = Lists.newArrayList();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                dirs.add(file);
+            }
+        }
+        for (File dir : dirs) {
+            loadWurstFilesInDir(dir);
+        }
+
+        gui.sendProgress("Parsing Files");
+        // parse all the files:
+        List<CompilationUnit> compilationUnits = new NotNullList<>();
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                // ignore dirs
+            } else if (file.getName().endsWith(".w3x") || file.getName().endsWith(".w3m")) {
+                CompilationUnit r = processMap(file);
+                if (r != null) {
+                    compilationUnits.add(r);
+                }
+            } else {
+                if (file.getName().endsWith("common.j")) {
+                    hasCommonJ = true;
+                }
+                compilationUnits.add(parseFile(file));
+            }
+        }
+        for (Entry<String, Reader> in : otherInputs.entrySet()) {
+            compilationUnits.add(parse(in.getKey(), in.getValue()));
+        }
+
+        try {
+            addImportedLibs(compilationUnits);
+        } catch (CompileError e) {
+            gui.sendError(e);
+            return null;
+        }
+
+        if (errorHandler.getErrorCount() > 0)
+            return null;
+
+        // merge the compilationUnits:
+        WurstModel merged = mergeCompilationUnits(compilationUnits);
+        StringBuilder sb = new StringBuilder();
+        for (CompilationUnit cu : merged) {
+            sb.append(cu.getCuInfo().getFile()).append(", ");
+        }
+        WLogger.info("Compiling compilation units: " + sb);
+
+        return merged;
+    }
+
+    /**
+     * Adds dependencies from the _build/dependencies folder
+     */
+    public static void addDependenciesFromFolder(File projectFolder, Collection<File> dependencies) {
+        File dependencyFolder = new File(new File(projectFolder, "_build"), "dependencies");
+        File[] depProjects = dependencyFolder.listFiles();
+        if (depProjects == null) return;
+        Arrays.sort(depProjects, Comparator.comparing(File::getName));
+
+        // keep behavior (FileUtils.sameFile), but avoid O(n*m) scanning
+        List<File> existing = new ArrayList<>(dependencies);
+
+        outer:
+        for (File depFile : depProjects) {
+            if (!depFile.isDirectory()) continue;
+
+            for (File f : existing) {
+                if (FileUtils.sameFile(f, depFile)) {
+                    continue outer;
+                }
+            }
+            dependencies.add(depFile);
+            existing.add(depFile);
+        }
+    }
+
+    private void addImportedLibs(List<CompilationUnit> compilationUnits) {
+        addImportedLibs(compilationUnits, file -> {
+            CompilationUnit lib = parseFile(file);
+            lib.getCuInfo().setFile(file.getAbsolutePath());
+            compilationUnits.add(lib);
+            return lib;
+        });
+    }
+
+    /**
+     * this method scans for unsatisfied imports and tries to find them in the lib-path
+     */
+    public void addImportedLibs(List<CompilationUnit> compilationUnits, Function<File, CompilationUnit> addCompilationUnit) {
+        Set<String> packages = Sets.newLinkedHashSet();
+        Set<WImport> imports = new LinkedHashSet<>();
+        for (CompilationUnit c : compilationUnits) {
+            c.getCuInfo().setCuErrorHandler(errorHandler);
+            for (WPackage p : c.getPackages()) {
+                packages.add(p.getName());
+                imports.addAll(p.getImports());
+            }
+        }
+
+        for (WImport imp : imports) {
+            resolveImport(addCompilationUnit, packages, imp);
+        }
+
+    }
+
+    private void resolveImport(Function<File, CompilationUnit> addCompilationUnit, Set<String> packages, WImport imp) throws CompileError {
+        //		WLogger.info("resolving import: " + imp.getPackagename());
+        if (!packages.contains(imp.getPackagename())) {
+            if (getLibs().containsKey(imp.getPackagename())) {
+                CompilationUnit lib = loadLibPackage(addCompilationUnit, imp.getPackagename());
+                boolean foundPackage = false;
+                for (WPackage p : lib.getPackages()) {
+                    packages.add(p.getName());
+                    if (p.getName().equals(imp.getPackagename())) {
+                        foundPackage = true;
+                    }
+                    for (WImport i : p.getImports()) {
+                        resolveImport(addCompilationUnit, packages, i);
+                    }
+                }
+                if (!foundPackage) {
+                    imp.addError("The import " + imp.getPackagename() + " could not be found in file " + lib.getCuInfo().getFile());
+                }
+            } else {
+                if (imp.getPackagename().equals("Wurst")) {
+                    imp.addError("The standard library could not be imported.");
+                }
+                if (imp.getPackagename().equals("NoWurst")) {
+                    // ignore this package
+                } else {
+                    imp.addError("The import '" + imp.getPackagename() + "' could not be resolved.\n" + "Available packages: "
+                        + Utils.join(getLibs().keySet(), ", "));
+                }
+            }
+        } else {
+            //			WLogger.info("already imported: " + imp.getPackagename());
+        }
+    }
+
+    private CompilationUnit loadLibPackage(Function<File, CompilationUnit> addCompilationUnit, String imp) {
+        File file = getLibs().get(imp);
+        if (file == null) {
+            gui.sendError(new CompileError(new WPos("", null, 0, 0), "Could not find lib-package " + imp + ". Is your dependency present in _build/dependencies?"));
+            return Ast.CompilationUnit(new CompilationUnitInfo(errorHandler), Ast.JassToplevelDeclarations(), Ast.WPackages());
+        } else {
+            CompilationUnit lib = addCompilationUnit.apply(file);
+            lib.getCuInfo().setLibrary(true);
+            return lib;
+        }
+    }
+
+    public Map<String, File> getLibs() {
+        Map<String, File> lc = libCache;
+        if (lc == null) {
+            lc = Maps.newLinkedHashMap();
+            libCache = lc;
+            for (File libDir : runArgs.getAdditionalLibDirs()) {
+                addLibDir(libDir);
+            }
+            for (File libDir : dependencies) {
+                addLibDir(libDir);
+            }
+        }
+        return lc;
+    }
+
+    private void addLibDir(File libDir) throws Error {
+        if (!libDir.exists() || !libDir.isDirectory()) {
+            throw new Error("Library folder " + libDir + " does not exist.");
+        }
+        File[] fileList = libDir.listFiles();
+        if (fileList == null) {
+            WLogger.warning("Could not list library folder " + libDir);
+            return;
+        }
+        Arrays.sort(fileList, Comparator.comparing(File::getName));
+        for (File f : fileList) {
+            if (f.isDirectory()) {
+                // recursively scan directory
+                addLibDir(f);
+            }
+            if (Utils.isWurstFile(f)) {
+                String libName = Utils.getLibName(f);
+                getLibs().put(libName, f);
+            }
+        }
+    }
+
+    public boolean checkProg(WurstModel model) {
+        return checkProg(model, model);
+    }
+
+    /** @return whether the units were validated, see {@link WurstChecker#checkProg} */
+    public boolean checkProg(WurstModel model, Collection<CompilationUnit> toCheck) {
+        return checkProg(model, toCheck, model);
+    }
+
+    public boolean checkProg(WurstModel model, Collection<CompilationUnit> toCheck,
+                             Collection<CompilationUnit> compilationUnits) {
+        for (CompilationUnit cu : toCheck) {
+            Preconditions.checkNotNull(cu);
+            if (!model.contains(cu)) {
+                // model has changed since then, no need to do 'toCheck'
+                throw new ModelChangedException();
+            }
+        }
+
+        return checker.checkProg(model, toCheck, compilationUnits);
+    }
+
+    /** Takes over a model which was checked completely and has not changed since, instead of checking it again. */
+    public void adoptCheckedModel(WurstModel model) {
+        checker.adoptCheckedModel(model);
+    }
+
+    public void adoptCheckedModel(WurstModel model, Collection<CompilationUnit> compilationUnits) {
+        checker.adoptCheckedModel(model, compilationUnits);
+    }
+
+    public JassProg transformProgToJass() {
+        ImTranslator imTranslator2 = getImTranslator();
+        ImProg imProg2 = getImProg();
+        imTranslator2.assertProperties();
+        checkNoCompiletimeExpr(imProg2);
+        int stage = 2;
+        // Before anything walks the whole program: the generics below specialise whatever they are given.
+        beginPhase(2, "remove unreachable functions before generics");
+        TreeShaker.removeUnreachableFunctionsBeforeGenerics(imTranslator2);
+        timeTaker.endPhase();
+        // eliminate
+        beginPhase(2, "Eliminate generics");
+        new EliminateGenerics(imTranslator2, imProg2).transform();
+        imTranslator2.clearStaleClassManagementVars();
+        printDebugImProg("./test-output/im " + stage++ + "_genericsEliminated.im");
+        timeTaker.endPhase();
+        // The specialisation copies functions nothing calls as well, and the passes from here on walk all of them.
+        beginPhase(2, "remove unreachable functions");
+        TreeShaker.removeUnreachableFunctions(imTranslator2);
+        timeTaker.endPhase();
+        // eliminate classes
+        beginPhase(2, "translate classes");
+
+        new EliminateClasses(imTranslator2, imProg2, !runArgs.isUncheckedDispatch()).eliminateClasses();
+        imTranslator2.assertProperties();
+        printDebugImProg("./test-output/im " + stage++ + "_classesEliminated.im");
+        timeTaker.endPhase();
+
+        beginPhase(2, "lower generic keyed-map values");
+        JassKeyedMapLowering.transform(imProg2);
+        timeTaker.endPhase();
+
+        // Generic elimination has made each specialisation's element type concrete and classes are
+        // integers by now, so the integer key a Jass keyed set needs follows from the type. Before
+        // inlining, so every call site agrees on one body.
+        beginPhase(2, "lower keyed-set key projection");
+        JassKeyOfLowering.transform(imProg2);
+        timeTaker.endPhase();
+
+        if (!runArgs.isNoDebugMessages() && runArgs.isIncludeStacktraces()) {
+            beginPhase(4, "add stack traces");
+            new StackTraceInjector2(imProg2, imTranslator2).transform(timeTaker);
+            timeTaker.endPhase();
+        }
+
+        beginPhase(4, "eliminate varargs");
+        new VarargEliminator(imProg2).run();
+        printDebugImProg("./test-output/im " + stage++ + "_varargEliminated.im");
+        imTranslator2.assertProperties();
+
+        timeTaker.endPhase();
+
+        imTranslator2.assertProperties();
+
+        ImOptimizer optimizer = new ImOptimizer(timeTaker, imTranslator2);
+
+        // inliner
+        if (runArgs.isInline()) {
+            beginPhase(5, "inlining");
+            getImProg().flatten(imTranslator2);
+            optimizer.doInlining();
+            imTranslator2.assertProperties();
+
+            printDebugImProg("./test-output/im " + stage++ + "_afterinline.im");
+            timeTaker.endPhase();
+        }
+
+        // eliminate tuples
+        beginPhase(6, "eliminate tuples");
+        timeTaker.beginPhase("flatten");
+        getImProg().flatten(imTranslator2);
+        timeTaker.endPhase();
+        timeTaker.beginPhase("kill tuples");
+        EliminateTuples.eliminateTuplesProg(getImProg(), imTranslator2);
+        timeTaker.endPhase();
+
+        getImTranslator().assertProperties(AssertProperty.NOTUPLES);
+
+        printDebugImProg("./test-output/im " + stage++ + "_withouttuples.im");
+
+        timeTaker.endPhase();
+
+        beginPhase(7, "eliminate multi arrays");
+        new MultiArrayEliminator(imProg2, imTranslator2, runArgs.isIncludeStacktraces() && !runArgs.isNoDebugMessages()).run();
+        printDebugImProg("./test-output/im " + stage++ + "_withoutmultiarrays.im");
+        imTranslator2.assertProperties();
+        timeTaker.endPhase();
+
+        beginPhase(8, "remove func refs");
+        new FuncRefRemover(imProg2, imTranslator2).run();
+        timeTaker.endPhase();
+
+        // remove cycles:
+        beginPhase(9, "remove cyclic functions");
+        new CyclicFunctionRemover(imTranslator2, imProg2, timeTaker).work();
+
+        printDebugImProg("./test-output/im " + stage++ + "_nocyc.im");
+        timeTaker.endPhase();
+
+        // flatten
+        beginPhase(10, "flatten");
+        getImProg().flatten(imTranslator2);
+        getImTranslator().assertProperties(AssertProperty.NOTUPLES, AssertProperty.FLAT);
+
+        printDebugImProg("./test-output/im " + stage++ + "_flat.im");
+        timeTaker.endPhase();
+
+        if (runArgs.isLocalOptimizations()) {
+            beginPhase(11, "local optimizations");
+            optimizer.localOptimizations();
+            timeTaker.endPhase();
+        }
+
+        printDebugImProg("./test-output/im " + stage++ + "_afterlocalopts.im");
+
+        if (runArgs.isNullsetting()) {
+            beginPhase(12, "null setting");
+            optimizer.doNullsetting();
+            printDebugImProg("./test-output/im " + stage++ + "_afternullsetting.im");
+            timeTaker.endPhase();
+        }
+
+        // The program is flat here (the flatten before the local optimizations, and every sweep of them ends with one) and
+        // the removal keeps it flat, so no flatten follows it. A second removal used to follow (#883): the flatten after
+        // the first uncovered garbage which only the second removed. There is no such flatten any more, so what one
+        // removal does not remove is not there. A unit test makes the second removal and fails when it finds garbage.
+        beginPhase(13, "remove garbage");
+        boolean garbageChanged = optimizer.removeGarbage();
+        if (garbageChanged) {
+            optimizer.assertNoGarbage("the removal ran on a flat program and kept it flat");
+        }
+
+        printDebugImProg("./test-output/im " + stage++ + "_afterremoveGarbage1.im");
+        timeTaker.endPhase();
+
+        if (runArgs.isHotStartmap() || runArgs.isHotReload()) {
+            addJassHotCodeReloadCode();
+        }
+        if (runArgs.isOptimize()) {
+            beginPhase(13, "froptimize");
+            optimizer.optimize();
+            printDebugImProg("./test-output/im " + stage++ + "_afteroptimize.im");
+            timeTaker.endPhase();
+        }
+
+
+        // translate flattened intermediate lang to jass:
+
+        beginPhase(14, "translate to jass");
+        // the last removal was followed by nothing which makes garbage (the code for the hot reload only calls and sets)
+        optimizer.assertNoGarbage("only the code for the hot reload was added since the last removal");
+        // the package initialisers which are empty now are removed, and then the variables only they used
+        timeTaker.beginPhase("remove empty package inits");
+        imTranslator.removeEmptyPackageInits();
+        timeTaker.endPhase();
+        timeTaker.beginPhase("remove garbage");
+        optimizer.removeGarbage();
+        timeTaker.endPhase();
+        imTranslator.assertFlat("before it is translated to Jass, which has no statement expression");
+        // The final garbage removal leaves current call relations; nothing modifies the program before emission.
+        timeTaker.beginPhase("print IM as Jass");
+        ImToJassTranslator translator =
+            new ImToJassTranslator(getImProg(), getImTranslator().getCalledFunctions(), getImTranslator().getMainFunc(), getImTranslator().getConfFunc());
+        prog = translator.translate();
+        timeTaker.endPhase();
+        if (errorHandler.getErrorCount() > 0) {
+            prog = null;
+        }
+        timeTaker.endPhase();
+        return prog;
+    }
+
+    private void addJassHotCodeReloadCode() {
+        Preconditions.checkNotNull(imTranslator);
+        Preconditions.checkNotNull(imProg);
+        ImFunction mainFunc = imTranslator.getMainFunc();
+        Preconditions.checkNotNull(mainFunc);
+        Element trace = imProg.getTrace();
+
+        List<ImStmt> stmts = new ArrayList<>();
+
+        // add call to JHCR_Init_init in main
+        stmts.add(callExtern(trace, CallType.EXECUTE, "JHCR_Init_init"));
+
+        ImFunction statusFunction = JassIm.ImFunction(trace, "JHCR_API_GetLastStatus", JassIm.ImTypeVars(),
+            JassIm.ImVars(), JassIm.ImSimpleType("integer"), JassIm.ImVars(), JassIm.ImStmts(JassIm.ImReturn(trace, JassIm.ImIntVal(0))),
+                List.of());
+
+        imProg.getFunctions().add(statusFunction);
+
+        ImFunctionCall jhcrStatusCall = JassIm.ImFunctionCall(trace, statusFunction, JassIm.ImTypeArguments(), JassIm.ImExprs(), false, CallType.NORMAL);
+        ImFunction I2S = findNative("I2S", trace.attrErrorPos());
+        ImFunctionCall statusCall = JassIm.ImFunctionCall(trace, I2S, JassIm.ImTypeArguments(), JassIm.ImExprs(jhcrStatusCall), false, CallType.NORMAL);
+
+
+        // add reload trigger for pressing escape
+        ImStmts reloadBody = JassIm.ImStmts(
+            callExtern(trace, CallType.EXECUTE, "JHCR_Init_parse"),
+            callExtern(trace, CallType.NORMAL, "BJDebugMsg", JassIm.ImOperatorCall(PLUS, JassIm.ImExprs(JassIm.ImStringVal("Code reloaded, status: "), statusCall)))
+            );
+        ImFunction jhcr_reload = JassIm.ImFunction(trace, "jhcr_reload_on_escape", JassIm.ImTypeVars(), JassIm.ImVars(), JassIm.ImVoid(), JassIm.ImVars(), reloadBody, Collections.emptyList());
+
+
+        ImVar trig = JassIm.ImVar(trace, TypesHelper.imTrigger(), "trig", false);
+        mainFunc.getLocals().add(trig);
+        // TriggerRegisterPlayerEventEndCinematic(trig, Player(0))
+        stmts.add(JassIm.ImSet(trace, JassIm.ImVarAccess(trig), callExtern(trace, CallType.NORMAL, "CreateTrigger")));
+        stmts.add(callExtern(trace, CallType.NORMAL, "TriggerRegisterPlayerEventEndCinematic", JassIm.ImVarAccess(trig),
+            callExtern(trace, CallType.NORMAL, "Player", JassIm.ImIntVal(0))));
+        stmts.add(callExtern(trace, CallType.NORMAL, "TriggerAddAction", JassIm.ImVarAccess(trig),
+            JassIm.ImFuncRef(trace, jhcr_reload)));
+
+        mainFunc.getBody().addAll(0, stmts);
+    }
+
+    @NotNull
+    private ImFunction findFunctionInternal(String funcName, WPos trace, boolean mustBeNative) {
+        Preconditions.checkNotNull(imProg);
+        for (ImFunction func : imProg.getFunctions()) {
+            if (func.getName().equals(funcName) && (!mustBeNative || func.isNative())) {
+                return func;
+            }
+        }
+        throw new CompileError(trace, "Could not find " + (mustBeNative ? "native " : "") + funcName);
+    }
+
+    @NotNull
+    private ImFunction findNative(String funcName, WPos trace) {
+        return findFunctionInternal(funcName, trace, true);
+    }
+
+
+    @NotNull
+    private ImFunctionCall callExtern(Element trace, CallType callType, String functionName, ImExpr... arguments) {
+        ImFunction jhcrinit = JassIm.ImFunction(trace, functionName, JassIm.ImTypeVars(), JassIm.ImVars(), JassIm.ImVoid(), JassIm.ImVars(), JassIm.ImStmts(), Collections.singletonList(IS_EXTERN));
+        return JassIm.ImFunctionCall(trace, jhcrinit, JassIm.ImTypeArguments(), JassIm.ImExprs(arguments), true, callType);
+    }
+
+    public void checkNoCompiletimeExpr(ImProg prog) {
+        prog.accept(new ImProg.DefaultVisitor() {
+            @Override
+            public void visit(ImCompiletimeExpr e) {
+                super.visit(e);
+                throw new CompileError(e.attrTrace().attrSource(), "Compiletime expressions require compilation with '-runcompiletimefunctions' option.");
+            }
+        });
+    }
+
+    public @Nullable LuaTranslator getLuaTranslator() {
+        return luaTranslator;
+    }
+
+    public ImTranslator getImTranslator() {
+        final ImTranslator t = imTranslator;
+        if (t != null) {
+            return t;
+        } else {
+            throw new Error("translator not initialized");
+        }
+    }
+
+    public @Nullable ImProg translateProgToIm(WurstModel root) {
+        return translateProgToIm(root, root);
+    }
+
+    /** Translate a compilation view without removing units from the checked editor model. */
+    public @Nullable ImProg translateProgToIm(WurstModel root, Collection<CompilationUnit> compilationUnits) {
+        beginPhase(1, "to intermediate lang");
+        // Names of generated temporaries are counted from here, so that the same source compiles
+        // to the same script whatever was compiled before it in this process.
+        Flatten.resetTempVarCounters();
+        // translate wurst to intermediate lang:
+        imTranslator = new ImTranslator(root, errorHandler.isUnitTestMode(), runArgs, compilationUnits);
+        imProg = getImTranslator().translateProg();
+        // Before any compile-time function runs: the library asks whether this compiler lowers CodeList.
+        CodeListSupport.markSupported(imProg);
+        int stage = 1;
+        printDebugImProg("./test-output/im " + stage++ + ".im");
+        timeTaker.endPhase();
+        return imProg;
+    }
+
+    private void beginPhase(int phase, String description) {
+        errorHandler.setProgress("Translating wurst. Phase " + phase + ": " + description);
+        timeTaker.beginPhase(description);
+    }
+
+    private void printDebugImProg(String debugFile) {
+        if (!errorHandler.isUnitTestMode() || !errorHandler.isOutputTestSource()) {
+            return;
+        }
+        try {
+            File file = new File(debugFile);
+            file.getParentFile().mkdirs();
+            try (Writer w = Files.newWriter(file, Charsets.UTF_8)) {
+                getImProg().print(w, 0);
+            }
+        } catch (IOException e) {
+            ErrorReporting.instance.handleSevere(e, getCompleteSourcecode());
+        }
+    }
+
+    private WurstModel mergeCompilationUnits(List<CompilationUnit> compilationUnits) {
+        gui.sendProgress("Merging Files");
+        // Compare with '/' separators so the order does not depend on the platform's path separator.
+        compilationUnits.sort(Comparator.comparing(cu -> Objects.toString(cu.getCuInfo().getFile(), "").replace('\\', '/')));
+        WurstModel result = Ast.WurstModel();
+        for (CompilationUnit compilationUnit : compilationUnits) {
+            // remove from old parent
+            compilationUnit.setParent(null);
+            result.add(compilationUnit);
+        }
+        return result;
+    }
+
+    private CompilationUnit processMap(File file) {
+        gui.sendProgress("Processing Map " + file.getName());
+        if (!mapFile.isPresent() || !file.equals(mapFile.get())) {
+            // TODO check if file != mapFile is possible, would be strange
+            // so this should definitely be done differently
+            throw new Error("file: " + file + " is not the mapfile: " + mapFile);
+        }
+
+        MpqEditor mapMpq = mapFileMpq;
+        if (mapMpq == null) {
+            throw new RuntimeException("map mpq is null");
+        }
+
+        if (runArgs.isNoExtractMapScript()) {
+            return null;
+        }
+
+        // extract mapscript:
+        try {
+            byte[] tempBytes = mapMpq.extractFile("war3map.j");
+
+            if (isWurstGenerated(tempBytes)) {
+                // the war3map.j file was generated by wurst
+                // this should not be the case, as we will get duplicate function errors in this case
+                throw new AbortCompilationException(
+                    "Map was not saved correctly. Please try saving the map again.\n\n" + "This usually happens if you change the name of the map or \n"
+                        + "if you have used the test-map-button without saving the map first.");
+            }
+
+            // move file to wurst directory
+            File wurstFolder = new File(file.getParentFile(), "wurst");
+            wurstFolder.mkdirs();
+            if (!wurstFolder.isDirectory()) {
+                throw new AbortCompilationException("Could not create Wurst folder at " + wurstFolder + ".");
+            }
+            File wurstwar3map = new File(wurstFolder, "war3map.j");
+            java.nio.file.Files.write(wurstwar3map.toPath(), tempBytes);
+            return parseFile(wurstwar3map);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+
+    }
+
+    private boolean isWurstGenerated(byte[] contents) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(
+            new ByteArrayInputStream(contents), StandardCharsets.UTF_8))) {
+            String firstLine = in.readLine();
+            WLogger.info("firstLine = '" + firstLine + "'");
+            return JassPrinter.WURST_COMMENT.equals(firstLine);
+        } catch (IOException e) {
+            WLogger.severe(e);
+        }
+        return false;
+    }
+
+    // a cache for compilation units, only used for unit tests to avoid parsing standard library too many times
+    private static final Map<File, WeakReference<CompilationUnit>> fileCompilationUnitCache = new HashMap<>();
+
+    private CompilationUnit parseFile(File file) {
+        if (errorHandler.isUnitTestMode()) {
+            // in unit test mode, we use a cache
+            WeakReference<CompilationUnit> wr = fileCompilationUnitCache.get(file);
+            CompilationUnit res = wr == null ? null : wr.get();
+            if (res == null) {
+                res = parseFile2(file);
+                fileCompilationUnitCache.put(file, new WeakReference<>(res));
+            } else {
+                res = res.copy();
+            }
+            return res;
+        } else {
+            return parseFile2(file);
+        }
+    }
+
+    private CompilationUnit parseFile2(File file) {
+        if (file.isDirectory()) {
+            throw new Error("Is a directory: " + file);
+        }
+        parsedFiles.add(file);
+
+        gui.sendProgress("Parsing File " + file.getName());
+        String source = file.getAbsolutePath();
+        try (Reader reader = FileReading.getFileReader(file)) {
+            // scanning
+            return parse(source, reader);
+
+        } catch (CompileError e) {
+            gui.sendError(e);
+            return emptyCompilationUnit();
+        } catch (FileNotFoundException e) {
+            gui.sendError(new CompileError(new WPos(source, LineOffsets.dummy, 0, 0), "File not found."));
+            return emptyCompilationUnit();
+        } catch (IOException e) {
+            gui.sendError(new CompileError(new WPos(source, LineOffsets.dummy, 0, 0), "Could not read file."));
+            return emptyCompilationUnit();
+        }
+    }
+
+    public CompilationUnit parse(String fileName, Reader reader) {
+        if (fileName.endsWith(".j")) {
+            return parser.parseJass(reader, fileName, hasCommonJ);
+        }
+        if (fileName.endsWith(".jurst")) {
+            return parser.parseJurst(reader, fileName, hasCommonJ);
+        }
+        if (runArgs.isPrettyPrint()) {
+            parser.setRemoveSugar(false);
+        }
+        return parser.parse(reader, fileName, hasCommonJ);
+    }
+
+    private CompilationUnit emptyCompilationUnit() {
+        return parser.emptyCompilationUnit();
+    }
+
+    public @Nullable JassProg getProg() {
+        return prog;
+    }
+
+    public void loadReader(String name, Reader input) {
+        otherInputs.put(name, input);
+    }
+
+    public void setHasCommonJ(boolean hasCommonJ) {
+        this.hasCommonJ = hasCommonJ;
+    }
+
+    public ImProg getImProg() {
+        final ImProg imProg2 = imProg;
+        if (imProg2 != null) {
+            return imProg2;
+        } else {
+            throw new Error("imProg is null");
+        }
+    }
+
+    public Optional<File> getMapFile() {
+        return mapFile;
+    }
+
+    public ErrorHandler getErrorHandler() {
+        return errorHandler;
+    }
+
+    public String getCompleteSourcecode() {
+
+        StringBuilder sb = new StringBuilder();
+        try {
+            for (File f : parsedFiles) {
+                sb.append(" //######################################################\n");
+                sb.append(" // File ").append(f.getAbsolutePath()).append("\n");
+                sb.append(" //######################################################\n");
+                sb.append(Files.toString(f, Charsets.UTF_8));
+            }
+
+            for (Entry<String, Reader> entry : otherInputs.entrySet()) {
+                sb.append(" //######################################################\n");
+                sb.append(" // Input ").append(entry.getKey()).append("\n");
+                sb.append(" //######################################################\n");
+                try (Reader reader = entry.getValue()) {
+                    char[] buffer = new char[1024];
+                    while (true) {
+                        int len = reader.read(buffer);
+                        if (len < 0) {
+                            break;
+                        }
+                        sb.append(buffer, 0, len);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            sb.append(Utils.printExceptionWithStackTrace(t));
+            WLogger.severe(t);
+        }
+        return sb.toString();
+    }
+
+    public void setRunArgs(RunArgs runArgs) {
+        this.runArgs = runArgs;
+    }
+
+    public void setMapFile(Optional<File> mapFile) {
+        this.mapFile = mapFile;
+    }
+
+    public @Nullable MpqEditor getMapfileMpqEditor() {
+        return mapFileMpq;
+    }
+
+    /**
+     * Drops the functions nothing reaches ({@link TreeShaker}) in front of the compile-time functions. The run walks
+     * the whole program (to find the expressions it evaluates), and splitting the state it replays analyses the whole
+     * program once per function it splits, so every function nothing calls is paid for there as well.
+     */
+    private void removeUnreachableFunctionsBeforeCompiletime() {
+        beginPhase(2, "remove unreachable functions before compiletime");
+        TreeShaker.removeUnreachableFunctionsBeforeCompiletime(getImTranslator(),
+            CompiletimeFunctionRunner.functionsOfTheRun(getImProg(), CompiletimeFunctions));
+        timeTaker.endPhase();
+    }
+
+    public LuaCompilationUnit transformProgToLua() {
+
+        ImAttrType.setWurstClassType(null);
+        int stage;
+        // Before anything walks the whole program: the generics below, and the checks which decide whether they run.
+        beginPhase(2, "remove unreachable functions before generics");
+        TreeShaker.removeUnreachableFunctionsBeforeGenerics(getImTranslator());
+        timeTaker.endPhase();
+        boolean specializeTupleValueTypes = containsTupleTypeArgument();
+        EliminateGenerics luaGenerics = new EliminateGenerics(getImTranslator(), getImProg());
+        if (containsGenericNewCall() || containsTypeClassDispatch() || specializeTupleValueTypes
+            || luaGenerics.hasGenericStatics()) {
+            beginPhase(2, "Specialize generics for Lua-only concrete operations");
+            luaGenerics.transformGenericNewOnly(specializeTupleValueTypes);
+            // Remove phantom erased initialization before optimization can preserve only its side
+            // effect. A specialized static owns its copied initializer unless the erased static is live.
+            RemoveGarbage.removePhantomGenericStaticInitializers(getImProg(), getImTranslator());
+            timeTaker.endPhase();
+        }
+        // What nothing calls (most of the imported libraries) would go through every pass below, and the garbage
+        // removal after the tuples is the first thing to drop it. The helpers the passes below call are pinned.
+        beginPhase(2, "remove unreachable functions");
+        TreeShaker.removeUnreachableFunctions(getImTranslator());
+        timeTaker.endPhase();
+        // Before stack traces: that pass appends a parameter to every affected function, and on
+        // Lua every non-native function is affected, so the exact signatures the keyed-table
+        // operations are recognised by would stop matching - silently leaving their Jass bodies on
+        // Lua, where wurstKeyOf answers with its placeholder and every element shares one key.
+        beginPhase(4, "lower keyed tables");
+        LuaNativeLowering.lowerKeyedTables(imProg, getImTranslator());
+        timeTaker.endPhase();
+
+        if (!runArgs.isNoDebugMessages() && runArgs.isIncludeStacktraces()) {
+            beginPhase(4, "add stack traces");
+            new StackTraceInjector2(imProg, imTranslator).transform(timeTaker);
+            timeTaker.endPhase();
+        }
+        // Same position as on Jass: after stack traces, before lowering and inlining. Calls with a
+        // static argument count go to fixed-arity copies, so the emitted Lua packs no table and the
+        // copies can inline; originals stay for dispatch, function references and calls above the bound.
+        beginPhase(4, "eliminate varargs");
+        new VarargEliminator(imProg, true).run();
+        imTranslator.assertProperties();
+        timeTaker.endPhase();
+
+        ImTranslator imTranslator2 = getImTranslator();
+        ImOptimizer optimizer = new ImOptimizer(timeTaker, imTranslator2);
+
+        // Lower Lua-specific native calls into IM-level wrappers before optimization,
+        // so the optimizer can inline and eliminate the nil-safety checks and remapped stubs.
+        beginPhase(4, "lua native lowering");
+        LuaNativeLowering.transform(imProg, imTranslator2);
+        LuaTypedKeyedReads.transform(imProg, imTranslator2);
+        timeTaker.endPhase();
+
+        // inliner
+        stage = 5;
+        if (runArgs.isInline()) {
+            // Expose every call which cannot dispatch anywhere else to the ordinary inliner, which
+            // only looks at function calls.
+            beginPhase(5, "lower monomorphic Lua method calls");
+            LuaMethodCallLowering.transform(imProg);
+            imTranslator.assertProperties();
+            timeTaker.endPhase();
+
+            beginPhase(5, "inlining");
+            optimizer.doInlining();
+            imTranslator2.assertProperties();
+
+            printDebugImProg("./test-output/lua/im " + stage++ + "_afterinline.im");
+            timeTaker.endPhase();
+        }
+
+        // eliminate local types
+        beginPhase(6, "eliminate local type");
+        getImProg().flatten(imTranslator2);
+        EliminateLocalTypes.eliminateLocalTypesProg(getImProg(), imTranslator2);
+
+        timeTaker.beginPhase("eliminate tuples");
+        getImProg().flatten(imTranslator2);
+        // The tuples left are the multiple results of calls (LuaMultipleResults), whose shape the elimination checks.
+        EliminateTuples.eliminateTuplesProg(getImProg(), imTranslator2);
+        timeTaker.endPhase();
+
+        optimizer.removeGarbage();
+        imProg.flatten(imTranslator);
+        timeTaker.endPhase();
+        // After the inlining an allocation is followed by the constructor's writes, so the local optimizations can
+        // drop the defaults those overwrite. The backend no longer writes them, so this runs in every mode.
+        LuaFieldDefaults.materialize(imProg, imTranslator2);
+        stage = 10;
+        if (runArgs.isLocalOptimizations()) {
+            beginPhase(10, "local optimizations");
+            optimizer.localOptimizations();
+            timeTaker.endPhase();
+        }
+
+        if (runArgs.isInline() && runArgs.isLocalOptimizations()) {
+            beginPhase(10, "inline Lua arithmetic helpers within allocated local budget");
+            int arithmeticHelpersInlined = optimizer.inlineLuaDivModHelpersWithinLocalBudget();
+            if (arithmeticHelpersInlined > 0) {
+                optimizer.localOptimizations();
+            }
+            timeTaker.endPhase();
+        }
+
+        printDebugImProg("./test-output/lua/im " + stage++ + "_afterlocalopts.im");
+
+        // The program is flat here (the flatten above, and every sweep of the local optimizations ends with one) and the
+        // removal keeps it flat, so no flatten follows it. A second removal used to follow (#883): the flatten after
+        // the first uncovered garbage which only the second removed. There is no such flatten any more, so what one
+        // removal does not remove is not there. A unit test makes the second removal and fails when it finds garbage.
+        boolean garbageChanged = optimizer.removeGarbage();
+        if (garbageChanged) {
+            optimizer.assertNoGarbage("the removal ran on a flat program and kept it flat");
+        }
+
+        printDebugImProg("./test-output/lua/im " + stage++ + "_afterremoveGarbage1.im");
+
+        stage = 12;
+        if (runArgs.isOptimize()) {
+            beginPhase(12, "froptimize");
+            optimizer.optimize();
+            printDebugImProg("./test-output/lua/im " + stage++ + "_afteroptimize.im");
+            timeTaker.endPhase();
+        }
+        beginPhase(13, "lua remove garbage");
+        RemoveGarbage.removeGarbage(imProg, imTranslator);
+        timeTaker.endPhase();
+
+        beginPhase(13, "prepare lua dispatch");
+        LuaDispatchPreparation.prepare(imProg, imTranslator);
+        timeTaker.endPhase();
+
+        // After the last optimization, so nothing folds the temporaries back into the casts.
+        beginPhase(13, "old-generics cast operands");
+        LuaOldGenericsCasts.transform(imProg, imTranslator);
+        timeTaker.endPhase();
+
+        imTranslator.assertFlat("before it is translated to Lua, which would make a closure of each statement expression");
+        beginPhase(14, "translate to lua");
+        LuaTranslator luaTranslator = new LuaTranslator(imProg, imTranslator);
+        LuaCompilationUnit luaCode = luaTranslator.translate();
+        this.luaTranslator = luaTranslator;
+        ImAttrType.setWurstClassType(TypesHelper.imInt());
+        timeTaker.endPhase();
+        return luaCode;
+    }
+
+    /** Whether the program constructs a value of a type parameter, which needs its concrete type. */
+    private boolean containsGenericNewCall() {
+        boolean[] found = {false};
+        getImProg().accept(new de.peeeq.wurstscript.jassIm.Element.DefaultVisitor() {
+            @Override
+            public void visit(ImFunctionCall call) {
+                if (getImTranslator().isGenericNewMarker(call.getFunc())) {
+                    found[0] = true;
+                    return;
+                }
+                super.visit(call);
+            }
+        });
+        return found[0];
+    }
+
+    /** Whether the program dispatches on a type class bound anywhere. */
+    private boolean containsTypeClassDispatch() {
+        boolean[] found = {false};
+        getImProg().accept(new de.peeeq.wurstscript.jassIm.Element.DefaultVisitor() {
+            @Override
+            public void visit(ImTypeVarDispatch dispatch) {
+                found[0] = true;
+            }
+        });
+        return found[0];
+    }
+
+    /** Tuple type arguments need monomorphisation before tuples can become scalar storage. */
+    private boolean containsTupleTypeArgument() {
+        boolean[] found = {false};
+        getImProg().accept(new de.peeeq.wurstscript.jassIm.Element.DefaultVisitor() {
+            @Override
+            public void visit(ImTypeArgument argument) {
+                if (TypesHelper.typeContainsTuples(argument.getType())) {
+                    found[0] = true;
+                }
+                super.visit(argument);
+            }
+        });
+        return found[0];
+    }
+}

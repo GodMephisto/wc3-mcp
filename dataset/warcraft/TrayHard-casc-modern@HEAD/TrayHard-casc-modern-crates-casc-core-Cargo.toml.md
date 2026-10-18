@@ -1,0 +1,22 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/TrayHard/casc-modern"
+source_path: "crates/casc-core/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "casc-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+casclib-sys = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+bytes = { workspace = true }
+image = { workspace = true }

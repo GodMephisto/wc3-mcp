@@ -1,0 +1,262 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/attributes/AttrNameDef.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.attributes;
+
+import de.peeeq.wurstscript.ast.*;
+import de.peeeq.wurstscript.attributes.names.FuncLink;
+import de.peeeq.wurstscript.attributes.names.NameLink;
+import de.peeeq.wurstscript.attributes.names.OtherLink;
+import de.peeeq.wurstscript.attributes.names.Visibility;
+import de.peeeq.wurstscript.jassIm.ImFunction;
+import de.peeeq.wurstscript.translation.imtranslation.ImTranslator;
+import de.peeeq.wurstscript.types.TypeClassConstraints;
+import de.peeeq.wurstscript.types.WurstType;
+import de.peeeq.wurstscript.types.WurstTypeClassOrInterface;
+import de.peeeq.wurstscript.types.WurstTypeTypeParam;
+import de.peeeq.wurstscript.types.WurstTypeUnknown;
+import de.peeeq.wurstscript.types.WurstTypeEnum;
+import de.peeeq.wurstscript.types.WurstTypeModule;
+import org.eclipse.jdt.annotation.Nullable;
+import de.peeeq.wurstscript.types.WurstTypeBoundTypeParam;
+
+/**
+ * this attribute find the variable definition for every variable reference
+ */
+public class AttrNameDef {
+
+
+    public static NameLink calculate(ExprVarArrayAccess term) {
+        return searchNameInScope(term.getVarName(), term);
+    }
+
+    public static NameLink calculate(ExprVarAccess term) {
+        NameLink result = specialEnumLookupRules(term);
+        if (result != null) {
+            return result;
+        }
+        return searchNameInScope(term.getVarName(), term);
+    }
+
+    public static @Nullable NameLink specialEnumLookupRules(ExprVarAccess term) {
+        NameLink result = null;
+        Element parent = term.getParent();
+        String varName = term.getVarName();
+        if (parent instanceof ExprList) {
+            parent = parent.getParent();
+            if (parent instanceof SwitchCase) {
+                SwitchStmt s = (SwitchStmt) parent.getParent().getParent();
+                result = lookupEnumConst(varName, s.getExpr().attrTyp());
+            }
+        } else if (parent instanceof StmtSet) {
+            StmtSet s = (StmtSet) parent;
+            if (s.getRight() == term) {
+                result = lookupEnumConst(varName, s.getUpdatedExpr().attrTyp());
+            }
+        } else if (parent instanceof GlobalOrLocalVarDef) {
+            GlobalOrLocalVarDef v = (GlobalOrLocalVarDef) parent;
+            result = lookupEnumConst(varName, v.getOptTyp().attrTyp());
+        } else if (parent instanceof ExprBinary) {
+            ExprBinary binary = (ExprBinary) parent;
+            if (binary.getRight() == term) {
+                result = lookupEnumConst(varName, binary.getLeft().attrTyp());
+            }
+        }
+        return result;
+    }
+
+    public static @Nullable NameLink lookupEnumConst(String varName, WurstType t) {
+        if (t instanceof WurstTypeEnum e) {
+            // if we expect an enum type we can as well directly look into the enum
+            EnumDef eDef = e.getDef();
+            return eDef.lookupMemberVar(e, varName, false);
+        }
+        return null;
+    }
+
+    public static NameLink calculate(ExprMemberVar term) {
+        return memberVarCase(term.getLeft(), term.getVarName(), AttrExprType.isWriteAccess(term), term);
+    }
+
+    public static @Nullable NameLink calculate(ExprMemberArrayVar term) {
+        return memberVarCase(term.getLeft(), term.getVarName(), AttrExprType.isWriteAccess(term), term);
+    }
+
+
+    protected static NameLink searchNameInScope(String varName, NameRef node) {
+        boolean showErrors = !varName.startsWith("gg_");
+        if (!"it".equals(varName)) {
+            // A bounded type parameter can stand in receiver position, as in T.toIndex(x). The
+            // syntactic test comes first so ordinary lookups keep their original cost, and the
+            // probe below uses the cached form. Anything else falls through to the normal lookup,
+            // which must stay the last word so that it still reports ambiguity and unknown names.
+            if (isMethodCallReceiver(node) && node.lookupVar(varName, false) == null) {
+                NameLink typeParamRef = lookupBoundedTypeParam(varName, node);
+                if (typeParamRef != null) {
+                    return typeParamRef;
+                }
+            }
+            return node.lookupVar(varName, showErrors);
+        }
+
+        // Normal lexical lookup wins, so user-defined names can shadow implicit closure-self.
+        NameLink result = node.lookupVar(varName, false);
+        if (result != null) {
+            return result;
+        }
+
+        NameLink implicitClosureSelf = lookupImplicitClosureSelf(node, showErrors);
+        if (implicitClosureSelf != null) {
+            return implicitClosureSelf;
+        }
+        if (node.attrNearestExprClosure() != null) {
+            // keep diagnostics focused on closure typing instead of "unknown variable it"
+            return null;
+        }
+
+        if (!showErrors) {
+            return null;
+        }
+
+        // Fallback to default diagnostics when no implicit closure-self is available.
+        return node.lookupVar(varName, true);
+    }
+
+    /** True when this reference is the receiver of a method call, as {@code T} is in {@code T.f(x)}. */
+    private static boolean isMethodCallReceiver(NameRef node) {
+        return node.getParent() instanceof ExprMemberMethod call && call.getLeft() == node;
+    }
+
+    /**
+     * Resolves a name which refers to a type parameter carrying type class bounds, so that the
+     * parameter can be used as the receiver of a required method: {@code T.toIndex(x)}.
+     * <p>
+     * A bare type parameter is not a value, so this is deliberately limited to receiver position;
+     * everywhere else the ordinary "unknown variable" error is the right answer.
+     */
+    private static @Nullable NameLink lookupBoundedTypeParam(String varName, NameRef node) {
+        TypeDef typeDef = node.lookupType(varName, false);
+        if (!(typeDef instanceof TypeParamDef tp) || !TypeClassConstraints.hasBounds(tp)) {
+            return null;
+        }
+        WurstType typ = staticRefTypeFor(tp, node);
+        return new OtherLink(Visibility.LOCAL, varName, typ) {
+            @Override
+            public de.peeeq.wurstscript.jassIm.ImExpr translate(NameRef e, ImTranslator t, ImFunction f) {
+                throw new CompileError(e.attrSource(),
+                        "Type parameter " + varName + " is not a value; it can only be used to call a method required by its bounds.");
+            }
+        };
+    }
+
+    /**
+     * The type a bounded parameter's name denotes in receiver position.
+     * <p>
+     * A parameter declared on a module instantiation stands for the argument the user supplied, so it
+     * denotes that type bound to this parameter: the requirement's own parameter types then substitute
+     * to the argument rather than to a name only the module can see. Everywhere else the parameter
+     * stands for itself.
+     */
+    private static WurstType staticRefTypeFor(TypeParamDef tp, NameRef node) {
+        WurstType argument = moduleInstanciationArgument(tp);
+        if (argument != null) {
+            return new WurstTypeBoundTypeParam(tp, argument, node).asStaticRef();
+        }
+        return new WurstTypeTypeParam(tp).asStaticRef();
+    }
+
+    /** The argument a module instantiation supplied for this parameter, or null if it is not one. */
+    private static @Nullable WurstType moduleInstanciationArgument(TypeParamDef tp) {
+        if (!(tp.getParent() != null && tp.getParent().getParent() instanceof ModuleInstanciation mi)) {
+            return null;
+        }
+        int index = mi.getTypeParameters().indexOf(tp);
+        if (index < 0 || index >= mi.getTypeArgs().size()) {
+            return null;
+        }
+        return mi.getTypeArgs().get(index).attrTyp();
+    }
+
+    private static @Nullable NameLink lookupImplicitClosureSelf(NameRef node, boolean showErrors) {
+        ExprClosure closure = node.attrNearestExprClosure();
+        if (closure == null) {
+            return null;
+        }
+        WurstType expectedTyp = closure.attrExpectedTypAfterOverloading();
+        if (!(expectedTyp instanceof WurstTypeClassOrInterface)) {
+            if (showErrors && (expectedTyp instanceof WurstTypeUnknown)) {
+                node.addError("Cannot use implicit closure self 'it' because the closure target type is unknown.");
+            }
+            return null;
+        }
+
+        return new OtherLink(Visibility.LOCAL, "it", expectedTyp) {
+            @Override
+            public de.peeeq.wurstscript.jassIm.ImExpr translate(NameRef e, de.peeeq.wurstscript.translation.imtranslation.ImTranslator t, de.peeeq.wurstscript.jassIm.ImFunction f) {
+                return de.peeeq.wurstscript.jassIm.JassIm.ImVarAccess(t.getThisVar(closure));
+            }
+        };
+    }
+
+    private static @Nullable NameLink memberVarCase(Expr left, String varName, boolean writeAccess, Expr node) {
+        WurstType receiverType = left.attrTyp();
+        NameLink result = node.lookupMemberVar(receiverType, varName);
+        if (result == null) {
+
+
+            node.addError("Could not resolve reference to variable " + varName + " for receiver of type " +
+                    receiverType + ".");
+
+        }
+        if (receiverType instanceof WurstTypeModule wurstTypeModule) {
+            ModuleDef module = wurstTypeModule.getDef();
+            if (!left.isSubtreeOf(module)) {
+                node.addError("Can only reference module variables from within the module.");
+            }
+        }
+
+
+        return result;
+    }
+
+    public static @Nullable NameDef tryGetNameDef(NameRef e) {
+        NameLink link = e.attrNameLink();
+        if (link == null || link instanceof OtherLink) {
+            return null;
+        }
+        return link.getDef();
+    }
+
+    public static @Nullable NameDef tryGetNameDef(NameDef e) {
+        return e;
+    }
+
+    public static @Nullable NameDef tryGetNameDef(FuncRef e) {
+        FuncLink link = e.attrFuncLink();
+        if (link == null) {
+            return null;
+        }
+        return link.getDef();
+    }
+
+    public static @Nullable NameDef tryGetNameDef(TypeRef e) {
+        return e.attrTypeDef();
+    }
+
+    public static @Nullable NameDef tryGetNameDef(Element elem) {
+        return null;
+    }
+
+
+    public static NameDef calculateDef(NameRef nameRef) {
+        NameLink l = nameRef.attrNameLink();
+        if (l instanceof OtherLink) {
+            return null;
+        }
+        return l == null ? null : l.getDef();
+    }
+}

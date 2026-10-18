@@ -1,0 +1,45 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Map.Example"
+source_path: "War3Map.Example.Source.Dependency/stylecop.json"
+ref: HEAD
+---
+
+﻿{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings":
+  {
+    "orderingRules":
+    {
+      "blankLinesBetweenUsingGroups": "require",
+      "systemUsingDirectivesFirst": true,
+      "usingDirectivesPlacement": "outsideNamespace"
+    },
+
+    "layoutRules":
+    {
+      "newlineAtEndOfFile": "omit",
+      "allowConsecutiveUsings": false
+    },
+
+    "documentationRules":
+    {
+      "xmlHeader": true,
+      "companyName": "Drake53",
+      "headerDecoration": "------------------------------------------------------------------------------",
+      "copyrightText": "Copyright (c) {licenseYear} {companyName}. All rights reserved.\nLicensed under the {licenseName} license. See {licenseFile} file in the project root for full license information.",
+      "variables":
+      {
+        "licenseName": "MIT",
+        "licenseFile": "LICENSE",
+        "licenseYear": "2019"
+      }
+    },
+
+    "indentation":
+    {
+      "indentationSize": 4,
+      "useTabs": false
+    }
+  }
+}

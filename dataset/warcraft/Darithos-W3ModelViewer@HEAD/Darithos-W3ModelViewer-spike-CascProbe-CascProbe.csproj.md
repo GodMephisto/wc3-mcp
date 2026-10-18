@@ -1,0 +1,31 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Darithos/W3ModelViewer"
+source_path: "spike/CascProbe/CascProbe.csproj"
+ref: HEAD
+---
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>CascProbe</AssemblyName>
+    <RootNamespace>CascProbe</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Wc3ModelViewer.Core\Wc3ModelViewer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\native\CascLib.dll">
+      <Link>CascLib.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

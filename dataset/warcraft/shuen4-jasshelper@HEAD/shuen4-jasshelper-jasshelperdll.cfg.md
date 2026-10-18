@@ -1,0 +1,51 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/shuen4/jasshelper"
+source_path: "jasshelperdll.cfg"
+ref: HEAD
+---
+
+-$A8
+-$B-
+-$C-
+-$D-
+-$E-
+-$F-
+-$G+
+-$H+
+-$I+
+-$J-
+-$K-
+-$L-
+-$M-
+-$N+
+-$O+
+-$P+
+-$Q-
+-$R-
+-$S-
+-$T-
+-$U-
+-$V+
+-$W-
+-$X+
+-$Y-
+-$Z1
+-cg
+-vr
+-AWinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;
+-H+
+-W+
+-M
+-$M16384,1048576
+-K$00400000
+-E".\wehelper"
+-LE"C:\Users\shuen\Documents\Borland Studio Projects\Bpl"
+-LN"C:\Users\shuen\Documents\Borland Studio Projects\Bpl"
+-U".\gold\"
+-O".\gold\"
+-I".\gold\"
+-R".\gold\"
+-w-UNSAFE_TYPE
+-w-UNSAFE_CODE
+-w-UNSAFE_CAST

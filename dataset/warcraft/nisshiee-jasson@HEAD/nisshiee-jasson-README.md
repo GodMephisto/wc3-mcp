@@ -5,5 +5,5 @@ source_path: "README.md"
 ref: HEAD
 ---
 
-A Simple JSON Schema Compiler for Scala.
-Now under construction ...
+A Simple JSON Schema Compiler for Scala.
+Now under construction ...

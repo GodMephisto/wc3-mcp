@@ -1,0 +1,112 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Script/TriggerData/TriggerAction.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Script
+{
+    public sealed partial class TriggerData
+    {
+        public sealed class TriggerAction
+        {
+            internal TriggerAction(
+                string functionName,
+                int gameVersion,
+                ImmutableArray<string> argumentTypes,
+                string displayName,
+                string parameters,
+                ImmutableArray<string>? defaults,
+                ImmutableArray<int?>? limits,
+                string category,
+                string? scriptName)
+            {
+                FunctionName = functionName;
+                GameVersion = gameVersion;
+                ArgumentTypes = argumentTypes;
+                DisplayName = displayName;
+                Parameters = parameters;
+                Defaults = defaults;
+                Limits = limits;
+                Category = category;
+                ScriptName = scriptName;
+            }
+
+            public string FunctionName { get; }
+
+            public int GameVersion { get; }
+
+            public ImmutableArray<string> ArgumentTypes { get; }
+
+            public string DisplayName { get; }
+
+            public string Parameters { get; }
+
+            public ImmutableArray<string>? Defaults { get; }
+
+            public ImmutableArray<int?>? Limits { get; }
+
+            public string Category { get; }
+
+            public string? ScriptName { get; }
+
+            public override string ToString() => FunctionName;
+
+            internal sealed class Builder
+            {
+                public Builder(
+                    string functionName,
+                    int gameVersion,
+                    ImmutableArray<string> argumentTypes)
+                {
+                    FunctionName = functionName;
+                    GameVersion = gameVersion;
+
+                    if (argumentTypes.Length == 1 && string.Equals(argumentTypes[0], JassKeyword.Nothing, StringComparison.Ordinal))
+                    {
+                        ArgumentTypes = ImmutableArray<string>.Empty;
+                    }
+                    else
+                    {
+                        ArgumentTypes = argumentTypes;
+                    }
+                }
+
+                public string FunctionName { get; }
+
+                public int GameVersion { get; }
+
+                public ImmutableArray<string> ArgumentTypes { get; }
+
+                public string? DisplayName { get; set; }
+
+                public string? Parameters { get; set; }
+
+                public ImmutableArray<string>? Defaults { get; set; }
+
+                public ImmutableArray<int?>? Limits { get; set; }
+
+                public string? Category { get; set; }
+
+                public string? ScriptName { get; set; }
+
+                public TriggerAction ToImmutable()
+                {
+                    return new TriggerAction(
+                        FunctionName,
+                        GameVersion,
+                        ArgumentTypes,
+                        DisplayName,
+                        Parameters,
+                        Defaults,
+                        Limits,
+                        Category,
+                        ScriptName);
+                }
+
+                public override string ToString() => FunctionName;
+            }
+        }
+    }
+}

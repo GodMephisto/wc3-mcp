@@ -1,0 +1,102 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/translation/imtojass/StatementTranslation.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.translation.imtojass;
+
+import de.peeeq.wurstscript.jassAst.*;
+import de.peeeq.wurstscript.jassIm.*;
+
+import de.peeeq.wurstscript.parser.WPos;
+
+import java.util.List;
+
+import static de.peeeq.wurstscript.jassAst.JassAst.*;
+public class StatementTranslation {
+
+
+    public static void translate(ImExitwhen imExitwhen, List<JassStatement> stmts, JassFunction f, ImToJassTranslator translator) {
+        stmts.add(JassStmtExitwhen(imExitwhen.getCondition().translate(translator)));
+    }
+
+    public static void translate(ImIf imIf, List<JassStatement> stmts, JassFunction f, ImToJassTranslator translator) {
+        JassExpr cond = imIf.getCondition().translate(translator);
+        JassStatements thenBlock = JassStatements();
+        imIf.getThenBlock().translate(thenBlock, f, translator);
+        JassStatements elseBlock = JassStatements();
+        imIf.getElseBlock().translate(elseBlock, f, translator);
+        stmts.add(JassStmtIf(cond, thenBlock, elseBlock));
+    }
+
+
+    public static void translate(ImLoop imLoop, List<JassStatement> stmts, JassFunction f, ImToJassTranslator translator) {
+        JassStatements body = JassStatements();
+        imLoop.getBody().translate(body, f, translator);
+        stmts.add(JassStmtLoop(body));
+    }
+
+    public static void translate(ImReturn imReturn, List<JassStatement> stmts, JassFunction f, ImToJassTranslator translator) {
+        if (imReturn.getReturnValue() instanceof ImNoExpr) {
+            stmts.add(JassStmtReturnVoid());
+        } else {
+            ImExpr e = (ImExpr) imReturn.getReturnValue();
+            JassExpr returnValue = e.translate(translator);
+            stmts.add(JassStmtReturn(returnValue));
+        }
+    }
+
+    public static void translate(ImSet imSet, List<JassStatement> stmts, JassFunction f, ImToJassTranslator translator) {
+        ImLExpr updatedExpr = imSet.getLeft();
+        if (updatedExpr instanceof ImVarAccess va) {
+            JassVar var = translator.getJassVarFor(va.getVar());
+            JassExpr exprs = imSet.getRight().translate(translator);
+            stmts.add(JassStmtSet(var.getName(), exprs));
+        } else if (updatedExpr instanceof ImVarArrayAccess vaa) {
+            JassVar var = translator.getJassVarFor(vaa.getVar());
+            JassExpr indexes = vaa.getIndexes().get(0).translate(translator);
+            JassExpr exprs = imSet.getRight().translate(translator);
+            stmts.add(JassStmtSetArray(var.getName(), indexes, exprs));
+        }
+    }
+
+    public static void translate(ImExpr imExpr, List<JassStatement> stmts, JassFunction f, ImToJassTranslator translator) {
+        JassExpr expr = imExpr.translate(translator);
+        // only add the function calls from this expression, the rest can not have any side effects
+        addAllCalls(stmts, expr);
+    }
+
+
+    private static void addAllCalls(List<JassStatement> stmts, de.peeeq.wurstscript.jassAst.Element expr) {
+        if (expr instanceof JassExprFunctionCall fc) {
+            stmts.add(JassAst.JassStmtCall(fc.getFuncName(), fc.getArguments().copy()));
+        } else {
+            // visit children
+            for (int i = 0; i < expr.size(); i++) {
+                addAllCalls(stmts, expr.get(i));
+            }
+        }
+    }
+
+
+    public static void translate(ImStmts imStmts, List<JassStatement> stmts, JassFunction f, ImToJassTranslator translator) {
+        for (ImStmt s : imStmts) {
+            int first = stmts.size();
+            s.translate(stmts, f, translator);
+            if (stmts.size() > first) {
+                WPos source = s.attrTrace().attrSource();
+                for (int i = first; i < stmts.size(); i++) {
+                    translator.recordSource(stmts.get(i), source);
+                }
+            }
+        }
+    }
+
+
+    public static void translate(ImVarargLoop imVarargLoop, List<JassStatement> stmts, JassFunction f, ImToJassTranslator translator) {
+        throw new Error("not implemented");
+    }
+
+}

@@ -1,0 +1,45 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "Directory.Build.props"
+ref: HEAD
+---
+
+<Project>
+  <ItemGroup Condition="'$(PUBLISH)'!='true'">
+    <PackageReference Include="StyleCop.Analyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(PUBLISH)'=='true'">
+    <SourceRoot Include="$(MSBuildThisFileDirectory)/" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PUBLISH)'!='true'">
+    <Content Include="$(MSBuildThisFileDirectory)LICENSE" Visible="false">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Visible="false" />
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory).config/analyzers/CA.globalconfig" />
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory).config/analyzers/IDE.globalconfig" />
+    <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory).config/analyzers/SA.globalconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="README.md" />
+    <None Remove="$(MSBuildThisFileDirectory)LICENSE" />
+    <None Remove="$(MSBuildThisFileDirectory)stylecop.json" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(PUBLISH)'!='true'">
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <AnalysisLevel>5</AnalysisLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DefaultItemExcludes>$(DefaultItemExcludes);README.md</DefaultItemExcludes>
+    <LangVersion>10.0</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TfmGroupDotNet>net6.0;net10.0</TfmGroupDotNet>
+    <TfmGroupDotNetWindows>net6.0;net6.0-windows;net10.0;net10.0-windows</TfmGroupDotNetWindows>
+  </PropertyGroup>
+</Project>

@@ -9,38 +9,39 @@ ref: HEAD
 
 ## Requirements
 
-- cmake
+- cmake 3.25 or later
 - C++ 17 compiler
 - StormLib (provided as Git Submodule)
 - CLI11 (provided as Git Submodule)
+- hash-library (provided as Git Submodule)
 
 ## Linux
 
 ```bash
 $ git clone --recursive https://github.com/thegraydot/mpqcli.git
 $ cd mpqcli
-$ cmake -B build
-$ cmake --build build
+$ cmake -B build/release -DCMAKE_BUILD_TYPE=Release
+$ cmake --build build/release
 ```
 
-The `mpqcli` binary will be available in: `./build/bin/mpqcli`
+The `mpqcli` binary will be available in: `./build/release/bin/mpqcli`
 
 ## Windows
 
 ```bash
 $ git clone --recursive https://github.com/thegraydot/mpqcli.git
 $ cd mpqcli
-$ cmake -B build
-$ cmake --build build --config Release
+$ cmake -B build/release
+$ cmake --build build/release --config Release
 ```
 
-The `mpqcli.exe` binary will be available in: `.\build\bin\Release\mpqcli.exe`
+The `mpqcli.exe` binary will be available in: `.\build\release\bin\mpqcli.exe`
 
 ## Dependencies
 
 ### StormLib
 
-This project requires the [StormLib](https://github.com/ladislav-zezula/StormLib) library. Many thanks to [Ladislav Zezula](https://github.com/ladislav-zezula) for authoring such a good library and releasing the code under an open-source license. The StormLib library has a number of requirements. However, the build method specifies using the libraries bundled with StormLib.
+This project requires the [StormLib](https://github.com/ladislav-zezula/StormLib) library. Many thanks to [Ladislav Zezula](https://github.com/ladislav-zezula) for authoring such a good library and releasing the code under an open-source licence. The StormLib library has a number of requirements. However, the build method specifies using the libraries bundled with StormLib.
 
 ### CLI11
 
@@ -54,13 +55,17 @@ To configure the testing environment you will need Python installed, as well as 
 
 ```bash
 $ sudo apt install python3-venv python3-pip
-$ python3 -m venv test/.venv
-$ source test/.venv/bin/activate
+$ python3 -m venv .venv
+$ source .venv/bin/activate
 $ pip3 install -r test/requirements.txt
 ```
 
-Then you can run the tests using:
+The tests run the binary in `build/dev`, so build it there and then run the tests using:
 
 ```bash
+$ cmake -B build/dev
+$ cmake --build build/dev
 $ python3 -m pytest test -s
 ```
+
+`make test` does the same in one step.

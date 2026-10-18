@@ -1,0 +1,299 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/deploy.gradle"
+ref: HEAD
+---
+
+import org.gradle.internal.os.OperatingSystem
+import javax.inject.Inject
+
+// ----------------------- Publishing -----------------------
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact tasks.shadowJar
+            groupId    = project.group ?: 'de.peeeq'
+            artifactId = 'wurstscript'
+            version    = project.version
+        }
+    }
+    repositories {
+        mavenLocal()
+        // or: maven { url = uri("${buildDir}/repo") }
+    }
+}
+
+// ----------------------- Common providers/locations ---------------------------------
+def os = OperatingSystem.current()
+def arch = System.getProperty("os.arch") // "amd64"/"x86_64"/"aarch64"
+
+def plat = os.isWindows() ? "win-x64"
+        : os.isMacOsX() ? (arch == "aarch64" ? "macos-arm64" : "macos-x64")
+        : "linux-x64"
+
+// Capture project version at configuration time (avoid Task.project at execution)
+def versionString = project.version.toString()
+
+// Allow adding modules if reflection/ServiceLoader pulls them in:
+//   ./gradlew jlinkRuntime27 -PextraJdkModules=java.desktop,jdk.crypto.ec
+def extraJdkModulesProvider = providers.gradleProperty("extraJdkModules").orElse("")
+
+def fatJar = tasks.named('shadowJar').flatMap { it.archiveFile }
+
+def jlinkWorkDir  = layout.buildDirectory.dir("jlink")
+def modulesRawTxt  = jlinkWorkDir.map { it.file("modules.raw.txt") }
+def modulesTxt     = jlinkWorkDir.map { it.file("modules.txt") }
+def jreImageDir    = layout.buildDirectory.dir("jre-wurst-27")
+
+def distRoot    = layout.buildDirectory.dir("dist/slim-${plat}")
+def releasesDir = layout.buildDirectory.dir("releases")
+
+// ----------------------- Toolchain / tool paths (providers) -------------------------
+def toolchainSvc = extensions.getByType(JavaToolchainService)
+def launcherProvider = toolchainSvc.launcherFor(java.toolchain)
+
+// Build the runtime with the same Java 27 toolchain as the compiler, even when
+// Gradle itself was launched with an older JAVA_HOME. CI pins the portable JDK
+// through org.gradle.java.installations.paths.
+def javaHomeProvider = launcherProvider.map { it.metadata.installationPath.asFile }
+
+def jdepsPathProvider = javaHomeProvider.map { home ->
+    new File(home, "bin/jdeps${os.isWindows() ? '.exe' : ''}").absolutePath
+}
+def jlinkPathProvider = javaHomeProvider.map { home ->
+    new File(home, "bin/jlink${os.isWindows() ? '.exe' : ''}").absolutePath
+}
+def javaExecutableName = os.isWindows() ? "java.exe" : "java"
+def jmodsDirProvider = javaHomeProvider.map { home ->
+    new File(home, "jmods").absolutePath
+}
+
+// ----------------------- Tasks: jdeps → jlink → assemble → package ------------------
+
+// 1) Run jdeps and capture raw module deps
+
+abstract class JdepsRawTask extends DefaultTask {
+    @Inject abstract ExecOperations getExecOps()
+
+    @InputFile
+    abstract RegularFileProperty getInputJar()
+
+    @Input
+    abstract Property<String> getJdepsPath()
+
+    @OutputFile
+    abstract RegularFileProperty getOutFile()
+
+    @TaskAction
+    void runJdeps() {
+        outFile.get().asFile.parentFile.mkdirs()
+
+        def outBuf = new ByteArrayOutputStream()
+        execOps.exec {
+            executable = jdepsPath.get()
+            args "--multi-release", "27",
+                    "--ignore-missing-deps",
+                    "--print-module-deps",
+                    "--ignore-missing-deps",
+                    inputJar.get().asFile.absolutePath
+            standardOutput = outBuf
+        }
+        outFile.get().asFile.text = outBuf.toString("UTF-8").trim() + "\n"
+    }
+}
+
+/**
+ * Runs the java of a runtime image without the JVM option variables of the build machine: CI exports JAVA_TOOL_OPTIONS
+ * for its tests, and a base class data sharing archive takes on the options of the JVM which writes it.
+ * Use Java 27's default compact-header mode when making and validating the shipped archive.
+ */
+class RuntimeJava {
+    static String run(File java, List<String> options) {
+        def command = [java.absolutePath] + options
+        def pb = new ProcessBuilder(command)
+        pb.redirectErrorStream(true)
+        ["JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JDK_JAVA_OPTIONS"].each { pb.environment().remove(it) }
+        def process = pb.start()
+        def output = process.inputStream.getText("UTF-8")
+        def exit = process.waitFor()
+        if (exit != 0) {
+            throw new org.gradle.api.GradleException("`" + command.join(" ") + "` exited with " + exit + ": " + output)
+        }
+        return output
+    }
+}
+
+def fatJarProvider = tasks.named("shadowJar").flatMap { it.archiveFile } // Provider<RegularFile>
+
+tasks.register("jdepsRaw", JdepsRawTask) {
+    group = "distribution"
+    description = "Runs jdeps and writes raw module deps to a file."
+    dependsOn("shadowJar")
+
+    // IMPORTANT: RegularFileProperty expects a Provider<RegularFile>
+    inputJar.set(fatJarProvider)
+
+    jdepsPath.set(jdepsPathProvider) // Provider<String>
+    outFile.set(modulesRawTxt)       // Provider<RegularFile>
+}
+
+
+// 1b) Normalize jdeps output into modules.txt (add jdwp + extra modules)
+tasks.register("jdepsModules") {
+    description = "Detects required JDK modules for the fat compiler.jar via jdeps"
+    group = "distribution"
+
+    dependsOn("jdepsRaw")
+
+    inputs.file(modulesRawTxt)
+    inputs.property("extraJdkModules", extraJdkModulesProvider)
+    outputs.file(modulesTxt)
+
+    // capture provider values at configuration time (avoid Task.project at execution)
+    def extraMods = extraJdkModulesProvider.get().toString().trim()
+
+    doLast {
+        def raw = modulesRawTxt.get().asFile.text.trim()
+        def detected = raw.isEmpty() ? "java.base" : raw
+
+        def jdwpModule = "jdk.jdwp.agent"
+        if (!detected.split(",").contains(jdwpModule)) {
+            detected = detected + "," + jdwpModule
+        }
+        if (!extraMods.isEmpty()) {
+            detected = detected + "," + extraMods
+        }
+
+        modulesTxt.get().asFile.parentFile.mkdirs()
+        modulesTxt.get().asFile.text = detected
+        logger.lifecycle("[jdeps] Using modules: ${detected}")
+    }
+}
+
+// 2) Build slim runtime with jlink (output dir must not exist)
+tasks.register("jlinkRuntime27", Exec) {
+    description = "Builds a slim Java 27 runtime image containing only the needed modules"
+    group = "distribution"
+
+    dependsOn("jdepsModules")
+
+    inputs.file(modulesTxt)
+    inputs.property("javaHome", javaHomeProvider)
+    inputs.property("jmodsDir", jmodsDirProvider)
+    outputs.dir(jreImageDir)
+
+    doFirst {
+        def mods = modulesTxt.get().asFile.text.trim()
+        if (!mods) throw new GradleException("No modules detected for jlink.")
+
+        def outDir = jreImageDir.get().asFile
+        if (outDir.exists()) {
+            outDir.deleteDir() // no project access
+        }
+        outDir.parentFile.mkdirs()
+
+        logger.lifecycle("[jlink] Using: ${jlinkPathProvider.get()}")
+        logger.lifecycle("[jlink] JAVA_HOME: ${javaHomeProvider.get()}")
+        logger.lifecycle("[jlink] jmods: ${jmodsDirProvider.get()}")
+        logger.lifecycle("[jlink] Modules: ${mods}")
+
+        executable = jlinkPathProvider.get()
+        // Generate the archive with the shipped JVM defaults, independently of the build machine's JVM options.
+        ["JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "JDK_JAVA_OPTIONS"].each { environment.remove(it) }
+        args "--verbose",
+                "--module-path", jmodsDirProvider.get(),
+                "--add-modules", mods,
+                "--no-header-files",
+                "--no-man-pages",
+                "--strip-debug",
+                "--compress=zip-9",
+                // The language server starts from an AppCDS archive which the JVM writes next to the compiler
+                // jar (wurst4vscode, -XX:+AutoCreateSharedArchive). That archive sits on top of the base archive
+                // of the runtime; without one the JVM silently runs without any.
+                "--generate-cds-archive",
+                "--output", outDir.absolutePath
+    }
+
+    doLast {
+        // checked on the image itself: the dist folder is only added to, and may still hold an archive of an earlier build
+        def image = jreImageDir.get().asFile
+        if (!["bin/server/classes.jsa", "lib/server/classes.jsa", "bin/server/classes_coh.jsa", "lib/server/classes_coh.jsa"].any { new File(image, it).exists() }) {
+            throw new GradleException("jlink made no base CDS archive (classes.jsa or classes_coh.jsa under bin/server or lib/server) in " + image)
+        }
+    }
+}
+
+// 3) Assemble folder layout: jre + compiler.jar (no manifest)
+tasks.register("assembleSlimCompilerDist", Copy) {
+    description = "Assembles dist folder with JRE and compiler.jar (no manifest)."
+    group = "distribution"
+
+    if (os.isMacOsX()) {
+        // On macOS, skip jlink entirely. Copying the original signed JDK preserves
+        // Apple's codesignatures on dylibs/executables, which jlink would invalidate.
+        // jmods/ (jlink inputs, ~150 MB) and include/ (C headers) are dev-only.
+        dependsOn("shadowJar")
+        from(javaHomeProvider) {
+            into("wurst-runtime")
+            exclude("jmods/**", "include/**")
+        }
+    } else {
+        dependsOn("jlinkRuntime27", "shadowJar")
+        from(jreImageDir) {
+            into("wurst-runtime")
+            // for heaps above 32 GB, which this does not run with; it would add 14 MB to the download
+            exclude("**/classes_nocoops*.jsa")
+        }
+    }
+
+    from(fatJar) { into("wurst-compiler") }
+    into(distRoot)
+
+    doLast {
+        logger.lifecycle("[dist] Folder ready at: ${distRoot.get().asFile}")
+        def runtime = new File(distRoot.get().asFile, "wurst-runtime")
+        def java = new File(runtime, "bin/" + javaExecutableName)
+        // jlink made the archive of the slim runtime, and a full JDK (macOS) normally brings its own, but not every
+        // build does (the macOS x64 JDK on CI once had none). -Xshare:dump writes it next to the JVM library.
+        if (!["bin/server/classes.jsa", "lib/server/classes.jsa", "bin/server/classes_coh.jsa", "lib/server/classes_coh.jsa"].any { new File(runtime, it).exists() }) {
+            logger.lifecycle("[dist] The runtime has no base CDS archive, dumping it")
+            RuntimeJava.run(java, ["-Xshare:dump"])
+        }
+        // -Xshare:on makes the JVM fail when it has no usable base archive, where it would otherwise run without one
+        // and nobody would notice
+        RuntimeJava.run(java, ["-Xshare:on", "-version"])
+    }
+}
+
+// Add launch scripts
+tasks.named("assembleSlimCompilerDist", Copy) { t ->
+    if (os.isWindows()) {
+        from("launchers/wurstscript.cmd") { into(".") }
+        from("launchers/wurstscript")     { into(".") }
+        from("launchers/grill.cmd")       { into(".") }
+        from("launchers/grill")           { into(".") }
+    } else {
+        from("launchers/wurstscript") { into(".") }
+        from("launchers/grill")       { into(".") }
+    }
+}
+
+// 4) Package ZIP on all platforms
+tasks.register("packageSlimCompilerDistZip", Zip) {
+    description = "Packages slim dist as a ZIP archive (all platforms)."
+    group = "distribution"
+    dependsOn("assembleSlimCompilerDist")
+
+    from(distRoot)
+    destinationDirectory.set(releasesDir)
+    archiveFileName.set("wurst-compiler-${versionString}-${plat}.zip")
+}
+
+// OS-aware convenience wrapper now just points to ZIP
+tasks.register("packageSlimCompilerDist") {
+    description = "Packages slim dist for the current platform (ZIP on all OSes)."
+    group = "distribution"
+    dependsOn("packageSlimCompilerDistZip")
+}

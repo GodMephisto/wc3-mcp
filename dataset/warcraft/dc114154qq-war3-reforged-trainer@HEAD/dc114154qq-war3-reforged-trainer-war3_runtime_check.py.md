@@ -1,0 +1,93 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/dc114154qq/war3-reforged-trainer"
+source_path: "war3_runtime_check.py"
+ref: HEAD
+---
+
+"""Offline verification executed by the packaged trainer, without a game hook."""
+
+import ctypes
+import hashlib
+import json
+from pathlib import Path
+import sys
+import traceback
+
+
+CURRENT_BRIDGE_FILENAMES = (
+    "war3_bridge_24268.dll",
+)
+
+
+def run(output_path):
+    report = {"ok": False, "frozen": bool(getattr(sys, "frozen", False))}
+    try:
+        import capstone
+
+        base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+        decoder = Path(capstone._cs._name).resolve()
+        report["decoder"] = str(decoder)
+        report["decoder_sha256"] = hashlib.sha256(decoder.read_bytes()).hexdigest()
+        if report["frozen"] and not decoder.is_relative_to(base.resolve()):
+            raise RuntimeError("Decoder was loaded from outside the executable bundle")
+        bridge = next(
+            (base / "tools" / name for name in CURRENT_BRIDGE_FILENAMES
+             if (base / "tools" / name).is_file()),
+            None,
+        )
+        if bridge is None:
+            raise RuntimeError("Current 3.0 bridge is missing from the executable bundle")
+        report["bridge"] = str(bridge)
+        report["bridge_sha256"] = hashlib.sha256(bridge.read_bytes()).hexdigest()
+        # C3 inside a mov instruction is not a return; E8 inside an immediate
+        # is not a call. Both caused false instruction boundaries previously.
+        code = bytes.fromhex("448bc3b8e8000000e803000000c3")
+        decoded = list(capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64).disasm(code, 0x1000))
+        if [ins.mnemonic for ins in decoded] != ["mov", "mov", "call", "ret"]:
+            raise RuntimeError("Decoder instruction-boundary check failed")
+        report["instructions"] = [ins.mnemonic for ins in decoded]
+        # 3.0 product bundle must not contain the retired 2.0 helper.
+        retired = base / "tools" / "war3_native_helper.dll"
+        if retired.exists():
+            raise RuntimeError("Retired 2.0 native helper is present in the 3.0 bundle")
+        report["retired_helper_present"] = False
+        from war3_save_codes import extract_text
+        from war3_save_extraction_ui import SaveExtractionTab
+        from war3_services.save_extraction import export_codes
+        sample = extract_text("-load |c00FEBA0EAaBb012345|r")
+        if len(sample) != 1 or sample[0].command != "-load AaBb012345":
+            raise RuntimeError("Save-code parsing check failed")
+        report["save_extraction_modules"] = bool(SaveExtractionTab and export_codes)
+        report["save_code_parser_verified"] = True
+        from war3_gamecache_fields import parse_cache
+        from war3_archive_fields_ui import ArchiveFieldsTab
+        from war3_services.archive_fields import display_rows
+        import struct
+        raw = (struct.pack("<II", 0, 1) + b"Campaigns.w3v\0" + struct.pack("<II", 0, 1)
+               + b"Chapter1\0" + bytes(20) + struct.pack("<I", 1) + b"progress\0"
+               + struct.pack("<i", 7) + bytes(16))
+        cache = parse_cache(raw)
+        if len(cache["fields"]) != 1 or cache["fields"][0]["value"] != 7 or len(display_rows(cache)) != 1:
+            raise RuntimeError("Campaign cache field parsing check failed")
+        report["archive_fields_modules"] = bool(ArchiveFieldsTab)
+        report["archive_parser_verified"] = True
+        from war3_extension_definition_ui import ExtensionDefinitionPanel
+        from war3_mpq import library, DLL_SHA256
+        from war3_services.extension_definitions import definition_pack, PACK_SHA256
+        from war3_object_tables import parse_slk, merge_slk
+        manifest, files = definition_pack()
+        merged, _added = merge_slk(files['baseline/Custom_V1/AbilityData.slk'],files['additions/AbilityData.slk'])
+        if not {'AIni','AEqu','ASpc','AThg'} <= set(parse_slk(merged).rows):
+            raise RuntimeError('Offline backpack definition check failed')
+        mpq = library()
+        if report['frozen'] and not Path(mpq._name).resolve().is_relative_to(base.resolve()):
+            raise RuntimeError('MPQ library was loaded outside the executable bundle')
+        report['extension_definitions'] = dict(pack_id=manifest['pack_id'],pack_sha256=PACK_SHA256,
+                                               mpq_sha256=DLL_SHA256,ui_module=bool(ExtensionDefinitionPanel),
+                                               merged_definitions_verified=True)
+        report["ok"] = True
+    except Exception:
+        report["error"] = traceback.format_exc()
+    Path(output_path).write_text(json.dumps(report, indent=2), encoding="utf-8")
+    return 0 if report["ok"] else 1

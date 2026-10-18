@@ -1,0 +1,248 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/dc114154qq/war3-reforged-trainer"
+source_path: "tools/war3_bridge_world.h"
+ref: HEAD
+---
+
+/* Current-build 24268 batch for global game and local-player operations. */
+#define WORLD_SET_TECH 1u
+#define WORLD_SET_XP_RATE 2u
+#define WORLD_QUERY_FOG 3u
+#define WORLD_SET_FOG 4u
+#define WORLD_SET_GAME_PAUSED 5u
+#define WORLD_END_GAME 6u
+
+typedef struct WorldWork {
+    uint64_t (*get_local_player)(void);
+    void (*set_tech_max)(uint64_t,uint32_t,uint32_t);
+    void (*set_tech_researched)(uint64_t,uint32_t,uint32_t);
+    void (*set_xp_rate)(uint64_t,const float *);
+    void (*fog_enable)(uint32_t);
+    void (*fog_mask_enable)(uint32_t);
+    uint8_t (*is_fog_enabled)(void);
+    uint8_t (*is_fog_mask_enabled)(void);
+    void (*pause_game)(uint32_t);
+    void (*end_game)(uint32_t);
+    void *expected_tls;
+    uint32_t action,rawcode,value,changed,error,completed,after0,after1,reserved0,reserved1;
+    uint32_t fog_gate[4],fog_tail[2];
+    uint64_t (*get_xp_rate)(uint64_t);
+} WorldWork;
+_Static_assert(sizeof(WorldWork)==160,"WorldWork ABI");
+__declspec(dllexport) const uint32_t world_batch_abi[3]={0x2426805cu,216u,160u};
+
+static float WorldReal(uint32_t bits) {
+    union {uint32_t bits;float value;} value;value.bits=bits;return value.value;
+}
+
+/* Reforged's fog setters may raise a tail fault after applying their state.
+   Execute both setters independently and accept only a verified final state. */
+static int BridgeFogExceptionFilter(
+    EXCEPTION_POINTERS *info, WorldWork *w, uint32_t phase,
+    uint32_t *value, DWORD *error
+) {
+    uint64_t address=(uint64_t)(uintptr_t)info->ExceptionRecord->ExceptionAddress;
+    *error=info->ExceptionRecord->ExceptionCode;
+    (void)value;
+    /* Preserve the nested native fault for transport diagnostics.  The outer
+       callback handler only sees a successfully handled business exception,
+       so without this snapshot the host cannot distinguish a bad recovery
+       site from a native query that returned normally. */
+    BridgeExceptionFilter(info);
+    if (w) {
+        w->rawcode=phase;
+        w->reserved0=(uint32_t)address;
+        w->reserved1=(uint32_t)(address>>32);
+        if (phase==1u) {
+            w->get_local_player=(uint64_t (*)(void))(uintptr_t)address;
+            w->set_tech_researched=(void (*)(uint64_t,uint32_t,uint32_t))
+                (uintptr_t)(info->ExceptionRecord->NumberParameters>=1?
+                    info->ExceptionRecord->ExceptionInformation[0]:~0ULL);
+            w->set_xp_rate=(void (*)(uint64_t,const float *))
+                (uintptr_t)(info->ExceptionRecord->NumberParameters>=2?
+                    info->ExceptionRecord->ExceptionInformation[1]:~0ULL);
+        } else if (phase==2u) {
+            w->set_tech_max=(void (*)(uint64_t,uint32_t,uint32_t))(uintptr_t)address;
+            w->fog_enable=(void (*)(uint32_t))
+                (uintptr_t)(info->ExceptionRecord->NumberParameters>=1?
+                    info->ExceptionRecord->ExceptionInformation[0]:~0ULL);
+            w->fog_mask_enable=(void (*)(uint32_t))
+                (uintptr_t)(info->ExceptionRecord->NumberParameters>=2?
+                    info->ExceptionRecord->ExceptionInformation[1]:~0ULL);
+        } else if (phase==3u) {
+            w->get_local_player=(uint64_t (*)(void))(uintptr_t)address;
+        } else if (phase==4u) {
+            w->set_tech_max=(void (*)(uint64_t,uint32_t,uint32_t))(uintptr_t)address;
+            w->set_tech_researched=(void (*)(uint64_t,uint32_t,uint32_t))(uintptr_t)info->ContextRecord->Rsp;
+            w->set_xp_rate=(void (*)(uint64_t,const float *))(uintptr_t)info->ContextRecord->Rbx;
+            w->fog_enable=(void (*)(uint32_t))(uintptr_t)info->ContextRecord->Rax;
+            w->fog_mask_enable=(void (*)(uint32_t))(uintptr_t)info->ContextRecord->Rcx;
+            w->is_fog_enabled=(uint8_t (*)(void))(uintptr_t)info->ContextRecord->Rdx;
+            w->is_fog_mask_enabled=(uint8_t (*)(void))(uintptr_t)info->ContextRecord->R8;
+        }
+    }
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+
+static int BridgeKnownFogGate(
+    WorldWork *w,uint64_t fn,uint32_t phase,uint32_t code,uint32_t flags,uint32_t parameters,
+    uint64_t instruction,uint64_t access,uint64_t address,uint32_t *length
+) {
+    uint64_t offset;
+    if (!w || phase<1u || phase>4u) return 0;
+    offset=w->fog_gate[phase-1u];*length=phase<=2u?5u:3u;
+    if (!offset || offset>=0x10000u) return 0;
+    return fn>=0x10000u && fn<0x800000000000ULL-offset &&
+        code==EXCEPTION_ACCESS_VIOLATION && !(flags&EXCEPTION_NONCONTINUABLE) &&
+        parameters>=2u && instruction==fn+offset && access==0u && address==0u;
+}
+
+static int BridgeKnownFogTail(
+    WorldWork *w,uint64_t fn,uint32_t phase,uint32_t code,uint32_t flags,uint32_t parameters,
+    uint64_t instruction,uint64_t access,uint64_t address
+) {
+    uint64_t offset;
+    if (!w || phase<1u || phase>2u) return 0;
+    offset=w->fog_tail[phase-1u];
+    if (!offset || offset>=0x10000u) return 0;
+    return fn>=0x10000u && fn<0x800000000000ULL-offset &&
+        code==EXCEPTION_ACCESS_VIOLATION && !(flags&EXCEPTION_NONCONTINUABLE) &&
+        parameters>=2u && instruction==fn+offset && access==0u && address==0u;
+}
+
+static int BridgeFogOpcode(uint64_t instruction,uint32_t phase) {
+    const uint8_t *p=(const uint8_t *)(uintptr_t)instruction;
+    __try {
+        if (phase<=2u) return p[0]==0x41 && p[1]==0x0f && p[2]==0xb6 && p[3]==0x04 && p[4]==0x24;
+        return p[0]==0x0f && p[1]==0xb6 && p[2]==0x00;
+    } __except(EXCEPTION_EXECUTE_HANDLER) {return 0;}
+}
+
+static int BridgeFogControlFlowFilter(
+    EXCEPTION_POINTERS *info,WorldWork *w,uint32_t phase,void *fn,
+    uint32_t *resumed,uint32_t *value,DWORD *error
+) {
+    EXCEPTION_RECORD *e=info->ExceptionRecord;
+    uint32_t length=0;
+    if (!*resumed && BridgeKnownFogGate(
+        w,(uint64_t)(uintptr_t)fn,phase,e->ExceptionCode,e->ExceptionFlags,
+        e->NumberParameters,(uint64_t)(uintptr_t)e->ExceptionAddress,
+        e->ExceptionInformation[0],e->ExceptionInformation[1],&length
+    ) && BridgeFogOpcode((uint64_t)(uintptr_t)e->ExceptionAddress,phase)) {
+        *resumed=1u;
+        info->ContextRecord->Rip+=length;
+        ++bridge_recovered_faults;
+        return EXCEPTION_CONTINUE_EXECUTION;
+    }
+    if (BridgeKnownFogTail(
+        w,(uint64_t)(uintptr_t)fn,phase,e->ExceptionCode,e->ExceptionFlags,
+        e->NumberParameters,(uint64_t)(uintptr_t)e->ExceptionAddress,
+        e->ExceptionInformation[0],e->ExceptionInformation[1]
+    ) && BridgeFogOpcode((uint64_t)(uintptr_t)e->ExceptionAddress,phase)) {
+        *error=ERROR_SUCCESS;
+        ++bridge_recovered_faults;
+        return EXCEPTION_EXECUTE_HANDLER;
+    }
+    return BridgeFogExceptionFilter(info,w,phase,value,error);
+}
+
+static DWORD BridgeFogCall(
+    void (*fn)(uint32_t), uint32_t value, WorldWork *w, uint32_t phase
+) {
+    DWORD error=ERROR_SUCCESS;
+    uint32_t resumed=0;
+    if (!fn) return ERROR_INVALID_PARAMETER;
+    __try {
+        fn(value);
+    } __except(BridgeFogControlFlowFilter(
+        GetExceptionInformation(),w,phase,(void *)fn,&resumed,0,&error
+    )) {}
+    return error;
+}
+
+static DWORD BridgeFogQuery(
+    uint8_t (*fn)(void),uint32_t *value,WorldWork *w,uint32_t phase
+) {
+    DWORD error=ERROR_SUCCESS;
+    uint32_t resumed=0;
+    if (!fn || !value) return ERROR_INVALID_PARAMETER;
+    __try {
+        *value=fn()?1u:0u;
+    } __except(BridgeFogControlFlowFilter(
+        GetExceptionInformation(),w,phase,(void *)fn,&resumed,value,&error
+    )) {}
+    return error;
+}
+
+__declspec(dllexport) uint64_t BridgeWorldQuery(void) {
+    WorldWork *w=(WorldWork *)g_dispatch->work;
+    uint64_t player;
+    float rate;
+    uint32_t enabled,i;
+    if (w) for(i=0;i<6u;++i) {
+        uint32_t offset=i<4u?w->fog_gate[i]:w->fog_tail[i-4u];
+        if (!offset || offset>=0x10000u) {w->error=80;return 0;}
+    }
+    if (!w || w->expected_tls!=g_dispatch->tls_value || w->action<WORLD_SET_TECH || w->action>WORLD_END_GAME ||
+        (w->action==WORLD_SET_TECH ? (!w->rawcode || w->value>100000) :
+         w->action==WORLD_SET_XP_RATE ? (w->rawcode || (rate=WorldReal(w->value),rate!=rate || rate<0.0f || rate>10000.0f)) :
+         w->action==WORLD_QUERY_FOG ? (w->rawcode || w->value) : (w->rawcode || w->value>1))) {
+        if (w) w->error=80;return 0;
+    }
+    if (!w->get_local_player || !w->set_tech_max || !w->set_tech_researched || !w->set_xp_rate ||
+        !w->fog_enable || !w->fog_mask_enable || !w->is_fog_enabled || !w->is_fog_mask_enabled ||
+        !w->pause_game || !w->end_game) {w->error=81;return 0;}
+    __try {
+        if (w->action==WORLD_SET_TECH || w->action==WORLD_SET_XP_RATE) {
+            player=w->get_local_player();
+            if (!player) {w->error=82;return 0;}
+            if (w->action==WORLD_SET_TECH) {
+                w->set_tech_max(player,w->rawcode,w->value);
+                w->set_tech_researched(player,w->rawcode,w->value);
+                w->after0=w->value;
+            } else {
+                float rate=WorldReal(w->value);
+                if(!w->get_xp_rate){w->error=84;return 0;}
+                w->set_xp_rate(player,&rate);
+                w->after0=(uint32_t)w->get_xp_rate(player);
+                if(w->after0!=w->value){w->error=84;return 0;}
+            }
+            w->changed=1;
+        } else if (w->action==WORLD_QUERY_FOG) {
+            DWORD fog_query_error=BridgeFogQuery(w->is_fog_enabled,&w->after0,w,3u);
+            DWORD mask_query_error=BridgeFogQuery(w->is_fog_mask_enabled,&w->after1,w,4u);
+            if (fog_query_error || mask_query_error) {
+                w->error=fog_query_error ? fog_query_error : mask_query_error;
+                return 0;
+            }
+        } else if (w->action==WORLD_SET_FOG) {
+            DWORD fog_error,mask_error,fog_query_error,mask_query_error;
+            enabled=w->value?0u:1u;
+            fog_error=BridgeFogCall(w->fog_enable,enabled,w,1u);
+            mask_error=BridgeFogCall(w->fog_mask_enable,enabled,w,2u);
+            if (fog_error || mask_error) {
+                w->changed=2u; /* A setter may have applied part of its state. */
+                w->error=fog_error?fog_error:mask_error;
+                return 0;
+            }
+            fog_query_error=BridgeFogQuery(w->is_fog_enabled,&w->after0,w,3u);
+            mask_query_error=BridgeFogQuery(w->is_fog_mask_enabled,&w->after1,w,4u);
+            if (fog_query_error || mask_query_error) {
+                w->changed=2u;
+                w->error=fog_query_error ? fog_query_error : mask_query_error;
+                return 0;
+            }
+            if (w->after0!=enabled || w->after1!=enabled) {
+                w->error=fog_error ? fog_error : (mask_error ? mask_error : 83u);
+                return 0;
+            }
+            w->changed=1;
+        } else if (w->action==WORLD_SET_GAME_PAUSED) {
+            w->pause_game(w->value);w->after0=w->value;w->changed=1;
+        } else {
+            w->end_game(w->value);w->after0=w->value;w->changed=1;
+        }
+    } __except(EXCEPTION_EXECUTE_HANDLER) {w->error=84;return 0;}
+    w->completed=1;return 1;
+}

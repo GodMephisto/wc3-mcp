@@ -1,0 +1,32 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Ruk33/vrJASS"
+source_path: "build.gradle"
+ref: HEAD
+---
+
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+    maven { url "https://jitpack.io" } // To fetch from Github
+}
+
+dependencies {
+    testCompile 'junit:junit:4.11'
+    compile 'com.github.peq:jMpq:e9ddcaa0cf2a3d860d2bc59779690312bbbb3c20',
+            'org.antlr:antlr4:4.5'
+}
+
+jar {
+    baseName = 'vrjassc-jar-with-dependencies'
+    manifest {
+        attributes 'Main-Class': 'com.ruke.vrjassc.Main'
+    }
+    // Include dependencies in final jar
+    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+}
+
+compileJava {
+    sourceCompatibility = '1.8'
+}

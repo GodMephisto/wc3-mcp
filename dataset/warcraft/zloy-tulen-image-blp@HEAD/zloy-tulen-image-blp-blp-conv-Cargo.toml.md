@@ -1,0 +1,29 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/zloy-tulen/image-blp"
+source_path: "blp-conv/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "blp-conv"
+version = "0.1.1"
+edition = "2021"
+license = "MIT"
+description = "CLI tool to encode/decode Blizzard BLP texture format"
+repository = "https://github.com/zloy-tulen/image-blp.git"
+documentation = "https://docs.rs/blp-conv"
+authors = ["zloy_tulen <zloy_tulen@proton.me>"]
+readme = "../README.md"
+keywords = ["blp", "texture", "image", "war3", "warcraft"]
+categories = ["multimedia::images", "multimedia::encoding"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "3.2.19", features = ["derive"] }
+image-blp = { version = "1", path = "../image-blp" }
+env_logger = "0.9.0"
+log = "0.4.17"
+thiserror = "1.0.34"
+image = "0.24.3"

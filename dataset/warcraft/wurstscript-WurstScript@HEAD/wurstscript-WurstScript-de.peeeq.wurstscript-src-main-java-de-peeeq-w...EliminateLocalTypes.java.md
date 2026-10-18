@@ -1,0 +1,89 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/translation/imtranslation/EliminateLocalTypes.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.translation.imtranslation;
+
+import de.peeeq.wurstscript.jassIm.*;
+import de.peeeq.wurstscript.types.TypesHelper;
+
+public class EliminateLocalTypes {
+    private static final ImType localSimpleType = JassIm.ImSimpleType("localSimpleType");
+    private static final ImType localIntType = JassIm.ImSimpleType("localSimpleTypeInt");
+    private static final ImType localRealType = JassIm.ImSimpleType("localSimpleTypeReal");
+    private static final ImType localBoolType = JassIm.ImSimpleType("localSimpleTypeBool");
+    private static final ImType localStringType = JassIm.ImSimpleType("localSimpleTypeString");
+
+    /** True for an integer, before or after its local type has been erased to the merged form. */
+    public static boolean isIntegerOrLocalInteger(ImType t) {
+        return TypesHelper.isIntType(t)
+            || (t instanceof ImSimpleType simple && simple.equalsType(localIntType));
+    }
+
+    public static void eliminateLocalTypesProg(ImProg imProg, ImTranslator translator) {
+        // While local types are still there, perform transformation, such that the lua translator does not need to know variable types
+        // null string -> "" (avoids type dependency in null translation)
+        // String concatenation was already lowered by LuaNativeLowering before optimization.
+        // int castTo int -> remove cast (avoids type dependency in cast translation)
+        transformProgram(imProg, translator);
+        // Eliminates local types to be able to merge more locals in Lua.
+        for (ImFunction f : ImHelper.calculateFunctionsOfProg(imProg)) {
+            eliminateLocalTypesFunc(f, translator);
+        }
+    }
+
+    private static void eliminateLocalTypesFunc(ImFunction f, final ImTranslator translator) {
+        for(ImVar local : f.getLocals()) {
+            ImType t = local.getType();
+            if(t instanceof ImSimpleType imSimpleType) {
+                // Keep primitive domains separate so later local merging cannot
+                // unify e.g. number/bool/string temporaries into one slot.
+                local.setType(canonicalizeSimpleLocalType(imSimpleType));
+            }
+        }
+    }
+
+    /** The type a local of type {@code t} has after this pass, so a later local can merge with it. */
+    public static ImType localTypeFor(ImType t) {
+        return t instanceof ImSimpleType simple ? canonicalizeSimpleLocalType(simple) : t.copy();
+    }
+
+    private static ImType canonicalizeSimpleLocalType(ImSimpleType t) {
+        if (TypesHelper.isIntType(t)) {
+            return localIntType;
+        }
+        if (TypesHelper.isRealType(t)) {
+            return localRealType;
+        }
+        if (TypesHelper.isBoolType(t)) {
+            return localBoolType;
+        }
+        if (TypesHelper.isStringType(t)) {
+            return localStringType;
+        }
+        return localSimpleType;
+    }
+
+    private static void transformProgram(ImProg imProg, ImTranslator translator) {
+        imProg.accept(new Element.DefaultVisitor() {
+            @Override
+            public void visit(ImNull imNull) {
+                super.visit(imNull);
+                if(TypesHelper.isStringType(imNull.getType())) {
+                    imNull.replaceBy(JassIm.ImStringVal(""));
+                }
+            }
+
+            @Override
+            public void visit(ImCast imCast) {
+                super.visit(imCast);
+                if(TypesHelper.isIntType(imCast.getFromType()) && TypesHelper.isIntType(imCast.getToType())) {
+                    imCast.replaceBy(imCast.getExpr().copy());
+                }
+            }
+        });
+    }
+}

@@ -1,0 +1,157 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/intermediatelang/ILconstReal.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.intermediatelang;
+
+import de.peeeq.wurstscript.WurstOperator;
+
+
+import de.peeeq.wurstscript.types.WurstType;
+import de.peeeq.wurstscript.types.WurstTypeReal;
+
+import java.util.Objects;
+
+
+public class ILconstReal extends ILconstAbstract implements ILconstNum {
+
+    private final float val;
+
+    public ILconstReal(String numVal) {
+        this.val = Float.parseFloat(numVal);
+    }
+
+    public ILconstReal(double numVal) {
+        this.val = (float) numVal;
+    }
+
+
+    @Override
+    public String print() {
+        return val + "";
+    }
+
+    public WurstType getType() {
+        return WurstTypeReal.instance();
+    }
+
+    @Override
+    public ILconstNum negate() {
+        return create(-val);
+    }
+
+    public static ILconstReal create(float f) {
+        return new ILconstReal(f);
+    }
+
+    @Override
+    public ILconstNum add(ILconstAddable other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return create(val + iLconstInt.getVal());
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return create(val + iLconstReal.getVal());
+        } else {
+            throw new Error();
+        }
+    }
+
+    @Override
+    public ILconstNum sub(ILconstNum other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return create(val - iLconstInt.getVal());
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return create(val - iLconstReal.getVal());
+        } else {
+            throw new Error();
+        }
+    }
+
+    @Override
+    public ILconstNum mul(ILconstNum other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return create(val * iLconstInt.getVal());
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return create(val * iLconstReal.getVal());
+        } else {
+            throw new Error();
+        }
+    }
+
+    @Override
+    public ILconstNum div(ILconstNum other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return create(WurstOperator.divideReal(val, iLconstInt.getVal()));
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return create(WurstOperator.divideReal(val, iLconstReal.getVal()));
+        } else {
+            throw new Error();
+        }
+    }
+
+    public float getVal() {
+        return val;
+    }
+
+    @Override
+    public ILconstBool less(ILconstNum other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return ILconstBool.instance(val < iLconstInt.getVal());
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return ILconstBool.instance(val < iLconstReal.getVal());
+        } else {
+            throw new Error();
+        }
+    }
+
+    @Override
+    public ILconstBool lessEq(ILconstNum other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return ILconstBool.instance(val <= iLconstInt.getVal());
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return ILconstBool.instance(val <= iLconstReal.getVal());
+        } else {
+            throw new Error();
+        }
+    }
+
+    @Override
+    public ILconstBool greater(ILconstNum other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return ILconstBool.instance(val > iLconstInt.getVal());
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return ILconstBool.instance(val > iLconstReal.getVal());
+        } else {
+            throw new Error();
+        }
+    }
+
+    @Override
+    public ILconstBool greaterEq(ILconstNum other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return ILconstBool.instance(val >= iLconstInt.getVal());
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return ILconstBool.instance(val >= iLconstReal.getVal());
+        } else {
+            throw new Error();
+        }
+    }
+
+    @Override
+    public boolean isEqualTo(ILconst other) {
+        if (other instanceof ILconstInt iLconstInt) {
+            return (val == iLconstInt.getVal());
+        } else if (other instanceof ILconstReal iLconstReal) {
+            return (val == iLconstReal.getVal());
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(val);
+    }
+}

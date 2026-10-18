@@ -1,0 +1,41 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Extensions/MapInfoExtensions.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Extensions
+{
+    public static class MapInfoExtensions
+    {
+        private static readonly Encoding _defaultEncoding = UTF8EncodingProvider.StrictUTF8;
+
+        public static void WriteArchiveHeaderToStream(this MapInfo mapInfo, Stream stream)
+        {
+            mapInfo.WriteArchiveHeaderToStream(stream, null, _defaultEncoding);
+        }
+
+        public static void WriteArchiveHeaderToStream(this MapInfo mapInfo, Stream stream, TriggerStrings? mapTriggerStrings)
+        {
+            mapInfo.WriteArchiveHeaderToStream(stream, mapTriggerStrings, _defaultEncoding);
+        }
+
+        public static void WriteArchiveHeaderToStream(this MapInfo mapInfo, Stream stream, Encoding encoding)
+        {
+            mapInfo.WriteArchiveHeaderToStream(stream, null, encoding);
+        }
+
+        public static void WriteArchiveHeaderToStream(this MapInfo mapInfo, Stream stream, TriggerStrings? mapTriggerStrings, Encoding encoding)
+        {
+            using (var writer = new BinaryWriter(stream, encoding, true))
+            {
+                writer.Write("HM3W".FromRawcode());
+                writer.Write(0);
+                writer.WriteString(mapInfo.MapName.Localize(mapTriggerStrings));
+                writer.Write((int)mapInfo.MapFlags);
+                writer.Write(mapInfo.Players.Count);
+            }
+        }
+    }
+}

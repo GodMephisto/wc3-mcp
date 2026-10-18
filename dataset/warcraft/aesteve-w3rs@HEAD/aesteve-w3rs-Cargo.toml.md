@@ -1,0 +1,21 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/aesteve/w3rs"
+source_path: "Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "w3rs"
+version = "0.0.1"
+authors = ["Arnaud Esteve <arnaud.esteve@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+nom = "7.1.1"
+hex-string = "0.1.0"
+hex = "0.4.2"
+flate2 = { version = "1.0.14", features = ["zlib"] }
+itertools = "0.10"
+colored = "2.0"
+humantime = "2.0.1"

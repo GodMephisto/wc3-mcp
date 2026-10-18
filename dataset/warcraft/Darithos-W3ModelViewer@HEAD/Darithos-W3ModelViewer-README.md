@@ -24,28 +24,98 @@ Working end to end:
 - **MDX parser** — classic and Reforged, validated against **86 real models** across every race,
   buildings and heroes with zero defects.
 - **Textured viewer** — DDS decode (BC1/BC3/BC5), multi-layer SD materials and HD team-colour
-  masks flattened per material, filter-mode-aware blending, LOD picker.
+  masks flattened per material, filter-mode-aware blending, LOD picker, and a player-colour picker
+  that recolours the model the way StarCraft II will.
 - **Animation player** — double-click a sequence to play; scrub, pause, speed control. CPU skinning
   of both schemes (classic matrix groups and Reforged 4-weight SKIN), GEOA geoset visibility.
 - **Effects** — particle emitters (`PRE2`/`PREM`), ribbons (`RIBB`) and lights (`LITE`) are parsed
   and the particles and ribbons simulated live in the viewer; particle emitters also export as SC2
-  `PAR_` systems. Reforged's own PopcornFX effects (`CORN`, a third of effect models) are counted
-  and reported rather than converted — their per-particle behaviour is compiled bytecode with no
-  equivalent in a fixed-field emitter. The status bar names what a model carries so an empty
-  viewport reads as a known limit rather than a bug.
+  `PAR_` systems. The status bar names what a model carries so an empty viewport reads as a known
+  limit rather than a bug.
+- **PopcornFX effects, simulated from their own scripts** — Reforged's own effect system (`CORN`, a
+  third of effect models, every HD spell) points at `.pkb` bakes that ship in the archive. The
+  viewer runs them: the bake's compiled per-particle scripts turned out to be a small virtual
+  machine, which is decoded and executed together with the layer graph, spawners, event payloads,
+  curves, shapes and spatial layers (see `mdxres/research/popcornfx-vm.md`). Sizes, lifetimes,
+  motion, colours and timing are the effect's own — Holy Light's beam grows from 5.4 to 13.2 m over
+  half a second, Lightning Shield's orbs circle with arcs chasing them. All 2,165 bakes load and run.
+  Export to StarCraft II **bakes** each effect: the same scripts are run headless, every frame's
+  sprites are rendered on the CPU at the Warcraft III editor's camera angle, tone-mapped to what
+  that renderer shows, and packed into an 8×8 sprite sheet that one camera-facing SC2 particle plays
+  end to end — Blizzard's own recipe for their fire and smoke (`Storm_FB_*`). A one-shot spell
+  plays once when its sequence starts; a steady effect is baked over one period and two cards
+  cross-fade so the sheet never visibly wraps; a picture that never changes is one cell. What an
+  effect leaves behind it as it moves — its ribbons and the layers spawned per distance travelled,
+  a missile's flame and smoke — is baked separately: the effect is flown at missile speed, the
+  trail is rendered from beside the flight line into one strip with the head at its left edge,
+  and one SC2 `RIB_` ribbon lays that strip along the model's real path, stretching with its
+  speed and vanishing when it stands still. Player-coloured layers keep a per-layer stand-in so
+  SC2's live player colour still applies. An effect-only model gets one
+  invisible carrier triangle, as Blizzard's own effect `.m3` files have. The dialog's "Bake
+  PopcornFX effects" checkbox turns the bake off, leaving every layer a stand-in. The **Hero glow**
+  checkbox leaves out the player-coloured glow every Reforged hero stands in; exported, the glow
+  travels with the hero and holds steady.
 - **Animated texture flipbooks** — HD water, fountains and coral animate their diffuse through a
   `KMTF` texture-id track of up to 50 frames. The viewer plays these on the track's own timeline;
   export resolves the flipbook's first frame instead of falling back to texture 0.
+- **Emissive maps** — Reforged and Definitive materials add their emissive map after lighting, as
+  Warcraft III does, so the Definitive fountains' pools glow instead of drawing black (their
+  colour lives only in the emissive map; 2,043 DE layers carry real emissive art). A gain track
+  animates it; a static gain of 0 switches it off.
+- **Texture wrap flags** — a texture whose TEXS wrap bit is clear clamps to its edge, in the viewer
+  and in the `.m3` (LAYR uv_wrap per axis, as Blizzard's own art clears it on 9% of its layers).
+  247 classic models draw UVs past a clamped edge; they used to tile there.
 - **.m3 export (StarCraft II)** — mesh, skeleton, baked animations, attachments, cameras, GEOA
   visibility, PBR→specular texture conversion, written directly by the app: **no Blender, no
   add-ons, no external tools**. Verified in the StarCraft II editor: models load, animate and
-  render textured.
-- **Copy/paste-ready export layout** — the export folder holds `<Name>.m3` next to
-  `textures\<Name>\*.dds`, which is exactly what you paste into a map's `Assets\` folder; the
-  baked references read `Assets/textures/<Name>/*.dds` and line up with no renaming. The per-model
-  subfolder keeps several imported units from colliding on a texture filename. Every texture path
-  is read back out of the written file and resolved against what landed on disk, because SC2 draws
-  a layer it cannot find as black rather than reporting anything.
+  render textured. Reforged metal is lit the way Warcraft III lights it and Heroes of the Storm
+  builds its own: a **reflection of Warcraft III's sky**. Warcraft III's HD shader reads a
+  prefiltered environment cube by the reflected ray, blurred by roughness; the export turns that
+  sky (Lordaeron Summer day) to StarCraft II's sun and ships it as an envi-layer cube map, masked
+  by the metal's own colour (F0 = albedo × metallic) — the Heroes recipe on 452 of the 529 hero
+  materials that carry one. Roughness becomes a gloss map in the spec's alpha, and with
+  simulate_roughness StarCraft II blurs the reflection per texel just as Warcraft III does (its
+  mip choice was measured on test spheres and each mip of the cube holds Warcraft III's own blur
+  level). Diffuse is `albedo × (1 − metallic)`, as in Warcraft III, since the reflection now carries
+  the metal. On the DE knight, set against the World Editor's render, the gold and steel came out
+  2.6× closer than without it. `MdxProbe --envical`, `--reflectab` and `spike/m3verify/envicensus.py`
+  hold the measurements. Normal maps follow StarCraft II's own convention, measured rather than
+  assumed: its maps store green the other way up from Reforged's (a curl test reads 29 of 30 HotS
+  and 5 of 6 Liberty maps one way, every Reforged source the other), and each triangle's bitangent
+  sign — the fourth byte of the packed normal — comes from the MDX tangent's W, so mirrored UVs
+  light the right way up. Blizzard's models run their bitangent down the texture on 90–100% of
+  the surface; the HD knight used to on 38% of it and now does on 99.6%.
+- **Export options are remembered** — scale, output folder, texture size and the rest come back as
+  they were left, so porting a collection does not mean retyping the scale on every model. LOD, the
+  sequence list and the geoset selection are properties of the model in front of you and are not
+  restored.
+- **Batch export** — Ctrl- or Shift-click several models in the browser (install or Custom folder) and **Export N…** writes
+  them all with one set of options (every geoset at full detail, all sequences or none). A model
+  that fails is skipped and named rather than ending the run, and `export-log.txt` in the output
+  folder keeps each model's report. Where two selected models share a name (the SD, HD and DE
+  knight), the later ones take the art set as a suffix: `knight_hd`; custom models take their
+  folder's name.
+- **Two output layouts** — *One folder per model* writes `<Out>\<Name>\Assets\…`, a package per
+  model. *Shared Assets folder* writes every model to `<Out>\Assets\<Name>.m3` and every texture to
+  one `<Out>\Assets\textures\`, so a whole collection is one folder to merge and a texture the
+  models share is written once. The export dialog also lets you rename the `.m3`.
+- **Scale is in StarCraft II's units** — everything this tool exports ends up in StarCraft II, so
+  **1.0 is SC2's own art size** (a unit around 2.3 SC2 units tall) rather than a Warcraft III one.
+  Type `40` for native Warcraft III units, which is what a war3mod map wants. The export log states
+  the scale both ways, so a model that came out the wrong size says so in its own report.
+- **Copy/paste-ready export layout** — the export folder holds an `Assets\` folder containing
+  `<Name>.m3` and `textures\*.dds`, mirroring the references baked into the file
+  (`Assets/textures/*.dds`) exactly. Merge that one folder into your map or mod root and
+  everything lines up with no renaming. All models share the one `textures\` folder: each file
+  name ends in a hash of its contents, so a texture several models use is stored once, and two
+  textures that differ can never overwrite each other. Every texture path is read back out of the written file and
+  resolved against what landed on disk, because SC2 draws a layer it cannot find as black rather
+  than reporting anything.
+- **Small files** — animation is baked at 30 fps and then key-reduced: a key is kept only where
+  the game's own interpolation would miss the bake by more than 0.25° or 0.05 units, so a 12.6 MB
+  HD unit becomes 1.3 MB with no visible change, and the export reports the exact deviation.
+  Textures are limited to 1024² by default (Blizzard's own SC2 units are 1024 or smaller) and
+  opaque maps are written DXT1. Both are options in the export dialog.
 - **Bone palette splitting** — geosets are split into regions of at most 45 bones. SC2 skins each
   draw call from a fixed matrix palette, and Reforged geosets routinely reference 80+ bones, which
   renders correctly at rest but explodes into spikes as soon as anything animates.
@@ -56,18 +126,62 @@ Working end to end:
   alpha-blended material leaves SC2's depth-writing pass and then clips through itself. Cut-outs
   test at Blizzard's own threshold (32, as on raynor's hair) — the feathered band Reforged authors
   around every strand carries the object's colour, so discarding it thins hair and fur into holes.
-- **Team colour** — verified against the shipping art rather than assumed: Reforged HD units carry
-  **no** team-colour data (`teamColorMultiplier` is 0 on every layer of all 102 HD unit models, and
-  their diffuse alpha is coverage, not a mask), so their team colour is already baked into the
-  diffuse by Blizzard. Classic SD units do carry a real mask — an opaque `replaceableId 1` layer
-  under the diffuse — which is composited at export using the chosen player slot. See
-  `docs/mdx-format-verified.md` §5.
+- **Team colour and team glow** — exported models take the player's colour **live from StarCraft
+  II**, so one file is correct for all eight players and recolours in the editor. Warcraft III hides
+  the mask in three different places and all three are read: classic units stack an opaque
+  `replaceableId 1` layer under the diffuse (mask = `1 - diffuse.a`), Reforged HD units put it in
+  the **alpha channel of the ORM map**, and team glow is the falloff of the game's own
+  `TeamGlow<nn>.blp`. A **PopcornFX effect** is a fourth place, and the only one that declares
+  nothing: nothing in the bake says it is team-coloured, so the export watches its scripts run and
+  routes a layer that reads `__a_Game.TeamColor` through the same channel — 166 of 11,259 drawing
+  layers across the archive, among them every item's rarity light beam, the revive beams and the
+  Ancient of Wind. Reforged and Definitive art lands as a **lit tint**, the way Reforged draws it
+  and the way StarCraft II's own marine is built: the diffuse keeps the painted albedo and carries
+  `1 - mask` in its alpha, sampled ARGB, and SC2 multiplies the player's colour in before lighting,
+  so a tabard keeps its folds, its shading and its highlights (a cut-out's coverage moves to its
+  own alpha texture). Classic art and PopcornFX layers land as `blend_mode_emis* = 4`, "Team Color
+  Emissive Add" — the mechanism 1,204 of Blizzard's own Heroes materials use. Measured, not
+  assumed; see `docs/mdx-format-verified.md` §5. Both engines apply the mask continuously — Warcraft III's HD shader
+  mixes the ORM alpha into its colour with no gate, and classic art blends `team x (1 - a)` — so a
+  soft, midtone or even uniform mask is ordinary art: an ORM whose alpha is 255 throughout is a
+  surface drawn entirely in the player's colour (the footman's helmet plume), and a classic layer
+  stack is read as what it draws, whichever way its author built it — the stock fill under a blended
+  diffuse, a fill multiplied on top of an opaque plate, a fill alone. Rejecting any of these exports
+  the surface **black**, because the player's contribution has already been taken out of the
+  diffuse; two stricter rules were tried and each cost real art.
+- **Billboards** — cards that Warcraft III turns to face the camera (the priest's staff orb, most
+  spell glows) face it in the viewer and in StarCraft II. They export as `BBSC` entries: a full
+  billboard becomes type 6, and a vertical-axis (Lock Z) billboard becomes type 2. No re-orientation
+  is needed, because the quarter turn on export lands Warcraft III's card layout exactly on
+  Blizzard's (measured over 2,604 WC3 cards and 346 SC2 ones). X- and Y-axis locks have no SC2
+  equivalent and keep their rest pose.
 - **glTF export** — skeleton, skinning, PNG textures and every sequence baked as a separate
   animation, for editing in Blender (re-export `.m3` there with m3studio if desired). Verified
-  headlessly: Blender imports the armature, skinned mesh and all actions.
+  headlessly: Blender imports the armature, skinned mesh and all actions. glTF **is**
+  metallic-roughness and Reforged's ORM is already packed the way it asks for, so the full PBR set
+  — base colour, ORM (shared as `metallicRoughnessTexture` and `occlusionTexture`), normal and
+  emissive — is always written; the *Convert Reforged PBR → SC2 specular* checkbox governs the
+  `.m3` and nothing else. Player colour is **not** baked into base colour, exactly as the `.m3`
+  path leaves it out: each material ships a greyscale `*_team.png` and names it in the material's
+  `extras.teamColorMask`, so a Blender shader can mix any player colour in live instead of being
+  stuck with the one that was exported.
+- **Invisible geometry stays invisible** — a material whose every layer sits at static alpha 0 is
+  how Warcraft III carries helper geometry: the smooth ramp a unit walks up instead of the visible
+  steps (Blizzard names the bone `ultraGlide_geo`), the sphere a cyclone is bound to, a portal's
+  empty carrier. These panels are deliberately larger than the art they sit on, so drawing them
+  swallows the model — most Reforged and Definitive staircases rendered as one flat, bridge-textured
+  slab. 1,417 layers across 604 models carry the flag; they are now unticked in the viewer's geoset
+  list (still listed, so you can tick one on and look at it) and dropped by both exporters.
 - **Custom models** — *Open file…* loads a loose `.mdx` from disk (Hive Workshop downloads etc.);
-  textures resolve from the model's folder (`.blp` including JPEG-content, `.dds`), stock
-  references from your game install.
+  textures resolve from the model's folder (`.blp` including JPEG-content, `.dds`), then by file
+  name anywhere in the folder tree beside it — a download that references
+  `Heroes\Human\Drenden\Drenden.blp` from the author's own disk still finds the `Drenden.blp` it
+  shipped, wherever in the package it sits. Stock references come from your game install.
+- **Texture panel and hand-mapping** — the *Textures* tab lists every reference the model makes,
+  what answered it, and how confident that answer was (beside the model, found by name, game
+  install, or a file you chose). Anything unresolved raises a banner rather than quietly drawing
+  magenta, and `…` points that reference at a file of your choosing. Mapping happens in the viewer,
+  so you see the result in the preview, and the export uses exactly what you previewed.
 - **Borrowed game textures are packaged** — most custom models ship only the art their author drew
   and leave every Warcraft III texture they reuse as a bare path. Those are pulled out of your
   installed game, converted like any other, and written into the export folder, so the package is
@@ -88,18 +202,29 @@ Working end to end:
 
 ## Getting started
 
-1. Download the latest zip from [Releases](../../releases), extract it anywhere, and run
-   `Wc3ModelViewer.exe`. The release build is self-contained — no .NET installation required.
+1. Download `Wc3ModelViewer.exe` from [Releases](../../releases) and run it. It is a single
+   self-contained file — nothing to extract, no installer, no .NET installation required.
 2. It opens your Warcraft III install by itself if it can find one, and remembers the folder you
    last opened. Otherwise point it at the folder containing `.build.info` (e.g.
    `C:\games\Warcraft III`) and click **Open**. Everything else waits on this, custom models
    included — they borrow most of their textures from the installed game.
 3. Filter the list, click a model to preview it, double-click a sequence to play it. **Open file…**
-   loads a custom `.mdx` from disk instead.
-4. **Export…** chooses formats, geosets, animations, scale and output folder.
+   loads a custom `.mdx` from disk instead; for a whole collection, pick **Custom** in the art-set
+   dropdown and choose the folder once. It then lists every `.mdx` in that folder and its
+   subfolders, and **Folder…** switches to another.
+4. **Export…** chooses formats, geosets, animations, scale, output folder and layout. Select
+   several models first to export them as one batch.
 
-To use an exported model in a map: copy the contents of the export folder — the `.m3` and the
-`textures\` folder beside it — into your map's `Assets\` folder.
+To use an exported model in a map: copy the `Assets` folder from the export into your map's root,
+merging it with the map's existing `Assets` folder. Keep the `.m3` and its `textures\` folder
+together — the paths baked into the model are resolved from the map root, so a `textures\` folder
+that lands anywhere other than inside `Assets\` leaves the model untextured with no error.
+
+Exported models are turned a quarter turn on the way out: Warcraft III builds a model facing +X and
+StarCraft II expects one facing -Y, so a model exported unturned walks and attacks square to the way
+the actor points it. A `_portrait.mdx` carries its camera through as an m3 camera under its original
+Warcraft III name (`Camera01` on most models) — name that camera in the portrait's data or SC2 frames
+the shot itself.
 
 > Windows SmartScreen may warn on first run because the executable is not code-signed. Use
 > "More info → Run anyway", or build from source yourself (see below).
@@ -110,7 +235,11 @@ To use an exported model in a map: copy the contents of the export folder — th
 dotnet build src/Wc3ModelViewer.slnx -c Release
 ```
 
-x64 only — the bundled native `CascLib.dll` is a 64-bit build.
+x64 only — the bundled native `CascLib.dll` is a 64-bit build. The single-file release build is:
+
+```
+dotnet publish src/Wc3ModelViewer/Wc3ModelViewer.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true
+```
 
 ## Layout
 

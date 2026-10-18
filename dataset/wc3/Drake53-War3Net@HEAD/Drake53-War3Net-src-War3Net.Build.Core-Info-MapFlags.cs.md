@@ -1,0 +1,48 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Info/MapFlags.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Info
+{
+    [Flags]
+    public enum MapFlags
+    {
+        HideMinimapInPreviewScreens = 1 << 0,
+        ModifyAllyPriorities = 1 << 1,
+        MeleeMap = 1 << 2,
+        PlayableMapSizeWasLarge = 1 << 3,
+        MaskedAreasArePartiallyVisible = 1 << 4,
+        FixedPlayerSettingsForCustomForces = 1 << 5,
+        UseCustomForces = 1 << 6,
+        UseCustomTechtree = 1 << 7,
+        UseCustomAbilities = 1 << 8,
+        UseCustomUpgrades = 1 << 9,
+        HasMapPropertiesMenuBeenOpened = 1 << 10,
+        ShowWaterWavesOnCliffShores = 1 << 11,
+        ShowWaterWavesOnRollingShores = 1 << 12,
+
+        // TFT only
+        HasTerrainFog = 1 << 13,
+        RequiresExpansion = 1 << 14,
+        UseItemClassificationSystem = 1 << 15,
+        HasWaterTintingColor = 1 << 16,
+
+        // Reforged only
+        AccurateProbabilityForCalculations = 1 << 17,
+        CustomAbilitySkin = 1 << 18,
+
+        DisableDenyIcon = 1 << 19,
+        ForceDefaultCameraZoom = 1 << 20,
+        ForceMaxCameraZoom = 1 << 21,
+        ForceMinCameraZoom = 1 << 22,
+        HasWaterColorHD = 1 << 23,
+        HasAlphaTileDefaultMinimapColor = 1 << 24,
+        DynamicMinimap = 1 << 25,
+
+        Flag30 = 1 << 29,
+        Flag31 = 1 << 30,
+    }
+}

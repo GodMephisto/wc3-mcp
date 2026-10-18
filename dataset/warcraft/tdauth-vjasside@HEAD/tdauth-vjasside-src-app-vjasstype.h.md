@@ -1,0 +1,33 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/tdauth/vjasside"
+source_path: "src/app/vjasstype.h"
+ref: HEAD
+---
+
+#ifndef VJASSTYPE_H
+#define VJASSTYPE_H
+
+#include "vjassast.h"
+
+class VJassType: public VJassAst
+{
+public:
+    VJassType(int line, int column);
+    VJassType(const VJassType &other);
+    VJassType& operator=(const VJassType &other);
+    virtual ~VJassType();
+
+    const QString& getIdentifier() const;
+    void setIdentifier(const QString &identifier);
+    const QString& getParent() const;
+    void setParent(const QString &parent);
+
+    QString toString() const override;
+
+private:
+    QString identifier;
+    QString parent;
+};
+
+#endif // VJASSTYPE_H

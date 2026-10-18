@@ -1,0 +1,39 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/GlobalUsings.cs"
+ref: HEAD
+---
+
+﻿global using System;
+global using System.Collections;
+global using System.Collections.Generic;
+global using System.Collections.Immutable;
+global using System.ComponentModel;
+global using System.Diagnostics.CodeAnalysis;
+global using System.Drawing;
+global using System.Globalization;
+global using System.IO;
+global using System.Linq;
+global using System.Numerics;
+global using System.Text;
+global using System.Text.Json;
+global using System.Text.Json.Serialization;
+global using System.Text.RegularExpressions;
+global using War3Net.Build.Audio;
+global using War3Net.Build.Common;
+global using War3Net.Build.Configuration;
+global using War3Net.Build.Environment;
+global using War3Net.Build.Extensions;
+global using War3Net.Build.Import;
+global using War3Net.Build.Info;
+global using War3Net.Build.Object;
+global using War3Net.Build.Providers;
+global using War3Net.Build.Resources;
+global using War3Net.Build.Script;
+global using War3Net.Build.Serialization.Json;
+global using War3Net.Build.Widget;
+global using War3Net.CodeAnalysis.Jass;
+global using War3Net.Common.Extensions;
+global using War3Net.Common.Providers;
+global using War3Net.IO.Mpq;

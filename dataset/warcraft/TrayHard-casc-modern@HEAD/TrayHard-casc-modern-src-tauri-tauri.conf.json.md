@@ -1,0 +1,61 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/TrayHard/casc-modern"
+source_path: "src-tauri/tauri.conf.json"
+ref: HEAD
+---
+
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CASC Modern",
+  "version": "0.3.0",
+  "identifier": "com.casc-modern.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1430",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "CASC Modern",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "center": true,
+        "backgroundColor": "#141414"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data: blob: asset: https://asset.localhost; media-src 'self' data: blob: asset: https://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src 'self' ipc: http://ipc.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$TEMP/casc-modern/**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": false,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/TrayHard/casc-modern/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdCODc4MjVCMjlGRUMxQkIKUldTN3dmNHBXNEtIZTFmT2VqdldMMDlXc2ZOblc4MjA5U1dWUjdxZDNOVG5HcW05QUFJOUozS2UK"
+    }
+  }
+}

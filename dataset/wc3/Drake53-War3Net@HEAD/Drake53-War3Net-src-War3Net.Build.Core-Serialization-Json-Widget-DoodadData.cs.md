@@ -1,0 +1,139 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Drake53/War3Net"
+source_path: "src/War3Net.Build.Core/Serialization/Json/Widget/DoodadData.cs"
+ref: HEAD
+---
+
+﻿namespace War3Net.Build.Widget
+{
+    public sealed partial class DoodadData : WidgetData
+    {
+        internal DoodadData(JsonElement jsonElement, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            GetFrom(jsonElement, formatVersion, subVersion, useNewFormat);
+        }
+
+        internal DoodadData(ref Utf8JsonReader reader, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            ReadFrom(ref reader, formatVersion, subVersion, useNewFormat);
+        }
+
+        internal void GetFrom(JsonElement jsonElement, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            TypeId = jsonElement.GetInt32(nameof(TypeId));
+            Variation = jsonElement.GetInt32(nameof(Variation));
+            Position = jsonElement.GetVector3(nameof(Position));
+            Rotation = jsonElement.GetSingle(nameof(Rotation));
+            Scale = jsonElement.GetVector3(nameof(Scale));
+            SkinId = useNewFormat ? jsonElement.GetInt32(nameof(SkinId)) : TypeId;
+
+            if (formatVersion >= MapWidgetsFormatVersion.v12)
+            {
+                GroupId = jsonElement.GetUInt32(nameof(GroupId));
+            }
+
+            if (formatVersion > MapWidgetsFormatVersion.v6)
+            {
+                State = jsonElement.GetByte<DoodadState>(nameof(State));
+            }
+
+            Life = jsonElement.GetByte(nameof(Life));
+
+            if (formatVersion >= MapWidgetsFormatVersion.v8)
+            {
+                MapItemTableId = jsonElement.GetInt32(nameof(MapItemTableId));
+
+                foreach (var element in jsonElement.EnumerateArray(nameof(ItemTableSets)))
+                {
+                    ItemTableSets.Add(element.GetRandomItemSet(formatVersion, subVersion, useNewFormat));
+                }
+            }
+
+            if (formatVersion >= MapWidgetsFormatVersion.v13)
+            {
+                Unk1 = jsonElement.GetInt32(nameof(Unk1));
+            }
+
+            CreationNumber = jsonElement.GetInt32(nameof(CreationNumber));
+
+            if (formatVersion >= MapWidgetsFormatVersion.v12)
+            {
+                Roll = jsonElement.GetSingle(nameof(Roll));
+                Pitch = jsonElement.GetSingle(nameof(Pitch));
+                foreach (var element in jsonElement.EnumerateArray(nameof(DoodadLights)))
+                {
+                    DoodadLights.Add(element.GetMapDoodadLightData());
+                }
+            }
+        }
+
+        internal void ReadFrom(ref Utf8JsonReader reader, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            GetFrom(JsonDocument.ParseValue(ref reader).RootElement, formatVersion, subVersion, useNewFormat);
+        }
+
+        internal void WriteTo(Utf8JsonWriter writer, JsonSerializerOptions options, MapWidgetsFormatVersion formatVersion, MapWidgetsSubVersion subVersion, bool useNewFormat)
+        {
+            writer.WriteStartObject();
+
+            writer.WriteNumber(nameof(TypeId), TypeId);
+            writer.WriteNumber(nameof(Variation), Variation);
+            writer.Write(nameof(Position), Position);
+            writer.WriteNumber(nameof(Rotation), Rotation);
+            writer.Write(nameof(Scale), Scale);
+
+            if (useNewFormat)
+            {
+                writer.WriteNumber(nameof(SkinId), SkinId);
+            }
+
+            if (formatVersion >= MapWidgetsFormatVersion.v12)
+            {
+                writer.WriteNumber(nameof(GroupId), GroupId);
+            }
+
+            if (formatVersion > MapWidgetsFormatVersion.v6)
+            {
+                writer.WriteObject(nameof(State), State, options);
+            }
+
+            writer.WriteNumber(nameof(Life), Life);
+
+            if (formatVersion >= MapWidgetsFormatVersion.v8)
+            {
+                writer.WriteNumber(nameof(MapItemTableId), MapItemTableId);
+
+                writer.WriteStartArray(nameof(ItemTableSets));
+                foreach (var itemSet in ItemTableSets)
+                {
+                    writer.Write(itemSet, options, formatVersion, subVersion, useNewFormat);
+                }
+
+                writer.WriteEndArray();
+            }
+
+            if (formatVersion >= MapWidgetsFormatVersion.v13)
+            {
+                writer.WriteNumber(nameof(Unk1), Unk1);
+            }
+
+            writer.WriteNumber(nameof(CreationNumber), CreationNumber);
+
+            if (formatVersion >= MapWidgetsFormatVersion.v12)
+            {
+                writer.WriteNumber(nameof(Roll), Roll);
+                writer.WriteNumber(nameof(Pitch), Pitch);
+                writer.WriteStartArray(nameof(DoodadLights));
+                foreach (var light in DoodadLights)
+                {
+                    writer.Write(light, options);
+                }
+
+                writer.WriteEndArray();
+            }
+
+            writer.WriteEndObject();
+        }
+    }
+}

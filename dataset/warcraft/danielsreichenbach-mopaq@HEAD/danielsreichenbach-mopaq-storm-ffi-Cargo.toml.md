@@ -1,0 +1,45 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/danielsreichenbach/mopaq"
+source_path: "storm-ffi/Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "storm-ffi"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+description = "StormLib-compatible C API for the storm MPQ archive library"
+readme = "../README.md"
+
+[lib]
+# Output library will be named libstorm.{so,dylib,dll}
+name = "storm"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+mopaq = { path = "../mopaq", version = "0.1.0" }
+libc = { workspace = true }
+log = { workspace = true }
+# For file verification
+md-5 = "0.10"
+crc32fast = "1.4"
+
+[build-dependencies]
+cbindgen = "0.29"
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[features]
+default = ["mopaq/default"]
+
+[package.metadata.capi]
+header_name = "StormLib.h"
+header_dir = "include"
+rustflags = "-C link-arg=-Wl,-soname,libstorm.so.1"

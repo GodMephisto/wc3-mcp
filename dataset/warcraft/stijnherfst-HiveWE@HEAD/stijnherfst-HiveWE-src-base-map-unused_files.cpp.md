@@ -1,0 +1,277 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/stijnherfst/HiveWE"
+source_path: "src/base/map/unused_files.cpp"
+ref: HEAD
+---
+
+
+module;
+
+#include <QObject>
+
+module Map;
+
+import std;
+import MDX;
+
+namespace fs = std::filesystem;
+
+std::vector<FileUsage> Map::get_file_usage() const {
+	// First, get all .MDX files referenced by the map
+	// Then load each of them and save the resources references by them
+	// Deal with game overrides somehow
+
+	const auto total_start = std::chrono::steady_clock::now();
+	auto start = std::chrono::steady_clock::now();
+
+	hive::unordered_map<std::string, std::unordered_set<std::string>> resources;
+
+
+
+	const auto normalize_path = [&](const std::string& path) {
+		auto path_copy = path;
+		// CASC lookup is case-insensitive
+		std::ranges::transform(path_copy, path_copy.begin(), [](const unsigned char c) {
+			return static_cast<char>(std::tolower(c));
+		});
+		normalize_path_to_forward_slash(path_copy);
+		// Game first checks .mdx, then .mdx so we normalize to .mdx
+		if (path_copy.ends_with(".mdl")) {
+			path_copy = path_copy.substr(0, path_copy.size() - 4) + ".mdx";
+		}
+		return path_copy;
+	};
+
+	const auto find_references = [&](const slk::SLK& slk, const std::vector<std::string>& keys) {
+		for (const auto& [id, values] : slk.shadow_data) {
+			for (const auto& key : keys) {
+				if (auto found = values.find(key); found != values.end()) {
+					resources[normalize_path(found->second)].emplace(id);
+				}
+			}
+		}
+	};
+
+	const auto find_model_references = [&](const slk::SLK& slk) {
+		for (const auto& [id, values] : slk.shadow_data) {
+			const fs::path model_path = slk.data("file", id);
+			if (model_path.empty()) {
+				continue;
+			}
+			resources[normalize_path(model_path.generic_string())].emplace(id);
+		}
+	};
+
+	// We have to handle doodad variations too in file resolving
+	const auto find_doodad_model_references = [&](const slk::SLK& slk, const bool is_doodad) {
+		for (const auto& [id, values] : slk.shadow_data) {
+			const fs::path model_path = slk.data("file", id);
+			if (model_path.empty()) {
+				continue;
+			}
+
+			const fs::path base_path = model_path;
+			const auto variations = slk.data<uint32_t>("numvar", id);
+
+			for (size_t variation = 0; variation < variations; variation += 1) {
+				auto load_path = base_path;
+
+				if (variations != 1) {
+					if (is_doodad) {
+						// For doodads the game directly appends the variation number, even if an extension exists
+						load_path.replace_filename(base_path.filename().string() + std::to_string(variation) + ".mdx");
+					} else {
+						// Destructibles get it properly appended to the filename
+						load_path.replace_filename(base_path.stem().string() + std::to_string(variation));
+					}
+				}
+
+				if (hierarchy.file_exists(load_path, Hierarchy::FileSource::all, {".mdx", ".mdl"})) {
+					resources[normalize_path(load_path.generic_string())].emplace(id);
+				} else {
+					if (is_doodad && variations != 1) {
+						// Doodads with a variation that fails to load will load the base if all variations are missing
+						bool any_variation_exists = false;
+						for (size_t i = 0; i < variations; i++) {
+							auto path = base_path;
+							path.replace_filename(base_path.filename().string() + std::to_string(i) + ".mdx");
+							if (hierarchy.file_exists(path, Hierarchy::FileSource::all, {".mdl", ".mdx"})) {
+								any_variation_exists = true;
+								break;
+							}
+						}
+
+						if (!any_variation_exists) {
+							resources[normalize_path(model_path.generic_string())].emplace(id);
+						}
+					}
+				}
+			}
+		}
+	};
+
+	find_model_references(units_slk);
+	find_model_references(items_slk);
+	find_doodad_model_references(destructibles_slk, false);
+	find_doodad_model_references(doodads_slk, true);
+
+	find_references(units_slk, {"portrait", "specialart", "missileart1", "missileart2", "art", "pathtex"});
+	find_references(items_slk, {"art"});
+	find_references(destructibles_slk, {"pathtex", "pathtexdeath"});
+	find_references(doodads_slk, {"pathtex"});
+	find_references(abilities_slk, {"targetart", "effectart", "specialart", "art", "researchart"});
+	find_references(buff_slk, {"targetart", "missileart", "specialart", "buffart"});
+	// Todo, all icon levels
+	find_references(upgrade_slk, {"file"});
+
+	if (!info.loading_screen_model.empty() && info.loading_screen_number == -1) {
+		resources[normalize_path(info.loading_screen_model)].emplace("loadingscreen");
+	}
+
+	for (const auto& i : sounds.sounds) {
+		resources[normalize_path(i.file)].emplace(i.name);
+	}
+
+	std::println(
+		"Find references: {:>5}ms",
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
+	);
+	start = std::chrono::steady_clock::now();
+
+	hive::unordered_map<std::string, std::unordered_set<std::string>> referenced_resources;
+	std::mutex mutex;
+
+	std::for_each(std::execution::par_unseq, resources.begin(), resources.end(), [&](const auto& resource) {
+		const auto& [path, ids] = resource; // MSVC does not support structured bindings in lambdas atm.
+
+		if (!path.ends_with(".mdx")) {
+			return;
+		}
+
+		mdx::MDX mdx;
+		try {
+			auto mdx_content = hierarchy.open_file(path, Hierarchy::FileSource::all, {".mdx", ".mdl"});
+			if (!mdx_content) {
+				std::println("Error loading mdx: {} with error: {}", path, mdx_content.error());
+				return;
+			}
+
+			if (mdx::is_mdx(mdx_content.value())) {
+				mdx = mdx::MDX(mdx_content.value());
+			} else {
+				const auto& buffer = mdx_content.value().buffer;
+				const auto view = std::string_view(reinterpret_cast<const char*>(buffer.data()), buffer.size());
+				auto result = mdx::MDX::from_mdl(view);
+				if (!result.has_value()) {
+					std::println("Error parsing mdl: {} with error: {}", path, result.error());
+					return;
+				}
+				mdx = std::move(result.value());
+			}
+		} catch (const std::exception& e) {
+			std::println("Exception loading mdx: {} with error: {}", path, e.what());
+			return;
+		}
+
+		const auto guard = std::scoped_lock(mutex);
+		for (const auto& texture : mdx.textures) {
+			referenced_resources[normalize_path(texture.file_name.string())].emplace(path);
+		}
+
+		for (const auto& attachment : mdx.attachments) {
+			referenced_resources[normalize_path(attachment.path)].emplace(path);
+		}
+
+		for (const auto& emitter : mdx.emitters1) {
+			referenced_resources[normalize_path(emitter.path)].emplace(path);
+		}
+	});
+
+	std::println(
+		"Find MDX references: {:>5}ms",
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
+	);
+	start = std::chrono::steady_clock::now();
+
+	for (const auto& [path, values] : referenced_resources) {
+		resources[path].insert(values.begin(), values.end());
+	}
+
+	struct FileEntry {
+		std::string path;
+		u64 size;
+	};
+
+	hive::unordered_map<std::string, FileEntry> files;
+
+	for (const auto& i : fs::recursive_directory_iterator(filesystem_path)) {
+		if (i.is_regular_file()) {
+			const auto new_path = i.path();
+			std::string path = new_path.lexically_relative(filesystem_path).string();
+			std::string file_name = i.path().filename().string();
+			if (imports.blacklist.contains(file_name)) {
+				continue;
+			}
+			normalize_path_to_forward_slash(path);
+			files.emplace(normalize_path(path), FileEntry {path, i.file_size()});
+		}
+	}
+
+	std::string script_file_name;
+	if (info.lua) {
+		script_file_name = "war3map.lua";
+	} else {
+		script_file_name = "war3map.j";
+	}
+
+	const auto binary = read_file(filesystem_path / script_file_name);
+	std::string map_script;
+	if (!binary) {
+		std::println("Error reading map script. Save your map first.");
+	} else {
+		const auto a = binary.value();
+		map_script = std::string(a.buffer.begin(), a.buffer.end());
+		std::ranges::transform(map_script, map_script.begin(), [](const unsigned char c) {
+			return static_cast<char>(std::tolower(c));
+		});
+	}
+
+	std::vector<FileUsage> result;
+	result.reserve(files.size());
+	for (const auto& [key, entry] : files) {
+		FileUsage usage;
+		usage.path = entry.path;
+		usage.size = entry.size;
+
+		auto lowercase_path = entry.path;
+		std::ranges::transform(lowercase_path, lowercase_path.begin(), [](const unsigned char c) {
+			return static_cast<char>(std::tolower(c));
+		});
+
+		if (resources.contains(key)) {
+			usage.used_by = resources.at(key);
+		} else if (!map_script.empty() && (map_script.contains(lowercase_path) || map_script.contains(key))) {
+			usage.used_by.emplace("map script");
+		}
+
+		// Game overrides may or may not be used. Hard to say
+		if (usage.used_by.empty()
+			&& (key.starts_with("terrainart/") || key.starts_with("replaceabletextures/") || hierarchy.game_file_exists(entry.path))) {
+			usage.used_by.emplace("game override");
+		}
+
+		result.push_back(std::move(usage));
+	}
+
+	std::println(
+		"Find unused files: {:>5}ms",
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count()
+	);
+	std::println(
+		"Total: {:>5}ms",
+		std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - total_start).count()
+	);
+
+	return result;
+}

@@ -1,0 +1,932 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/intermediateLang/interpreter/ProgramStateIO.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio.intermediateLang.interpreter;
+
+import com.google.common.collect.Maps;
+import de.peeeq.wurstio.map.importer.ImportFile;
+import de.peeeq.wurstio.mpq.MpqEditor;
+import de.peeeq.wurstio.objectreader.ObjectExportService;
+import de.peeeq.wurstio.objectreader.ObjectFileType;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.gui.WurstGui;
+import de.peeeq.wurstscript.intermediatelang.interpreter.ProgramState;
+import de.peeeq.wurstscript.jassIm.ImProg;
+import de.peeeq.wurstscript.jassIm.ImStmt;
+import de.peeeq.wurstscript.utils.Utils;
+import net.moonlightflower.wc3libs.bin.ObjMod;
+import net.moonlightflower.wc3libs.bin.Wc3BinOutputStream;
+import net.moonlightflower.wc3libs.bin.app.objMod.*;
+import net.moonlightflower.wc3libs.dataTypes.app.War3Int;
+import net.moonlightflower.wc3libs.dataTypes.app.War3String;
+import net.moonlightflower.wc3libs.txt.WTS;
+import org.eclipse.jdt.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+
+import java.io.*;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class ProgramStateIO extends ProgramState {
+
+    private static final int GENERATED_BY_WURST = 42;
+    private static final String OBJECT_CACHE_MANIFEST = "wurst_object_cache.txt";
+
+    private @Nullable ImStmt lastStatement;
+    private @Nullable final MpqEditor mpqEditor;
+    private final Map<ObjectFileType, ObjMod<? extends ObjMod.Obj>> dataStoreMap = Maps.newLinkedHashMap();
+    private final Map<ObjectFileType, String> dataStoreHashes = Maps.newLinkedHashMap();
+    /** Object files present in the map that could not be read; their stores started empty. */
+    private final Set<ObjectFileType> unreadableObjectFiles = EnumSet.noneOf(ObjectFileType.class);
+    private final Map<String, Set<String>> createdObjectDefinitionIds = Maps.newLinkedHashMap();
+    private int id = 0;
+    private final Map<String, ObjMod.Obj> objDefinitions = Maps.newLinkedHashMap();
+    private @Nullable WTS trigStrings = null;
+    private final Optional<File> mapFile;
+    /**
+     * Map to read the base object data from, when the map being compiled already holds object data written
+     * back by a previous run (the cached map). Without it, objects that are no longer created and fields that
+     * are no longer set would survive from that run.
+     */
+    private @Nullable File objectDataSource;
+    private boolean exportW3o;
+    private @Nullable Map<String, byte[]> baseObjectFiles;
+
+    /**
+     * Tracks which object files have been modified during compiletime
+     */
+    private static class ObjectCacheManifest {
+        Map<String, ObjectFileEntry> objectFiles = new HashMap<>();
+
+        static class ObjectFileEntry {
+            String fileType;
+            String hash;
+            long timestamp;
+            int objectCount;
+
+            ObjectFileEntry(String fileType, String hash, long timestamp, int objectCount) {
+                this.fileType = fileType;
+                this.hash = hash;
+                this.timestamp = timestamp;
+                this.objectCount = objectCount;
+            }
+        }
+
+        String serialize() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("# Wurst Object Cache Manifest v1\n");
+            sb.append("# Format: fileType|hash|timestamp|objectCount\n");
+
+            for (Map.Entry<String, ObjectFileEntry> entry : objectFiles.entrySet()) {
+                ObjectFileEntry e = entry.getValue();
+                sb.append(e.fileType)
+                    .append("|")
+                    .append(e.hash)
+                    .append("|")
+                    .append(e.timestamp)
+                    .append("|")
+                    .append(e.objectCount)
+                    .append("\n");
+            }
+            return sb.toString();
+        }
+
+        static ObjectCacheManifest deserialize(String data) {
+            ObjectCacheManifest manifest = new ObjectCacheManifest();
+            if (data == null || data.isEmpty()) {
+                return manifest;
+            }
+
+            String[] lines = data.split("\n");
+            for (String line : lines) {
+                if (line.startsWith("#") || line.trim().isEmpty()) {
+                    continue;
+                }
+                String[] parts = line.split("\\|");
+                if (parts.length == 4) {
+                    try {
+                        String fileType = parts[0];
+                        String hash = parts[1];
+                        long timestamp = Long.parseLong(parts[2]);
+                        int objectCount = Integer.parseInt(parts[3]);
+
+                        manifest.objectFiles.put(fileType,
+                            new ObjectFileEntry(fileType, hash, timestamp, objectCount));
+                    } catch (NumberFormatException e) {
+                        WLogger.warning("Invalid object cache manifest line: " + line);
+                    }
+                }
+            }
+            return manifest;
+        }
+
+        boolean hasEntry(String fileType) {
+            return objectFiles.containsKey(fileType);
+        }
+
+        boolean hashMatches(String fileType, String hash) {
+            ObjectFileEntry entry = objectFiles.get(fileType);
+            return entry != null && entry.hash.equals(hash);
+        }
+
+        void putEntry(String fileType, String hash, int objectCount) {
+            objectFiles.put(fileType, new ObjectFileEntry(fileType, hash, System.currentTimeMillis(), objectCount));
+        }
+    }
+
+    public ProgramStateIO(Optional<File> mapFile, @Nullable MpqEditor mpqEditor, WurstGui gui, ImProg prog, boolean isCompiletime) {
+        super(gui, prog, isCompiletime);
+        this.mapFile = mapFile;
+        this.mpqEditor = mpqEditor;
+    }
+
+    public void setExportW3o(boolean exportW3o) {
+        this.exportW3o = exportW3o;
+    }
+
+    @Override
+    public void setLastStatement(ImStmt s) {
+        lastStatement = s;
+    }
+
+    @Override
+    public @Nullable ImStmt getLastStatement() {
+        return lastStatement;
+    }
+
+    @Override
+    public WurstGui getGui() {
+        return super.getGui();
+    }
+
+    private String getTrigString(int id) {
+        return loadTrigStrings().getEntry(id);
+    }
+
+    private WTS loadTrigStrings() {
+        WTS res = trigStrings;
+        if (res != null) {
+            return res;
+        }
+        try {
+            byte[] wts = mpqEditor.extractFile("war3map.wts");
+            res = new WTS(new ByteArrayInputStream(wts));
+        } catch (Exception e) {
+            // dummy result
+            res = new WTS();
+            WLogger.warning("Could not load trigger strings");
+            WLogger.info(e);
+        }
+        trigStrings = res;
+        return res;
+    }
+
+    public void setObjectDataSource(@Nullable File sourceMap) {
+        this.objectDataSource = sourceMap;
+        this.baseObjectFiles = null;
+    }
+
+    private byte[] readBaseObjectFile(String name) throws Exception {
+        if (objectDataSource != null && baseObjectFiles == null) {
+            try {
+                baseObjectFiles = ObjectExportService.readObjectFiles(objectDataSource);
+            } catch (Exception e) {
+                WLogger.warning("Could not read object data from " + objectDataSource
+                    + ", using the object data of the compiled map instead: " + e.getMessage());
+                objectDataSource = null;
+            }
+        }
+        Map<String, byte[]> base = baseObjectFiles;
+        if (base != null) {
+            return base.get(name);
+        }
+        return mpqEditor.hasFile(name) ? mpqEditor.extractFile(name) : null;
+    }
+
+    ObjMod<? extends ObjMod.Obj> getDataStore(String fileExtension) {
+        return getDataStore(ObjectFileType.fromExt(fileExtension));
+    }
+
+    private ObjMod<? extends ObjMod.Obj> getDataStore(ObjectFileType filetype) throws Error {
+        ObjMod<? extends ObjMod.Obj> dataStore = dataStoreMap.get(filetype);
+        if (dataStore != null) {
+            return dataStore;
+        }
+        if (mpqEditor == null) {
+            // without a map: create empty object file
+            dataStore = filetypeToObjmod(filetype);
+            dataStore.setFormat(ObjMod.EncodingFormat.OBJ_0x2);
+            dataStoreMap.put(filetype, dataStore);
+            return dataStore;
+        }
+
+        try {
+            // extract specific object file:
+            String fileName = "war3map." + filetype.getExt();
+            String skinFileName = "war3mapSkin." + filetype.getExt();
+            try {
+                byte[] main = readBaseObjectFile(fileName);
+                if (main != null) {
+                    byte[] skin = readBaseObjectFile(skinFileName);
+                    dataStore = ObjectExportService.readObjectFile(filetype, main, skin);
+                    // the skin data is merged into the main file, which is what gets written back
+                    if (mpqEditor.hasFile(skinFileName)) {
+                        mpqEditor.deleteFile(skinFileName);
+                    }
+                    replaceTrigStrings(dataStore);
+                } else {
+                    dataStore = filetypeToObjmod(filetype);
+                    dataStore.setFormat(ObjMod.EncodingFormat.OBJ_0x2);
+                }
+            } catch (IOException | InterruptedException e) {
+                // TODO maybe tell the user, that something has gone wrong
+                WLogger.info("Could not extract file: " + fileName);
+                WLogger.info(e);
+                unreadableObjectFiles.add(filetype);
+                dataStore = filetypeToObjmod(filetype);
+                dataStore.setFormat(ObjMod.EncodingFormat.OBJ_0x2);
+            }
+            dataStoreMap.put(filetype, dataStore);
+
+            // clean datastore, remove all objects created by wurst
+            deleteWurstObjects(dataStore);
+        } catch (Exception e) {
+            WLogger.severe(e);
+            throw new Error(e);
+        }
+
+        return dataStore;
+    }
+
+    @NotNull
+    private ObjMod<? extends ObjMod.Obj> filetypeToObjmod(ObjectFileType filetype) {
+        switch (filetype) {
+            case UNITS:
+                return new W3U();
+            case ITEMS:
+                return new W3T();
+            case DESTRUCTABLES:
+                return new W3B();
+            case DOODADS:
+                return new W3D();
+            case ABILITIES:
+                return new W3A();
+            case BUFFS:
+                return new W3H();
+            case UPGRADES:
+                return new W3Q();
+        }
+        return null;
+    }
+
+    private void replaceTrigStrings(ObjMod<? extends ObjMod.Obj> dataStore) {
+        replaceTrigStringsInTable(dataStore.getOrigObjs());
+        replaceTrigStringsInTable(dataStore.getCustomObjs());
+    }
+
+    private void replaceTrigStringsInTable(List<? extends ObjMod.Obj> modifiedTable) {
+        for (ObjMod.Obj od : modifiedTable) {
+            for (ObjMod.Obj.Mod mod : od.getMods()) {
+                if (mod.getValType() == ObjMod.ValType.STRING && mod.getVal() instanceof War3String) {
+                    War3String stringVal = (War3String) mod.getVal();
+                    if (stringVal.getVal().startsWith("TRIGSTR_")) {
+                        try {
+                            int id = Integer.parseInt(stringVal.getVal().substring("TRIGSTR_".length()), 10);
+                            String newVal = getTrigString(id);
+                            stringVal.set_val(newVal);
+                        } catch (NumberFormatException e) {
+                            // ignore
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void deleteWurstObjects(ObjMod<? extends ObjMod.Obj> dataStore) {
+        for (ObjMod.Obj next : dataStore.getCustomObjs()) {
+            for (ObjMod.Obj.Mod om : next.getMods()) {
+                if (om.getId().getVal().equals("wurs") && om.getVal() instanceof War3Int) {
+                    War3Int val = (War3Int) om.getVal();
+                    if (val.getVal() == GENERATED_BY_WURST) {
+                        dataStore.removeObj(next.getId());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    String addObjectDefinition(ObjMod.Obj objDef) {
+        id++;
+        String key = "obj" + id;
+        objDefinitions.put(key, objDef);
+        return key;
+    }
+
+    ObjMod.Obj getObjectDefinition(String key) {
+        return objDefinitions.get(key);
+    }
+
+    boolean registerCreatedObjectDefinition(String fileExtension, String objId) {
+        Set<String> ids = createdObjectDefinitionIds.computeIfAbsent(fileExtension, k -> new LinkedHashSet<>());
+        return ids.add(objId);
+    }
+
+    /**
+     * The object file as it is written into the map. It is serialised once and both hashed and written from
+     * these bytes: a big map's object files take a noticeable time to serialise.
+     */
+    private byte[] serializeObjectFile(ObjMod<? extends ObjMod.Obj> dataStore) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            Wc3BinOutputStream out = new Wc3BinOutputStream(baos);
+            dataStore.write(out, ObjMod.EncodingFormat.AS_DEFINED);
+            out.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            WLogger.severe(e);
+            throw new Error(e);
+        }
+    }
+
+    /**
+     * Load the object cache manifest from MPQ
+     */
+    private ObjectCacheManifest loadObjectCacheManifest() {
+        if (mpqEditor == null) {
+            return new ObjectCacheManifest();
+        }
+
+        try {
+            if (mpqEditor.hasFile(OBJECT_CACHE_MANIFEST)) {
+                byte[] data = mpqEditor.extractFile(OBJECT_CACHE_MANIFEST);
+                String content = new String(data, StandardCharsets.UTF_8);
+                WLogger.info("Loaded object cache manifest from MPQ");
+                return ObjectCacheManifest.deserialize(content);
+            }
+        } catch (Exception e) {
+            WLogger.info("Could not load object cache manifest: " + e.getMessage());
+        }
+        return new ObjectCacheManifest();
+    }
+
+    /**
+     * Save the object cache manifest to MPQ
+     */
+    private void saveObjectCacheManifest(ObjectCacheManifest manifest) {
+        if (mpqEditor == null) {
+            return;
+        }
+
+        try {
+            String serialized = manifest.serialize();
+            byte[] data = serialized.getBytes(StandardCharsets.UTF_8);
+            mpqEditor.deleteFile(OBJECT_CACHE_MANIFEST);
+            mpqEditor.insertFile(OBJECT_CACHE_MANIFEST, data);
+            WLogger.info("Saved object cache manifest to MPQ");
+        } catch (Exception e) {
+            WLogger.warning("Could not save object cache manifest: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void writeBack(boolean inject) {
+        gui.sendProgress("Writing back generated objects");
+        long startTime = System.currentTimeMillis();
+
+        ObjectCacheManifest oldManifest = loadObjectCacheManifest();
+        ObjectCacheManifest newManifest = new ObjectCacheManifest();
+
+        int filesProcessed = 0, filesUpdated = 0, filesSkipped = 0;
+        boolean anyFileWritten = false;
+
+        for (ObjectFileType fileType : ObjectFileType.values()) {
+            filesProcessed++;
+            ObjMod<? extends ObjMod.Obj> dataStore = getDataStore(fileType);
+
+            if (unreadableObjectFiles.contains(fileType)) {
+                // Writing the store would replace the map's objects of this type with only the generated ones.
+                if (!dataStore.getObjsList().isEmpty()) {
+                    compilationError("Could not read war3map." + fileType.getExt()
+                        + " from the map, so the objects created at compiletime cannot be added to it.");
+                }
+                WLogger.warning("Object file " + fileType.getExt() + " could not be read, keeping it unchanged");
+                continue;
+            }
+            // An empty store still has to replace an existing file, which may hold objects that are no longer created.
+            if (dataStore.getObjsList().isEmpty()
+                && (mpqEditor == null || !mpqEditor.hasFile("war3map." + fileType.getExt()))) {
+                WLogger.info("Object file " + fileType.getExt() + " is empty, skipping");
+                continue;
+            }
+
+            // Compute hash of what we intend to write
+            byte[] currentContent = serializeObjectFile(dataStore);
+            String currentHash = ImportFile.calculateHash(currentContent);
+            dataStoreHashes.put(fileType, currentHash);
+
+            boolean mpqHasSame = false;
+            if (mpqEditor != null && mpqEditor.hasFile("war3map." + fileType.getExt())) {
+                try {
+                    byte[] existing = mpqEditor.extractFile("war3map." + fileType.getExt());
+                    mpqHasSame = Arrays.equals(existing, currentContent);
+                } catch (Exception e) {
+                    WLogger.info("Could not validate MPQ content for " + fileType.getExt() + ": " + e.getMessage());
+                }
+            }
+
+            boolean manifestSaysSame = oldManifest.hasEntry(fileType.getExt())
+                && oldManifest.hashMatches(fileType.getExt(), currentHash);
+
+            // Only skip if BOTH the manifest and the actual MPQ content match
+            if (manifestSaysSame && mpqHasSame) {
+                WLogger.info("Object file " + fileType.getExt() + " unchanged (hash match), skipping writeback");
+                filesSkipped++;
+                if (inject) {
+                    newManifest.putEntry(fileType.getExt(), currentHash, dataStore.getObjsList().size());
+                }
+                continue;
+            }
+
+            WLogger.info("Object file " + fileType.getExt() + " changed or MPQ out of sync, writing back");
+            filesUpdated++;
+            writebackObjectFile(currentContent, dataStore, fileType, inject);
+            anyFileWritten = anyFileWritten || inject;
+            if (inject) {
+                newManifest.putEntry(fileType.getExt(), currentHash, dataStore.getObjsList().size());
+            }
+        }
+
+        // Export independently of the MPQ cache: an explicit request must also work on an unchanged build.
+        if (exportW3o) {
+            writeW3oFile();
+        }
+
+        // Only persist a new manifest if we actually injected files
+        if (inject && anyFileWritten) {
+            saveObjectCacheManifest(newManifest);
+        } else {
+            WLogger.info("Skipping manifest update (inject=" + inject + ", anyFileWritten=" + anyFileWritten + ")");
+        }
+
+        long endTime = System.currentTimeMillis();
+        WLogger.info(String.format(
+            "Object writeback complete in %dms: %d files processed, %d updated, %d skipped",
+            endTime - startTime, filesProcessed, filesUpdated, filesSkipped));
+    }
+
+
+    private void writeW3oFile() {
+        if (!unreadableObjectFiles.isEmpty()) {
+            compilationError("Could not export combined object data because the map's object files could not be read: " + unreadableObjectFiles);
+            return;
+        }
+        Optional<File> folder = getObjectEditingOutputFolder();
+        if (folder.isEmpty()) {
+            compilationError("Could not create the output folder for the combined object data export.");
+            return;
+        }
+        File objFile = new File(folder.get(), "wurstCreatedObjects.w3o");
+        try (Wc3BinOutputStream objFileStream = new Wc3BinOutputStream(objFile)) {
+            objFileStream.writeInt32(1); // version
+            for (ObjectFileType fileType : ObjectFileType.values()) {
+                ObjMod<? extends ObjMod.Obj> dataStore = getDataStore(fileType);
+                if (!dataStore.getObjs().isEmpty()) {
+                    objFileStream.writeInt32(1); // exists
+                    dataStore.write(objFileStream, ObjMod.EncodingFormat.AS_DEFINED);
+                } else {
+                    objFileStream.writeInt32(0); // does not exist
+                }
+            }
+        } catch (IOException e) {
+            WLogger.severe(e);
+            compilationError("Could not export combined object data to " + objFile + ": " + e.getMessage());
+        }
+    }
+
+    private void writebackObjectFile(byte[] w3_, ObjMod<? extends ObjMod.Obj> dataStore, ObjectFileType fileType,
+                                     boolean inject) throws Error {
+        try {
+            Optional<File> folder = getObjectEditingOutputFolder();
+
+            exportToWurst(dataStore, fileType, new File(folder.get(), "WurstExportedObjects_" + fileType.getExt() + ".wurst.txt").toPath());
+
+            if (inject) {
+                if (mpqEditor == null) {
+                    throw new RuntimeException("Map file must be given with '-injectobjects' option.");
+                }
+                String filenameInMpq = "war3map." + fileType.getExt();
+                mpqEditor.deleteFile(filenameInMpq);
+                mpqEditor.insertFile(filenameInMpq, w3_);
+                WLogger.info("Injected modified object file: " + filenameInMpq);
+            }
+        } catch (Exception e) {
+            WLogger.severe(e);
+            throw new Error(e);
+        }
+    }
+
+    public void exportToWurst(ObjMod<? extends ObjMod.Obj> dataStore,
+                              ObjectFileType fileType, Path outFile) throws IOException {
+        exportToWurst(dataStore, fileType, outFile, true);
+    }
+
+    public void exportToWurst(ObjMod<? extends ObjMod.Obj> dataStore,
+                              ObjectFileType fileType, Path outFile, boolean useWrappers) throws IOException {
+        exportToWurstFile(dataStore, fileType, outFile, useWrappers);
+    }
+
+    public static void exportToWurstFile(ObjMod<? extends ObjMod.Obj> dataStore,
+                                         ObjectFileType fileType, Path outFile,
+                                         boolean useWrappers) throws IOException {
+        try (BufferedWriter out = Files.newBufferedWriter(outFile, StandardCharsets.UTF_8)) {
+            out.write("package WurstExportedObjects_" + fileType.getExt() + "\n");
+            out.write("import ObjEditingNatives\n");
+            out.write("import ObjEditingCommons\n");
+            // Add the appropriate stdlib wrapper import for the file type so generated
+            // code using e.g. AbilityDefinitionSlow can reference that class directly.
+            switch (fileType) {
+                case ABILITIES:    out.write("import AbilityObjEditing\n"); break;
+                case UNITS:        out.write("import UnitObjEditing\n"); break;
+                case BUFFS:        out.write("import BuffObjEditing\n"); break;
+                case ITEMS:        out.write("import ItemObjEditing\n"); break;
+                case DESTRUCTABLES: out.write("import DestructableObjEditing\n"); break;
+                case DOODADS:      out.write("import DoodadObjEditing\n"); break;
+                default: break;
+            }
+            out.write("\n");
+
+            out.write("// Modified Table (contains all custom objects)\n\n");
+            exportToWurst(dataStore.getCustomObjs(), fileType, out, useWrappers);
+
+            out.write("// Original Table (contains all modified default/melee objects)\n" +
+                "// These are emitted when createObjectDefinition uses the same base/new id.\n\n");
+            exportToWurst(dataStore.getOrigObjs(), fileType, out, useWrappers);
+        }
+    }
+
+    public static void exportToWurst(List<? extends ObjMod.Obj> customObjs, ObjectFileType fileType, Appendable out) throws IOException {
+        exportToWurst(customObjs, fileType, out, true);
+    }
+
+    public static void exportToWurst(List<? extends ObjMod.Obj> customObjs, ObjectFileType fileType, Appendable out,
+                                     boolean useWrappers) throws IOException {
+        for (ObjMod.Obj obj : customObjs) {
+            // Original-table objects (melee overrides) have no base/new id in wc3libs.
+            // For Wurst export we represent them as same-id overrides.
+            String objectId = obj.getId().getVal();
+            String oldId = (obj.getBaseId() != null ? obj.getBaseId().getVal() : objectId);
+            String newId = (obj.getNewId() != null ? obj.getNewId().getVal() : objectId);
+
+            // Pretty wrapper exports hide the internal Wurst marker. Raw exports keep it
+            // because they are used for lossless object-data extraction.
+            List<ObjMod.Obj.Mod> modsToExport = obj.getMods().stream()
+                .filter(m -> !useWrappers || !m.toString().equals("wurs"))
+                .collect(Collectors.toList());
+
+            if (!useWrappers || !tryExportWithWrapper(out, fileType, newId, oldId, modsToExport)) {
+                // Raw fallback: createObjectDefinition with direct field setters
+                out.append("@compiletime function create_").append(fileType.getExt()).append("_").append(newId)
+                    .append("()\n");
+                out.append("\tlet def = createObjectDefinition(\"").append(fileType.getExt()).append("\", '");
+                out.append(newId).append("', '").append(oldId).append("')\n");
+                for (ObjMod.Obj.Mod m : modsToExport) {
+                    appendRawMod(out, m, fileType);
+                }
+                out.append("\n\n");
+            }
+        }
+    }
+
+    /**
+     * Attempts to emit a wrapper-class-based definition for the given object.
+     * Uses the stdlib high-level classes (e.g. AbilityDefinitionSlow, UnitDefinition)
+     * and their named setter methods.
+     *
+     * <p>Fields that have no known wrapper method are emitted as commented-out raw
+     * calls so the output is still useful even when coverage is incomplete.
+     *
+     * <p>Returns {@code false} when there is no wrapper class at all for this
+     * object type / base ID (e.g. doodads, upgrades, or an unknown ability base ID),
+     * or when a mapped wrapper setter exists but its parameter type is not yet
+     * supported for source re-emission. In those cases the caller should fall back
+     * to the fully raw format so no object data is lost on re-export.
+     */
+    private static boolean tryExportWithWrapper(Appendable out, ObjectFileType fileType,
+                                          String newId, String oldId,
+                                          List<ObjMod.Obj.Mod> mods) throws IOException {
+        String wrapperClass;
+        Map<String, StdlibObjectMappings.FieldMethodInfo> fieldMethods;
+        // Constructor argument string, e.g. "'A01M'" or "'H001', 'hfoo'"
+        String constructorArgs;
+
+        switch (fileType) {
+            case ABILITIES:
+                wrapperClass = StdlibObjectMappings.ABILITY_CLASS_BY_BASE_ID.get(oldId);
+                if (wrapperClass == null) return false;
+                fieldMethods = StdlibObjectMappings.ABILITY_FIELD_METHODS.getOrDefault(
+                    oldId, Collections.emptyMap());
+                constructorArgs = "'" + newId + "'";
+                break;
+            case UNITS:
+                // Buildings: base ID is in the known building set
+                // Heroes: base ID is in the known hero set, OR the new (custom) ID starts with
+                //         an uppercase letter (WC3 convention for custom hero unit IDs)
+                if (StdlibObjectMappings.BUILDING_BASE_IDS.contains(oldId)) {
+                    wrapperClass = "BuildingDefinition";
+                    fieldMethods = StdlibObjectMappings.BUILDING_FIELD_METHODS;
+                } else if (StdlibObjectMappings.HERO_BASE_IDS.contains(oldId)
+                           || Character.isUpperCase(newId.charAt(0))) {
+                    wrapperClass = "HeroDefinition";
+                    fieldMethods = StdlibObjectMappings.HERO_FIELD_METHODS;
+                } else {
+                    wrapperClass = "UnitDefinition";
+                    fieldMethods = StdlibObjectMappings.UNIT_FIELD_METHODS;
+                }
+                constructorArgs = "'" + newId + "', '" + oldId + "'";
+                break;
+            case BUFFS:
+                wrapperClass = "BuffDefinition";
+                fieldMethods = StdlibObjectMappings.BUFF_FIELD_METHODS;
+                constructorArgs = "'" + newId + "', '" + oldId + "'";
+                break;
+            case ITEMS:
+                wrapperClass = "ItemDefinition";
+                fieldMethods = StdlibObjectMappings.ITEM_FIELD_METHODS;
+                constructorArgs = "'" + newId + "', '" + oldId + "'";
+                break;
+            case DESTRUCTABLES:
+                wrapperClass = "DestructableDefinition";
+                fieldMethods = StdlibObjectMappings.DESTRUCTABLE_FIELD_METHODS;
+                constructorArgs = "'" + newId + "', '" + oldId + "'";
+                break;
+            case DOODADS:
+                wrapperClass = "DoodadDefinition";
+                fieldMethods = StdlibObjectMappings.DOODAD_FIELD_METHODS;
+                constructorArgs = "'" + newId + "', '" + oldId + "'";
+                break;
+            default:
+                return false;
+        }
+
+        if (hasUnsupportedMappedWrapperField(mods, fieldMethods, fileType)) {
+            return false;
+        }
+
+        out.append("@compiletime function create_").append(fileType.getExt()).append("_").append(newId)
+            .append("()\n");
+        out.append("\tnew ").append(wrapperClass).append("(").append(constructorArgs).append(")\n");
+
+        for (ObjMod.Obj.Mod m : mods) {
+            StdlibObjectMappings.FieldMethodInfo info = fieldMethods.get(fieldKey(m, fileType));
+            if (info != null && canUseWrapperForMod(m, info)) {
+                out.append("\t..").append(info.methodName()).append("(");
+                if (info.hasLevel() && m instanceof ObjMod.Obj.ExtendedMod extendedMod) {
+                    out.append(String.valueOf(extendedMod.getLevel())).append(", ");
+                }
+                out.append(formatWrapperValue(m, info)).append(")\n");
+            } else {
+                // No wrapper method for this field; emit as a commented raw call so the
+                // user can see what needs to be handled and add it manually.
+                out.append("\t// TODO no wrapper: ");
+                appendRawMod(out, m, fileType);
+            }
+        }
+        out.append("\n\n");
+        return true;
+    }
+
+    private static boolean hasUnsupportedMappedWrapperField(List<ObjMod.Obj.Mod> mods,
+                                                            Map<String, StdlibObjectMappings.FieldMethodInfo> fieldMethods,
+                                                            ObjectFileType fileType) {
+        for (ObjMod.Obj.Mod mod : mods) {
+            StdlibObjectMappings.FieldMethodInfo info = fieldMethods.get(fieldKey(mod, fileType));
+            if (info == null) {
+                continue;
+            }
+            if (!canUseWrapperForMod(mod, info)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the lookup key used to match a mod to a {@link StdlibObjectMappings.FieldMethodInfo}.
+     * Uses the mod's actual dataPtr when it is an {@link ObjMod.Obj.ExtendedMod}, regardless of
+     * whether the file type reports {@code usesLevels()}; some types (e.g. buffs) store their
+     * data as extended mods even though the file type flag is false.
+     */
+    static String fieldKey(ObjMod.Obj.Mod m, ObjectFileType fileType) {
+        if (m instanceof ObjMod.Obj.ExtendedMod ext) {
+            return m.toString() + ":" + ext.getDataPt();
+        }
+        // Plain Mods (non-extended) have no dataPtr. WC3 WE stores equivalent data as
+        // ExtendedMod with dataPtr=0, so use 0 here to match the JSON keys for unit/item/buff
+        // fields. Ability fields always use ExtendedMod so this path only applies to unit types.
+        return m.toString() + ":0";
+    }
+
+    private static boolean canUseWrapperForMod(ObjMod.Obj.Mod m, StdlibObjectMappings.FieldMethodInfo info) {
+        if (!supportsWrapperParameterType(info.parameterType())) {
+            return false;
+        }
+        if (isEnumParameter(info.parameterType())) {
+            return enumConstantForObjectString(info.parameterType(), m.getVal().toString()) != null;
+        }
+        return true;
+    }
+
+    private static boolean supportsWrapperParameterType(String parameterType) {
+        return parameterType.isEmpty()
+            || isPrimitiveParameter(parameterType)
+            || isEnumParameter(parameterType);
+    }
+
+    private static boolean isEnumParameter(String parameterType) {
+        return ENUM_OBJECT_STRING_TO_CONSTANT.containsKey(parameterType);
+    }
+
+    private static boolean isPrimitiveParameter(String parameterType) {
+        return switch (parameterType) {
+            case "int", "string", "real", "bool", "boolean" -> true;
+            default -> false;
+        };
+    }
+
+    private static String formatWrapperValue(ObjMod.Obj.Mod m, StdlibObjectMappings.FieldMethodInfo info) {
+        String enumConstant = enumConstantForObjectString(info.parameterType(), m.getVal().toString());
+        if (enumConstant != null) {
+            return enumConstant;
+        }
+        return formatModValue(m, info.isBoolField());
+    }
+
+    /** Formats a mod value for use in generated Wurst source. */
+    static String formatModValue(ObjMod.Obj.Mod m, boolean isBoolField) {
+        if (isBoolField) {
+            return "0".equals(m.getVal().toString()) ? "false" : "true";
+        }
+        if (m.getValType() == ObjMod.ValType.STRING) {
+            return Utils.escapeString(m.getVal().toString());
+        }
+        if (m.getValType() == ObjMod.ValType.REAL || m.getValType() == ObjMod.ValType.UNREAL) {
+            return formatRealLiteral(m.getVal().toString());
+        }
+        return m.getVal().toString();
+    }
+
+    private static String formatRealLiteral(String value) {
+        try {
+            String plain = new BigDecimal(value).toPlainString();
+            return plain.contains(".") ? plain : plain + ".0";
+        } catch (NumberFormatException e) {
+            return value;
+        }
+    }
+
+    private static @Nullable String enumConstantForObjectString(String parameterType, String value) {
+        Map<String, String> values = ENUM_OBJECT_STRING_TO_CONSTANT.get(parameterType);
+        if (values == null) {
+            return null;
+        }
+        String constant = values.get(value);
+        return constant == null ? null : parameterType + "." + constant;
+    }
+
+    private static Map<String, String> enumConstants(String... valueConstantPairs) {
+        Map<String, String> result = new LinkedHashMap<>();
+        for (int i = 0; i < valueConstantPairs.length; i += 2) {
+            result.put(valueConstantPairs[i], valueConstantPairs[i + 1]);
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    private static final Map<String, Map<String, String>> ENUM_OBJECT_STRING_TO_CONSTANT = Map.of(
+        "Race", enumConstants(
+            "commoner", "Commoner",
+            "creeps", "Creeps",
+            "critters", "Critters",
+            "demon", "Demon",
+            "human", "Human",
+            "naga", "Naga",
+            "nightelf", "Nightelf",
+            "orc", "Orc",
+            "other", "Other",
+            "undead", "Undead",
+            "unknown", "Unknown"
+        ),
+        "MovementType", enumConstants(
+            "", "None",
+            "foot", "Foot",
+            "horse", "Horse",
+            "fly", "Fly",
+            "hover", "Hover",
+            "float", "Float",
+            "amph", "Amphipic"
+        ),
+        "ArmorType", enumConstants(
+            "small", "Small",
+            "medium", "Medium",
+            "large", "Large",
+            "fort", "Fortified",
+            "normal", "Normal",
+            "hero", "Hero",
+            "divine", "Divine",
+            "none", "Unarmored"
+        ),
+        "AttackType", enumConstants(
+            "unknown", "Unknown",
+            "normal", "Normal",
+            "pierce", "Pierce",
+            "siege", "Siege",
+            "spells", "Spells",
+            "chaos", "Chaos",
+            "magic", "Magic",
+            "hero", "Hero"
+        ),
+        "WeaponType", enumConstants(
+            "_", "None",
+            "normal", "Normal",
+            "instant", "Instant",
+            "artillery", "Artillery",
+            "aline", "ArtilleryLine",
+            "missile", "Missile",
+            "msplash", "MissileSplash",
+            "mbounce", "MissileBounce",
+            "mline", "MissileLine"
+        ),
+        "WeaponSound", enumConstants(
+            "", "Nothing",
+            "Nothing", "Nothing",
+            "AxeMediumChop", "AxeMediumChop",
+            "MetalHeavyBash", "MetalHeavyBash",
+            "MetalHeavyChop", "MetalHeavyChop",
+            "MetalHeavySlice", "MetalHeavySlice",
+            "MetalLightChop", "MetalLightChop",
+            "MetalLightSlice", "MetalLightSlice",
+            "MetalMediumBash", "MetalMediumBash",
+            "MetalMediumChop", "MetalMediumChop",
+            "MetalMediumSlice", "MetalMediumSlice",
+            "RockHeavyBash", "RockHeavyBash",
+            "WoodHeavyBash", "WoodHeavyBash",
+            "WoodLightBash", "WoodLightBash",
+            "WoodMediumBash", "WoodMediumBash"
+        ),
+        "ArmorSoundType", enumConstants(
+            "Ethereal", "Ethereal",
+            "Flesh", "Flesh",
+            "Wood", "Wood",
+            "Stone", "Stone",
+            "Metal", "Metal"
+        )
+    );
+
+    /** Appends a single raw field-setter call (e.g. ..setLvlDataUnreal(...)) to {@code out}. */
+    private static void appendRawMod(Appendable out, ObjMod.Obj.Mod m, ObjectFileType fileType) throws IOException {
+        if (m instanceof ObjMod.Obj.ExtendedMod ext) {
+            out.append("\t..setLvlData").append(valTypeToFuncPostfix(ext.getValType())).append("(\"");
+            out.append(m.toString()).append("\", ")
+                .append(String.valueOf(ext.getLevel())).append(", ")
+                .append(String.valueOf(ext.getDataPt())).append(", ")
+                .append(formatModValue(m, false)).append(")\n");
+        } else {
+            out.append("\t..set").append(valTypeToFuncPostfix(m.getValType())).append("(\"");
+            out.append(m.toString()).append("\", ").append(formatModValue(m, false)).append(")\n");
+        }
+    }
+
+    private static String valTypeToFuncPostfix(ObjMod.ValType valType) {
+        switch (valType) {
+            case INT:    return "Int";
+            case REAL:   return "Real";
+            case UNREAL: return "Unreal";
+            case STRING: return "String";
+        }
+        return "Int";
+    }
+
+    private Optional<File> getObjectEditingOutputFolder() {
+        if (!mapFile.isPresent()) {
+            File folder = new File("_build", "objectEditingOutput");
+            folder.mkdirs();
+            return Optional.of(folder);
+        }
+        Optional<File> folder = mapFile.map(fi -> new File(fi.getParent(), "objectEditingOutput"));
+        if (!folder.get().exists() && !folder.get().mkdirs()) {
+            WLogger.info("Could not create folder " + folder.map(File::getAbsoluteFile));
+            return Optional.empty();
+        }
+        return folder;
+    }
+
+}

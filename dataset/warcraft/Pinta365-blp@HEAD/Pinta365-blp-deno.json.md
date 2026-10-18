@@ -1,0 +1,23 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Pinta365/blp"
+source_path: "deno.json"
+ref: HEAD
+---
+
+{
+    "name": "@pinta365/blp",
+    "version": "0.2.0",
+    "exports": "./mod.ts",
+    "license": "MIT",
+    "tasks": {
+        "check": "deno fmt --check && deno lint && deno doc --lint mod.ts && deno test --allow-read"
+    },
+    "imports": {
+        "@std/assert": "jsr:@std/assert@1"
+    },
+    "fmt": {
+        "lineWidth": 150,
+        "indentWidth": 4
+    }
+}

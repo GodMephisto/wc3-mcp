@@ -1,0 +1,47 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/sugky7302/my-first-war3-project"
+source_path: ".vscode/launch.json"
+ref: HEAD
+---
+
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch",
+            "type": "lua",
+            "request": "attach",
+            "stopOnEntry": true,
+            "address": "127.0.0.1:4279",
+            "sourceCoding": "utf8",
+            "preLaunchTask": "執行",
+            "sourceMaps": [
+                [
+                    "scripts\\",
+                    "${workspaceRoot}\\scripts\\"
+                ],
+                [
+                    "${workspaceRoot}\\map\\"
+                ]
+            ]
+        },
+        {
+            "name": "Attach",
+            "type": "lua",
+            "request": "attach",
+            "stopOnEntry": true,
+            "sourceCoding": "utf8",
+            "address": "127.0.0.1:4279",
+            "sourceMaps": [
+                [
+                    "scripts\\",
+                    "${workspaceRoot}\\scripts\\"
+                ],
+                [
+                    "${workspaceRoot}\\map\\"
+                ]
+            ]
+        }
+    ]
+}

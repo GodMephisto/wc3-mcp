@@ -1,0 +1,30 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/BogdanTretyakov/casc-cdn"
+source_path: ".vscode/launch.json"
+ref: HEAD
+---
+
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug demo.ts",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/demo.ts",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Current File",
+      "type": "node",
+      "request": "launch",
+      "program": "${file}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    }
+  ]
+}

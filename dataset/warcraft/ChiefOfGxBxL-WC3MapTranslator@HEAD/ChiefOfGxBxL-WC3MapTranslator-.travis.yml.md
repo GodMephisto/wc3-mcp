@@ -1,0 +1,30 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/ChiefOfGxBxL/WC3MapTranslator"
+source_path: ".travis.yml"
+ref: HEAD
+---
+
+# Modeled after: https://travis-ci.org/microsoft/TypeScript/jobs/625136191/config
+
+language: node_js
+
+node_js:
+  - "14"
+
+branches:
+  only:
+  - master
+
+install:
+  - npm uninstall typescript --no-save
+  - npm install
+
+cache:
+  directories:
+    - node_modules
+
+script: "npm run-script test-travis"
+
+# Send coverage data to Coveralls
+after_script: "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"

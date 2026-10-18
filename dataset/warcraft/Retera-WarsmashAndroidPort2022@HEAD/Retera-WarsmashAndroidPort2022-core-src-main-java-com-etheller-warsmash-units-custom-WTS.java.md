@@ -1,0 +1,19 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/WarsmashAndroidPort2022"
+source_path: "core/src/main/java/com/etheller/warsmash/units/custom/WTS.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.units.custom;
+
+public interface WTS {
+	String get(int key);
+
+	WTS DO_NOTHING = new WTS() {
+		@Override
+		public String get(final int key) {
+			return "TRIGSTR_" + key;
+		}
+	};
+}

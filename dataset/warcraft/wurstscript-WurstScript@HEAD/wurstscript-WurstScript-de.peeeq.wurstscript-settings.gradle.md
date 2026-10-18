@@ -1,0 +1,41 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/settings.gradle"
+ref: HEAD
+---
+
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = uri("https://plugins.gradle.org/m2") }
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        mavenCentral()
+        google()
+        def jitpack = maven { url 'https://jitpack.io' }
+        exclusiveContent {
+            forRepositories(jitpack)
+            // Commit-pinned GitHub artifacts are published by JitPack.
+            filter {
+                includeModule('com.github.inwc3', 'JMPQ3')
+                includeModule('com.github.inwc3', 'wc3libs')
+                includeModule('com.github.wurstscript', 'wurst-project-config')
+                includeModule('com.github.peterzeller', 'abstractsyntaxgen')
+                includeModule('com.github.peterzeller', 'java-smallcheck')
+            }
+        }
+    }
+}
+
+rootProject.name = 'wurstscript'
+

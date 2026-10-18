@@ -1,0 +1,56 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/rzaharia/UnitAbilitiesWarcraft3"
+source_path: "wurst/Hello.wurst"
+ref: HEAD
+---
+
+package Hello
+
+import Assets
+import SpellList
+
+import InitUnits
+import WinTrigger
+import ClosureKeyPresses
+import SaveLoadSystem
+
+/* Hello and welcome to Wurst!
+This is just a demo package. 
+You can modify it to tests things out 
+and then later delete it and create your own, new packages.
+Enjoy WurstScript? Consider starring o
+ur repo https://github.com/wurstscript/WurstScript */ 
+init
+	let hero = CreateUnit( players[0], UnitIds.archimonde, -126.6, 102.2, 228.600)
+	//let hero = GetUnitsOfPlayerAndTypeId( players[0], UnitIds.lichking).next()
+	hero.addAbility(CONFLAGRATION_SPELL_ID_)
+	initMyUnits()
+	//registerWinCondition()
+
+	bool hasHero = true
+	//Dummy event for testing
+	onKeyPress(OSKEY_ESCAPE) -> 
+		print("A player pressed ESCAPE")
+		if hasHero
+			Log.info("hasHero TRUE")
+			if hero != null
+				saveMyPLayerData(hero)
+				print("Saved and removed player hero")
+				hero.remove()
+			else
+				print("hero is NULL")
+		else
+			Log.info("hasHero FALSE")
+			print("Restoring player hero")	
+			loadMyPlayerData()
+		
+		hasHero = not hasHero
+		
+	
+
+	//let player p = Player(0);
+	//let u = CreateUnit( p, 'Hblm', -126.6, 102.2, 228.600)
+	//u.
+
+	

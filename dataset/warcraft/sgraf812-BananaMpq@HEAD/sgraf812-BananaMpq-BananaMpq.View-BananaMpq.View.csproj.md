@@ -1,0 +1,218 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/sgraf812/BananaMpq"
+source_path: "BananaMpq.View/BananaMpq.View.csproj"
+ref: HEAD
+---
+
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{2F465D31-B8BE-4EB3-A065-6C77628DB4E8}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BananaMpq.View</RootNamespace>
+    <AssemblyName>BananaMpq.View</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <PublishUrl>veröffentlichen\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>BananaMpq.View.App</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="CrystalMpq">
+      <HintPath>..\packages\CrystalMpq\CrystalMpq.dll</HintPath>
+    </Reference>
+    <Reference Include="CrystalMpq.DataFormats">
+      <HintPath>..\packages\CrystalMpq\CrystalMpq.DataFormats.dll</HintPath>
+    </Reference>
+    <Reference Include="CrystalMpq.WoW">
+      <HintPath>..\packages\CrystalMpq\CrystalMpq.WoW.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX, Version=2.4.2.0, Culture=neutral, PublicKeyToken=627a3d6d1956f55a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\SharpDX.2.4.2\lib\net40\SharpDX.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpDX.Direct3D9, Version=2.4.2.0, Culture=neutral, PublicKeyToken=627a3d6d1956f55a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\SharpDX.Direct3D9.2.4.2\lib\net40\SharpDX.Direct3D9.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Compile Include="..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="Infrastructure\BuildConfiguration.cs" />
+    <Compile Include="Infrastructure\DelegateUtil.cs" />
+    <Compile Include="Infrastructure\LiquidTypeRecord.cs" />
+    <Compile Include="Infrastructure\PluginLoader.cs" />
+    <Compile Include="Presenters\NavMeshPresenter.cs" />
+    <Compile Include="Presenters\NavigationMeshRenderersEventArgs.cs" />
+    <Compile Include="Presenters\TileSelectionPresenter.cs" />
+    <Compile Include="Rendering\AgentRenderer.cs" />
+    <Compile Include="Rendering\FirstPersonCamera.cs" />
+    <Compile Include="Rendering\INavigationMeshRenderer.cs" />
+    <Compile Include="Rendering\IRenderBatch.cs" />
+    <Compile Include="Rendering\ISceneRenderer.cs" />
+    <Compile Include="Rendering\SceneGeometryRenderer.cs" />
+    <Compile Include="Rendering\VertexPositionNormal.cs" />
+    <Compile Include="Rendering\DirectX9RenderBatch.cs" />
+    <Compile Include="Views\IChunkHierarchyView.cs" />
+    <Compile Include="Views\INavigationMeshSettingsView.cs" />
+    <Compile Include="Views\ITileSelectionView.cs" />
+    <Compile Include="Views\NavigationMeshSettingsView.xaml.cs">
+      <DependentUpon>NavigationMeshSettingsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\BuildConfigGroup.xaml.cs">
+      <DependentUpon>BuildConfigGroup.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\TileSelectionDialog.xaml.cs">
+      <DependentUpon>TileSelectionDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\TileSelectionEventArgs.cs" />
+    <Compile Include="Views\TreeChunkHierarchyView.xaml.cs">
+      <DependentUpon>TreeChunkHierarchyView.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Views\MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Infrastructure\MpqFileReader.cs" />
+    <Compile Include="Infrastructure\SceneService.cs" />
+    <Compile Include="Infrastructure\Cursor.cs" />
+    <Compile Include="Infrastructure\CameraChassis.cs" />
+    <Compile Include="Models\ChunkHierarchyModel.cs" />
+    <Compile Include="Presenters\LoadedWmoChunkHierarchyPresenter.cs" />
+    <Compile Include="Presenters\ScenePresenter.cs" />
+    <Compile Include="Views\ISceneView.cs" />
+    <Compile Include="Views\MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Page Include="Views\NavigationMeshSettingsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\BuildConfigGroup.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\TileSelectionDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\TreeChunkHierarchyView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Presenters\AdtChunkHierachyPresenter.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+    <AppDesigner Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BananaMpq\BananaMpq.csproj">
+      <Project>{082737BB-07C5-4129-9BCF-1B1193591FB7}</Project>
+      <Name>BananaMpq</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.5">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.5 %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

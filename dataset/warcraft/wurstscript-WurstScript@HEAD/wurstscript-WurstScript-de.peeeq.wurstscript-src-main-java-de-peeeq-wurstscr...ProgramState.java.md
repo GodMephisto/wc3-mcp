@@ -1,0 +1,1073 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/intermediatelang/interpreter/ProgramState.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.intermediatelang.interpreter;
+
+import com.google.common.collect.Lists;
+import de.peeeq.wurstio.jassinterpreter.InterpreterException;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.ast.Element;
+import de.peeeq.wurstscript.attributes.CompileError;
+import de.peeeq.datastructures.Partitions;
+import de.peeeq.wurstscript.gui.WurstGui;
+import de.peeeq.wurstscript.intermediatelang.*;
+import de.peeeq.wurstscript.jassIm.*;
+import de.peeeq.wurstscript.parser.WPos;
+import de.peeeq.wurstscript.translation.imtojass.ImAttrType;
+import de.peeeq.wurstscript.translation.imtranslation.SpecialisationLookup;
+import de.peeeq.wurstscript.utils.LineOffsets;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.io.PrintStream;
+import java.util.*;
+
+public class ProgramState extends State implements AutoCloseable {
+
+    public static final int GENERATED_BY_WURST = 42;
+    private de.peeeq.wurstscript.jassIm.Element lastStatement;
+    protected WurstGui gui;
+    private PrintStream outStream = System.err;
+    private final List<NativesProvider> nativeProviders = Lists.newArrayList();
+    private final Object2ObjectOpenHashMap<String, NativesProvider> nativeProviderByFunc = new Object2ObjectOpenHashMap<>();
+    private final Set<String> missingNativeFuncs = new HashSet<>();
+    private ImProg prog;
+    private final Map<ImClass, Object> classKeyLookup = new HashMap<>();
+    /** See {@link #isGenericHierarchy}; only looked up, never iterated. */
+    private final Map<ImClass, Boolean> genericHierarchy = new IdentityHashMap<>();
+    /** See {@link #dispatch}; only looked up, never iterated. */
+    private final Map<ImMethod, Map<ImClass, ImMethod>> dispatchCache = new IdentityHashMap<>();
+    /** See {@link #mostSpecificOverride}; only looked up, never iterated. */
+    private final Map<ImMethod, Map<ImClass, IntArrayList>> overridePositions = new IdentityHashMap<>();
+    /** See {@link #ancestors}; iterated only to collect positions which are then sorted. */
+    private final Map<ImClass, Set<ImClass>> ancestorsCache = new IdentityHashMap<>();
+    private final Map<Object, ObjectIdSpace> objectIdSpaces = new HashMap<>();
+    private final Int2ObjectOpenHashMap<IlConstHandle> handleMap = new Int2ObjectOpenHashMap<>();
+    private final Deque<ILStackFrame> stackFrames = new ArrayDeque<>();
+    private final Deque<de.peeeq.wurstscript.jassIm.Element> lastStatements = new ArrayDeque<>();
+    private final boolean isCompiletime;
+
+    private final Map<ImVar, ImClass> genericStaticOwner = new HashMap<>();
+
+    private final Set<ImVar> modifiedScalars = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<String> modifiedGenericScalars = new HashSet<>();
+    private final Map<String, List<ImTypeArgument>> genericScalarTypeArguments = new HashMap<>();
+    private final Object2ObjectOpenHashMap<String, ILconstArray> genericStaticArrays = new Object2ObjectOpenHashMap<>();
+    private final Set<String> modifiedGenericArrays = new HashSet<>();
+    private final Map<String, Set<List<Integer>>> modifiedGenericArrayIndexes = new HashMap<>();
+    private final Map<String, List<ImTypeArgument>> genericArrayTypeArguments = new HashMap<>();
+    private final Object2ObjectOpenHashMap<String, ILconst> genericStaticScalarVals = new Object2ObjectOpenHashMap<>();
+    private int untrackedWriteDepth;
+
+    /**
+     * What each specialised node was copied from, when the caller knows. A program handed over without
+     * it is treated as having no specialisation in it, which is what a hand-built program means.
+     */
+    private SpecialisationLookup specialisations = SpecialisationLookup.NONE;
+
+    public void setSpecialisations(SpecialisationLookup specialisations) {
+        this.specialisations = specialisations;
+        // The owners were worked out in the constructor, before this arrived, and the recorded answer
+        // is better than the one read out of a name - so ask again now that it can be asked.
+        genericStaticOwner.clear();
+        identifyGenericStaticGlobals();
+    }
+
+
+    public ProgramState(WurstGui gui, ImProg prog, boolean isCompiletime) {
+        this.gui = gui;
+        this.prog = prog;
+        this.isCompiletime = isCompiletime;
+
+        buildClassKeyLookup();
+        identifyGenericStaticGlobals();
+    }
+
+    private void buildClassKeyLookup() {
+        Partitions<ImClass> partitions = new Partitions<>();
+        for (ImClass clazz : prog.getClasses()) {
+            partitions.add(clazz);
+            for (ImClassType superClass : clazz.getSuperClasses()) {
+                partitions.union(clazz, superClass.getClassDef());
+            }
+        }
+
+        for (ImClass clazz : prog.getClasses()) {
+            classKeyLookup.put(clazz, partitions.getRep(clazz));
+        }
+    }
+
+    private void identifyGenericStaticGlobals() {
+        Map<String, ImClass> classMap = new HashMap<>();
+        for (ImClass c : prog.getClasses()) {
+            classMap.put(c.getName(), c);
+        }
+
+        for (ImVar global : prog.getGlobals()) {
+            // Recorded where the global was created, when the caller supplied the relation.
+            ImClass recorded = specialisations.genericStaticOwnerOf(global);
+            if (recorded != null) {
+                genericStaticOwner.put(global, recorded);
+                continue;
+            }
+
+            // Otherwise the name is all there is: the longest prefix ending at an underscore which
+            // names a generic class. Wrong for a class whose name contains an underscore, and wrong
+            // silently, which is why the recorded answer is preferred.
+            String n = global.getName();
+            int pos = n.lastIndexOf('_');
+            while (pos > 0) {
+                String className = n.substring(0, pos);
+                ImClass owner = classMap.get(className);
+                if (owner != null && !owner.getTypeVariables().isEmpty()) {
+                    genericStaticOwner.put(global, owner);
+                    break;
+                }
+                pos = n.lastIndexOf('_', pos - 1);
+            }
+        }
+
+        WLogger.trace(() -> "[GENSTATIC] owners detected: " + genericStaticOwner.size());
+        for (var e : genericStaticOwner.entrySet()) {
+            WLogger.trace(() -> "[GENSTATIC] " + e.getKey().getName() + " -> " + e.getValue().getName());
+        }
+    }
+
+    public void setLastElement(de.peeeq.wurstscript.jassIm.Element e) {
+        lastStatement = e;
+
+        ILStackFrame top = stackFrames.peek();
+        if (top != null) {
+            top.currentElement = e;
+        }
+    }
+
+    // keep old API, delegate:
+    public void setLastStatement(ImStmt s) {
+        setLastElement(s);
+    }
+
+    public de.peeeq.wurstscript.jassIm.Element getLastStatement() {
+        return lastStatement;
+    }
+
+    public WurstGui getGui() {
+        return gui;
+    }
+
+
+    public void writeBack(boolean injectObjects) {
+    }
+
+
+    public void setOutStream(PrintStream os) {
+        outStream = os;
+        for (NativesProvider natives : nativeProviders) {
+            natives.setOutStream(os);
+        }
+    }
+
+    public void addNativeProvider(NativesProvider np) {
+        np.setOutStream(outStream);
+        nativeProviders.add(np);
+        nativeProviderByFunc.clear();
+        missingNativeFuncs.clear();
+    }
+
+    public Iterable<NativesProvider> getNativeProviders() {
+        return nativeProviders;
+    }
+
+    /**
+     * Closes all registered NativesProvider instances to release external native resources (such as SQLite connections).
+     */
+    @Override
+    public void close() {
+        for (NativesProvider provider : nativeProviders) {
+            try {
+                provider.close();
+            } catch (Exception e) {
+                WLogger.severe(e);
+            }
+        }
+    }
+
+    public @Nullable NativesProvider getCachedNativeProvider(String funcName) {
+        return nativeProviderByFunc.get(funcName);
+    }
+
+    public boolean isKnownMissingNative(String funcName) {
+        return missingNativeFuncs.contains(funcName);
+    }
+
+    public void cacheNativeProvider(String funcName, NativesProvider provider) {
+        nativeProviderByFunc.put(funcName, provider);
+    }
+
+    public void markMissingNative(String funcName) {
+        missingNativeFuncs.add(funcName);
+    }
+
+    public ImProg getProg() {
+        return prog;
+    }
+
+    public ILconstObject allocate(ImClassType clazz, Element trace) {
+        Object key = classKey(clazz.getClassDef());
+        ObjectIdSpace idSpace = getIdSpace(key);
+        int objId = !idSpace.freeObjectIds.isEmpty() ? idSpace.freeObjectIds.pop() : ++idSpace.objectIdCounter;
+        ILconstObject res = new ILconstObject(clazz, objId, trace);
+        idSpace.indexToObject.put(objId, res);
+        WLogger.trace(() -> "alloc objId=" + objId + " type=" + clazz + " trace=" + trace);
+        return res;
+    }
+
+    protected Object classKey(ImClass clazz) {
+        return classKeyLookup.getOrDefault(clazz, clazz);
+    }
+
+    public void deallocate(ILconstObject obj, ImClass clazz, Element trace) {
+        assertAllocated(obj, trace);
+        obj.destroy();
+        ObjectIdSpace idSpace = getIdSpace(classKey(clazz));
+        idSpace.freeObjectIds.push(obj.getObjectId());
+    }
+
+    public void assertAllocated(ILconstObject obj, Element trace) {
+        if (obj == null) {
+            throw new InterpreterException(trace, "Null pointer dereference. The interpreter expected an object here, but found null.");
+        }
+        if (obj.isDestroyed()) {
+            throw new InterpreterException(trace, "Object already destroyed");
+        }
+    }
+
+    public boolean isInstanceOf(ILconstObject obj, ImClass clazz, Element trace) {
+        if (obj == null) {
+            return false;
+        }
+        assertAllocated(obj, trace);
+        return ancestors(obj.getImClass()).contains(clazz);
+    }
+
+    /**
+     * The implementation a call of {@code method} runs for a receiver of class {@code receiverClass}: the
+     * most specific of its overrides which that class inherits. A call site sees the same few classes
+     * again and again, so the answer is kept per method and class.
+     */
+    public ImMethod dispatch(ImMethod method, ImClass receiverClass) {
+        Map<ImClass, ImMethod> byClass = dispatchCache.computeIfAbsent(method, m -> new IdentityHashMap<>());
+        ImMethod result = byClass.get(receiverClass);
+        if (result == null) {
+            result = mostSpecificOverride(method, receiverClass);
+            byClass.put(receiverClass, result);
+        }
+        return result;
+    }
+
+    /**
+     * Goes through the overrides of {@code method} in order and takes each one which belongs to a class the
+     * receiver inherits from and to a subclass of the one taken so far. Only overrides in the receiver's
+     * classes can be taken, so only they are looked at: a method of a big hierarchy has thousands of
+     * overrides, and a receiver class few ancestors.
+     */
+    private ImMethod mostSpecificOverride(ImMethod method, ImClass receiverClass) {
+        List<ImMethod> overrides = method.getSubMethods();
+        Map<ImClass, IntArrayList> positions = overridePositions.get(method);
+        if (positions == null) {
+            positions = new IdentityHashMap<>();
+            for (int i = 0; i < overrides.size(); i++) {
+                positions.computeIfAbsent(overrides.get(i).attrClass(), c -> new IntArrayList()).add(i);
+            }
+            overridePositions.put(method, positions);
+        }
+        IntArrayList candidates = new IntArrayList();
+        for (ImClass ancestor : ancestors(receiverClass)) {
+            IntArrayList at = positions.get(ancestor);
+            if (at != null) {
+                candidates.addAll(at);
+            }
+        }
+        // the ancestors come in no particular order; the overrides are taken in theirs
+        candidates.sort(null);
+        ImMethod result = method;
+        for (int i = 0; i < candidates.size(); i++) {
+            ImMethod m = overrides.get(candidates.getInt(i));
+            if (ancestors(m.attrClass()).contains(result.attrClass())) {
+                result = m;
+            }
+        }
+        return result;
+    }
+
+    /** The classes {@code c} is a subclass of, itself included, as {@link ImClass#isSubclassOf} answers. */
+    private Set<ImClass> ancestors(ImClass c) {
+        Set<ImClass> result = ancestorsCache.get(c);
+        if (result == null) {
+            result = Collections.newSetFromMap(new IdentityHashMap<>());
+            Deque<ImClass> todo = new ArrayDeque<>();
+            todo.push(c);
+            while (!todo.isEmpty()) {
+                ImClass next = todo.pop();
+                if (result.add(next)) {
+                    for (ImClassType superClass : next.getSuperClasses()) {
+                        todo.push(superClass.getClassDef());
+                    }
+                }
+            }
+            ancestorsCache.put(c, result);
+        }
+        return result;
+    }
+
+    /**
+     * Whether a type variable of this class, or a type argument written in the supertypes of it or of a
+     * class it inherits from, can bind anything for a receiver of this class. Most classes have neither,
+     * and their calls bind no type arguments.
+     */
+    public boolean isGenericHierarchy(ImClass c) {
+        Boolean known = genericHierarchy.get(c);
+        if (known != null) {
+            return known;
+        }
+        // provisional answer, in case of a cyclic hierarchy in an erroneous program
+        genericHierarchy.put(c, Boolean.TRUE);
+        boolean result = !c.getTypeVariables().isEmpty();
+        for (ImClassType superClass : c.getSuperClasses()) {
+            result |= !superClass.getTypeArguments().isEmpty() || isGenericHierarchy(superClass.getClassDef());
+        }
+        genericHierarchy.put(c, result);
+        return result;
+    }
+
+    public int getTypeId(ILconstObject obj, Element trace) {
+        assertAllocated(obj, trace);
+        return obj.getImClass().attrTypeId();
+    }
+
+    /** {@code entry} is where the frame is entered: the call, or the function when nothing called it. */
+    public void pushStackframeWithTypes(ImFunction f, @Nullable ILconstObject receiver,
+                                        ILconst[] args, de.peeeq.wurstscript.jassIm.Element entry,
+                                        Map<ImTypeVar, ImType> typeSubstitutions) {
+
+        // normalize the incoming map: RHS = fully resolved type
+        Map<ImTypeVar, ImType> normalized = Collections.emptyMap();
+        if (!typeSubstitutions.isEmpty()) {
+            normalized = new HashMap<>();
+            for (Map.Entry<ImTypeVar, ImType> e : typeSubstitutions.entrySet()) {
+                ImType rhs = resolveType(e.getValue()); // resolve through existing frames
+                // skip self-maps (T -> T)
+                if (rhs instanceof ImTypeVarRef imTypeVarRef &&
+                    imTypeVarRef.getTypeVariable() == e.getKey()) {
+                    continue;
+                }
+                normalized.put(e.getKey(), rhs);
+            }
+        }
+        Map<ImTypeVar, ImType> frameTypes = normalized;
+
+        WLogger.trace(() -> "pushStackframe " + f + " with receiver " + receiver
+            + " and args " + Arrays.toString(args) + " and typesubst " + frameTypes);
+
+
+        stackFrames.push(new ILStackFrame(f, receiver, args, entry, frameTypes));
+        de.peeeq.wurstscript.jassIm.Element stmt = this.lastStatement;
+        if (stmt == null) stmt = f;
+        lastStatements.push(stmt);
+    }
+
+    private @Nullable String ownerInstantiationKeyFromTypeSubst(ImClass owner) {
+        if (owner.getTypeVariables().isEmpty()) return owner.getName();
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(owner.getName()).append('<');
+
+        boolean first = true;
+        boolean anyConcrete = false;
+
+        for (ImTypeVar tv : owner.getTypeVariables()) {
+            if (!first) sb.append(',');
+            first = false;
+
+            // resolve T -> concrete type using current stack substitutions
+            ImType resolved = resolveType(JassIm.ImTypeVarRef(tv));
+            sb.append(resolved.toString());
+
+            if (!(resolved instanceof ImTypeVarRef)) {
+                anyConcrete = true;
+            }
+        }
+
+        sb.append('>');
+
+        // If nothing was resolved (still just type vars), let caller fallback.
+        return anyConcrete ? sb.toString() : null;
+    }
+
+    private @Nullable String genericStaticKey(ImVar v) {
+        ImClass owner = genericStaticOwner.get(v);
+        if (owner == null) return null;
+
+        String ownerInst = ownerInstantiationKeyFromTypeSubst(owner);
+        WLogger.trace(() -> "[GENSTATIC] key for " + v.getName()
+            + " owner=" + owner.getName()
+            + " ownerInstFromSubst=" + ownerInst
+            + " receiver=" + (stackFrames.peek() == null ? null : stackFrames.peek().receiver));
+        if (ownerInst != null) {
+            return v.getName() + "|" + ownerInst;
+        }
+
+        // fallback: previous receiver-based logic
+        ImClassType inst = currentReceiverInstantiationFor(owner);
+        WLogger.trace(() -> "[GENSTATIC] key for " + v.getName()
+            + " owner=" + owner.getName()
+            + " ownerInstFromSubst=" + ownerInst
+            + " receiver=" + (stackFrames.peek() == null ? null : stackFrames.peek().receiver));
+        if (inst != null) {
+            return v.getName() + "|" + instantiationKey(inst);
+        }
+
+        return v.getName() + "|<no-receiver>";
+    }
+
+    private @Nullable ImClassType currentReceiverInstantiationFor(ImClass owner) {
+        ILStackFrame top = stackFrames.peek();
+        if (top == null || top.receiver == null) return null;
+
+        ImClassType rt = top.receiver.getType();
+        // resolve possible type vars inside type args
+        ImType resolved = resolveType(rt);
+        if (resolved instanceof ImClassType imClassType) {
+            rt = imClassType;
+        }
+
+        ImClassType adapted = adaptToSuperclass(rt, owner);
+        return adapted != null ? adapted : rt;
+    }
+
+    private @Nullable ImClassType adaptToSuperclass(ImClassType ct, ImClass owner) {
+        if (ct.getClassDef() == owner) return ct;
+
+        // Walk super types, substituting this ct's type args into the superclass types
+        List<ImTypeVar> tvs = ct.getClassDef().getTypeVariables();
+        ImTypeArguments tas = ct.getTypeArguments();
+
+        for (ImClassType scRaw : ct.getClassDef().getSuperClasses()) {
+            ImType scSubst = ImAttrType.substituteType(scRaw, tas, tvs);
+            scSubst = resolveType(scSubst);
+            if (scSubst instanceof ImClassType) {
+                ImClassType r = adaptToSuperclass((ImClassType) scSubst, owner);
+                if (r != null) return r;
+            }
+        }
+        return null;
+    }
+
+    public ImType resolveType(ImType t) {
+        return resolveTypeDeep(t, 32); // small budget to avoid cycles
+    }
+
+    /**
+     * Replaces the stand-in default of a type parameter with the default of the type bound to it.
+     * <p>
+     * The default of a value is computed by a static attribute, which cannot see the frames that
+     * know what the parameter stands for, so it produces a stand-in. Reading a slot of a
+     * {@code T array} that was never written is how one reaches a program: the stand-in compares
+     * equal only to another stand-in, so a comparison against the real default is quietly false.
+     * The frames are known here, so resolve it where the value is produced.
+     */
+    public ILconst resolveDefault(ILconst value) {
+        if (!(value instanceof ILconstUnsafeDefault unsafeDefault)) {
+            return value;
+        }
+        ImType resolved = resolveType(JassIm.ImTypeVarRef(unsafeDefault.getTypeVariable()));
+        return resolved instanceof ImTypeVarRef ? value : resolved.defaultValue();
+    }
+
+    private ImType resolveTypeDeep(ImType t, int budget) {
+        if (budget <= 0 || t == null) return t;
+        // the common cases, which hold no type variable, without allocating a matcher
+        if (t instanceof ImSimpleType || t instanceof ImClassType ct && ct.getTypeArguments().isEmpty()) {
+            return t;
+        }
+
+        return t.match(new ImType.Matcher<ImType>() {
+            @Override
+            public ImType case_ImTypeVarRef(ImTypeVarRef tvr) {
+                // search from top-most frame down
+                for (ILStackFrame sf : stackFrames) { /* we iterate deque top-first: use an iterator if needed */
+                    ImType mapped = sf.typeSubstitutions.get(tvr.getTypeVariable());
+                    if (mapped != null) {
+                        ImType resolved = resolveTypeDeep(mapped, budget - 1);
+                        return resolved;
+                    }
+                }
+                // no mapping anywhere -> keep the type var
+                return tvr;
+            }
+
+            @Override
+            public ImType case_ImClassType(ImClassType ct) {
+                if (ct.getTypeArguments().isEmpty()) return ct;
+                ImTypeArguments newArgs = JassIm.ImTypeArguments();
+                boolean changed = false;
+                for (ImTypeArgument ta : ct.getTypeArguments()) {
+                    ImType rt = resolveTypeDeep(ta.getType(), budget - 1);
+                    newArgs.add(JassIm.ImTypeArgument(rt, typeClassBindingFor(ta)));
+                    changed |= (rt != ta.getType());
+                }
+                return changed ? JassIm.ImClassType(ct.getClassDef(), newArgs) : ct;
+            }
+
+            @Override
+            public ImType case_ImArrayType(ImArrayType at) {
+                ImType et = resolveTypeDeep(at.getEntryType(), budget - 1);
+                return et == at.getEntryType() ? at : JassIm.ImArrayType(et);
+            }
+
+            @Override
+            public ImType case_ImArrayTypeMulti(ImArrayTypeMulti at) {
+                ImType et = resolveTypeDeep(at.getEntryType(), budget - 1);
+                return et == at.getEntryType() ? at : JassIm.ImArrayTypeMulti(et, at.getArraySize());
+            }
+
+            @Override
+            public ImType case_ImTupleType(ImTupleType tt) {
+                List<ImType> nts = new ArrayList<>();
+                List<String> names = new ArrayList<>();
+                boolean changed = false;
+                var i = 0;
+                for (ImType it : tt.getTypes()) {
+                    ImType rt = resolveTypeDeep(it, budget - 1);
+                    nts.add(rt);
+                    changed |= (rt != it);
+                    i++;
+                    names.add(i + "");
+                }
+                return changed ? JassIm.ImTupleType(nts, names) : tt;
+            }
+
+            @Override public ImType case_ImSimpleType(ImSimpleType st) { return st; }
+            @Override public ImType case_ImAnyType(ImAnyType at)       { return at; }
+            @Override public ImType case_ImVoid(ImVoid v)              { return v; }
+        });
+    }
+
+
+    public void pushStackframe(ImCompiletimeExpr f, WPos trace) {
+        WLogger.trace(() -> "pushStackframe compiletime expr " + f);
+        stackFrames.push(new ILStackFrame(f, trace));
+        de.peeeq.wurstscript.jassIm.Element stmt = this.lastStatement;
+        if (stmt == null) {
+            stmt = f;
+        }
+        lastStatements.push(stmt);
+    }
+
+    /**
+     * Type arguments of the frames currently on the stack. A type class dispatch on a parameter
+     * which the current frame received abstractly is answered from the frame which supplied it.
+     */
+    private final Deque<Map<ImTypeVar, ImTypeArgument>> typeArgumentFrames = new ArrayDeque<>();
+
+    public void pushTypeArguments(Map<ImTypeVar, ImTypeArgument> typeArguments) {
+        typeArgumentFrames.push(typeArguments);
+    }
+
+    public void popTypeArguments() {
+        if (!typeArgumentFrames.isEmpty()) {
+            typeArgumentFrames.pop();
+        }
+    }
+
+    public @Nullable ImTypeArgument getCurrentTypeArgument(ImTypeVar typeVar) {
+        for (Map<ImTypeVar, ImTypeArgument> frame : typeArgumentFrames) {
+            for (Map.Entry<ImTypeVar, ImTypeArgument> e : frame.entrySet()) {
+                // A class and its constructor hold separate nodes for the same source type parameter,
+                // so identity alone does not find the binding. This used to fall back to comparing
+                // names, which takes two parameters that merely share one for the same parameter - the
+                // same mistake EliminateGenerics made, where it dispatched a value through the wrong
+                // instance. Both now ask what the node was copied from.
+                boolean sameVar = e.getKey() == typeVar
+                    || specialisations.canonical(e.getKey()) == specialisations.canonical(typeVar);
+                if (sameVar && !e.getValue().getTypeClassBinding().isEmpty()) {
+                    return e.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The type class binding for a type argument being resolved.
+     * <p>
+     * A class body refers to its own type variables, so the argument written there carries no
+     * binding. The frame which created the object was called with one, so take it from there;
+     * otherwise a bound on a generic class would have nothing to dispatch through.
+     */
+    private Map<ImTypeClassFunc, io.vavr.control.Either<ImMethod, ImFunction>> typeClassBindingFor(ImTypeArgument arg) {
+        if (!arg.getTypeClassBinding().isEmpty() || !(arg.getType() instanceof ImTypeVarRef ref)) {
+            return arg.getTypeClassBinding();
+        }
+        ImTypeArgument fromFrame = getCurrentTypeArgument(ref.getTypeVariable());
+        return fromFrame != null ? fromFrame.getTypeClassBinding() : arg.getTypeClassBinding();
+    }
+
+    public void popStackframe() {
+        WLogger.trace(() -> "popStackframe " + (stackFrames.isEmpty() ? "empty" : stackFrames.peek().f));
+        if (!stackFrames.isEmpty()) {
+            stackFrames.pop();
+        }
+        if (!lastStatements.isEmpty()) {
+            lastStatement = lastStatements.pop();
+        }
+    }
+
+    public void resetStackframes() {
+        stackFrames.clear();
+        lastStatements.clear();
+    }
+
+    public StackTrace getStackFrames() {
+        return new StackTrace(stackFrames);
+    }
+
+    public void compilationError(String errorMessage) {
+        de.peeeq.wurstscript.jassIm.Element lastStatement = getLastStatement();
+        if (lastStatement != null) {
+            WPos source = lastStatement.attrTrace().attrSource();
+            getGui().sendError(new CompileError(source, errorMessage));
+        } else {
+            getGui().sendError(new CompileError(new WPos("", new LineOffsets(), 0, 0), errorMessage));
+        }
+        for (ILStackFrame sf : getStackFrames().getStackFrames().reversed()) {
+            getGui().sendError(sf.makeCompileError());
+        }
+    }
+
+    public ILconstObject getObjectByIndex(int val) {
+        return getObjectByIndex(val, null);
+    }
+
+    public ILconstObject getObjectByIndex(int val, @Nullable ImClassType expectedType) {
+        if (expectedType != null) {
+            ObjectIdSpace idSpace = objectIdSpaces.get(classKey(expectedType.getClassDef()));
+            if (idSpace == null) {
+                return null;
+            }
+            return idSpace.indexToObject.get(val);
+        }
+
+        ILconstObject found = null;
+        for (ObjectIdSpace idSpace : objectIdSpaces.values()) {
+            ILconstObject candidate = idSpace.indexToObject.get(val);
+            if (candidate != null) {
+                if (found != null && candidate != found) {
+                    throw new InterpreterException(this, "Ambiguous object id " + val + " in multiple id spaces.");
+                }
+                found = candidate;
+            }
+        }
+        return found;
+    }
+
+    public Map<Integer, IlConstHandle> getHandleMap() {
+        return handleMap;
+    }
+
+    public ILconst getHandleByIndex(int val) {
+        return handleMap.get(val);
+    }
+
+    public ILconstObject ensureObject(ImClassType clazz, int objectId, Element trace) {
+        ObjectIdSpace idSpace = getIdSpace(classKey(clazz.getClassDef()));
+        ILconstObject existing = idSpace.indexToObject.get(objectId);
+        if (existing != null) {
+            return existing;
+        }
+        ILconstObject res = new ILconstObject(clazz, objectId, trace);
+        idSpace.indexToObject.put(objectId, res);
+        return res;
+    }
+
+    public ILconstObject toObject(ILconst val) {
+        return toObject(val, null);
+    }
+
+    public ILconstObject toObject(ILconst val, @Nullable ImType expectedType) {
+        ImType resolved = expectedType == null ? null : resolveType(expectedType);
+        ImClassType expectedClass = resolved instanceof ImClassType imClassType ? imClassType : null;
+
+        if (val instanceof ILconstObject iLconstObject) {
+            return iLconstObject;
+        } else if (val instanceof ILconstInt iLconstInt) {
+            int objectId = iLconstInt.getVal();
+            return expectedClass != null
+                ? getObjectByIndex(objectId, expectedClass)
+                : getObjectByIndex(objectId);
+        }
+        throw new InterpreterException(this, "Value " + val + " (" + val.getClass().getSimpleName() + ") cannot be cast to object.");
+    }
+
+    public static class StackTrace {
+        private final List<ILStackFrame> stackFrames;
+
+        public StackTrace(Deque<ILStackFrame> frames) {
+            // copy once into an array-backed list
+            this.stackFrames = Collections.unmodifiableList(new ArrayList<>(frames));
+        }
+
+        public void appendTo(StringBuilder sb) {
+            for (ILStackFrame sf : stackFrames) {
+                sb.append(sf.getMessage()).append('\n');
+            }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder(stackFrames.size() * 32);
+            appendTo(sb);
+            return sb.toString();
+        }
+
+        public List<ILStackFrame> getStackFrames() {
+            return stackFrames;
+        }
+    }
+
+    public String instantiationKey(ImClassType ct) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ct.getClassDef().getName());
+        if (!ct.getTypeArguments().isEmpty()) {
+            sb.append('<');
+            boolean first = true;
+            for (ImTypeArgument ta : ct.getTypeArguments()) {
+                if (!first) sb.append(',');
+                first = false;
+                sb.append(ta.toString()); // or your own stable printer
+            }
+            sb.append('>');
+        }
+        return sb.toString();
+    }
+
+    @Override
+    public void setVal(ImVar v, ILconst val) {
+        boolean trackWrite = untrackedWriteDepth == 0;
+        if (trackWrite) {
+            modifiedScalars.add(v);
+        }
+        String key = genericStaticKey(v);
+        if (key != null) {
+            WLogger.trace(() -> "[GENSTATIC] set " + key + " = " + val);
+            genericStaticScalarVals.put(key, val);
+            if (trackWrite) {
+                modifiedGenericScalars.add(key);
+                genericScalarTypeArguments.computeIfAbsent(key, ignored -> genericStaticTypeArguments(v));
+            }
+            return;
+        }
+        super.setVal(v, val);
+    }
+
+    public void setValUntracked(ImVar v, ILconst val) {
+        String key = genericStaticKey(v);
+        if (key != null) {
+            WLogger.trace(() -> "[GENSTATIC] initialize " + key + " = " + val);
+            genericStaticScalarVals.put(key, val);
+            return;
+        }
+        super.setVal(v, val);
+    }
+
+    @Override
+    public @Nullable ILconst getVal(ImVar v) {
+        String key = genericStaticKey(v);
+        if (key != null) {
+            ILconst existing = genericStaticScalarVals.get(key);
+            if (existing != null) {
+                WLogger.trace(() -> "[GENSTATIC] get " + key + " -> (cached) " + existing);
+                return existing;
+            }
+
+            // lazy init from global inits (e.g. foo = 1)
+            List<ImSet> inits = prog.getGlobalInits().get(v);
+            if (inits != null && !inits.isEmpty()) {
+                ILconst initVal = evaluateUntracked(inits.get(inits.size() - 1).getRight(), EMPTY_LOCAL_STATE);
+                genericStaticScalarVals.put(key, initVal);
+                WLogger.trace(() -> "[GENSTATIC] get " + key + " -> (init) " + initVal);
+                return initVal;
+            }
+
+            // fallback: default semantics (if your interpreter expects “unset = null/0”)
+            WLogger.trace(() -> "[GENSTATIC] get " + key + " -> (unset) null");
+            return null;
+        }
+
+        return super.getVal(v);
+    }
+
+    /**
+     * Evaluates a lazy global initializer without recording its side effects for state migration.
+     * Runtime repeats initializer execution, so replaying those writes would duplicate them.
+     * Compiletime-only side effects hidden inside an initializer are intentionally unsupported;
+     * persistent mutations must be performed by an explicit compiletime function instead.
+     */
+    public ILconst evaluateUntracked(ImExpr expr, LocalState localState) {
+        untrackedWriteDepth++;
+        try {
+            return expr.evaluate(this, localState);
+        } finally {
+            untrackedWriteDepth--;
+        }
+    }
+
+
+    public boolean isCompiletime() {
+        return isCompiletime;
+    }
+
+    // Reuse a shared, empty LocalState (ensure it's safe/side-effect free)
+    private static final LocalState EMPTY_LOCAL_STATE = new LocalState();
+
+    @Override
+    protected ILconstArray getArray(ImVar v) {
+        String key = genericStaticKey(v);
+        if (key != null) {
+            ILconstArray arr = genericStaticArrays.get(key);
+            if (arr != null) return arr;
+
+            ILconstArray r = createArrayConstantFromType(v.getType());
+            genericStaticArrays.put(key, r);
+
+            List<ImSet> inits = prog.getGlobalInits().get(v);
+            if (inits != null && !inits.isEmpty()) {
+                final LocalState ls = EMPTY_LOCAL_STATE;
+                for (int i = 0; i < inits.size(); i++) {
+                    ILconst val = evaluateUntracked(inits.get(i).getRight(), ls);
+                    r.set(i, val);
+                }
+            }
+            return r;
+        }
+
+        // non-generic case = your existing logic
+        Object2ObjectOpenHashMap<ImVar, ILconstArray> arrayValues = ensureArrayValues();
+        ILconstArray r = arrayValues.get(v);
+        if (r != null) return r;
+
+        r = createArrayConstantFromType(v.getType());
+        arrayValues.put(v, r);
+
+        List<ImSet> inits = prog.getGlobalInits().get(v);
+        if (inits != null && !inits.isEmpty()) {
+            final LocalState ls = EMPTY_LOCAL_STATE;
+            for (int i = 0; i < inits.size(); i++) {
+                ILconst val = evaluateUntracked(inits.get(i).getRight(), ls);
+                r.set(i, val);
+            }
+        }
+        return r;
+    }
+
+    @Override
+    public void setArrayVal(ImVar v, List<Integer> indexes, ILconst val) {
+        if (untrackedWriteDepth > 0) {
+            setArrayValUntracked(v, indexes, val);
+            return;
+        }
+        String key = genericStaticKey(v);
+        super.setArrayVal(v, indexes, val);
+        if (key != null) {
+            modifiedGenericArrays.add(key);
+            modifiedGenericArrayIndexes.computeIfAbsent(key, ignored -> new HashSet<>())
+                .add(Collections.unmodifiableList(new ArrayList<>(indexes)));
+            genericArrayTypeArguments.computeIfAbsent(key, ignored -> genericStaticTypeArguments(v));
+        }
+    }
+
+    private List<ImTypeArgument> genericStaticTypeArguments(ImVar v) {
+        ImClass owner = genericStaticOwner.get(v);
+        if (owner == null) {
+            return Collections.emptyList();
+        }
+
+        ImClassType receiver = currentReceiverInstantiationFor(owner);
+        if (receiver != null && receiver.getClassDef() == owner) {
+            return copyTypeArguments(receiver.getTypeArguments());
+        }
+
+        List<ImTypeArgument> result = new ArrayList<>();
+        for (ImTypeVar typeVar : owner.getTypeVariables()) {
+            ImType resolved = resolveType(JassIm.ImTypeVarRef(typeVar));
+            if (resolved instanceof ImTypeVarRef) {
+                return Collections.emptyList();
+            }
+            result.add(JassIm.ImTypeArgument(resolved, Collections.emptyMap()));
+        }
+        return result;
+    }
+
+    private static List<ImTypeArgument> copyTypeArguments(ImTypeArguments typeArguments) {
+        List<ImTypeArgument> result = new ArrayList<>(typeArguments.size());
+        for (ImTypeArgument typeArgument : typeArguments) {
+            result.add(typeArgument.copy());
+        }
+        return result;
+    }
+
+    public static final class ArrayState {
+        private final ILconstArray value;
+        private final List<ImTypeArgument> typeArguments;
+        private final boolean generic;
+        private final Set<List<Integer>> modifiedIndexes;
+
+        public ArrayState(ILconstArray value, List<ImTypeArgument> typeArguments) {
+            this(value, typeArguments, !typeArguments.isEmpty(), Collections.emptySet());
+        }
+
+        public ArrayState(ILconstArray value, List<ImTypeArgument> typeArguments, boolean generic) {
+            this(value, typeArguments, generic, Collections.emptySet());
+        }
+
+        public ArrayState(ILconstArray value, List<ImTypeArgument> typeArguments, boolean generic,
+                          Set<List<Integer>> modifiedIndexes) {
+            this.value = value;
+            this.typeArguments = Collections.unmodifiableList(new ArrayList<>(typeArguments));
+            this.generic = generic;
+            Set<List<Integer>> indexSnapshot = new HashSet<>();
+            for (List<Integer> indexes : modifiedIndexes) {
+                indexSnapshot.add(Collections.unmodifiableList(new ArrayList<>(indexes)));
+            }
+            this.modifiedIndexes = Collections.unmodifiableSet(indexSnapshot);
+        }
+
+        public ILconstArray getValue() {
+            return value;
+        }
+
+        public List<ImTypeArgument> getTypeArguments() {
+            return typeArguments;
+        }
+
+        public boolean isGeneric() {
+            return generic;
+        }
+
+        public Set<List<Integer>> getModifiedIndexes() {
+            return modifiedIndexes;
+        }
+    }
+
+    public static final class ScalarState {
+        private final ILconst value;
+        private final List<ImTypeArgument> typeArguments;
+        private final boolean generic;
+
+        private ScalarState(ILconst value, List<ImTypeArgument> typeArguments, boolean generic) {
+            this.value = value;
+            this.typeArguments = Collections.unmodifiableList(new ArrayList<>(typeArguments));
+            this.generic = generic;
+        }
+
+        public ILconst getValue() {
+            return value;
+        }
+
+        public List<ImTypeArgument> getTypeArguments() {
+            return typeArguments;
+        }
+
+        public boolean isGeneric() {
+            return generic;
+        }
+    }
+
+    public Set<ImVar> getModifiedScalars() {
+        return Collections.unmodifiableSet(modifiedScalars);
+    }
+
+    public Collection<ScalarState> getScalarStates(ImVar v) {
+        String prefix = v.getName() + "|";
+        List<String> keys = new ArrayList<>(modifiedGenericScalars);
+        Collections.sort(keys);
+        List<ScalarState> result = new ArrayList<>();
+        for (String key : keys) {
+            if (key.startsWith(prefix)) {
+                ILconst value = genericStaticScalarVals.get(key);
+                if (value != null) {
+                    result.add(new ScalarState(value,
+                        genericScalarTypeArguments.getOrDefault(key, Collections.emptyList()), true));
+                }
+            }
+        }
+        if (result.isEmpty() && genericStaticKey(v) == null) {
+            ILconst value = getVal(v);
+            if (value != null) {
+                result.add(new ScalarState(value, Collections.emptyList(), false));
+            }
+        }
+        return result;
+    }
+
+    public Collection<ArrayState> getArrayStates(ImVar v) {
+        String prefix = v.getName() + "|";
+        List<String> keys = new ArrayList<>(modifiedGenericArrays);
+        Collections.sort(keys);
+        List<ArrayState> result = new ArrayList<>();
+        for (String key : keys) {
+            if (key.startsWith(prefix)) {
+                ILconstArray value = genericStaticArrays.get(key);
+                if (value != null) {
+                    result.add(new ArrayState(value,
+                        genericArrayTypeArguments.getOrDefault(key, Collections.emptyList()), true,
+                        modifiedGenericArrayIndexes.getOrDefault(key, Collections.emptySet())));
+                }
+            }
+        }
+        if (result.isEmpty() && genericStaticKey(v) == null) {
+            result.add(new ArrayState(getArray(v), Collections.emptyList(), false, getModifiedArrayIndexes(v)));
+        }
+        return result;
+    }
+
+
+    public Collection<ILconstObject> getAllObjects() {
+        List<ILconstObject> values = new ArrayList<>();
+        for (ObjectIdSpace idSpace : objectIdSpaces.values()) {
+            values.addAll(idSpace.indexToObject.values());
+        }
+        return values;
+    }
+
+    private ObjectIdSpace getIdSpace(Object key) {
+        return objectIdSpaces.computeIfAbsent(key, k -> new ObjectIdSpace());
+    }
+
+    public int getMaxAllocatedId(ImClass clazz) {
+        return getIdSpace(classKey(clazz)).objectIdCounter;
+    }
+
+    private static class ObjectIdSpace {
+        private int objectIdCounter;
+        private final Deque<Integer> freeObjectIds = new ArrayDeque<>();
+        private final Int2ObjectOpenHashMap<ILconstObject> indexToObject = new Int2ObjectOpenHashMap<>();
+    }
+
+    public Map<ImTypeVar, ImType> snapshotResolvedTypeSubstitutions() {
+        Map<ImTypeVar, ImType> res = new HashMap<>();
+        for (ILStackFrame sf : stackFrames) { // top-first
+            for (Map.Entry<ImTypeVar, ImType> e : sf.typeSubstitutions.entrySet()) {
+                res.putIfAbsent(e.getKey(), resolveType(e.getValue()));
+            }
+        }
+        return res;
+    }
+
+}

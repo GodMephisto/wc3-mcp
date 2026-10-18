@@ -1,0 +1,51 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/lluiscab/MPQTT"
+source_path: "Cargo.toml"
+ref: HEAD
+---
+
+[package]
+name = "mpqtt"
+version = "1.1.0"
+authors = ["Lluís <lluiscab@gmail.com>"]
+edition = "2018"
+description = "Data extractor for Axpert / MasterPower inverters with MQTT and HomeAssistant integration"
+license = "MIT"
+readme = "README.md"
+
+[features]
+build-for-deb = []
+
+[package.metadata.deb]
+section = "utilities"
+assets = [
+    ["target/release/mpqtt", "usr/bin/", "755"],
+    ["debian/config.yaml", "/etc/mpqtt/config.yaml", "644"],
+]
+features = ["build-for-deb"]
+conf-files = ["/etc/mpqtt/config.yaml"]
+maintainer-scripts = "debian/"
+systemd-units = {}
+
+[package.metadata.release]
+disable-publish = true
+no-dev-version = true
+
+[dependencies]
+crc-any = "2.3.4"
+libc = "0.2.72"
+tokio = { version = "0.2.21", features = ["full"] }
+masterpower-api = { git = "https://github.com/azteca1998/masterpower-api" }
+bytes = "0.5.6"
+pretty_env_logger = "0.4.0"
+config = "0.9"
+serde_derive = "^1.0.8"
+serde = "^1.0.8"
+serde_json = "1.0"
+log = "0.4.11"
+mqtt-async-client = "0.1.5"
+
+[dev-dependencies]
+futures = "0.3.5"
+futures_ringbuf = { version = "0.2.1", features = ["tokio"] }

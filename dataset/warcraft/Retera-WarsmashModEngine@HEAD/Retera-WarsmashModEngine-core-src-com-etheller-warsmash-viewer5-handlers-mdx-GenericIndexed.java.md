@@ -1,0 +1,12 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/WarsmashModEngine"
+source_path: "core/src/com/etheller/warsmash/viewer5/handlers/mdx/GenericIndexed.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.viewer5.handlers.mdx;
+
+public interface GenericIndexed {
+	public int getIndex();
+}

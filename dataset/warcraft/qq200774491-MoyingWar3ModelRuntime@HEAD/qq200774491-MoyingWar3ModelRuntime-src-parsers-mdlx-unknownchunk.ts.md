@@ -1,0 +1,31 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/qq200774491/MoyingWar3ModelRuntime"
+source_path: "src/parsers/mdlx/unknownchunk.ts"
+ref: HEAD
+---
+
+import BinaryStream from '../common/binarystream';
+
+/**
+ * An unknown chunk.
+ */
+export default class UnknownChunk {
+    tag: string;
+    chunk: Uint8Array;
+
+    constructor(stream: BinaryStream, size: number, tag: string) {
+        this.tag = tag;
+        this.chunk = stream.readUint8Array(new Uint8Array(size));
+    }
+
+    writeMdx(stream: BinaryStream): void {
+        stream.writeBinary(this.tag);
+        stream.writeUint32(this.chunk.byteLength);
+        stream.writeUint8Array(this.chunk);
+    }
+
+    getByteLength(): number {
+        return 8 + this.chunk.byteLength;
+    }
+}

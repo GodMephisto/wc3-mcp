@@ -1,0 +1,14 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Retera/WarsmashModEngine"
+source_path: "core/src/com/etheller/warsmash/util/Test2.java"
+ref: HEAD
+---
+
+package com.etheller.warsmash.util;
+
+public class Test2 {
+	public static void main(final String[] args) {
+		System.out.println(new War3ID(1786017909));
+	}
+}

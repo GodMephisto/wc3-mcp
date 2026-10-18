@@ -1,0 +1,373 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/translation/imtojass/ImToJassTranslator.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.translation.imtojass;
+
+import com.google.common.collect.*;
+import de.peeeq.wurstscript.attributes.CompileError;
+import de.peeeq.wurstscript.jassAst.*;
+import de.peeeq.wurstscript.jassIm.*;
+import de.peeeq.wurstscript.jassIm.Element;
+import de.peeeq.wurstscript.parser.WPos;
+import de.peeeq.wurstscript.translation.imoptimizer.RestrictedCompressedNames;
+import de.peeeq.wurstscript.translation.imtranslation.FunctionFlagEnum;
+import de.peeeq.wurstscript.translation.imtranslation.ImHelper;
+import de.peeeq.wurstscript.translation.imtranslation.UsedFunctions;
+import de.peeeq.wurstscript.validation.NamePreservation;
+import de.peeeq.wurstscript.utils.Utils;
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.util.*;
+import java.util.regex.Pattern;
+
+import static de.peeeq.wurstscript.jassAst.JassAst.*;
+
+public class ImToJassTranslator {
+
+    private final ImProg imProg;
+    private final Multimap<ImFunction, ImFunction> calledFunctions;
+    private final ImFunction mainFunc;
+    private final ImFunction confFunction;
+    private @Nullable JassProg prog;
+    private final Stack<ImFunction> translatingFunctions = new Stack<>();
+    private final Set<ImFunction> translatedFunctions = Sets.newLinkedHashSet();
+    /** Functions reached only through ExecuteFunc, which are translated after the ordered traversal. */
+    private final Deque<ImFunction> executeOnlyTargets = new ArrayDeque<>();
+    /**
+     * Functions which take their place in the script when they are translated rather than when they are first
+     * named. Any other function is translated before a body names it, but an ExecuteFunc target is named by its
+     * caller first, and its place has to come after the functions it calls.
+     */
+    private final Set<ImFunction> awaitingPlacement = Sets.newLinkedHashSet();
+    private final Set<String> usedNames = Sets.newLinkedHashSet();
+    private final Multimap<ImFunction, String> usedLocalNames = HashMultimap.create();
+
+    void recordSource(de.peeeq.wurstscript.jassAst.Element element, WPos source) {
+        if (!source.getFile().isEmpty()) {
+            prog.attrSourceMap().put(element, source);
+        }
+    }
+
+    public ImToJassTranslator(ImProg imProg, Multimap<ImFunction, ImFunction> calledFunctions,
+                              ImFunction mainFunc, ImFunction confFunction) {
+        this.imProg = imProg;
+        this.calledFunctions = calledFunctions;
+        this.mainFunc = mainFunc;
+        this.confFunction = confFunction;
+    }
+
+    public JassProg translate() {
+        makeNamesUnique(imProg.getGlobals());
+        makeNamesUnique(imProg.getFunctions());
+
+        JassVars globals = JassVars();
+        JassFunctions functions = JassFunctions();
+        prog = JassProg(JassTypeDefs(), globals, JassNatives(), functions);
+
+        collectGlobalVars();
+
+        translateFunctionTransitive(mainFunc);
+        translateFunctionTransitive(confFunction);
+        for (ImFunction function : ImHelper.calculateFunctionsOfProg(imProg)) {
+            if (NamePreservation.isPreserved(function)) {
+                translateFunctionTransitive(function);
+            }
+        }
+        while (!executeOnlyTargets.isEmpty()) {
+            translateFunctionTransitive(executeOnlyTargets.poll());
+        }
+        // a named function which translateFunction skips still needs its place
+        for (ImFunction f : new ArrayList<>(awaitingPlacement)) {
+            JassFunctionOrNative created = jassFuncs.get(f);
+            if (created == null) {
+                awaitingPlacement.remove(f);
+            } else {
+                placeIfHeldBack(f, created);
+            }
+        }
+
+        return prog;
+    }
+
+    /**
+     * makes names unique in a consistent way
+     */
+    private <T extends JassImElementWithName> void makeNamesUnique(List<T> list) {
+        List<T> sorted = new ArrayList<>(list);
+        sorted.sort(Comparator.comparing(JassImElementWithName::getName)
+            .thenComparing(v -> new java.io.File(v.getTrace().attrSource().getFile()).getName())
+            .thenComparingInt(v -> v.getTrace().attrSource().getLine())
+            .thenComparingInt(v -> v.getTrace().attrSource().getStartColumn()));
+
+        Set<String> used = new HashSet<>(sorted.size() * 2);
+        Map<String, Integer> nextSuffix = new HashMap<>();
+
+        for (T v : sorted) {
+            String base = v.getName();
+            if (used.add(base)) {
+                nextSuffix.putIfAbsent(base, 1);
+                continue;
+            }
+
+            int suffix = nextSuffix.getOrDefault(base, 1);
+            String candidate;
+            do {
+                candidate = base + "_" + suffix;
+                suffix++;
+            } while (used.contains(candidate));
+
+            v.setName(candidate);
+            used.add(candidate);
+            nextSuffix.put(base, suffix);
+            nextSuffix.putIfAbsent(candidate, 1);
+        }
+    }
+
+    private static final Pattern jassValidName = Pattern.compile("[a-zA-Z][a-zA-Z0-9_]*");
+
+    private static de.peeeq.wurstscript.ast.Element getTrace(@Nullable Element elem) {
+        while (elem != null) {
+            if (elem instanceof ElementWithTrace) {
+                ElementWithTrace ElementWithTrace = (ElementWithTrace) elem;
+                de.peeeq.wurstscript.ast.Element t = ElementWithTrace.getTrace();
+                if (t != null) {
+                    return t;
+                }
+            }
+            elem = elem.getParent();
+        }
+        throw new Error("Could not get trace to original program.");
+    }
+
+    private void collectGlobalVars() {
+        // An initializer can name a global later in this list (bj_DEGTORAD reads bj_PI).
+        // getJassVarFor emits a variable only once it is known to be global, and caches that
+        // result: translating the initializer first would cache bj_PI as a non-global and the
+        // later declaration would never be added.
+        globalImVars.addAll(imProg.getGlobals());
+        for (ImVar v : imProg.getGlobals()) {
+            getJassVarFor(v);
+        }
+    }
+
+    private void translateFunctionTransitive(ImFunction imFunc) {
+        if (translatedFunctions.contains(imFunc)) {
+            // already translated
+            return;
+        }
+        if (translatingFunctions.contains(imFunc)) {
+            // TODO extract method
+            if (imFunc != translatingFunctions.peek()) {
+                StringBuilder msg = new StringBuilder("cyclic dependency between functions: ");
+                boolean start = false;
+                for (ImFunction f : translatingFunctions) {
+                    if (imFunc == f) {
+                        start = true;
+                    }
+                    if (start) {
+                        msg.append("\n - ").append(Utils.printElement(getTrace(f))).append("  ( ").append(f.attrTrace().attrSource().printShort()).append(")");
+                    }
+                }
+                WPos src = getTrace(imFunc).attrSource();
+                throw new CompileError(src, msg.toString());
+            }
+            // already translating, recursive function
+            return;
+        }
+        translatingFunctions.push(imFunc);
+        // An ExecuteFunc target need not be declared first, and it may call back into a function on this stack,
+        // which is no cyclic dependency. So it waits until the traversal has unwound.
+        Set<ImFunction> ordering = UsedFunctions.orderingRelevantTargets(imFunc);
+        for (ImFunction f : sorted(calledFunctions.get(imFunc))) {
+            if (ordering.contains(f)) {
+                translateFunctionTransitive(f);
+            } else if (!translatedFunctions.contains(f) && awaitingPlacement.add(f)) {
+                executeOnlyTargets.add(f);
+            }
+        }
+
+        translateFunction(imFunc);
+
+        // translation finished
+        if (translatingFunctions.pop() != imFunc) {
+            throw new Error("something went wrong...");
+        }
+        translatedFunctions.add(imFunc);
+    }
+
+    private List<ImFunction> sorted(Collection<ImFunction> collection) {
+        List<ImFunction> r = Lists.newArrayList(collection);
+        r.sort(Comparator.comparing(ImFunction::getName));
+        return r;
+    }
+
+    private void translateFunction(ImFunction imFunc) {
+        if (imFunc.isBj() || imFunc.hasFlag(FunctionFlagEnum.IS_VARARG)) {
+            return;
+        }
+        // not a native
+        JassFunctionOrNative f = getJassFuncFor(imFunc);
+        placeIfHeldBack(imFunc, f);
+
+        f.setReturnType(imFunc.getReturnType().translateType());
+
+        // translate parameters
+        for (ImVar v : imFunc.getParameters()) {
+            f.getParams().add((JassSimpleVar) getJassVarFor(v));
+        }
+        if (f instanceof JassFunction jf) {
+            // translate locals
+            for (ImVar v : imFunc.getLocals()) {
+                jf.getLocals().add(getJassVarFor(v));
+            }
+            imFunc.getBody().translate(jf.getBody(), jf, this);
+        }
+
+    }
+
+
+    private void placeIfHeldBack(ImFunction imFunc, JassFunctionOrNative f) {
+        if (awaitingPlacement.remove(imFunc) && f instanceof JassFunction jf && !imFunc.isBj() && !imFunc.isExtern()) {
+            prog.getFunctions().add(jf);
+        }
+    }
+
+    private String getUniqueGlobalName(String name) { // TODO find local names
+        name = jassifyName(name);
+        name = Utils.makeUniqueName(name, n -> !usedNames.contains(n));
+        usedNames.add(name);
+        return name;
+    }
+
+    private String getUniqueLocalName(ImFunction imFunction, String name) {
+        name = jassifyName(name);
+        name = Utils.makeUniqueName(name, n -> !usedNames.contains(n) && !usedLocalNames.containsEntry(imFunction, n));
+        usedLocalNames.put(imFunction, name);
+        return name;
+    }
+
+
+    private final Map<ImVar, JassVar> jassVars = Maps.newLinkedHashMap();
+    private final Set<ImVar> globalImVars = Sets.newLinkedHashSet();
+
+    JassVar getJassVarFor(ImVar v) {
+        JassVar result = jassVars.get(v);
+        if (result == null) {
+            boolean isArray = v.getType() instanceof ImArrayType;
+            String type = v.getType().translateType();
+            String name = v.getName();
+            if (v.getNearestFunc() != null) {
+                name = getUniqueLocalName(v.getNearestFunc(), name);
+            } else {
+                name = getUniqueGlobalName(name);
+            }
+            if (isArray) {
+                result = JassAst.JassArrayVar(type, name);
+            } else {
+                if (isGlobal(v) && v.getType() instanceof ImSimpleType) {
+                    JassExpr initialVal = v.getIsBJ() ? translateBjInitializer(v) : null;
+                    if (initialVal == null) {
+                        initialVal = ImHelper.defaultValueForType((ImSimpleType) v.getType()).translate(this);
+                    }
+                    result = JassAst.JassInitializedVar(type, name, initialVal, v.getIsBJ());
+                } else {
+                    result = JassAst.JassSimpleVar(type, name);
+                }
+            }
+            if (isGlobal(v) && (!v.getIsBJ() || result instanceof JassInitializedVar)) {
+                prog.getGlobals().add(result);
+            }
+            jassVars.put(v, result);
+            recordSource(result, v.attrTrace().attrSource());
+        }
+        return result;
+    }
+
+    /**
+     * The game initialises common.j and blizzard.j globals before the map script runs, so the script
+     * never assigns them. The initialiser is kept on the variable (the printer only writes it as a
+     * comment) so that running the translated program gives e.g. UNIT_TYPE_DEAD its ConvertUnitType(1)
+     * handle instead of null.
+     */
+    private @Nullable JassExpr translateBjInitializer(ImVar v) {
+        List<ImSet> inits = imProg.getGlobalInits().get(v);
+        if (inits == null || inits.isEmpty()) {
+            return null;
+        }
+        return inits.get(0).getRight().translate(this);
+    }
+
+    private String jassifyName(String name) {
+        name = filterInvalidSymbols(name);
+        if (RestrictedCompressedNames.contains(name) || name.startsWith("_")) {
+            name = "w" + name;
+        }
+        if (name.endsWith("_")) {
+            name = name + "u";
+        }
+        if (name.isEmpty()) {
+            name = "empty";
+        }
+        return name;
+    }
+
+    /**
+     * replaces all invalid characters with underscores
+     */
+    private String filterInvalidSymbols(String name) {
+        if (jassValidName.matcher(name).matches()) {
+            return name;
+        }
+        StringBuilder sb = new StringBuilder(name.length());
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (!(c >= 'a' && c <= 'z'
+                    || c >= 'A' && c <= 'Z'
+                    || c >= '0' && c <= '9'
+                    || c == '_')) {
+                c = '_';
+            }
+            sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    private boolean isGlobal(ImVar v) {
+        return globalImVars.contains(v);
+    }
+
+
+    private final Map<ImFunction, JassFunctionOrNative> jassFuncs = Maps.newLinkedHashMap();
+
+    public JassFunctionOrNative getJassFuncFor(ImFunction func) {
+        JassFunctionOrNative f = jassFuncs.get(func);
+        if (f == null) {
+            if (func.isNative()) {
+                f = JassAst.JassNative(func.getName(), JassSimpleVars(), "nothing");
+                if (!func.isBj() && !func.isExtern()) {
+                    prog.getNatives().add((JassNative) f);
+                }
+            } else {
+                String name = func.getName();
+                // find a unique name, but keep special names 'main' and 'config'
+                if (!name.equals("main") && !name.equals("config") && !func.hasFlag(FunctionFlagEnum.IS_EXTERN)) {
+                    name = getUniqueGlobalName(func.getName());
+                }
+                boolean isCompiletimeNative = func.hasFlag(FunctionFlagEnum.IS_COMPILETIME_NATIVE);
+                f = JassFunction(name, JassSimpleVars(), "nothing", JassVars(), JassStatements(), isCompiletimeNative);
+                if (!func.isBj() && !func.isExtern() && !awaitingPlacement.contains(func)) {
+                    prog.getFunctions().add((JassFunction) f);
+                }
+            }
+            jassFuncs.put(func, f);
+            recordSource(f, func.attrTrace().attrSource());
+        }
+        return f;
+    }
+
+
+}

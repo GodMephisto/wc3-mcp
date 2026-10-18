@@ -1,0 +1,57 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/Ruk33/vrJASS"
+source_path: "src/main/java/com/ruke/vrjassc/translator/expression/Expression.java"
+ref: HEAD
+---
+
+package com.ruke.vrjassc.translator.expression;
+
+import com.ruke.vrjassc.vrjassc.symbol.Symbol;
+import com.ruke.vrjassc.vrjassc.util.MutualRecursion;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
+public abstract class Expression {
+
+	protected Expression parent;
+	protected Set<Symbol> usedFunctions = new HashSet<Symbol>();
+	
+	public abstract String translate();
+	
+	public void setParent(Expression parent) {
+		parent.getUsedFunctions().addAll(this.getUsedFunctions());
+		this.parent = parent;
+	}
+	
+	public Expression getParent() {
+		return this.parent;
+	}
+	
+	public MutualRecursion getMutualRecursion(Symbol function) {
+		if (this.getParent() == null) {
+			return null;
+		}
+		
+		return this.getParent().getMutualRecursion(function);
+	}
+	
+	public Symbol getSymbol() {
+		return null;
+	}
+	
+	public boolean usesFunction(Symbol function) {
+		return this.getUsedFunctions().contains(function);
+	}
+	
+	public Collection<Symbol> getUsedFunctions() {
+		return this.usedFunctions;
+	}
+	
+	public void registerFunctionUsage(Symbol function) {
+		this.getUsedFunctions().add(function);
+	}
+	
+}

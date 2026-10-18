@@ -1,0 +1,147 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstscript/attributes/AttrForEachStatement.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstscript.attributes;
+
+import com.google.common.collect.ImmutableCollection;
+import de.peeeq.wurstscript.ast.Expr;
+import de.peeeq.wurstscript.ast.StmtForEach;
+import de.peeeq.wurstscript.ast.StmtForFrom;
+import de.peeeq.wurstscript.ast.StmtForIn;
+import de.peeeq.wurstscript.attributes.names.FuncLink;
+import de.peeeq.wurstscript.types.WurstType;
+import de.peeeq.wurstscript.types.WurstTypeUnknown;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+public class AttrForEachStatement {
+
+    public static Optional<FuncLink> calcIterator(StmtForIn forEach) {
+        Expr iterationTarget = forEach.getIn();
+        WurstType itrType = iterationTarget.attrTyp();
+        // find 'iterator' function:
+        ImmutableCollection<FuncLink> iterator = iterationTarget.lookupMemberFuncs(itrType, "iterator", false);
+        // find the 'iterator' function without parameters:
+        // must exist, because this is after type check
+        List<FuncLink> members = new ArrayList<>();
+        List<FuncLink> extensions = new ArrayList<>();
+        for (FuncLink nl : iterator) {
+            if (nl.getParameterTypes().isEmpty()) {
+                (AttrPossibleFunctionSignatures.isExtension(nl) ? extensions : members).add(nl);
+            }
+        }
+        // Member methods take precedence over extension functions, so receivers are only compared
+        // within one of the two. A class and its subclass can each get an 'iterator' from a module
+        // they use: the one closest to the loop's target hides the other, the order of the lookup
+        // must not decide.
+        List<FuncLink> candidates = AttrPossibleFunctionSignatures.keepMostSpecificReceivers(
+            members.isEmpty() ? extensions : members, FuncLink::getReceiverType, iterationTarget);
+        Optional<FuncLink> iteratorFunc = candidates.isEmpty() ? Optional.empty() : Optional.of(candidates.get(0));
+        // find the 'hasNext' function without parameters
+        if (!iteratorFunc.isPresent()) {
+            forEach.getIn().addError("For loop target " + itrType + " doesn't provide a iterator() function");
+        } else {
+            FuncLink f = iteratorFunc.get();
+            if (f.isStatic() && !itrType.isStaticRef()) {
+                iterationTarget.addError("Cannot use static iterator method from " + itrType + " on dynamic value.");
+            } else if (!f.isStatic() && itrType.isStaticRef()) {
+                iterationTarget.addError("Cannot use dynamic iterator method from " + itrType + " without a dynamic value.");
+            }
+        }
+        return iteratorFunc;
+    }
+
+    public static Optional<FuncLink> calcHasNext(StmtForEach forEach) {
+        WurstType iteratorType = calcItrType(forEach);
+        // find 'hasNext' function:
+        ImmutableCollection<FuncLink> hasNext = forEach.getIn().lookupMemberFuncs(iteratorType, "hasNext", false);
+        // find the 'hasNext' function without parameters
+        Optional<FuncLink> nextFunc = Optional.empty();
+        for (FuncLink nl : hasNext) {
+            if (nl.getParameterTypes().isEmpty()) {
+                nextFunc = Optional.of(nl);
+                break;
+            }
+        }
+        if (!nextFunc.isPresent()) {
+            forEach.getIn().addError("For loop iterator doesn't provide a hasNext() function that returns boolean");
+        } else {
+            FuncLink f = nextFunc.get();
+            if (f.isStatic()) {
+                forEach.addError("Cannot use a foreach loop here, because the 'hasNext' method " + iteratorType + " is static.");
+            }
+        }
+        return nextFunc;
+    }
+
+    public static Optional<FuncLink> calcGetNext(StmtForEach forEach) {
+        WurstType iteratorType = calcItrType(forEach);
+
+        // find 'next' function:
+        ImmutableCollection<FuncLink> next = forEach.getIn().lookupMemberFuncs(iteratorType, "next", false);
+        // find the 'next' function without parameters
+        Optional<FuncLink> nextFunc = Optional.empty();
+        for (FuncLink nl : next) {
+            if (nl.getParameterTypes().isEmpty()) {
+                nextFunc = Optional.of(nl);
+                break;
+            }
+        }
+        if (!nextFunc.isPresent()) {
+            forEach.getIn().addError("Target of for-loop '" + forEach.getIn().attrTyp().getName() + "' doesn't provide a proper next() function");
+        } else {
+            FuncLink f = nextFunc.get();
+            if (f.isStatic()) {
+                forEach.addError("Cannot use a foreach loop here, because the 'next' method " + iteratorType + " is static.");
+            }
+        }
+        return nextFunc;
+    }
+
+    public static Optional<FuncLink> calcClose(StmtForEach forEach) {
+        if (forEach instanceof StmtForFrom) {
+            return Optional.empty();
+        }
+        WurstType iteratorType = calcItrType(forEach);
+
+        // find 'close' function:
+        ImmutableCollection<FuncLink> close = forEach.getIn().lookupMemberFuncs(iteratorType, "close", false);
+        // find the 'close' function without parameters
+        Optional<FuncLink> closeFunc = Optional.empty();
+        for (FuncLink nl : close) {
+            if (nl.getParameterTypes().isEmpty()) {
+                closeFunc = Optional.of(nl);
+                break;
+            }
+        }
+        if (!closeFunc.isPresent()) {
+            forEach.getIn().addError("Target of for-loop <" + forEach.getIn().attrTyp().getName() + " doesn't provide a proper close() function");
+        } else {
+            FuncLink f = closeFunc.get();
+            if (f.isStatic()) {
+                forEach.addError("Cannot use a foreach loop here, because the 'close' method " + iteratorType + " is static.");
+            }
+        }
+        return closeFunc;
+    }
+
+    public static WurstType calcItrType(StmtForEach forEach) {
+        WurstType iteratorType = WurstTypeUnknown.instance();
+        if (forEach instanceof StmtForFrom) {
+            iteratorType = forEach.getIn().attrTyp();
+        } else if (forEach instanceof StmtForIn stmtForIn) {
+            Optional<FuncLink> nameLink = calcIterator(stmtForIn);
+            if (nameLink.isPresent()) {
+                FuncLink iteratorFunc = nameLink.get();
+                iteratorType = iteratorFunc.getReturnType().normalize();
+            }
+        }
+        return iteratorType;
+    }
+}

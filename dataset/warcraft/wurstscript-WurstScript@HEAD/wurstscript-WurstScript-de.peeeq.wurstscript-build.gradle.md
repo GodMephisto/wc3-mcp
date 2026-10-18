@@ -1,0 +1,530 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/build.gradle"
+ref: HEAD
+---
+
+buildscript {
+    repositories { mavenCentral() }
+    dependencies {
+        classpath "javax.inject:javax.inject:1"
+    }
+}
+
+plugins {
+    id 'java'
+    id 'antlr'
+    id 'eclipse'
+    id 'idea'
+    id 'jacoco'
+    id 'net.ltgt.errorprone' version '5.1.1'
+    id 'maven-publish'
+    id 'com.gradleup.shadow' version '9.2.2'
+}
+
+
+import java.util.regex.Pattern
+import java.time.Duration
+
+ext.mainClassName = "de.peeeq.wurstio.Main"
+
+version = providers.fileContents(layout.projectDirectory.file('version.txt')).asText.get().trim()
+if (!(version ==~ /(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)/)) {
+    throw new GradleException('version.txt must contain MAJOR.MINOR.PATCH')
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(27)
+    }
+}
+
+def toolchainSvc = extensions.getByType(JavaToolchainService)
+def j27Launcher = toolchainSvc.launcherFor(java.toolchain)
+
+tasks.withType(JavaExec).configureEach {
+    javaLauncher.set(j27Launcher)
+}
+
+/** -------- Compilation and static analysis --------
+ * Both javac lint and Error Prone are ADVISORY: they report at warning severity and
+ * never fail the build. Unit tests and coverage remain the primary quality gate; this
+ * is a supplementary signal, not a merge blocker.
+ * Skip Error Prone entirely with: ./gradlew <task> -PskipErrorProne
+ */
+def errorProneEnabled = !project.hasProperty('skipErrorProne')
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 27
+    // 'serial'/'this-escape' are noisy against this codebase's AST and visitor style.
+    // 'auxiliaryclass' fires ~86 times purely on the multi-class-per-file layout - structural, not a defect.
+    options.compilerArgs += ['-Xlint:all', '-Xlint:-serial', '-Xlint:-this-escape',
+                             '-Xlint:-processing', '-Xlint:-auxiliaryclass']
+    // javac silently caps reporting at 100 warnings. Without this, lint noise exhausts the
+    // budget and every Error Prone finding is dropped as overflow - the analysis looks clean
+    // while reporting nothing. Do not remove.
+    options.compilerArgs += ['-Xmaxwarns', '10000']
+
+    options.errorprone {
+        enabled = errorProneEnabled
+        // src-gen holds ~700 generated AST classes - analysing them is pure noise.
+        excludedPaths = '.*src-gen.*'
+        disableWarningsInGeneratedCode = true
+        // Advisory only: demote every check to a warning so the build never fails on it.
+        // Requires the -Xmaxwarns bump above to actually be visible.
+        allErrorsAsWarnings = true
+        // Upstream bug: NonCanonicalType NPEs in SuggestedFixes.qualifyType on anonymous
+        // subclasses of nested types, which this codebase's visitors use everywhere
+        // (e.g. `new LuaModel.DefaultVisitor() {}`). A plugin crash is a hard javac error,
+        // so allErrorsAsWarnings cannot absorb it. Purely stylistic check; safe to drop.
+        disable('NonCanonicalType')
+    }
+}
+
+// Keep the test compile loop fast - tests are the primary gate, not the audit target.
+tasks.named('compileTestJava') { options.errorprone.enabled = false }
+
+jacoco {
+    toolVersion = "0.8.15"
+}
+
+tasks.named("jacocoTestReport", JacocoReport) {
+    dependsOn(tasks.named("test"))
+
+    reports { xml.required.set(true) }
+
+    def excluded = [
+            '**/ast/**',
+            '**/jassAst/**',
+            '**/jassIm/**',
+            '**/luaAst/**',
+            '**/antlr/**',
+            'de/peeeq/wurstio/gui/**',
+            'de/peeeq/wurstio/AbortCompilationException.class',
+            'de/peeeq/wurstio/ModelChangedException.class'
+    ]
+
+    classDirectories.setFrom(
+            files(classDirectories.files.collect { dir ->
+                fileTree(dir: dir, exclude: excluded)
+            })
+    )
+}
+
+def genDir = "$projectDir/src-gen"
+
+sourceSets {
+    main {
+        java.srcDir(genDir)
+    }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+configurations {
+    // isolated classpath for the generator
+    astgen
+}
+
+dependencies {
+    errorprone 'com.google.errorprone:error_prone_core:2.50.0'
+
+    implementation 'org.jetbrains:annotations:23.0.0'
+
+    // Antlr
+    antlr "org.antlr:antlr4:4.13.1"
+
+    implementation "org.antlr:antlr4-runtime:4.13.1"
+
+    // abstractsyntaxgen (available to IDE via compileOnly; used at runtime via astgen)
+    compileOnly 'com.github.peterzeller:abstractsyntaxgen:693dca993e'
+    astgen 'com.github.peterzeller:abstractsyntaxgen:693dca993e'
+
+
+    // Tests
+    testImplementation 'org.testng:testng:7.11.0'
+    testImplementation 'org.hamcrest:hamcrest-all:1.3'
+
+    // Libs
+    implementation 'com.google.guava:guava:32.1.3-jre'
+    implementation 'io.vavr:vavr:0.10.7'
+    implementation 'org.eclipse.lsp4j:org.eclipse.lsp4j:0.24.0'
+    implementation 'org.eclipse.jdt:org.eclipse.jdt.annotation:2.1.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'commons-lang:commons-lang:2.6'
+    implementation 'com.github.albfernandez:juniversalchardet:2.4.0'
+    implementation 'org.xerial:sqlite-jdbc:3.46.1.3'
+    implementation 'com.github.inwc3:JMPQ3:v2.0.2'
+    implementation 'com.github.inwc3:wc3libs:0542c41400'
+    implementation 'com.github.wurstscript:wurst-project-config:1897c53'
+    implementation 'org.slf4j:slf4j-api:2.0.17'
+    implementation 'ch.qos.logback:logback-classic:1.5.20'
+    testImplementation 'org.eclipse.jgit:org.eclipse.jgit:6.7.0.202309050840-r'
+    testImplementation 'org.eclipse.jgit:org.eclipse.jgit.ssh.apache:6.7.0.202309050840-r'
+    implementation 'it.unimi.dsi:fastutil:8.5.16'
+
+    // Smallcheck
+    testImplementation 'com.github.peterzeller:java-smallcheck:3f6a178ba7'
+}
+
+configurations {
+    runtimeClasspath {
+        exclude group: "org.antlr", module: "antlr4"
+    }
+}
+
+configurations.configureEach {
+    exclude group: "org.slf4j", module: "slf4j-log4j12"
+    exclude group: "log4j", module: "log4j"
+}
+
+/** -------- AST generation (abstractsyntaxgen) -------- */
+
+def parseqFiles = fileTree(dir: 'parserspec', include: '*.parseq')
+
+def pkgPattern = Pattern.compile(/package\s+(\S+)\s*;/)
+
+// resolve once at configuration time
+def genDirFile = file(genDir)
+def astgenCp = configurations.astgen
+def pkgPatternLocal = pkgPattern
+
+def perFileTasks = []
+
+parseqFiles.files.each { File f ->
+    // determine package at configuration time (same logic you had)
+    String contents = f.getText('UTF-8')
+    def m = pkgPatternLocal.matcher(contents)
+    String pkg = m.find() ? m.group(1) : ""
+    File targetDir = new File(genDirFile, pkg.replace('.', '/'))
+
+    def t = tasks.register("genAst_${f.name.replaceAll(/[^A-Za-z0-9_]/, '_')}", JavaExec) {
+        timeout = Duration.ofMinutes(5)
+        // incremental + cache correctness for the generator
+        inputs.file(f)
+        inputs.files(astgenCp).withPropertyName("astgenClasspath")
+        outputs.dir(targetDir)
+
+        classpath = astgenCp
+        mainClass.set("asg.Main")
+        args(f.absolutePath, targetDir.absolutePath)
+
+        // optional: ensure target dir exists
+        doFirst { targetDir.mkdirs() }
+    }
+
+    perFileTasks << t
+}
+
+tasks.register("genAst") {
+    inputs.files(parseqFiles)
+    outputs.dir(genDirFile)
+    dependsOn(perFileTasks)
+}
+
+
+
+/** -------- Version info file generation -------- */
+
+tasks.register('versionInfoFile') {
+    description "Generates a file CompileTimeInfo.java with version number etc."
+
+    def repoDir = new File(rootProject.projectDir, '..')
+
+    def dir = new File("$genDir/de/peeeq/wurstscript/")
+    def out = new File(dir, 'CompileTimeInfo.java')
+    outputs.file(out)
+
+    // capture at configuration time (no Task.project usage later)
+    def versionString = project.version.toString()
+
+    // Git resolves linked worktrees and shared/packed refs. Track the values we emit,
+    // rather than assuming that repository metadata lives in a .git directory.
+    def revision = providers.exec {
+        workingDir(repoDir)
+        commandLine('git', 'rev-parse', 'HEAD')
+    }.standardOutput.asText.map { it.trim() }
+    def shortRevision = providers.exec {
+        workingDir(repoDir)
+        commandLine('git', 'rev-parse', '--short=8', 'HEAD')
+    }.standardOutput.asText.map { it.trim() }
+    def releaseTag = providers.exec {
+        workingDir(repoDir)
+        commandLine('git', 'tag', '--points-at', 'HEAD', '--list', "v${versionString}")
+    }.standardOutput.asText.map { it.trim() }
+
+    inputs.property("projectVersion", versionString)
+    inputs.property("gitRevision", revision)
+    inputs.property("gitShortRevision", shortRevision)
+    inputs.property("releaseTag", releaseTag)
+
+    doLast {
+        def rev8 = shortRevision.get()
+        def revLong = revision.get()
+        def wurstVersion = releaseTag.get() == "v${versionString}"
+            ? versionString : "${versionString}-dev+${rev8}"
+
+        dir.mkdirs()
+        out.text = """
+package de.peeeq.wurstscript;
+
+public class CompileTimeInfo {
+    public static final String revision="${rev8}";
+    public static final String revisionLong="${revLong}";
+    public static final String version="${wurstVersion}";
+}
+"""
+    }
+}
+
+
+
+/** -------- Aggregate generation + wiring into compile -------- */
+
+tasks.register('gen') {
+    description "Generates code from various input files"
+    dependsOn 'genAst', 'versionInfoFile', 'generateGrammarSource'
+}
+tasks.named('compileJava') { it.dependsOn('gen') }
+
+/** -------- Tests -------- */
+
+/**
+ * How many test workers to run at once.
+ *
+ * Cores decide how much parallelism is useful; memory decides how much is survivable. Each worker
+ * is a JVM with the heap set below, and the Gradle daemon holds its own on top, so a machine with
+ * many cores and little memory has to be counted the other way. Measured on eight cores: serial
+ * 13m11s, four forks 8m39s, eight forks 7m03s; more forks kept winning even though each test runs
+ * slower under the contention, so this errs towards cores where memory allows.
+ */
+int testForkCount() {
+    def override = project.findProperty('testForks')
+    if (override) {
+        return Math.max(1, override.toString().toInteger())
+    }
+    int byCores = Math.max(1, (int) (Runtime.runtime.availableProcessors() / 2))
+    int workerHeapGb = 2      // keep in step with -Xmx below
+    int reservedGb = 4        // the daemon's own heap, plus room for the OS and the lua/pjass runs
+    try {
+        def os = java.lang.management.ManagementFactory.operatingSystemMXBean
+        long totalBytes = os."getTotalMemorySize"()
+        int byMemory = (int) ((totalBytes / (1024L * 1024L * 1024L) - reservedGb) / workerHeapGb)
+        return Math.max(1, Math.min(byCores, byMemory))
+    } catch (Throwable ignored) {
+        // No reliable reading of physical memory; cores alone, conservatively.
+        return Math.max(1, Math.min(byCores, 4))
+    }
+}
+
+
+/**
+ * Fetches the standard library the tests compile against, once, before they fork.
+ *
+ * StdLib guards the fetch with a lock held in one process, which is no guard at all across
+ * workers: on a clean checkout each of them would clone into the same directory at the same time.
+ * The pinned repository and commit stay defined in that one place rather than being repeated here.
+ */
+tasks.register('ensureStdLib', JavaExec) {
+    timeout = Duration.ofMinutes(5)
+    description "Fetches the pinned standard library used by the tests"
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass.set('tests.wurstscript.tests.StdLib')
+    workingDir = projectDir
+    // An escape hatch for working without the network: a focused run of tests that never touch
+    // the library should not be stopped by not being able to reach GitHub. Read now rather than
+    // when the task runs, which the configuration cache does not allow.
+    def skipFetch = project.hasProperty('skipStdLibFetch')
+    onlyIf { !skipFetch }
+    // Deliberately not declaring the checkout as an output: that would skip this whenever the
+    // directory merely exists, which is precisely when it may be at the wrong commit or half
+    // cloned. The fetch checks the pinned commit and repairs it, and costs nothing when correct.
+    outputs.upToDateWhen { false }
+}
+
+sourceSets.test.java.srcDir('../test-support')
+
+test {
+    dependsOn 'ensureStdLib'
+    timeout = Duration.ofMinutes(20)
+    failFast = true
+    useTestNG {
+        listeners.add('org.wurstscript.testing.TestTimeoutWatchdog')
+    }
+    // Override only for deliberately longer local profiling/oracle runs or timeout repros.
+    systemProperty 'wurst.test.timeoutMillis', project.findProperty('testTimeoutMillis') ?: '180000'
+    // These deliberately hanging fixtures run only in subprocesses of the watchdog regression.
+    exclude '**/TimeoutWatchdogProbe*.class'
+    // Keep CI output focused on failures; compiler/runtime tests intentionally exercise native
+    // print paths and can otherwise flood the log with expected diagnostic output.
+    testLogging {
+        showStandardStreams = false
+        events 'failed', 'skipped'
+    }
+
+    // The suite is a few thousand independent compilations and was running one at a time, so it
+    // took as long as the sum of them. Forks rather than threads: the harness keeps state in
+    // statics (the current test environment, the global caches, the extracted lua binaries), and a
+    // fork gets its own copy of all of it. Gradle hands out whole classes, so a class that writes
+    // fixed file names stays inside one fork.
+    // Wall time cannot fall below the slowest single class, which is why this does not need to be
+    // every core to get most of the win.
+    //
+    // Bounded by memory as well as cores, because the two are not proportional everywhere: a CI
+    // runner with sixteen cores and eight gigabytes would otherwise start eight two-gigabyte
+    // workers next to the daemon's own three and be killed for it. Override with -PtestForks=N.
+    maxParallelForks = testForkCount()
+
+    // Gradle deals the test classes to the forks one after another, in the order it finds them, and a
+    // fork keeps what it was dealt. In alphabetical order one fork ended up with the long classes at the
+    // back while the others sat idle, so the heaviest classes come first. -PtestAlphabetical turns this off.
+    if (!project.hasProperty('testAlphabetical')) {
+        def weights = providers.fileContents(layout.projectDirectory.file('test-class-weights.txt')).asText.get()
+        def heaviestFirst = weights.readLines().findAll { it && !it.startsWith('#') }
+                .collect { it.split(/\s+/)[1].replace('.', '/') + '.class' }
+        def classesDir = sourceSets.test.output.classesDirs.singleFile
+        testClassesDirs = files(fileTree(classesDir) { exclude heaviestFirst },
+                heaviestFirst.collect { path -> fileTree(classesDir) { include path } })
+    }
+
+    // IM dumps (.jim) are written only for the tests which read one; -PimDumps writes them for all.
+    if (project.hasProperty('imDumps')) {
+        systemProperty 'wurst.test.imDumps', 'true'
+    }
+
+    // The collector for the test JVMs; -PtestGc='-XX:+UseG1GC' (or another flag) overrides it.
+    jvmArgs((project.findProperty('testGc') ?: '-XX:+UseParallelGC').toString().split(' '))
+
+    jvmArgs(
+            '-Xmx2g',                         // local: give it room to finish and dump
+            '-XX:MaxMetaspaceSize=256m',
+            '-XX:+HeapDumpOnOutOfMemoryError',
+            // Each fork otherwise sizes its garbage collector and compiler threads for the whole
+            // machine, so running several at once oversubscribes it badly: eight forks made every
+            // test about three times slower and gave back only a third of the parallelism.
+            '-XX:ActiveProcessorCount=2',
+    )
+}
+
+tasks.register('updateTestClassWeights') {
+    description "Updates test-class-weights.txt with the classes of the last test run, and keeps the others"
+    def results = fileTree(layout.buildDirectory.dir('test-results/test')) { include 'TEST-*.xml' }
+    def target = layout.projectDirectory.file('test-class-weights.txt').asFile
+    doLast {
+        def lines = target.readLines()
+        def weights = [:]
+        lines.findAll { it && !it.startsWith('#') }.each { line ->
+            def parts = line.split(/\s+/)
+            weights[parts[1]] = parts[0].toLong()
+        }
+        results.files.each { f ->
+            def suite = new groovy.xml.XmlSlurper().parse(f)
+            weights[suite.@name.toString()] = Math.round(suite.@time.toDouble())
+        }
+        def rows = weights.sort { a, b -> b.value <=> a.value ?: a.key <=> b.key }.collect { name, seconds -> "$seconds $name" }
+        target.text = (lines.takeWhile { it.startsWith('#') } + rows).join('\n') + '\n'
+    }
+}
+
+/** -------- Clean generated sources -------- */
+tasks.named('clean') {
+    doFirst { delete genDir }
+}
+
+/** -------- Shadow / packaging -------- */
+
+shadowJar {
+    archiveBaseName.set('wurstscript')
+    archiveClassifier.set('')
+    archiveVersion.set('')
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+    exclude 'OSGI-INF/**'
+    exclude '**/DefaultListfile.txt'
+
+    // exclude fastutil type-specialized packages (keep objects + refs)
+    exclude 'it/unimi/dsi/fastutil/doubles/**'
+    exclude 'it/unimi/dsi/fastutil/floats/**'
+    exclude 'it/unimi/dsi/fastutil/longs/**'
+    exclude 'it/unimi/dsi/fastutil/shorts/**'
+    exclude 'it/unimi/dsi/fastutil/chars/**'
+    exclude 'it/unimi/dsi/fastutil/bytes/**'
+    exclude 'it/unimi/dsi/fastutil/booleans/**'
+    exclude 'it/unimi/dsi/fastutil/io/**'
+
+    // Within the kept objects/ints packages the compiler only uses the open-hash map/set, linked-open variants,
+    // array list and FIFO queue for Object2Object, Object2Int, Reference2Object, Reference2Int, Reference2Boolean and
+    // Int2Object.
+    // Drop the rest (~4.6 MB): sorted (tree) maps, custom-hash maps, and the cross-primitive value families whose
+    // value-type packages are already excluded above. If you start using another fastutil collection, remove the
+    // matching exclude here.
+    exclude 'it/unimi/dsi/fastutil/**/*AVLTreeMap*'
+    exclude 'it/unimi/dsi/fastutil/**/*RBTreeMap*'
+    exclude 'it/unimi/dsi/fastutil/**/*OpenCustomHashMap*'
+    exclude 'it/unimi/dsi/fastutil/objects/Object2Double*'
+    exclude 'it/unimi/dsi/fastutil/objects/Object2Float*'
+    exclude 'it/unimi/dsi/fastutil/objects/Object2Long*'
+    exclude 'it/unimi/dsi/fastutil/objects/Object2Short*'
+    exclude 'it/unimi/dsi/fastutil/objects/Object2Byte*'
+    exclude 'it/unimi/dsi/fastutil/objects/Object2Char*'
+    exclude 'it/unimi/dsi/fastutil/objects/Object2Boolean*'
+    exclude 'it/unimi/dsi/fastutil/objects/Object2Reference*'
+    exclude 'it/unimi/dsi/fastutil/objects/Reference2Double*'
+    exclude 'it/unimi/dsi/fastutil/objects/Reference2Float*'
+    exclude 'it/unimi/dsi/fastutil/objects/Reference2Long*'
+    exclude 'it/unimi/dsi/fastutil/objects/Reference2Short*'
+    exclude 'it/unimi/dsi/fastutil/objects/Reference2Byte*'
+    exclude 'it/unimi/dsi/fastutil/objects/Reference2Char*'
+    exclude 'it/unimi/dsi/fastutil/objects/Reference2Reference*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Double*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Float*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Long*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Short*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Byte*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Char*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Boolean*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Int*'
+    exclude 'it/unimi/dsi/fastutil/ints/Int2Reference*'
+
+    // sqlite-jdbc bundles ~13.5 MB of native libs for 24 platforms. The compiler needs Java (64-bit only), so keep
+    // only the desktop platforms it actually runs on (Windows/macOS/Linux on x86_64 + aarch64, incl. Apple Silicon)
+    // and drop the rest (~10 MB saved). Keep this list in sync if sqlite-jdbc adds platforms.
+    exclude 'org/sqlite/native/FreeBSD/**'
+    exclude 'org/sqlite/native/Linux-Android/**'
+    exclude 'org/sqlite/native/Linux-Musl/**'
+    exclude 'org/sqlite/native/Linux/ppc64/**'
+    exclude 'org/sqlite/native/Linux/riscv64/**'
+    exclude 'org/sqlite/native/Linux/arm/**'
+    exclude 'org/sqlite/native/Linux/armv6/**'
+    exclude 'org/sqlite/native/Linux/armv7/**'
+    exclude 'org/sqlite/native/Linux/x86/**'
+    exclude 'org/sqlite/native/Windows/armv7/**'
+    exclude 'org/sqlite/native/Windows/x86/**'
+}
+
+def fatJar = shadowJar.archiveFile.map { it.asFile }
+def wurstUserDir = "${System.properties['user.home']}/.wurst"
+def wurstCompilerDir = "${wurstUserDir}/wurst-compiler"
+
+tasks.register('delete_legacy_userdir_compiler_jar', Delete) {
+    delete "${wurstUserDir}/wurstscript.jar"
+}
+
+tasks.register('make_for_userdir', Copy) {
+    dependsOn 'shadowJar', 'delete_legacy_userdir_compiler_jar'
+    from fatJar
+    into wurstCompilerDir
+}
+
+tasks.register('make_for_userdir_wurst_compiler') {
+    dependsOn 'make_for_userdir'
+}
+
+/** -------- Apply deployment settings -------- */
+apply from: 'deploy.gradle'

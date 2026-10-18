@@ -1,0 +1,1179 @@
+---
+type: vendor-doc
+source_repo: "https://github.com/wurstscript/WurstScript"
+source_path: "de.peeeq.wurstscript/src/main/java/de/peeeq/wurstio/languageserver/requests/MapRequest.java"
+ref: HEAD
+---
+
+package de.peeeq.wurstio.languageserver.requests;
+
+import java.util.concurrent.CancellationException;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError;
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
+import de.peeeq.wurstscript.utils.CompilationCancellation;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+import org.wurstscript.projectconfig.WurstProjectConfigData;
+import de.peeeq.wurstio.CompilationProcess;
+import de.peeeq.wurstio.Pjass;
+import de.peeeq.wurstio.TimeTaker;
+import de.peeeq.wurstio.UtilsIO;
+import de.peeeq.wurstio.WurstCompilerJassImpl;
+import de.peeeq.wurstio.languageserver.ModelManager;
+import de.peeeq.wurstio.languageserver.ProjectConfigBuilder;
+import de.peeeq.wurstio.languageserver.WFile;
+import de.peeeq.wurstio.languageserver.WurstBuildConfig;
+import de.peeeq.wurstio.languageserver.WurstLanguageServer;
+import de.peeeq.wurstio.languageserver.WurstGuiLsp;
+import de.peeeq.wurstio.map.importer.ImportFile;
+import de.peeeq.wurstio.mpq.MpqEditor;
+import de.peeeq.wurstio.mpq.MpqEditorFactory;
+import de.peeeq.wurstio.utils.W3InstallationData;
+import de.peeeq.wurstscript.RunArgs;
+import de.peeeq.wurstscript.WLogger;
+import de.peeeq.wurstscript.ast.CompilationUnit;
+import de.peeeq.wurstscript.ast.WImport;
+import de.peeeq.wurstscript.ast.WPackage;
+import de.peeeq.wurstscript.ast.WurstModel;
+import de.peeeq.wurstscript.attributes.CompileError;
+import de.peeeq.wurstscript.gui.WurstGui;
+import de.peeeq.wurstscript.jassAst.JassProg;
+import de.peeeq.wurstscript.jassprinter.JassPrinter;
+import de.peeeq.wurstscript.luaAst.LuaCompilationUnit;
+import de.peeeq.wurstscript.parser.WPos;
+import de.peeeq.wurstscript.translation.lua.translation.LuaAssertions;
+import de.peeeq.wurstscript.utils.LineOffsets;
+import de.peeeq.wurstscript.utils.Utils;
+import net.moonlightflower.wc3libs.bin.app.W3I;
+import net.moonlightflower.wc3libs.port.GameVersion;
+import net.moonlightflower.wc3libs.port.Orient;
+import org.apache.commons.lang.StringUtils;
+import org.eclipse.lsp4j.MessageParams;
+import org.eclipse.lsp4j.MessageType;
+import org.eclipse.lsp4j.services.LanguageClient;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.jetbrains.annotations.Nullable;
+
+import javax.swing.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+public abstract class MapRequest extends UserRequest<Object> {
+    protected final WurstLanguageServer langServer;
+    protected final Optional<File> map;
+    protected final List<String> compileArgs;
+    protected final WFile workspaceRoot;
+    protected final RunArgs runArgs;
+    protected final Optional<String> wc3Path;
+    protected final WurstBuildConfig buildConfig;
+    protected final W3InstallationData w3data;
+    protected final TimeTaker timeTaker;
+    private Either<String, Integer> workDoneToken;
+    private volatile boolean canceled;
+
+    public Either<String, Integer> getWorkDoneToken() {
+        return workDoneToken;
+    }
+
+    @Override
+    public void cancel() {
+        // Keep the completion pending until execution has unwound and released map resources.
+        canceled = true;
+    }
+
+    @Override
+    public void run(ModelManager modelManager) {
+        CompilationCancellation.run(() -> canceled, () -> super.run(modelManager));
+    }
+
+    public void setWorkDoneToken(Either<String, Integer> workDoneToken) {
+        this.workDoneToken = workDoneToken;
+    }
+
+    protected WurstGui createGui(ModelManager modelManager, String title) {
+        return new WurstGuiLsp(modelManager, langServer.getLanguageClient(), workDoneToken, title);
+    }
+
+    public static long mapLastModified = 0L;
+    public static String mapPath = "";
+
+    private static Long lastMapModified = 0L;
+    private static String lastMapPath = "";
+    protected String cachedMapFileName = "";
+
+    public static final String BUILD_CONFIGURED_SCRIPT_NAME = "01_war3mapj_with_config.j.txt";
+    public static final String BUILD_COMPILED_JASS_NAME = "02_compiled.j.txt";
+    public static final String BUILD_COMPILED_LUA_NAME = "02_compiled.lua";
+    public static final String BUILD_JHCR_SCRIPT_NAME = "03_jhcr_war3map.j";
+
+    /** RunArgs flag (see {@link RunArgs}) that relaxes Jass type checks and skips PJass; injected for pre-1.24 targets. */
+    private static final String LEGACY_JASS_CHECKS_ARG = "-legacyJassChecks";
+
+    public TimeTaker getTimeTaker() {
+        return timeTaker;
+    }
+
+
+    public static class CompilationResult {
+        public File script;
+        public File w3i;
+    }
+
+    public MapRequest(WurstLanguageServer langServer, Optional<File> map, List<String> compileArgs, WFile workspaceRoot,
+                      Optional<String> wc3Path, Optional<String> gameExePath) {
+        this.langServer = langServer;
+        this.map = map;
+        this.workspaceRoot = workspaceRoot;
+        this.wc3Path = wc3Path;
+        this.buildConfig = WurstBuildConfig.fromWorkspaceRoot(workspaceRoot);
+        // Patches before 1.24 ship Blizzard common.j/blizzard.j with type mismatches that the
+        // Jass VM tolerates (e.g. a real returned where an integer is declared). Relax Jass type
+        // checks and skip PJass for such targets so these stock scripts compile. Carry the flag
+        // through compileArgs so every RunArgs rebuilt from it (compileScript/compileMap) sees it,
+        // not just this request-level field.
+        if (buildConfig.isPre124() && !compileArgs.contains(LEGACY_JASS_CHECKS_ARG)) {
+            List<String> legacyArgs = new ArrayList<>(compileArgs);
+            legacyArgs.add(LEGACY_JASS_CHECKS_ARG);
+            compileArgs = legacyArgs;
+        }
+        this.compileArgs = compileArgs;
+        this.runArgs = new RunArgs(compileArgs);
+        if (gameExePath.isPresent() && StringUtils.isNotBlank(gameExePath.get())) {
+            Optional<GameVersion> configuredVersion = this instanceof RunMap
+                ? Optional.empty()
+                : buildConfig.configuredGameVersion();
+            this.w3data = new W3InstallationData(Optional.of(new File(gameExePath.get())), configuredVersion);
+        } else {
+            this.w3data = getBestW3InstallationData();
+        }
+        if (runArgs.isMeasureTimes()) {
+            this.timeTaker = new TimeTaker.Recording();
+        } else {
+            this.timeTaker = new TimeTaker.Default();
+        }
+    }
+
+    @Override
+    public void handleException(LanguageClient languageClient, Throwable err, CompletableFuture<Object> resFut) {
+        if (canceled || err instanceof CancellationException) {
+            resFut.completeExceptionally(new ResponseErrorException(
+                new ResponseError(
+                    ResponseErrorCode.RequestCancelled,
+                    "Map command canceled", null)));
+            return;
+        }
+        if (workDoneToken != null && !(err instanceof RequestFailedException rfe && rfe.getMessageType() == MessageType.Info)) {
+            // The requesting editor owns the failure notification for this progress operation.
+            resFut.completeExceptionally(err);
+        } else if (err instanceof RequestFailedException rfe) {
+            languageClient.showMessage(new MessageParams(rfe.getMessageType(), rfe.getMessage()));
+            resFut.complete(new Object());
+        } else {
+            super.handleException(languageClient, err, resFut);
+        }
+    }
+
+    /**
+     * Checks the model for a compilation, unless the model manager has validated every unit of it since it
+     * last changed. Then the model only takes over the compilation's error handler. A check which finds
+     * the model free of errors is reported to the manager, which would otherwise check it again for the
+     * next compilation.
+     */
+    public static void checkModel(ModelManager modelManager, WurstCompilerJassImpl compiler, WurstModel model,
+                                  RunArgs runArgs) {
+        checkModel(modelManager, compiler, model, runArgs, model);
+    }
+
+    private static void checkModel(ModelManager modelManager, WurstCompilerJassImpl compiler, WurstModel model,
+                                   RunArgs runArgs, Collection<CompilationUnit> units) {
+        boolean sameChecks = checksLikeTheModelManager(runArgs);
+        if (sameChecks && modelManager.isChecked(model, units)) {
+            compiler.adoptCheckedModel(model, units);
+            return;
+        }
+        boolean validated = compiler.checkProg(model, units, units);
+        if (sameChecks && validated && compiler.getErrorHandler().getErrorCount() == 0) {
+            modelManager.markChecked(model, units);
+        }
+    }
+
+    protected boolean isObjectExportOnly() {
+        return false;
+    }
+
+    protected File compileMap(ModelManager modelManager, File projectFolder, WurstGui gui, Optional<File> mapCopy, RunArgs runArgs,
+                              WurstModel model, WurstProjectConfigData projectConfigData, boolean isProd) {
+        try (@Nullable MpqEditor mpqEditor = MpqEditorFactory.getEditor(mapCopy)) {
+            if (mpqEditor != null && !mpqEditor.canWrite()) {
+                WLogger.severe("The supplied map is invalid/corrupted/protected and Wurst cannot write to it.\n" +
+                    "Please supply a valid .w3x input map that can be opened in the world editor.");
+                throw new NonWritableChannelException();
+            }
+            WurstCompilerJassImpl compiler = new WurstCompilerJassImpl(timeTaker, projectFolder, gui, mpqEditor, runArgs);
+            compiler.setMapFile(mapCopy);
+            // injectMapData imports the project files into the map afterwards
+            compiler.setImportFiles(false);
+            if (map.isPresent() && mapCopy.isPresent() && mapCopy.get().equals(getCachedMapFile())) {
+                // The cached map holds the object data written back by the previous run, so start from the source map's.
+                compiler.setObjectDataSource(map.get());
+            }
+            if (model == modelManager.getModel()) {
+                // The language worker owns this model. Finish its mutations and attribute calculations before
+                // honoring cancellation; throwing out of a generated attribute leaves its cache in progress.
+                // From here on compilation mutates private IM, not the shared AST.
+                CompilationCancellation.check();
+                CompilationCancellation.run(() -> false,
+                    () -> prepareImProgram(modelManager, compiler, model, gui, runArgs));
+                CompilationCancellation.check();
+            } else {
+                prepareImProgram(modelManager, compiler, model, gui, runArgs);
+            }
+
+            if (runArgs.isRunTests()) {
+                CompilationProcess.runTests(gui, compiler, runArgs);
+                if (gui.getErrorCount() > 0) {
+                    throw new RequestFailedException(MessageType.Error, "Could not compile project: tests failed.");
+                }
+            }
+
+            timeTaker.measure("Runinng Compiletime Functions", () -> compiler.runCompiletime(projectConfigData, isProd, runArgs.isCompiletimeCache()));
+
+            if (isObjectExportOnly()) {
+                // Object generation is complete; the export command does not need a runtime script.
+                return new File(mapCopy.orElseThrow().getParentFile(), "objectEditingOutput/wurstCreatedObjects.w3o");
+            }
+
+            if (runArgs.isLua()) {
+                print("Translating program to Lua ... ");
+                Optional<LuaCompilationUnit> luaCode = Optional.ofNullable(
+                    timeTaker.measure("Transform program to Lua", compiler::transformProgToLua));
+
+                if (!luaCode.isPresent()) {
+                    print("Could not compile project\n");
+                    throw new RuntimeException("Could not compile project (error in LUA translation)");
+                }
+
+                StringBuilder sb = new StringBuilder();
+                timeTaker.measure("Print Lua", () -> luaCode.get().print(sb, 0));
+
+                String compiledMapScript = sb.toString();
+                LuaAssertions.assertNoLeakedNativeCalls(compiledMapScript);
+                File buildDir = getBuildDir();
+                File outFile = new File(buildDir, BUILD_COMPILED_LUA_NAME);
+                Files.write(compiledMapScript.getBytes(Charsets.UTF_8), outFile);
+                return outFile;
+
+            } else {
+                print("Translating program to jass ... ");
+                timeTaker.measure("Transform program to Jass", compiler::transformProgToJass);
+
+                Optional<JassProg> jassProg = Optional.ofNullable(compiler.getProg());
+                if (!jassProg.isPresent()) {
+                    print("Could not compile project\n");
+                    throw new RuntimeException("Could not compile project (error in JASS translation)");
+                }
+
+                gui.sendProgress("Printing program");
+                JassPrinter printer = new JassPrinter(!runArgs.isOptimize(), jassProg.get());
+                String compiledMapScript = timeTaker.measure("Print Jass", () -> printer.printProg());
+                File buildDir = getBuildDir();
+                File outFile = new File(buildDir, BUILD_COMPILED_JASS_NAME);
+                Files.write(compiledMapScript.getBytes(Charsets.UTF_8), outFile);
+
+                if (!runArgs.isDisablePjass() && !runArgs.isLegacyJassTypeChecks()) {
+                    gui.sendProgress("Running PJass");
+                    timeTaker.beginPhase("Pjass execution");
+                    Pjass.Result pJassResult = Pjass.runPjass(outFile,
+                        new File(buildDir, "common.j").getAbsolutePath(),
+                        new File(buildDir, "blizzard.j").getAbsolutePath());
+                    WLogger.info(pJassResult.getLogMessage());
+                    for (CompileError diagnostic : pJassResult.getDiagnostics(printer.getSourceMap())) {
+                        gui.sendBuildDiagnostic(diagnostic);
+                    }
+                    if (!pJassResult.isOk()) {
+                        throw new RuntimeException("Could not compile project (PJass error)");
+                    }
+                    timeTaker.endPhase();
+                }
+
+                if (runArgs.isHotStartmap()) {
+                    gui.sendProgress("Running JHCR");
+                    return runJassHotCodeReload(outFile);
+                }
+                return outFile;
+            }
+        } catch (CancellationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void prepareImProgram(ModelManager modelManager, WurstCompilerJassImpl compiler, WurstModel model,
+                                  WurstGui gui, RunArgs runArgs) {
+        Set<CompilationUnit> compilationUnits = compilationUnits(model);
+        List<CompilationUnit> units = model.stream().filter(compilationUnits::contains).toList();
+        try (de.peeeq.wurstscript.validation.NamePreservation.SavedMarkers markers = units.size() == model.size()
+            ? null : de.peeeq.wurstscript.validation.NamePreservation.saveSyntheticMarkers(model)) {
+            gui.sendProgress("Check program");
+            timeTaker.measure("Typecheck program", () -> checkModel(modelManager, compiler, model, runArgs, units));
+            if (gui.getErrorCount() > 0) {
+                throw new RequestFailedException(MessageType.Warning, "Could not compile project: ", gui.getErrorList().get(0));
+            }
+            print("translating program ... ");
+            compiler.translateProgToIm(model, units);
+            if (gui.getErrorCount() > 0) {
+                throw new RequestFailedException(MessageType.Error,
+                    "Could not compile project (error in translation): " + gui.getErrorList().get(0));
+            }
+        }
+    }
+
+    protected File runJassHotCodeReload(File mapScript) throws IOException, InterruptedException {
+        File buildDir = getBuildDir();
+        File commonJ = new File(buildDir, "common.j");
+        File blizzardJ = new File(buildDir, "blizzard.j");
+
+        if (!commonJ.exists()) {
+            throw new IOException("Could not find file " + commonJ.getAbsolutePath());
+        }
+
+        if (!blizzardJ.exists()) {
+            throw new IOException("Could not find file " + blizzardJ.getAbsolutePath());
+        }
+
+        ProcessBuilder pb = new ProcessBuilder(langServer.getConfigProvider().getJhcrExe(), "init", commonJ.getName(), blizzardJ.getName(), mapScript.getName());
+        pb.directory(buildDir);
+        Utils.exec(pb, Duration.ofSeconds(30), System.err::println);
+        return renameJhcrOutput(buildDir);
+    }
+
+    /**
+     * Selects project Wurst sources, the map/core Jass scripts and their imports, without changing the editor model.
+     */
+    private Set<CompilationUnit> compilationUnits(WurstModel model) {
+
+        Set<CompilationUnit> imported = model.stream()
+            .filter(cu -> isInProjectWurstFolder(cu.getCuInfo().getFile())
+                || isProjectWar3MapScript(cu.getCuInfo().getFile())
+                || isRequiredBuildJass(cu.getCuInfo().getFile()))
+            .collect(Collectors.toSet());
+        addImports(imported, imported);
+
+        return imported;
+    }
+
+    private boolean isProjectWar3MapScript(String file) {
+        if (!file.endsWith("war3map.j")) {
+            return false;
+        }
+        Path p = Paths.get(file).toAbsolutePath().normalize();
+        Path projectWurstFolder;
+        try {
+            projectWurstFolder = workspaceRoot.getPath().resolve("wurst").toAbsolutePath().normalize();
+        } catch (FileNotFoundException e) {
+            return false;
+        }
+        return p.startsWith(projectWurstFolder) && java.nio.file.Files.exists(p);
+    }
+
+    private boolean isInProjectWurstFolder(String file) {
+        Path p = Paths.get(file).toAbsolutePath().normalize();
+        Path projectWurstFolder;
+        try {
+            projectWurstFolder = workspaceRoot.getPath().resolve("wurst").toAbsolutePath().normalize();
+        } catch (FileNotFoundException e) {
+            return false;
+        }
+        return p.startsWith(projectWurstFolder)
+            && java.nio.file.Files.exists(p)
+            && Utils.isWurstFile(file);
+    }
+
+    private boolean isRequiredBuildJass(String file) {
+        Path p = Paths.get(file).toAbsolutePath().normalize();
+        Path buildDir;
+        try {
+            buildDir = workspaceRoot.getPath().resolve("_build").toAbsolutePath().normalize();
+        } catch (FileNotFoundException e) {
+            return false;
+        }
+        if (!p.startsWith(buildDir)) {
+            return false;
+        }
+        String name = p.getFileName().toString();
+        return name.equals("common.j") || name.equals("blizzard.j");
+    }
+
+    protected File getBuildDir() {
+        File buildDir;
+        try {
+            buildDir = new File(workspaceRoot.getFile(), "_build");
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Cannot get build dir", e);
+        }
+        if (!buildDir.exists()) {
+            UtilsIO.mkdirs(buildDir);
+        }
+        return buildDir;
+    }
+
+    private void addImports(Set<CompilationUnit> result, Set<CompilationUnit> toAdd) {
+        Set<CompilationUnit> imported =
+            toAdd.stream()
+                .flatMap((CompilationUnit cu) -> cu.getPackages().stream())
+                .flatMap((WPackage p) -> p.getImports().stream())
+                .map(WImport::attrImportedPackage)
+                .filter(Objects::nonNull)
+                .map(WPackage::attrCompilationUnit)
+                .collect(Collectors.toSet());
+        boolean changed = result.addAll(imported);
+        if (changed) {
+            // recursive call terminates, as there are only finitely many compilation units
+            addImports(result, imported);
+        }
+    }
+
+    protected void print(String s) {
+        WLogger.info(s);
+    }
+
+    protected void println(String s) {
+        WLogger.info(s);
+    }
+
+
+    protected File compileScript(WurstGui gui, ModelManager modelManager, List<String> compileArgs, Optional<File> mapCopy,
+                                 WurstProjectConfigData projectConfigData, boolean isProd, File scriptFile) throws Exception {
+        RunArgs runArgs = new RunArgs(compileArgs);
+
+        gui.sendProgress("Compiling Script");
+        print("Compile Script : ");
+        for (File dep : modelManager.getDependencyWurstFiles()) {
+            WLogger.debug("dep: " + dep.getPath());
+        }
+        print("Dependencies done.");
+        CompilationCancellation.check();
+        CompilationCancellation.run(() -> false, () -> {
+            timeTaker.beginPhase("Replace map script");
+            replaceBaseScriptWithConfig(modelManager, scriptFile);
+            timeTaker.endPhase();
+            timeTaker.measure("Typecheck project with map script", () -> checkModelWithMapScript(modelManager, gui, runArgs));
+        });
+        CompilationCancellation.check();
+
+        if (modelManager.hasErrors()) {
+            for (CompileError compileError : modelManager.getParseErrors()) {
+                gui.sendError(compileError);
+            }
+            throw new RequestFailedException(MessageType.Warning, "Cannot run code with syntax errors.");
+        }
+
+        WurstModel model = modelManager.getModel();
+        return compileMap(modelManager, modelManager.getProjectPath(), gui, mapCopy, runArgs, model, projectConfigData, isProd);
+    }
+
+    /**
+     * Called when the map script with the project config applied is in the model, before anything is compiled.
+     * The swap of the script invalidates every attribute of the model, so a request which loaded the project
+     * without checking it checks it here, once, and the compilation takes that check over.
+     *
+     * @param gui     the gui the compilation reports to
+     * @param runArgs the arguments of the compilation
+     */
+    protected void checkModelWithMapScript(ModelManager modelManager, WurstGui gui, RunArgs runArgs) {
+    }
+
+    /**
+     * Whether a compilation with these arguments checks the model as the model manager does, and so can take the
+     * manager's check over ({@link #checkModel}): the manager checks without the legacy Jass type checks.
+     */
+    static boolean checksLikeTheModelManager(RunArgs runArgs) {
+        return !runArgs.isLegacyJassTypeChecks();
+    }
+
+    private static void replaceBaseScriptWithConfig(ModelManager modelManager, File scriptFile) throws IOException {
+        Optional<CompilationUnit> war3mapJ = modelManager.getModel()
+            .stream()
+            .filter((CompilationUnit cu) -> cu.getCuInfo().getFile().endsWith("war3map.j"))
+            .findFirst();
+
+        if (war3mapJ.isPresent()) {
+            modelManager.syncCompilationUnitContent(WFile.create(war3mapJ.get().getCuInfo().getFile()),
+                java.nio.file.Files.readString(scriptFile.toPath()));
+        }
+    }
+
+
+    /**
+     * Gets or creates the cached map file location
+     */
+    protected File getCachedMapFile() {
+        File buildDir = getBuildDir();
+        File cacheDir = new File(buildDir, "cache");
+        if (!cacheDir.exists()) {
+            UtilsIO.mkdirs(cacheDir);
+        }
+        return new File(cacheDir, resolveCachedMapFileName());
+    }
+
+    private String resolveCachedMapFileName() {
+        if (!cachedMapFileName.isEmpty()) {
+            return cachedMapFileName;
+        }
+        return resolveCachedMapFileName(runArgs.isLua());
+    }
+
+    private String resolveCachedMapFileName(boolean luaMode) {
+        if (!map.isPresent()) {
+            return luaMode ? "cached_map_lua.w3x" : "cached_map_jass.w3x";
+        }
+        File inputMap = map.get();
+        String inputName = inputMap.getName();
+        int dot = inputName.lastIndexOf('.');
+        String baseName = dot > 0 ? inputName.substring(0, dot) : inputName;
+        // Keep only filesystem-safe characters and avoid collisions for same basename from different folders.
+        String safeBase = baseName.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String pathHash = Integer.toUnsignedString(inputMap.getAbsolutePath().hashCode(), 36);
+        String modeSuffix = luaMode ? "lua" : "jass";
+        return safeBase + "_" + pathHash + "_" + modeSuffix + "_cached.w3x";
+    }
+
+    protected File ensureWritableTargetFile(File targetFile, String dialogTitle, String lockMessage,
+                                            String cancelMessage) {
+        File currentTarget = targetFile;
+        while (isLocked(currentTarget)) {
+            int choice = showTargetLockedDialog(dialogTitle, lockMessage);
+            if (choice == 0 || choice == JOptionPane.CLOSED_OPTION) {
+                throw new RequestFailedException(MessageType.Warning, cancelMessage);
+            } else if (choice == 1) {
+                continue;
+            } else if (choice == 2) {
+                currentTarget = createTemporaryTargetFile(currentTarget);
+            }
+        }
+        return currentTarget;
+    }
+
+    private int showTargetLockedDialog(String dialogTitle, String message) {
+        JFrame frame = new JFrame();
+        frame.setAlwaysOnTop(true);
+        Object[] options = { "Cancel", "Retry", "Rename" };
+        return JOptionPane.showOptionDialog(
+            frame,
+            message,
+            dialogTitle,
+            JOptionPane.DEFAULT_OPTION,
+            JOptionPane.WARNING_MESSAGE,
+            null,
+            options,
+            options[1]
+        );
+    }
+
+    private File createTemporaryTargetFile(File currentTarget) {
+        String currentName = currentTarget.getName();
+        String baseName = currentName.endsWith(".w3x")
+            ? currentName.substring(0, currentName.length() - 4)
+            : currentName;
+        try {
+            File parent = currentTarget.getParentFile();
+            if (parent == null) {
+                parent = getBuildDir();
+            }
+            File tempTarget = java.nio.file.Files.createTempFile(parent.toPath(), baseName + "_", ".w3x").toFile();
+            tempTarget.deleteOnExit();
+            WLogger.info("Using temporary map target due to locked file: " + tempTarget.getAbsolutePath());
+            return tempTarget;
+        } catch (IOException e) {
+            throw new RequestFailedException(MessageType.Error, "Could not create temporary map target file.", e);
+        }
+    }
+
+    private boolean isLocked(File targetMap) {
+        if (!targetMap.exists()) {
+            return false;
+        }
+        try (FileChannel ignored = FileChannel.open(targetMap.toPath(), StandardOpenOption.WRITE)) {
+            return false;
+        } catch (IOException e) {
+            return true;
+        }
+    }
+
+    /**
+     * Ensures cached map exists and is up to date
+     */
+    protected File ensureCachedMap(WurstGui gui) throws IOException {
+        File cachedMap = getCachedMapFile();
+        cleanupOppositeModeCacheAndOutputs();
+
+        if (!map.isPresent()) {
+            throw new RequestFailedException(MessageType.Error, "No source map provided");
+        }
+
+        File sourceMap = map.get();
+
+        long sourceLastModified = getSourceMapLastModified(sourceMap);
+        // If cached map doesn't exist or source is newer, update cache
+        if (!cachedMap.exists() || sourceLastModified > cachedMap.lastModified()) {
+            WLogger.info("Updating cached map from source");
+            gui.sendProgress("Updating cached map");
+            if (sourceMap.isDirectory()) {
+                buildArchiveFromFolder(sourceMap, cachedMap);
+            } else {
+                Files.copy(sourceMap, cachedMap);
+            }
+        }
+
+        return cachedMap;
+    }
+
+    protected static long getSourceMapLastModified(File sourceMap) {
+        if (!sourceMap.isDirectory()) {
+            return sourceMap.lastModified();
+        }
+        try (java.util.stream.Stream<Path> files = java.nio.file.Files.walk(sourceMap.toPath())) {
+            return files
+                .map(Path::toFile)
+                .mapToLong(File::lastModified)
+                .max()
+                .orElse(sourceMap.lastModified());
+        } catch (IOException e) {
+            WLogger.warning("Could not inspect folder map timestamp: " + sourceMap + " (" + e.getMessage() + ")");
+            return sourceMap.lastModified();
+        }
+    }
+
+    private static void buildArchiveFromFolder(File sourceFolder, File cachedMap) throws IOException {
+        try {
+            java.nio.file.Files.deleteIfExists(cachedMap.toPath());
+            MpqEditorFactory.createEmptyArchive(cachedMap);
+            try (MpqEditor mpqEditor = MpqEditorFactory.getEditor(Optional.of(cachedMap))) {
+                try (java.util.stream.Stream<Path> files = java.nio.file.Files.walk(sourceFolder.toPath())) {
+                    List<Path> regularFiles = files
+                        .filter(java.nio.file.Files::isRegularFile)
+                        .sorted(Comparator.comparing(path -> sourceFolder.toPath().relativize(path).toString().replace('\\', '/')))
+                        .collect(Collectors.toList());
+                    for (Path file : regularFiles) {
+                        String filenameInMpq = sourceFolder.toPath().relativize(file).toString().replace('/', '\\');
+                        if (isInternalMpqMetadataFile(filenameInMpq)) {
+                            continue;
+                        }
+                        mpqEditor.insertFile(filenameInMpq, file.toFile());
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new IOException("Could not build MPQ archive from folder map: " + sourceFolder.getAbsolutePath(), e);
+        }
+    }
+
+    private static boolean isInternalMpqMetadataFile(String filenameInMpq) {
+        return filenameInMpq.equals("(listfile)")
+            || filenameInMpq.equals("(attributes)")
+            || filenameInMpq.equals("(signature)");
+    }
+
+    private void cleanupOppositeModeCacheAndOutputs() {
+        if (cachedMapFileName.isEmpty()) {
+            File cacheDir = new File(getBuildDir(), "cache");
+            String oppositeModeCacheName = resolveCachedMapFileName(!runArgs.isLua());
+            java.nio.file.Path oppositeModeCache = new File(cacheDir, oppositeModeCacheName).toPath();
+            try {
+                java.nio.file.Files.deleteIfExists(oppositeModeCache);
+            } catch (IOException e) {
+                WLogger.warning("Could not delete opposite-mode cached map: " + oppositeModeCache + " (" + e.getMessage() + ")");
+            }
+        }
+
+        File buildDir = getBuildDir();
+        File oppositeCompiledOutput = runArgs.isLua()
+            ? new File(buildDir, BUILD_COMPILED_JASS_NAME)
+            : new File(buildDir, BUILD_COMPILED_LUA_NAME);
+        try {
+            java.nio.file.Files.deleteIfExists(oppositeCompiledOutput.toPath());
+        } catch (IOException e) {
+            WLogger.warning("Could not delete opposite-mode compiled output: " + oppositeCompiledOutput + " (" + e.getMessage() + ")");
+        }
+    }
+
+    protected CompilationResult compileScript(ModelManager modelManager, WurstGui gui, Optional<File> testMap,
+                                              WurstProjectConfigData projectConfigData, File buildDir,
+                                              boolean isProd) throws Exception {
+
+        if (!runArgs.isHotReload()) {
+            // Ensure we're working with the cached map
+            timeTaker.beginPhase("Prepare cached map");
+            File cachedMap = ensureCachedMap(gui);
+            timeTaker.endPhase();
+
+            // Update testMap to point to cached map
+            testMap = Optional.of(cachedMap);
+        }
+
+        CompilationResult result;
+
+        if (runArgs.isHotReload()) {
+            result = new CompilationResult();
+            result.script = new File(buildDir, BUILD_CONFIGURED_SCRIPT_NAME);
+            if (!result.script.exists()) {
+                result.script = new File(new File(workspaceRoot.getFile(), "wurst"), "war3map.j");
+            }
+            if (!result.script.exists()) {
+                throw new RequestFailedException(MessageType.Error, "Could not find war3map.j file");
+            }
+        } else {
+            timeTaker.beginPhase("load map script");
+            File scriptFile = loadMapScript(getMapForScriptExtraction(testMap), modelManager, gui);
+            timeTaker.endPhase();
+            result = applyProjectConfig(gui, testMap, buildDir, projectConfigData, scriptFile, BUILD_CONFIGURED_SCRIPT_NAME);
+        }
+
+        // Compile the script
+        result.script = compileScript(gui, modelManager, compileArgs, testMap, projectConfigData, isProd, result.script);
+
+        Optional<WurstModel> model = Optional.ofNullable(modelManager.getModel());
+        if (!model.isPresent()
+            || model
+            .get()
+            .stream()
+            .noneMatch((CompilationUnit cu) -> cu.getCuInfo().getFile().endsWith("war3map.j"))) {
+            println("No 'war3map.j' file could be found inside the map nor inside the wurst folder");
+            println("Put the map's war3map.j into your wurst-folder, or use a map that contains it. ");
+            println("We will try to start the map now, but it will probably fail. ");
+        }
+        return result;
+    }
+
+    protected void injectMapData(WurstGui gui, Optional<File> testMap, CompilationResult result) throws Exception {
+        gui.sendProgress("Injecting map data");
+        timeTaker.beginPhase("Injecting map data");
+
+        // Work directly with the cached map
+        File cachedMap = getCachedMapFile();
+
+        if (!cachedMap.exists()) {
+            throw new RequestFailedException(MessageType.Error, "Cached map does not exist");
+        }
+
+        try (MpqEditor mpqEditor = MpqEditorFactory.getEditor(Optional.of(cachedMap))) {
+            String mapScriptName;
+            if (runArgs.isLua()) {
+                mapScriptName = "war3map.lua";
+                injectExternalLuaFiles(result.script);
+            } else {
+                mapScriptName = "war3map.j";
+            }
+
+            // Delete old scripts (both root and scripts/ subdirectory locations)
+            if (mpqEditor.hasFile("war3map.j")) {
+                mpqEditor.deleteFile("war3map.j");
+            }
+            if (mpqEditor.hasFile("scripts\\war3map.j")) {
+                mpqEditor.deleteFile("scripts\\war3map.j");
+            }
+            if (mpqEditor.hasFile("war3map.lua")) {
+                mpqEditor.deleteFile("war3map.lua");
+            }
+            if (mpqEditor.hasFile("scripts\\war3map.lua")) {
+                mpqEditor.deleteFile("scripts\\war3map.lua");
+            }
+
+            // Insert new script
+            mpqEditor.insertFile(mapScriptName, result.script);
+
+            // Insert w3i if it changed
+            if (result.w3i != null) {
+                String w3iHash = ImportFile.calculateFileHash(result.w3i);
+
+                Optional<ImportFile.CacheManifest> manifestOpt = ImportFile.getCachedManifest(mpqEditor);
+                boolean w3iChanged = true;
+
+                if (manifestOpt.isPresent() && manifestOpt.get().w3iConfigMatches(w3iHash)) {
+                    WLogger.info("W3I file unchanged, skipping injection");
+                    w3iChanged = false;
+                }
+
+                if (w3iChanged) {
+                    WLogger.info("W3I file changed, injecting");
+                    if (mpqEditor.hasFile(W3I.GAME_PATH.getName())) {
+                        mpqEditor.deleteFile(W3I.GAME_PATH.getName());
+                    }
+                    mpqEditor.insertFile(W3I.GAME_PATH.getName(), result.w3i);
+
+                    // Update manifest
+                    ImportFile.CacheManifest manifest = manifestOpt.orElse(new ImportFile.CacheManifest());
+                    manifest.setW3iConfig(w3iHash);
+                    ImportFile.saveManifest(mpqEditor, manifest);
+                }
+            }
+
+            // CRITICAL: Import files into THIS mpq editor instance
+            gui.sendProgress("Importing resource files");
+            timeTaker.beginPhase("Importing files");
+            try {
+                ImportFile.ImportResult importResult = ImportFile.importFilesFromImports(
+                    workspaceRoot.getFile(),
+                    mpqEditor
+                );
+                WLogger.info("Import result: " + importResult.toString());
+            } catch (Exception e) {
+                WLogger.severe("Failed to import files: " + e.getMessage());
+                throw e;
+            }
+            timeTaker.endPhase();
+        }
+
+        timeTaker.endPhase();
+
+        WLogger.info("Cached map size after injection: " + (cachedMap.length() / 1024 / 1024) + " MB");
+    }
+
+    protected File executeBuildMapPipeline(ModelManager modelManager, WurstGui gui, WurstProjectConfigData projectConfig) throws Exception {
+        if (!map.isPresent()) {
+            throw new RequestFailedException(MessageType.Error, "Map is null");
+        }
+        if (!map.get().exists()) {
+            throw new RequestFailedException(MessageType.Error, map.get().getAbsolutePath() + " does not exist.");
+        }
+
+        mapLastModified = getSourceMapLastModified(map.get());
+        mapPath = map.get().getAbsolutePath();
+
+        gui.sendProgress("Copying map");
+
+        File buildDir = getBuildDir();
+        File targetMapFile = getBuildOutputMapFile(projectConfig, buildDir);
+        targetMapFile = ensureWritableBuildOutput(targetMapFile, false);
+
+        CompilationResult result = compileScript(modelManager, gui, Optional.of(targetMapFile), projectConfig, buildDir, isProductionBuild());
+        injectMapData(gui, Optional.of(targetMapFile), result);
+        timeTaker.beginPhase("Write requested script");
+        writeRequestedScript(result);
+        timeTaker.endPhase();
+
+        targetMapFile = ensureWritableBuildOutput(targetMapFile, true);
+        CompilationCancellation.check();
+        final File outputMapFile = targetMapFile;
+        // Once publication begins, finish compression and stripping cache metadata before
+        // honoring cancellation. Otherwise the output could replace a valid release with
+        // an unfinished cached map.
+        CompilationCancellation.run(() -> false, () -> {
+            timeTaker.beginPhase("Copy output map");
+            java.nio.file.Files.copy(getCachedMapFile().toPath(), outputMapFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            timeTaker.endPhase();
+
+            gui.sendProgress("Finalizing map");
+            try (MpqEditor mpq = MpqEditorFactory.getEditor(Optional.of(outputMapFile))) {
+                if (mpq != null) {
+                    // Strip internal Wurst cache files; they are dev-only metadata and should
+                    // not be present in the distributed map.
+                    if (mpq.hasFile("wurst_cache_manifest.txt")) mpq.deleteFile("wurst_cache_manifest.txt");
+                    if (mpq.hasFile("wurst_object_cache.txt"))   mpq.deleteFile("wurst_object_cache.txt");
+                    timeTaker.beginPhase("Finalize map");
+                    mpq.closeWithCompression();
+                    timeTaker.endPhase();
+                }
+            }
+
+        });
+
+        gui.sendProgress("Done.");
+        timeTaker.printReport();
+        return targetMapFile;
+    }
+
+    private void writeRequestedScript(CompilationResult result) throws IOException {
+        if (runArgs.getOutFile() == null || result.script == null) {
+            return;
+        }
+
+        String outputPath = runArgs.getOutFile();
+        File outputFile = new File(outputPath);
+        if (runArgs.isLua() && outputPath.toLowerCase(Locale.ROOT).endsWith(".j")) {
+            java.nio.file.Files.deleteIfExists(outputFile.toPath());
+            outputPath = outputPath.substring(0, outputPath.length() - 2) + ".lua";
+            outputFile = new File(outputPath);
+        }
+
+        File parent = outputFile.getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
+        java.nio.file.Files.copy(
+            result.script.toPath(),
+            outputFile.toPath(),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING
+        );
+    }
+
+    protected boolean isProductionBuild() {
+        return !runArgs.isDevBuild();
+    }
+
+    protected File ensureWritableBuildOutput(File targetMapFile, boolean isFinalWrite) {
+        String lockMessage = isFinalWrite
+            ? "The output map file is still in use and cannot be replaced.\nClick Retry, choose Rename to use a temporary file name, or Cancel."
+            : "The output map file is in use and cannot be replaced.\nClose Warcraft III and click Retry, choose Rename to use a temporary file name, or Cancel.";
+        return ensureWritableTargetFile(
+            targetMapFile,
+            "Build Map",
+            lockMessage,
+            "Build canceled because output map target is in use."
+        );
+    }
+
+    private static File getBuildOutputMapFile(WurstProjectConfigData projectConfig, File buildDir) {
+        String fileName = projectConfig.buildMapData().fileName();
+        return new File(buildDir, fileName.isEmpty() ? projectConfig.projectName() + ".w3x" : fileName + ".w3x");
+    }
+
+    private static boolean startsWith(byte[] data, byte[] prefix) {
+        if (data.length < prefix.length) return false;
+        for (int i = 0; i < prefix.length; i++) {
+            if (data[i] != prefix[i]) return false;
+        }
+        return true;
+    }
+
+    protected File loadMapScript(Optional<File> mapCopy, ModelManager modelManager, WurstGui gui) throws Exception {
+        File scriptFile = new File(new File(workspaceRoot.getFile(), "wurst"), "war3map.j");
+        // If runargs are no extract, either use existing or throw error
+        // Otherwise try loading from map, if map was saved with wurst, try existing script, otherwise error
+        if (!mapCopy.isPresent() || runArgs.isNoExtractMapScript()) {
+            System.out.println("No extract map script enabled - not extracting.");
+            if (scriptFile.exists()) {
+                System.out.println("war3map.j exists at wurst root.");
+                ensureScriptIsSynced(modelManager, scriptFile);
+                return scriptFile;
+            } else {
+                throw new CompileError(new WPos("", new LineOffsets(), 0, 0),
+                    "RunArg noExtractMapScript is set but no war3map.j is provided inside the wurst folder");
+            }
+        }
+        if (shouldExtractMapScript(scriptFile)) {
+            lastMapModified = MapRequest.mapLastModified;
+            lastMapPath = MapRequest.mapPath;
+            System.out.println("Map not cached yet, extracting script");
+            byte[] extractedScript = extractMapScript(mapCopy);
+            if (extractedScript == null) {
+                if (scriptFile.exists()) {
+                    String msg = "No war3map.j in map file, using old extracted file";
+                    WLogger.info(msg);
+                } else {
+                    CompileError err = new CompileError(new WPos(mapCopy.toString(), new LineOffsets(), 0, 0),
+                        "No war3map.j found in map file.");
+                    gui.showInfoMessage(err.getMessage());
+                    WLogger.severe(err);
+                }
+            } else if (startsWith(extractedScript, JassPrinter.WURST_COMMENT_RAW.getBytes(StandardCharsets.UTF_8))) {
+                WLogger.info("map has already been compiled with wurst");
+                // file generated by wurst, do not use
+                if (scriptFile.exists()) {
+                    String msg = "Cannot use war3map.j from map file, because it already was compiled with wurst. " + "Using war3map.j from Wurst directory instead.";
+                    WLogger.info(msg);
+                } else {
+                    CompileError err = new CompileError(new WPos(mapCopy.toString(), new LineOffsets(), 0, 0),
+                        "Cannot use war3map.j from map file, because it already was compiled with wurst. " + "Please add war3map.j to the wurst directory.");
+                    gui.showInfoMessage(err.getMessage());
+                    WLogger.severe(err);
+                }
+            } else {
+                WLogger.info("new map, use extracted");
+                // write mapfile from map to workspace
+                Files.write(extractedScript, scriptFile);
+                ensureScriptIsSynced(modelManager, scriptFile);
+            }
+        } else {
+            System.out.println("Map not modified, not extracting script");
+        }
+        if (scriptFile.exists()) {
+            ensureScriptIsSynced(modelManager, scriptFile);
+        }
+
+        return scriptFile;
+    }
+
+    private static boolean shouldExtractMapScript(File scriptFile) {
+        if (!scriptFile.exists()) {
+            return true;
+        }
+        if (!MapRequest.mapPath.equals(lastMapPath)) {
+            return true;
+        }
+        if (MapRequest.mapLastModified > lastMapModified) {
+            return true;
+        }
+        return MapRequest.mapLastModified > scriptFile.lastModified();
+    }
+
+    private static void ensureScriptIsSynced(ModelManager modelManager, File scriptFile) throws IOException {
+        CompilationUnit compilationUnit = modelManager.getCompilationUnit(WFile.create(scriptFile));
+        if (compilationUnit == null) {
+            // Into the model only, without a check: the script is replaced by the one with the project config applied
+            // before the model is checked, and a check of this one finds errors in code which calls what the config
+            // adds (and checks the whole model, since every unit may use a Jass function).
+            modelManager.syncCompilationUnitContent(WFile.create(scriptFile),
+                java.nio.file.Files.readString(scriptFile.toPath()));
+        }
+    }
+
+    protected CompilationResult applyProjectConfig(WurstGui gui, Optional<File> testMap, File buildDir, WurstProjectConfigData projectConfig, File scriptFile,
+                                                   String outputScriptName) {
+        AtomicReference<CompilationResult> result = new AtomicReference<>();
+        gui.sendProgress("Applying Map Config...");
+        timeTaker.measure("Applying Map Config", () -> {
+            try {
+                result.set(ProjectConfigBuilder.apply(projectConfig, testMap.get(), map.orElse(testMap.get()), scriptFile, buildDir,
+                    runArgs, w3data, outputScriptName, gui::showInfoMessage));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return result.get();
+    }
+
+    protected Optional<File> getMapForScriptExtraction(Optional<File> mapCopy) {
+        if (map.isPresent()) {
+            return map;
+        }
+        return mapCopy;
+    }
+
+    protected byte[] extractMapScript(Optional<File> mapCopy) throws Exception {
+        if (!mapCopy.isPresent()) {
+            return null;
+        }
+        if (mapCopy.get().isDirectory()) {
+            File rootScript = new File(mapCopy.get(), "war3map.j");
+            if (rootScript.exists()) {
+                return java.nio.file.Files.readAllBytes(rootScript.toPath());
+            }
+            File scriptsScript = new File(new File(mapCopy.get(), "scripts"), "war3map.j");
+            if (scriptsScript.exists()) {
+                return java.nio.file.Files.readAllBytes(scriptsScript.toPath());
+            }
+            return null;
+        }
+        try (@Nullable MpqEditor mpqEditor = MpqEditorFactory.getEditor(mapCopy, true)) {
+            if (mpqEditor.hasFile("war3map.j")) {
+                return mpqEditor.extractFile("war3map.j");
+            }
+            if (mpqEditor.hasFile("scripts\\war3map.j")) {
+                return mpqEditor.extractFile("scripts\\war3map.j");
+            }
+        }
+        return null;
+    }
+
+    protected File renameJhcrOutput(File buildDir) throws IOException {
+        File rawJhcrScript = new File(buildDir, "jhcr_war3map.j");
+        if (!rawJhcrScript.exists()) {
+            throw new IOException("Could not find file " + rawJhcrScript.getAbsolutePath());
+        }
+        File renamedJhcrScript = new File(buildDir, BUILD_JHCR_SCRIPT_NAME);
+        java.nio.file.Files.move(rawJhcrScript.toPath(), renamedJhcrScript.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        return renamedJhcrScript;
+    }
+
+    private W3InstallationData getBestW3InstallationData() throws RequestFailedException {
+        Optional<GameVersion> configuredVersion = buildConfig.configuredGameVersion();
+        boolean needsGameExe = this instanceof RunMap && !runArgs.isHotReload();
+        if (configuredVersion.isPresent()) {
+            WLogger.info("Using wurst.build wc3Patch " + buildConfig.wc3PatchName().orElse(configuredVersion.get().toString())
+                + " (" + configuredVersion.get() + ").");
+        }
+        if (Orient.isLinuxSystem()) {
+            // no Warcraft installation supported on Linux
+            return new W3InstallationData(Optional.empty(), configuredVersion);
+        }
+        if (!needsGameExe && configuredVersion.isPresent()) {
+            return new W3InstallationData(Optional.empty(), configuredVersion);
+        }
+        Optional<GameVersion> versionForDiscovery = needsGameExe ? Optional.empty() : configuredVersion;
+        if (wc3Path.isPresent() && StringUtils.isNotBlank(wc3Path.get())) {
+            W3InstallationData w3data = new W3InstallationData(langServer, new File(wc3Path.get()),
+                needsGameExe, versionForDiscovery);
+            if (w3data.getWc3PatchVersion().isEmpty() && !configuredVersion.isPresent()) {
+                WLogger.warning("Could not determine Warcraft III version at specified path: " + wc3Path
+                    + ". Falling back to default launch behavior.");
+            }
+
+            return w3data;
+        } else {
+            return new W3InstallationData(langServer, needsGameExe, versionForDiscovery);
+        }
+    }
+
+
+    private void injectExternalLuaFiles(File script) {
+        File luaDir;
+        try {
+            luaDir = new File(workspaceRoot.getFile(), "lua");
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Cannot get build dir", e);
+        }
+        if (!luaDir.exists()) {
+            return;
+        }
+
+        try (var fileStream = java.nio.file.Files.walk(luaDir.toPath())) {
+            List<Path> luaFiles = fileStream
+                .filter(java.nio.file.Files::isRegularFile)
+                .sorted(Comparator.comparing(path -> {
+                    Path relative = luaDir.toPath().relativize(path);
+                    return relative.toString().replace('\\', '/').toLowerCase(Locale.ROOT);
+                }))
+                .collect(Collectors.toList());
+
+            if (luaFiles.isEmpty()) {
+                return;
+            }
+
+            List<byte[]> preChunks = new ArrayList<>();
+            List<byte[]> postChunks = new ArrayList<>();
+            for (Path luaFile : luaFiles) {
+                byte[] bytes = java.nio.file.Files.readAllBytes(luaFile);
+                String fileName = luaFile.getFileName().toString();
+                if (fileName.startsWith("pre_")) {
+                    preChunks.add(bytes);
+                } else {
+                    postChunks.add(bytes);
+                }
+            }
+
+            if (!preChunks.isEmpty()) {
+                byte[] existingBytes = java.nio.file.Files.readAllBytes(script.toPath());
+                java.nio.file.Files.write(script.toPath(), new byte[0]);
+                for (byte[] preChunk : preChunks) {
+                    java.nio.file.Files.write(script.toPath(), preChunk, StandardOpenOption.APPEND);
+                }
+                java.nio.file.Files.write(script.toPath(), existingBytes, StandardOpenOption.APPEND);
+            }
+
+            for (byte[] postChunk : postChunks) {
+                java.nio.file.Files.write(script.toPath(), postChunk, StandardOpenOption.APPEND);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+}
