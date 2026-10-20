@@ -367,4 +367,23 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
         var r = await Call("script_callgraph", Args(("map", map)));
         Assert.True(Prop(r, "edges").GetInt32() >= 1);
     }
+
+    [Fact, Covers("script_verify", "script_bench")]
+    public async Task Verify_and_bench_answer_on_the_scripted_map()
+    {
+        var map = await ScriptedMap();
+        var verify = await Call("script_verify", Args(("map", map)));
+        Assert.NotNull(Prop(verify, "findings"));
+        var bench = await Call("script_bench", Args(("map", map)));
+        Assert.NotNull(Prop(bench, "functions"));
+    }
+
+    [Fact, Trait("Category", "GameData"), Covers("repair_audit_errors", "repair_portraits")]
+    public async Task Repairs_write_a_copy_and_leave_the_input_alone()
+    {
+        var audit = await Call("repair_audit_errors", Args(("map", Fixture), ("out_path", NewOut("audit-fix"))));
+        Assert.NotNull(audit);
+        var portraits = await Call("repair_portraits", Args(("map", Fixture), ("out_path", NewOut("portrait-fix"))));
+        Assert.NotNull(portraits);
+    }
 }

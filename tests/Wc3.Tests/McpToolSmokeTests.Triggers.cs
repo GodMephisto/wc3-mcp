@@ -77,6 +77,20 @@ public sealed class McpSmokeTriggersTests : McpSmokeBase
         Assert.Equal(catId, Prop(added, "parentCategoryId").GetInt32());
     }
 
+    [Fact, Covers("trigger_move")]
+    public async Task Moving_a_trigger_under_a_category_changes_only_its_parent()
+    {
+        var (map, _, id) = await TriggerMap();
+        var withCat = await Write("trigger_add_category", Args(("name", "Moved")), map);
+        var cat = Rows(Prop(await Call("triggers_read", Args(("map", withCat))), "categories"))
+            .Single(c => Prop(c, "name").GetString() == "Moved");
+        int catId = Prop(cat, "id").GetInt32();
+
+        var moved = await Write("trigger_move", Args(("id", id), ("parent", catId)), withCat);
+        var t = Trigger(await Call("triggers_read", Args(("map", moved))), id);
+        Assert.Equal(catId, Prop(t, "parentCategoryId").GetInt32());
+    }
+
     [Fact, Covers("trigger_rename", "trigger_set_enabled", "trigger_set_initially_on", "trigger_set_run_on_map_init")]
     public async Task Rename_and_flags_reach_the_trigger()
     {
