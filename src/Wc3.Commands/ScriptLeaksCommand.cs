@@ -110,6 +110,17 @@ public static class ScriptLeaksCommand
     private static readonly Regex RealGlobal = new(@"^\s*(?:constant\s+)?real\s+(\w+)\s*=\s*([0-9]*\.?[0-9]+)\s*$", RegexOptions.Compiled);
     private static readonly Regex WantDestroy = new(@"\bset\s+bj_wantDestroyGroup\s*=\s*true", RegexOptions.Compiled);
 
+    // The two BJ effect creators keep their handle in bj_lastCreatedEffect rather than returning
+    // it, so a following DestroyEffectBJ(GetLastCreatedEffectBJ()) or DestroyEffect(bj_lastCreatedEffect)
+    // releases it, and an assignment into another variable stores it for a later destroy. Neither
+    // is a discarded handle, and reporting them inflated a real map's count by hundreds.
+    private static readonly Regex BjEffectDestroy = new(
+        @"\bDestroyEffect(?:BJ)?\s*\(\s*(?:GetLastCreatedEffectBJ\s*\(\s*\)|bj_lastCreatedEffect)\s*\)",
+        RegexOptions.Compiled);
+    private static readonly Regex BjEffectStore = new(
+        @"=\s*(?:GetLastCreatedEffectBJ\s*\(\s*\)|bj_lastCreatedEffect)\b", RegexOptions.Compiled);
+
+
     /// <summary>How hot a finding is, ranked so every leak list groups hot code first, then code
     /// that repeats, then code that runs once. Shared with the Lua leak pass so the two rank
     /// identically.</summary>
@@ -227,6 +238,26 @@ public static class ScriptLeaksCommand
             ordered, periodicOut, diagnostics);
     }
 
+    /// <summary>True when the creator stores its effect in bj_lastCreatedEffect instead of returning it.</summary>
+    private static bool IsBjEffect(string creator) =>
+        creator is "AddSpecialEffectLocBJ" or "AddSpecialEffectTargetUnitBJ";
+
+    /// <summary>
+    /// Whether the BJ effect created at <paramref name="index"/> is destroyed or stored before the
+    /// next BJ creator overwrites bj_lastCreatedEffect. A destroy of the global, or an assignment
+    /// that saves it into a variable the function later uses, is a handled effect, not a leak.
+    /// </summary>
+    private static bool BjEffectHandled(List<(int Line, string Code)> body, int index)
+    {
+        for (int i = index + 1; i < body.Count; i++)
+        {
+            var code = body[i].Code;
+            if (BjEffectDestroy.IsMatch(code) || BjEffectStore.IsMatch(code)) return true;
+            if (CallStmt.Match(code) is { Success: true } cs && IsBjEffect(cs.Groups[1].Value)) return false;
+        }
+        return false;
+    }
+
     private static void Scan(JassFunction f, string[] lines, Dictionary<string, JassFunction> mapFunctions,
         string heat, List<ScriptLeak> leaks)
     {
@@ -239,13 +270,17 @@ public static class ScriptLeaksCommand
         var locals = new Dictionary<string, (string Type, int Line, string Creator, string Code)>(StringComparer.Ordinal);
         bool wantDestroy = false;
 
-        foreach (var (line, code) in body)
+        for (int bi = 0; bi < body.Count; bi++)
         {
+            var (line, code) = body[bi];
             if (WantDestroy.IsMatch(code)) wantDestroy = true;
 
             // discarded
             if (CallStmt.Match(code) is { Success: true } cs && Creators.TryGetValue(cs.Groups[1].Value, out var dType))
             {
+                // A BJ effect keeps its handle in bj_lastCreatedEffect. A destroy or a store
+                // before the next BJ creator handles it, so it is not a discarded handle.
+                if (IsBjEffect(cs.Groups[1].Value) && BjEffectHandled(body, bi)) continue;
                 leaks.Add(new("discarded", heat, f.Name, line, dType, code,
                     $"{cs.Groups[1].Value} is called as a statement, so its {dType} is thrown away and can never be destroyed"));
                 continue;

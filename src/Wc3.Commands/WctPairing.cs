@@ -145,18 +145,66 @@ public static class WctPairing
         if (slotIndex < 0 || slotIndex >= layout.Slots.Count) return false;
 
         var (start, length) = layout.Slots[slotIndex];
-        int newCount = layout.Slots.Count - 1;
-        int prefix = layout.CountOffset;
         int suffixStart = start + length;
 
         byte[] result = new byte[wctBytes.Length - length];
-        Buffer.BlockCopy(wctBytes, 0, result, 0, prefix);
-        int at = prefix + WriteInt32(result, prefix, newCount);
-        Buffer.BlockCopy(wctBytes, prefix + 4, result, at, start - (prefix + 4));
-        at += start - (prefix + 4);
-        Buffer.BlockCopy(wctBytes, suffixStart, result, at, wctBytes.Length - suffixStart);
+        if (layout.CountOffset >= 0)
+        {
+            int prefix = layout.CountOffset;
+            Buffer.BlockCopy(wctBytes, 0, result, 0, prefix);
+            int at = prefix + WriteInt32(result, prefix, layout.Slots.Count - 1);
+            Buffer.BlockCopy(wctBytes, prefix + 4, result, at, start - (prefix + 4));
+            at += start - (prefix + 4);
+            Buffer.BlockCopy(wctBytes, suffixStart, result, at, wctBytes.Length - suffixStart);
+        }
+        else
+        {
+            // The v4 sub-version stores no count, so the splice is the removal.
+            Buffer.BlockCopy(wctBytes, 0, result, 0, start);
+            Buffer.BlockCopy(wctBytes, suffixStart, result, start, wctBytes.Length - suffixStart);
+        }
 
         updatedWctBytes = result;
+        return true;
+    }
+
+    /// <summary>
+    /// Make the war3map.wct slot count match <paramref name="targetCount"/>, copying every
+    /// surviving slot's raw bytes verbatim. When the file holds more slots than the tree accounts
+    /// for, the trailing orphaned slots are dropped (they belong to no trigger, so nothing reads
+    /// them). When it holds fewer, empty slots are appended so every custom-text trigger still has
+    /// a body to read. Returns false when the bytes do not walk cleanly or the count already
+    /// matches. <paramref name="oldCount"/> reports what the file held before.
+    /// </summary>
+    public static bool TryReconcileSlotCount(
+        byte[] wctBytes, int targetCount, out byte[] updatedWctBytes, out int oldCount)
+    {
+        updatedWctBytes = wctBytes;
+        oldCount = -1;
+        if (!TryParseLayout(wctBytes, out var layout)) return false;
+        oldCount = layout.Slots.Count;
+        if (targetCount < 0 || oldCount == targetCount) return false;
+
+        if (targetCount < oldCount)
+        {
+            // Keep the header, the global block and the first targetCount slots. The header and
+            // every kept slot are copied byte for byte, so a body that is not valid UTF-8 survives.
+            int end = targetCount > 0
+                ? layout.Slots[targetCount - 1].Start + layout.Slots[targetCount - 1].Length
+                : layout.Slots.Count > 0 ? layout.Slots[0].Start
+                : layout.CountOffset >= 0 ? layout.CountOffset + 4
+                : wctBytes.Length;
+            updatedWctBytes = new byte[end];
+            Buffer.BlockCopy(wctBytes, 0, updatedWctBytes, 0, end);
+            if (layout.CountOffset >= 0) WriteInt32(updatedWctBytes, layout.CountOffset, targetCount);
+            return true;
+        }
+
+        // Fewer slots than the tree needs. Append an empty slot (a single int32 length of 0) for
+        // each missing one, so the file is long enough for every custom-text trigger to read.
+        updatedWctBytes = new byte[wctBytes.Length + (targetCount - oldCount) * 4];
+        Buffer.BlockCopy(wctBytes, 0, updatedWctBytes, 0, wctBytes.Length);
+        if (layout.CountOffset >= 0) WriteInt32(updatedWctBytes, layout.CountOffset, targetCount);
         return true;
     }
 
@@ -175,11 +223,29 @@ public static class WctPairing
     private static bool TryParseLayout(byte[] bytes, out WctLayout layout)
     {
         layout = null!;
-        if (bytes is null || bytes.Length < 4) return false;
+        if (bytes is null || bytes.Length < 8) return false;
 
+        // A v1 or v4 sub-version sits first, then the format version. Otherwise the format version
+        // is first. Mirrors War3Net's MapCustomTextTriggers.ReadFrom.
         int pos = 4;
-        int version = ReadInt32(bytes, 0);
-        if (version != 0)
+        int first = ReadInt32(bytes, 0);
+        int formatVersion;
+        int? subVersion = null;
+        if (first is unchecked((int)0x80000001) or unchecked((int)0x80000004))
+        {
+            subVersion = first;
+            if (pos + 4 > bytes.Length) return false;
+            formatVersion = ReadInt32(bytes, pos);
+            pos += 4;
+        }
+        else
+        {
+            formatVersion = first;
+        }
+        if (formatVersion < 0) return false;
+
+        // v1 and up carry a null-terminated global comment and a global code block.
+        if (formatVersion >= 1)
         {
             int nul = Array.IndexOf(bytes, (byte)0, pos);
             if (nul < 0) return false;
@@ -191,26 +257,31 @@ public static class WctPairing
             pos += globalLength;
         }
 
-        if (pos + 4 > bytes.Length) return false;
-        int countOffset = pos;
-        int count = ReadInt32(bytes, pos);
-        pos += 4;
-        if (count < 0) return false;
+        // No sub-version or v1 carries a slot count. v4 has none and runs to EOF.
+        int countOffset = -1;
+        bool hasCount = subVersion is null || subVersion == unchecked((int)0x80000001);
+        int count = int.MaxValue;
+        if (hasCount)
+        {
+            if (pos + 4 > bytes.Length) return false;
+            countOffset = pos;
+            count = ReadInt32(bytes, pos);
+            pos += 4;
+            if (count < 0) return false;
+        }
 
-        // Each slot needs at least its 4-byte length field, so the remaining buffer bounds how many
-        // can follow. Pre-sizing to a raw count from a malformed file would let a hostile header
-        // allocate arbitrarily before the loop's own bound check ever runs.
-        var slots = new List<SlotRange>(Math.Min(count, (bytes.Length - pos) / 4));
+        var slots = new List<SlotRange>(hasCount ? Math.Min(count, (bytes.Length - pos) / 4) : 16);
         for (int i = 0; i < count; i++)
         {
+            if (pos + 4 > bytes.Length) { if (hasCount) return false; break; }
             int start = pos;
-            if (pos + 4 > bytes.Length) return false;
             int codeLength = ReadInt32(bytes, pos);
             pos += 4;
             if (codeLength < 0 || pos + codeLength > bytes.Length) return false;
             pos += codeLength;
             slots.Add(new SlotRange(start, pos - start));
         }
+        if (!hasCount && pos != bytes.Length) return false;
 
         layout = new WctLayout(countOffset, slots);
         return true;

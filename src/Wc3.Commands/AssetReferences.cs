@@ -1,4 +1,7 @@
 // src/Wc3.Commands/AssetReferences.cs
+using System.Buffers.Binary;
+using System.Text;
+using System.Text.RegularExpressions;
 using Wc3.Model;
 
 namespace Wc3.Commands;
@@ -48,6 +51,9 @@ internal static class AssetReferences
         var set = new HashSet<string>(StringComparer.Ordinal);
         foreach (var value in ObjectFieldValues(doc)) Add(value);
         foreach (var value in OverrideFileValues(doc)) Add(value);
+        foreach (var value in ModelTextureValues(doc)) Add(value);
+        foreach (var value in UiFileValues(doc)) Add(value);
+        foreach (var value in StructuralFileValues(doc)) Add(value);
         if (ScriptEntry(doc) is { } script)
             foreach (var literal in AssetPathCandidates.NamedInScript(ScriptText.GetString(script.CurrentBytes)))
                 Add(literal);
@@ -96,6 +102,139 @@ internal static class AssetReferences
                 foreach (var token in line[(eq + 1)..].Split(',', StringSplitOptions.TrimEntries))
                     if (token.Length > 0) yield return token;
             }
+        }
+    }
+
+    /// <summary>
+    /// Every texture path an imported model names in its own texture chunk. A texture reached only
+    /// from a model is live even though no object-data field and no script literal names it, so a
+    /// reference set without these would tell asset_unused to delete a texture a model still draws.
+    /// An .mdx is read by walking its chunk list to TEXS; an .mdl is read from its Bitmap blocks.
+    /// </summary>
+    public static IEnumerable<string> ModelTextureValues(MapDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        foreach (var entry in ImportedEntries(doc))
+        {
+            var name = entry.FileName!;
+            var ext = Path.GetExtension(name);
+            var bytes = entry.CurrentBytes;
+            if (ext.Equals(".mdx", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var texture in MdxTexturePaths(bytes))
+                    yield return texture;
+            }
+            else if (ext.Equals(".mdl", StringComparison.OrdinalIgnoreCase))
+            {
+                if (bytes.Length == 0) continue;
+                var text = ScriptText.GetString(bytes);
+                // MDL writes it as Bitmap { Image "path" }, so the quoted path follows the keyword.
+                foreach (Match m in Regex.Matches(text,
+                             @"\b(?:Image|Texture)\s+""([^""]+)""", RegexOptions.IgnoreCase))
+                {
+                    var value = m.Groups[1].Value.Trim();
+                    if (value.Length > 0) yield return value;
+                }
+            }
+
+            // Catch any other path the file embeds, a particle emitter 1 spawn model being the one
+            // that matters. PREM carries a model path outside the texture chunk, and the emitter
+            // reader does not expose it, so scanning the bytes is what keeps asset_unused from
+            // offering a model a live emitter still spawns.
+            foreach (var embedded in EmbeddedAssetPaths(bytes))
+                yield return embedded;
+        }
+    }
+
+    /// <summary>
+    /// Every asset path named in a map-format file rather than in object data or the script. The
+    /// w3i names the loading screen model, the w3e names every terrain tile texture, and the w3s
+    /// names every sound. None of these is an object-data field, so without this a loading screen
+    /// or a custom terrain tile reads as unused and a prune deletes a file the game still loads.
+    /// Every structural entry is scanned, which over-approximates on purpose.
+    /// </summary>
+    public static IEnumerable<string> StructuralFileValues(MapDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        foreach (var file in doc.Files)
+        {
+            var name = file.FileName;
+            if (name is null || IsImportedEntry(name)) continue;
+            // The MPQ bookkeeping entries, (listfile) above all, name every file in the archive, so
+            // scanning one would mark every import used. The script is already read as literals.
+            if (name.StartsWith('(')) continue;
+            if (name.EndsWith(".j", StringComparison.OrdinalIgnoreCase)
+                || name.EndsWith(".lua", StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in EmbeddedAssetPaths(file.CurrentBytes))
+                yield return value;
+        }
+    }
+
+    /// <summary>
+    /// Every path-like string inside a binary, so a reference the structured readers do not model
+    /// is still seen. Conservative on purpose, since a false "used" only keeps a file.
+    /// </summary>
+    internal static IEnumerable<string> EmbeddedAssetPaths(byte[] data)
+    {
+        if (data.Length == 0) yield break;
+        var text = Encoding.Latin1.GetString(data);
+        foreach (Match m in EmbeddedAsset.Matches(text))
+        {
+            var value = m.Value.TrimStart('\0', ' ', '\t', '\r', '\n');
+            if (value.Length > 0) yield return value;
+        }
+    }
+
+    private static readonly Regex EmbeddedAsset = new(
+        @"[A-Za-z0-9_\\/ .\-\[\]()]{1,180}\.(?:mdx|mdl|blp|tga|dds|png|jpg|jpeg|fdf|toc|wav|mp3)\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Every asset path named in the map's own UI files, war3mapSkin.txt, war3mapMisc.txt, and the
+    /// .fdf and .toc files a custom interface carries. An interface file can name a texture no
+    /// object field and no script literal does, so it belongs in the reference set.
+    /// </summary>
+    public static IEnumerable<string> UiFileValues(MapDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        foreach (var entry in ImportedEntries(doc))
+        {
+            var name = entry.FileName!;
+            var ext = Path.GetExtension(name);
+            if (!ext.Equals(".fdf", StringComparison.OrdinalIgnoreCase)
+                && !ext.Equals(".toc", StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in EmbeddedAssetPaths(entry.CurrentBytes))
+                yield return value;
+        }
+    }
+
+    /// <summary>Texture paths from an MDX TEXS chunk. Each entry is replaceableId, char[260] path,
+    /// flags. A replaceable entry has an empty path and is skipped.</summary>
+    private static IEnumerable<string> MdxTexturePaths(byte[] data)
+    {
+        if (data.Length < 8 || data[0] != (byte)'M' || data[1] != (byte)'D'
+            || data[2] != (byte)'L' || data[3] != (byte)'X')
+            yield break;
+        int offset = 4;
+        while (offset + 8 <= data.Length)
+        {
+            int size = BinaryPrimitives.ReadInt32LittleEndian(data.AsSpan(offset + 4, 4));
+            if (size < 0 || offset + 8 + size > data.Length) yield break;
+            if (data[offset] == (byte)'T' && data[offset + 1] == (byte)'E'
+                && data[offset + 2] == (byte)'X' && data[offset + 3] == (byte)'S')
+            {
+                int count = size / 268;
+                for (int i = 0; i < count; i++)
+                {
+                    int entry = offset + 8 + i * 268;
+                    if (entry + 264 > data.Length) break;
+                    int end = entry + 4;
+                    while (end < entry + 264 && data[end] != 0) end++;
+                    if (end <= entry + 4) continue;
+                    yield return Encoding.ASCII.GetString(data, entry + 4, end - entry - 4);
+                }
+            }
+            offset += 8 + size;
         }
     }
 

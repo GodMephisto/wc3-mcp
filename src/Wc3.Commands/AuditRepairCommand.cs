@@ -76,6 +76,33 @@ public static class AuditRepairCommand
             edits.Add(new("ability", r.Rawcode, "areq:0", r.Inherited, "_",
                 $"inherited Requirements name {string.Join(", ", r.Unmet)}, which the map never defines"));
 
+        // Level gaps: a field stops before the declared level count and the base has no value
+        // there either, so the last level resolves to nothing. Copy the nearest lower level's
+        // value into each gap, which is what the Object Editor does when a level is added.
+        var gapScan = AuditCommand.Execute(doc, gameDirOverride, new[] { "level-gap" });
+        foreach (var issue in gapScan.Issues.Where(i => i.Check == "level-gap"))
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(issue.Message,
+                @"field (\w+) has values at levels \[([0-9,]+)\][^\[]*level\(s\) \[([0-9,]+)\]");
+            if (!m.Success) continue;
+            string code = m.Groups[1].Value;
+            var valid = m.Groups[2].Value.Split(',').Select(int.Parse).OrderBy(x => x).ToList();
+            var gaps = m.Groups[3].Value.Split(',').Select(int.Parse).ToList();
+            if (!entries.TryGetValue(ObjectKind.Ability, out var byCode)
+                || !byCode.TryGetValue(issue.Rawcode, out var ability)) continue;
+            foreach (int level in gaps)
+            {
+                int below = valid.Where(v => v < level).DefaultIfEmpty(0).Max();
+                if (below == 0) continue;
+                string key = $"{code}:{below}";
+                var mod = ability.Mods.FirstOrDefault(x => x.Key == key);
+                if (mod.Value is null) continue;
+                if (ability.Mods.Any(x => x.Key == $"{code}:{level}")) continue;
+                edits.Add(new("ability", issue.Rawcode, $"{code}:{level}", "", mod.Value,
+                    $"level {level} of {code} resolved to nothing, copied level {below}'s value"));
+            }
+        }
+
         if (apply)
             foreach (var e in edits)
             {

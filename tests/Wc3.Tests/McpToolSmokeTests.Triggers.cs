@@ -193,4 +193,15 @@ public sealed class McpSmokeTriggersTests : McpSmokeBase
             Args(("map", map), ("out_path", NewOut("code")), ("id", id), ("code", "call DoNothing()")));
         Assert.Contains("war3map.wct", refusal);
     }
+
+    [Fact, Covers("trigger_sync_bodies")]
+    public async Task Sync_bodies_reports_a_map_whose_two_halves_are_missing()
+    {
+        // The recovered map holds a war3map.wtg but no war3map.wct, so the reconcile names the
+        // missing half and writes nothing. The byte-level reconcile is covered by Wct_reconcile.
+        var (map, _, _) = await TriggerMap();
+        var refusal = await CallError("trigger_sync_bodies",
+            Args(("map", map), ("out_path", NewOut("sync"))));
+        Assert.Contains("war3map.", refusal);
+    }
 }

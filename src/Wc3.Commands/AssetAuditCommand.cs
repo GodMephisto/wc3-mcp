@@ -110,6 +110,18 @@ public static class AssetAuditCommand
     private static bool TryTextureSize(MapFileEntry entry, out int width, out int height)
     {
         width = height = 0;
+        var bytes = entry.CurrentBytes;
+        // Some maps ship PNG data under a .blp name. The engine decodes it, the BLP decoder
+        // cannot, and reporting "unknown" for a valid texture is the false signal. Read the
+        // IHDR width and height straight out of the PNG signature instead.
+        if (bytes.Length >= 24
+            && bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47
+            && bytes[12] == 0x49 && bytes[13] == 0x48 && bytes[14] == 0x44 && bytes[15] == 0x52)
+        {
+            width = (bytes[16] << 24) | (bytes[17] << 16) | (bytes[18] << 8) | bytes[19];
+            height = (bytes[20] << 24) | (bytes[21] << 16) | (bytes[22] << 8) | bytes[23];
+            return width > 0 && height > 0;
+        }
         try
         {
             var texture = BlpDecoder.Decode(entry.CurrentBytes);

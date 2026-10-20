@@ -8,7 +8,7 @@ public sealed class McpSmokeAssetTests : McpSmokeBase
 {
     public McpSmokeAssetTests(SmokeFixture f) : base(f) { }
 
-    [Fact, Covers("asset_unused", "asset_duplicates", "asset_audit", "asset_size_report")]
+    [Fact, Covers("asset_unused", "asset_duplicates", "asset_audit", "asset_size_report", "asset_report")]
     public async Task Asset_scans_see_an_import_and_a_blank_map_has_no_duplicates()
     {
         var asset = NewOut("smoke", ".blp");
@@ -19,6 +19,13 @@ public sealed class McpSmokeAssetTests : McpSmokeBase
         var unused = await Call("asset_unused", Args(("map", map)));
         Assert.Contains(Rows(Prop(unused, "unused")),
             u => Prop(u, "path").GetString()!.EndsWith("Smoke.blp", StringComparison.OrdinalIgnoreCase));
+
+        // The report accounts for the same import, and lists it as an entry.
+        var report = await Call("asset_report", Args(("map", map), ("model_lint", false)));
+        Assert.Contains(Rows(Prop(report, "entryList")),
+            e => Prop(e, "path").GetString()!.EndsWith("Smoke.blp", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(Rows(Prop(report, "findings")),
+            f => Prop(f, "kind").GetString() == "Unreferenced");
 
         var duplicates = await Call("asset_duplicates", Args(("map", map)));
         Assert.Empty(Prop(duplicates, "groups").EnumerateArray());

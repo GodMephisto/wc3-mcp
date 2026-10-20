@@ -133,6 +133,22 @@ public sealed class McpSmokeMpqTests : McpSmokeBase
             f => Prop(f, "name").GetString() == @"war3mapImported\SmokeAdd.bin");
     }
 
+    [Fact, Covers("mpq_remove_many")]
+    public async Task Mpq_remove_many_drops_several_names_in_one_copy()
+    {
+        var a = NewOut("a", ".bin");
+        File.WriteAllBytes(a, new byte[] { 1, 2, 3 });
+        var b = NewOut("b", ".bin");
+        File.WriteAllBytes(b, new byte[] { 4, 5, 6 });
+        var addA = await Write("mpq_add", Args(("name", @"war3mapImported\SmokeA.bin"), ("from", a)));
+        var addB = await Write("mpq_add", Args(("name", @"war3mapImported\SmokeB.bin"), ("from", b)), addA);
+        var names = new[] { @"war3mapImported\SmokeA.bin", @"war3mapImported\SmokeB.bin" };
+        var removed = await Write("mpq_remove_many", Args(("names", names)), addB);
+        var files = await Call("file_list", Args(("map", removed)));
+        Assert.DoesNotContain(Rows(files), f => Prop(f, "name").GetString() == names[0]);
+        Assert.DoesNotContain(Rows(files), f => Prop(f, "name").GetString() == names[1]);
+    }
+
     [Fact, Covers("mpq_extract_all")]
     public async Task Mpq_extract_all_writes_every_entry()
     {

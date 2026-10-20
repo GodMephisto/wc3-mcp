@@ -75,9 +75,22 @@ public static class PortraitRepairCommand
     /// breaks it. Build both and look.
     /// </param>
     public static PortraitRepairResult Execute(
-        MapDocument doc, bool apply, int? stampVersion = null, bool upgradeGeometry = false)
+        MapDocument doc, bool apply, int? stampVersion = null, bool upgradeGeometry = false,
+        bool allowVersionStamp = false)
     {
         ArgumentNullException.ThrowIfNull(doc);
+
+        // The repository's own Reforged 3.0.0 investigation measured this remedy and withdrew it.
+        // docs/reforged-3.0.0-blizzard-bug-report.md records that re-stamping VERS 800 to 1800 makes
+        // the map crash on load, because every geoset and material that follows is still laid out
+        // for 800. Camera removal alone was play-tested and is safe. Keep the dangerous half opt-in
+        // so a tool call cannot ship a map that dies at the loading screen.
+        if (stampVersion is not null && !allowVersionStamp)
+            throw new InvalidOperationException(
+                "--stamp-version is refused. Re-stamping a version 800 model to 1800 was measured to "
+                + "crash the map on load (docs/reforged-3.0.0-blizzard-bug-report.md marks that remedy "
+                + "withdrawn), while camera removal alone is safe. Pass allowVersionStamp only for a "
+                + "build you are prepared to test in game.");
         var diagnostics = new List<string>();
         var models = new List<PortraitModel>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

@@ -78,4 +78,73 @@ public static class MpqRemoveCommand
         return new MpqRemoveResult(path, dest, name, found, inputEntries, outputEntries,
             dropped, rebuilt.LongLength, reopens, reopenError);
     }
+
+    /// <summary>
+    /// Removes many internal files in one rebuild, for the case that matters in practice, pruning
+    /// the imported assets a map never references. One rebuild rather than one per name is the
+    /// whole point, since each rebuild of a large map is expensive. Names that are not present are
+    /// reported rather than refused, and the copy is reopened to confirm what was dropped.
+    /// </summary>
+    public static MpqRemoveManyResult ExecuteMany(
+        string path, IReadOnlyCollection<string> names, string? outPath)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+        if (names.Count == 0)
+            throw new ArgumentException("at least one internal file name is required", nameof(names));
+        string dest = MpqStripBookkeepingCommand.ResolveOutput(path, outPath);
+        var wanted = new HashSet<string>(names, StringComparer.OrdinalIgnoreCase);
+
+        var doc = MapDocument.Load(path);
+        int inputEntries = doc.Files.Count;
+        int found = 0;
+        var entries = new List<MpqWriteEntry>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in doc.Files)
+        {
+            string? entryName = file.FileName ?? file.RecoveredFileName;
+            if (entryName is null) continue;
+            if (wanted.Contains(entryName)) { found++; continue; }
+            if (!doc.TryReadFileByName(entryName, out var bytes) || bytes.Length == 0) continue;
+            if (!seen.Add(entryName)) continue;
+            entries.Add(new MpqWriteEntry(entryName, bytes));
+        }
+
+        byte[] rebuilt = MpqArchiveWriter.Write(entries, doc.PreArchiveData, hashTableSize: null);
+        string? dir = Path.GetDirectoryName(dest);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        File.WriteAllBytes(dest, rebuilt);
+
+        bool reopens = true;
+        string? reopenError = null;
+        int outputEntries = 0;
+        int dropped = 0;
+        try
+        {
+            var reopened = MapDocument.Load(dest);
+            outputEntries = reopened.Files.Count;
+            foreach (var name in wanted)
+                if (!reopened.HasFileByName(name)) dropped++;
+        }
+        catch (Exception ex)
+        {
+            reopens = false;
+            reopenError = ex.Message;
+        }
+
+        return new MpqRemoveManyResult(path, dest, names.Count, found, dropped, inputEntries,
+            outputEntries, rebuilt.LongLength, reopens, reopenError);
+    }
 }
+
+/// <summary>How many of the requested names were removed, and whether the copy reopens.</summary>
+public sealed record MpqRemoveManyResult(
+    string Path,
+    string SavedTo,
+    int Requested,
+    int Found,
+    int Dropped,
+    int InputEntries,
+    int OutputEntries,
+    long OutputBytes,
+    bool Reopens,
+    string? ReopenError);

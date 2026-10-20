@@ -791,6 +791,22 @@ public sealed class MapDocument
 
     public byte[] SaveToBytes()
     {
+        // Diagnostic: force the in-place patch, which keeps the source archive's hash table and
+        // therefore its exact probe chains. A rebuild re-places every slot, and on a map whose
+        // rebuilt chains are long the game stalls on the loading screen while content checks pass.
+        if (Environment.GetEnvironmentVariable("WC3CTL_FORCE_SALVAGE") == "1")
+            return SalvageSaveToBytes(new InvalidOperationException("forced by WC3CTL_FORCE_SALVAGE"));
+
+        // Diagnostic: compacting save, which keeps the source hash table verbatim and rewrites
+        // only the block table, so the probe chains the game walks are unchanged.
+        if (Environment.GetEnvironmentVariable("WC3CTL_COMPACT_SAVE") == "1")
+        {
+            var dirty = _files.Where(f => f.IsDirty)
+                .Select(f => (f.BlockIndex, SerializeEntry(f)))
+                .ToList();
+            return MpqSalvagePatcher.CompactSave(_originalBytes, PreArchiveData.Length, dirty).Bytes;
+        }
+
         using var source = new MemoryStream(_originalBytes);
         using var archive = MpqArchive.Open(source, loadListFile: true);
         // Same probing as Load, kept in sync so a dirty entry on a protected map (named
@@ -1183,6 +1199,12 @@ public sealed class MapDocument
         // the source's own capacity untouched.
         if (Environment.GetEnvironmentVariable("WC3CTL_NO_HASH_GROWTH") == "1")
             return null;
+
+        // Force a specific capacity regardless of occupancy. Diagnostic, for isolating a rebuild
+        // whose inherited table is under the growth threshold yet still stalls the game.
+        if (ushort.TryParse(Environment.GetEnvironmentVariable("WC3CTL_HASH_TABLE_SIZE"), out var forced)
+            && forced > 0)
+            return forced;
 
         static bool Fits(long entries, long slots) =>
             entries * OccupancyDenominator <= slots * OccupancyNumerator;

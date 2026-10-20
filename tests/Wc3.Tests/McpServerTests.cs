@@ -17,7 +17,7 @@ public class McpServerTests
     private static readonly string[] ExpectedTools =
     {
         "asset_audit", "asset_convert_batch", "asset_duplicates", "asset_import_wire", "asset_list",
-        "asset_model_lint", "asset_replace", "asset_size_report", "asset_thumbnails", "asset_unused",
+        "asset_model_lint", "asset_replace", "asset_report", "asset_size_report", "asset_thumbnails", "asset_unused",
         "audit_ability", "audit_fidelity", "audit_hero", "audit_map",
         "audit_readiness", "audit_trend", "bench_compat", "bench_leaks", "bench_open",
         "bench_perf_gate", "bench_schema_coverage", "bundle_diff", "bundle_merge", "bundle_unit",
@@ -45,7 +45,7 @@ public class McpServerTests
         "model_lod",
         "model_optimize",
         "mpq_add", "mpq_bytes_diff", "mpq_extract_all", "mpq_listfile", "mpq_merge",
-        "mpq_name_recover", "mpq_rebuild", "mpq_remove",
+        "mpq_name_recover", "mpq_rebuild", "mpq_remove", "mpq_remove_many",
         "mpq_strip_bookkeeping", "mpq_verify", "new_map", "object_bulk_set", "object_clone", "object_deprecated",
         "object_export", "object_field_options", "object_form", "object_get", "object_import", "object_list",
         "object_migrate", "object_new", "object_noop_fields", "object_rawcode_suggest", "object_rename",
@@ -83,7 +83,7 @@ public class McpServerTests
         "trigger_diff", "trigger_export", "trigger_lint", "trigger_recover_from_script",
         "trigger_remove", "trigger_remove_eca", "trigger_rename",
         "trigger_set_code", "trigger_set_eca_enabled", "trigger_set_enabled", "trigger_set_initially_on",
-        "trigger_set_run_on_map_init", "trigger_to_script", "trigger_var_add", "trigger_var_list",
+        "trigger_set_run_on_map_init", "trigger_sync_bodies", "trigger_to_script", "trigger_var_add", "trigger_var_list",
         "trigger_var_remove", "trigger_var_set", "triggers_read", "uabi_profile",
         "unit_abilities",
         "validate", "validate_strict", "version_info",

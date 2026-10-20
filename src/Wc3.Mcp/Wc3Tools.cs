@@ -89,6 +89,26 @@ public static class Wc3Tools
         [Description("Path to a .w3x/.w3m map file.")] string map)
         => Run(() => ScriptLeaksCommand.Execute(LoadMap(map)));
 
+    [McpServerTool(Name = "script_bench", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Rank every script function by static engine cost per second, per-tick CreateUnit, "
+        + "special effects, group enumeration, condition allocation and damage, plus the leak shape "
+        + "each one carries. Headless and needs no game client, so an ability can be triaged before "
+        + "a play test. Read-only.")]
+    public static ScriptBenchResult ScriptBench(
+        [Description("Path to a .w3x/.w3m map file.")] string map)
+        => Run(() => ScriptBenchCommand.Execute(LoadMap(map)));
+
+    [McpServerTool(Name = "script_verify", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Static verifier for a map script. Reachability-aware checks for pause without a "
+        + "reachable restore, SetUnitTimeScale(0), periodic timers never stopped, group and location "
+        + "leaks, ability-strip, ability-hide, GetLocalPlayer desync, sleeps and GetTriggerUnit in a "
+        + "timer callback, and constant-exit loops. It follows direct calls and TimerStart callback "
+        + "edges, so a correct channel ability with the pause in _Start and resume in _Loop is not "
+        + "flagged. Headless, no game client. Read-only.")]
+    public static ScriptVerifyResult ScriptVerify(
+        [Description("Path to a .w3x/.w3m map file.")] string map)
+        => Run(() => ScriptVerifyCommand.Execute(LoadMap(map)));
+
     [McpServerTool(Name = "leak_list", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("The ranked static handle-leak list for a map's script plus the periodic timers and "
         + "triggers that feed it, and every hot leak target by function. Read-only, a presentation over "
@@ -340,10 +360,25 @@ public static class Wc3Tools
             ResolveGameDir(game_dir)));
 
     [McpServerTool(Name = "asset_unused", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("List the map's imported files that no object-data field value and no script string literal references, each with the size it holds. A lead to review before deleting an import, since the base game can also load a file a field does not name. Read-only.")]
+    [Description("List the map's imported files that nothing references, each with the size it holds. A file is referenced when an object-data field value, a war3mapSkin.txt or war3mapMisc.txt value, a script string literal, an imported model's own texture chunk (.mdx TEXS, .mdl Bitmap), any path embedded in an imported model's bytes (a particle emitter spawn model included), an imported .fdf or .toc interface file, or a map-format file names it. The map-format scan is essential: the w3i names the loading screen model, the w3e names every terrain tile, and the w3s names every sound, so without it a loading screen or a custom terrain tile reads as unused. A lead to review before deleting an import, since the base game can also load a file none of those name. Use mpq_remove_many to act on the list in one rebuild.")]
     public static AssetUnusedResult AssetUnused(
         [Description("Path to a .w3x/.w3m map file.")] string map)
         => Run(() => AssetUnusedCommand.Execute(LoadMap(map)));
+
+    [McpServerTool(Name = "asset_report", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("One report over every imported file in a map. Lists every entry with its size and whether anything references it, and every fault the asset checks and the model scan can find: core (empty entry), audit (oversized, non power of two texture, model without source, empty), unused (referenced nowhere), duplicates (byte-identical groups), and model lint (geoset without material, missing texture, zero duration sequence, bounding box out of range). The engine does not log what it loads and its loading screen runs before the script, so this static report is the complete answer a map gives about its own contents. Note that ModelWithoutSource fires for nearly every .mdx in a compiled map and MissingTexture may be a case-insensitive base-game path, so read those two as leads. Read-only. Pass model_lint false to skip the slow per-model scan.")]
+    public static AssetReportResult AssetReport(
+        [Description("Path to a .w3x/.w3m map file.")] string map,
+        [Description("Run the per-model structural scan, the slowest part. Default true.")] bool model_lint = true,
+        [Description("Also read War3Log.txt and fold the engine's own faults into the report, a texture it replaced with a solid colour, a model it could not create, a UI frame or frame string defined twice, and any other line it wrote as an error. Default false.")] bool log = false,
+        [Description("Path to War3Log.txt. Default Documents\\Warcraft III\\Logs\\War3Log.txt.")] string? log_path = null)
+        => Run(() =>
+        {
+            var logPath = log_path ?? (log
+                ? War3LogFaults.DefaultPath(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments))
+                : null);
+            return AssetReportCommand.Execute(LoadMap(map), map, includeModelLint: model_lint, logPath: logPath);
+        });
 
     [McpServerTool(Name = "asset_duplicates", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Group the map's imported files whose bytes are identical (by sha256) and report the space each duplicate group wastes. Zero-byte entries are excluded. Read-only.")]
@@ -437,12 +472,13 @@ public static class Wc3Tools
         [Description("Output map file path (must differ from the input map).")] string out_path,
         [Description("One or more disk files to add as imports.")] string[] files,
         [Description("Four-character rawcode of the object whose model or icon field is pointed at each imported file. Omit to import without setting a field.")] string? obj = null,
-        [Description("Object type, one of unit|item|destructable|doodad. Defaults to auto-detect from the object.")] string? kind = null)
+        [Description("Object type, one of unit|item|destructable|doodad. Defaults to auto-detect from the object.")] string? kind = null,
+        [Description("Keep each file's path relative to this directory instead of flattening to a single folder. A war3mapimported folder is normalised to war3mapImported. Use this for a sound or asset pack that must land on its original subfolders.")] string? base_dir = null)
         => Run(() =>
         {
             string full = ResolveOutPath(map, out_path);
             var doc = LoadMap(map);
-            var r = AssetImportWireCommand.Execute(doc, files, obj, kind is null ? null : ParseKind(kind));
+            var r = AssetImportWireCommand.Execute(doc, files, obj, kind is null ? null : ParseKind(kind), base_dir);
             if (!r.Ok) throw new McpException(r.Message);
             if (Path.GetDirectoryName(full) is { Length: > 0 } dir) Directory.CreateDirectory(dir);
             doc.Save(full);
@@ -507,11 +543,11 @@ public static class Wc3Tools
         });
 
     [McpServerTool(Name = "map_optimize", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
-    [Description("Shrink every imported model and texture inside a map in one pass and write a new map to out_path with only those files replaced, everything else byte for byte. Each model is decimated at ratio (the target fraction of faces to keep) and each texture is scaled to fit max_texture on its longest side, reusing the model and texture optimisers. A file whose optimised bytes are not smaller is left untouched. Reports the per-file before and after sizes, the per-kind counts, bytesSaved (the output size subtracted from the input's) and contentBytesSaved (the per-file sum, which is larger when the archive was patched in place rather than rebuilt). The input map is NEVER modified.")]
+    [Description("Shrink every imported texture inside a map in one pass and write a new map to out_path with only those files replaced, everything else byte for byte. By default models are left untouched and each texture is scaled to fit max_texture on its longest side; pass ratio below 1 to also decimate models, which is NOT safe by default because decimation is known to produce a model the game crashes on in some maps (a 3,091 model build hit an ACCESS_VIOLATION on load at ratio 0.9, while the same map with original models loaded). When decimating, load-test the result before shipping. A file whose optimised bytes are not smaller is left untouched. Reports the per-file before and after sizes, the per-kind counts, bytesSaved (the output size subtracted from the input's) and contentBytesSaved (the per-file sum, which is larger when the archive was patched in place rather than rebuilt). The input map is NEVER modified.")]
     public static MapOptimizeResult MapOptimize(
         [Description("Path to a .w3x/.w3m map file. Read-only, the edited copy is written to out_path.")] string map,
         [Description("Output map path. The input is never modified.")] string out_path,
-        [Description("Target fraction of a model's faces to keep, between 0 and 1. Default 0.5.")] float ratio = 0.5f,
+        [Description("Target fraction of a model's faces to keep, between 0 and 1. Default 1.0, which leaves every model byte for byte and shrinks only textures. A value below 1 decimates models, which needs a load test because it can produce a model the game crashes on.")] float ratio = 1.0f,
         [Description("Maximum texture side in pixels. A texture larger than this on either side is scaled down. Default 256.")] int max_texture = 256)
         => Run(() =>
         {
@@ -628,7 +664,7 @@ public static class Wc3Tools
         => Run(() => ScriptCommand.References(LoadMap(map), name));
 
     [McpServerTool(Name = "script_check", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("Check the map script for errors that stop it loading, war3map.j or war3map.lua. Lua is checked against Lua 5.3 exactly as luac 5.3.6 would, with its line and message, JASS by the built-in JASS checks. A script that fails here cannot run, and the game gives no reason, it just shows no slots.")]
+    [Description("Check the map script for errors that stop it loading, war3map.j or war3map.lua. Lua is checked against Lua 5.3 exactly as luac 5.3.6 would, with its line and message, JASS by the built-in JASS checks. A script that fails here cannot run, and the game gives no reason, it just shows no slots. A Lua script that carries the Wurst package runtime is reported as a warning, because a JASS-to-Lua conversion of a Wurst map does not preserve package initialization and a spell can then fail in game with \"Could not initialize package\".")]
     public static ScriptCheckResult ScriptCheck(
         [Description("Path to a .w3x/.w3m map file or map folder.")] string map)
         => Run(() => ScriptCommand.Check(LoadMap(map)));
@@ -649,17 +685,19 @@ public static class Wc3Tools
         });
 
     [McpServerTool(Name = "script_to_lua", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
-    [Description("Convert a JASS map to a Lua map and save it to out_path. The script becomes war3map.lua, which keeps the JASS rules Lua lacks (32 bit integer wrap, integer division toward zero, division by zero gives zero, a null string concatenates as empty, unset array slots read their type default), and the w3i script language is set to Lua so the game runs it. war3map.j is left as a one line stub. Warnings name untyped calls, and custom text triggers the World Editor would regenerate as JASS. Lua maps are refused. The input map is NEVER modified. Pass strict_reals to also round real arithmetic back to the 32 bit float the JASS runtime holds, since Lua numbers are 64 bit doubles and a converted real expression otherwise drifts.")]
+    [Description("Convert a JASS map to a Lua map and save it to out_path. The script becomes war3map.lua, which keeps the JASS rules Lua lacks (32 bit integer wrap, integer division toward zero, division by zero gives zero, a null string concatenates as empty, unset array slots read their type default), and the w3i script language is set to Lua so the game runs it. war3map.j is left as a one line stub. Warnings name untyped calls, and custom text triggers the World Editor would regenerate as JASS. Lua maps are refused. The input map is NEVER modified. Pass strict_reals to also round real arithmetic back to the 32 bit float the JASS runtime holds, since Lua numbers are 64 bit doubles and a converted real expression otherwise drifts. A script generated by WurstScript is refused because its package runtime does not survive the conversion and the map then fails in game with \"Could not initialize package\" when a spell runs; allow_wurst overrides that refusal.")]
     public static JassToLuaSummary ScriptToLua(
         [Description("Path to a .w3x/.w3m map file or map folder.")] string map,
         [Description("Where to save the converted map.")] string out_path,
         [Description("Round real (floating point) arithmetic to the 32 bit float JASS uses, so a converted expression does not drift from the original. Off by default, which reproduces the upstream converter byte for byte.")] bool strict_reals = false,
-        [Description("Rewrite a hashtable that is local to one function and used only through the hashtable natives into a plain Lua table, which is what Lua should use. A hashtable passed to another function or a native stays a real hashtable, since a native still has to receive one. Off by default.")] bool hashtables = false)
+        [Description("Rewrite a hashtable that is local to one function and used only through the hashtable natives into a plain Lua table, which is what Lua should use. A hashtable passed to another function or a native stays a real hashtable, since a native still has to receive one. Off by default.")] bool hashtables = false,
+        [Description("Convert even when the script was generated by WurstScript. Wurst's package runtime does not survive the conversion, and the map fails in game with \"Could not initialize package\" when a spell runs. Off by default. Wurst compiles to Lua directly, so rebuild the Wurst project with its own Lua target instead.")] bool allow_wurst = false)
         => Run(() =>
         {
             var full = ResolveOutPath(map, out_path);
             var doc = LoadMap(map);
-            var r = JassToLuaCommand.Convert(doc, strictReals: strict_reals, hashtables: hashtables);
+            var r = JassToLuaCommand.Convert(doc, strictReals: strict_reals, hashtables: hashtables,
+                allowWurst: allow_wurst);
             doc.Save(full);
             return r;
         });
@@ -1858,6 +1896,14 @@ public static class Wc3Tools
         [Description("Output map path. The input map is never overwritten.")] string? out_path)
         => Run(() => MpqRemoveCommand.Execute(RequireMapPath(map), name, ResolveOutPath(map, out_path)));
 
+    [McpServerTool(Name = "mpq_remove_many", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
+    [Description("Remove many internal files in one rebuild and report how many were dropped. Writes a copy, the input map is never modified in place. The one-rebuild form of mpq_remove, for pruning the files asset_unused reports as unreferenced.")]
+    public static MpqRemoveManyResult MpqRemoveMany(
+        [Description("Path to a .w3x/.w3m map file.")] string map,
+        [Description("Internal archive paths to remove, for example one asset_unused path per element.")] string[] names,
+        [Description("Output map path. The input map is never overwritten.")] string out_path)
+        => Run(() => MpqRemoveCommand.ExecuteMany(RequireMapPath(map), names, ResolveOutPath(map, out_path)));
+
     [McpServerTool(Name = "mpq_extract_all", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
     [Description("Extract every entry of a map archive to a directory, including unnamed protected "
         + "blocks, through the same path-safety rule 'extract' uses. Read-only over the map. "
@@ -2444,6 +2490,29 @@ public static class Wc3Tools
                 : r.Message);
         }));
 
+    [McpServerTool(Name = "repair_portraits", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Remove the pre-900 camera chunk from every at-risk model so the portrait pane renders under 3.0.0 and later, and save the repaired map to out_path. Camera removal only. The version re-stamp is refused because it was measured to crash the map on load. The input map is NEVER modified in place.")]
+    public static EditToolResult RepairPortraits(
+        [Description("Path to the source .w3x/.w3m map file. Read-only, the repaired copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map).")] string out_path)
+        => Run(() => SaveEdit(map, out_path, doc =>
+        {
+            var r = PortraitRepairCommand.Execute(doc, apply: true);
+            return (r.ModelsRepaired > 0 || r.ModelsAtRisk == 0,
+                $"{r.ModelsRepaired} of {r.ModelsAtRisk} at-risk model(s) repaired.");
+        }));
+
+    [McpServerTool(Name = "repair_audit_errors", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Repair the object-data defects audit reports. Fills ability level gaps (a field with no value at a declared level, copied from the nearest valid level), clears dangling references and impossible requirements, and saves to out_path. The input map is NEVER modified in place.")]
+    public static EditToolResult RepairAuditErrors(
+        [Description("Path to the source .w3x/.w3m map file. Read-only, the repaired copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map).")] string out_path)
+        => Run(() => SaveEdit(map, out_path, doc =>
+        {
+            var r = AuditRepairCommand.Execute(doc, apply: true);
+            return (r.Ok, r.Message);
+        }));
+
     [McpServerTool(Name = "terrain_fill", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
     [Description("Apply a terrain tool over an inclusive RECTANGLE of corners and save the edited map to out_path, instead of one brush dab at a time. Corners may be given in any order and a rectangle that runs off the grid is clipped rather than refused. tool is one of Raise, Lower, SetHeight, Flatten, Paint, CliffRaise, CliffLower, CliffSet, Ramp, RampOff, Water, WaterRemove, Blight, BlightOff. value means height for Raise/Lower/SetHeight/Water, a ground tile index for Paint (see terrain_info for the map's tile list), and a step count for the Cliff tools; it is ignored by Flatten, Ramp, RampOff, WaterRemove, Blight and BlightOff. The input map is NEVER modified in place.")]
     public static EditToolResult TerrainFill(
@@ -2529,6 +2598,19 @@ public static class Wc3Tools
             return (r.Ok, r.Message);
         }));
 
+    [McpServerTool(Name = "trigger_move", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Move a trigger item under a parent category in the GUI trigger tree and save the edited map to out_path. This is how you organise the tree into folders. Only ParentId changes, so document order and every war3map.wct code body stay put, and a category cannot be moved inside its own subtree. The input map is NEVER modified in place.")]
+    public static EditToolResult TriggerMove(
+        [Description("Path to the source .w3x/.w3m map file. Read-only, the edited copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map). To make SEVERAL edits, pass this file as the next call's map argument.")] string out_path,
+        [Description("Trigger item id, from triggers_read.")] int id,
+        [Description("Parent category id, or -1 for the root.")] int parent)
+        => Run(() => SaveEdit(map, out_path, doc =>
+        {
+            var r = TriggerCommand.Move(doc, id, parent);
+            return (r.Ok, r.Message);
+        }));
+
     [McpServerTool(Name = "trigger_set_enabled", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Enable or disable a GUI trigger and save the edited map to out_path. A disabled trigger is not compiled into the map script at all, so this is how you take one out of play without deleting it. The input map is NEVER modified in place.")]
     public static EditToolResult TriggerSetEnabled(
@@ -2565,6 +2647,17 @@ public static class Wc3Tools
         => Run(() => SaveEdit(map, out_path, doc =>
         {
             var r = TriggerCommand.SetRunOnMapInit(doc, id, on);
+            return (r.Ok, r.Message);
+        }));
+
+    [McpServerTool(Name = "trigger_sync_bodies", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Reconcile war3map.wct with the war3map.wtg trigger tree and save the edited map to out_path. A map can arrive with more code bodies than the tree accounts for (a protected or ported build keeps orphaned bodies), or fewer, and the World Editor then cannot trust which body belongs to which trigger and refuses some trigger removals. This drops the orphaned tail or appends empty slots, copying every surviving byte verbatim. It is the repair for the trigger-bodies lint warning. The input map is NEVER modified in place.")]
+    public static EditToolResult TriggerSyncBodies(
+        [Description("Path to the source .w3x/.w3m map file. Read-only, the edited copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map).")] string out_path)
+        => Run(() => SaveEdit(map, out_path, doc =>
+        {
+            var r = TriggerCommand.SyncBodies(doc);
             return (r.Ok, r.Message);
         }));
 

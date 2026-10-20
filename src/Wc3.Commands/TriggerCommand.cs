@@ -23,6 +23,12 @@ public sealed record TriggerVariableFields(
 /// after the op (-1 when the op failed).</summary>
 public sealed record TriggerOpResult(bool Ok, string Message, int Count = -1);
 
+/// <summary>What reconciling war3map.wct with the trigger tree changed. <paramref name="Delta"/> is
+/// negative when orphaned slots were dropped and positive when empty slots were appended.</summary>
+public sealed record TriggerBodiesSyncResult(
+    bool Ok, string Message, int ExpectedSlots, int ActualSlots, int Delta,
+    long BytesBefore, long BytesAfter);
+
 /// <summary>
 /// Read/write access to the GUI-trigger file (war3map.wtg). The write side mutates the
 /// already-parsed War3Net <see cref="MapTriggers"/> model and re-serializes the WHOLE file
@@ -234,6 +240,45 @@ public static class TriggerCommand
             triggers.TriggerItems.Count);
     }
 
+    /// <summary>
+    /// Reconcile war3map.wct with war3map.wtg. A map can arrive with more code bodies than the
+    /// trigger tree accounts for (a protected or ported build keeps the bodies of triggers it no
+    /// longer lists), and the World Editor then cannot trust which body belongs to which trigger.
+    /// This trims the orphaned tail, or appends empty slots when the file is short, copying every
+    /// surviving byte verbatim. It is the repair for the lint check <c>trigger-bodies</c>.
+    /// </summary>
+    public static TriggerBodiesSyncResult SyncBodies(MapDocument doc)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        if (doc.GetFile(FileName)?.Model is not MapTriggers wtg)
+            throw new InvalidOperationException("war3map.wtg is missing or could not be parsed.");
+        if (doc.GetFile(CustomTextFileName) is not { } entry)
+            throw new InvalidOperationException("war3map.wct is missing, so there are no bodies to sync.");
+
+        int expected = WctPairing.ExpectedSlotCount(wtg);
+        byte[] bytes = entry.OverrideBytes ?? entry.RawBytes;
+        long before = bytes.Length;
+        if (!WctPairing.TryReconcileSlotCount(bytes, expected, out var updated, out int old))
+        {
+            bool walked = old >= 0;
+            return new(false,
+                walked
+                    ? $"war3map.wct already holds {expected} slot(s), matching the trigger tree."
+                    : "war3map.wct could not be walked, so nothing was changed.",
+                expected, old, 0, before, before);
+        }
+
+        var written = doc.AddOrReplaceRawFile(CustomTextFileName, updated);
+        if (TryReparseWct(updated, out var model)) written.Model = model;
+        int delta = expected - old;
+        string what = delta < 0
+            ? $"dropped {-delta} orphaned slot(s)"
+            : $"appended {delta} empty slot(s)";
+        return new(true,
+            $"war3map.wct now holds {expected} slot(s), {what}; {before} to {updated.Length} byte(s).",
+            expected, old, delta, before, updated.Length);
+    }
+
     /// <summary>Re-parses a war3map.wct payload with the same parser the loader uses, so the model
     /// kept in memory matches the bytes on disk. Returns false when the payload will not parse, in
     /// which case the raw bytes still win on save.</summary>
@@ -279,6 +324,49 @@ public static class TriggerCommand
 
         item.Name = newName;
         return Persist(doc, triggers, $"Renamed trigger item {id} to '{newName}'.");
+    }
+
+    /// <summary>
+    /// Moves a trigger item under a different parent category. This only changes ParentId, which
+    /// the World Editor uses to group the tree, so it does not touch document order and therefore
+    /// cannot shift a war3map.wct code body onto the wrong trigger. A category cannot be moved
+    /// under itself or one of its own descendants, which would detach that subtree from the root.
+    /// </summary>
+    public static TriggerOpResult Move(MapDocument doc, int id, int newParentId)
+    {
+        var triggers = GetTriggers(doc);
+        var item = triggers.TriggerItems.FirstOrDefault(i => i.Id == id);
+        if (item is null)
+            return new TriggerOpResult(false, $"No trigger item with id {id}.");
+        if (triggers.TriggerItems.Count(i => i.Id == id) > 1)
+            return new TriggerOpResult(false,
+                $"{triggers.TriggerItems.Count(i => i.Id == id)} trigger items share id {id}.");
+
+        if (newParentId != -1)
+        {
+            var parent = triggers.TriggerItems.FirstOrDefault(i => i.Id == newParentId);
+            if (parent is null)
+                return new TriggerOpResult(false, $"No trigger item with id {newParentId} to parent to.");
+            if (parent is not TriggerCategoryDefinition)
+                return new TriggerOpResult(false, $"Item {newParentId} is not a category.");
+
+            // Refuse a cycle: walk up from the new parent, and if we meet the item, the move
+            // would place the item inside itself and orphan its whole subtree.
+            var byId = triggers.TriggerItems.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.First());
+            int cursor = newParentId;
+            var seen = new HashSet<int>();
+            while (cursor != -1 && seen.Add(cursor) && byId.TryGetValue(cursor, out var node))
+            {
+                if (node.Id == id)
+                    return new TriggerOpResult(false,
+                        $"Cannot move {id} under {newParentId}, that is inside the item's own subtree.");
+                cursor = node.ParentId;
+            }
+        }
+
+        item.ParentId = newParentId;
+        return Persist(doc, triggers,
+            $"Moved trigger item {id} under {(newParentId == -1 ? "the root" : newParentId.ToString())}.");
     }
 
     /// <summary>Enables/disables the GUI or custom-text trigger with the given id. Rejects

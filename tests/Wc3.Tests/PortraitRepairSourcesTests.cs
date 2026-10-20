@@ -92,7 +92,7 @@ public class PortraitRepairSourcesTests
         // war3map.w3u, so the object-data-only scan returned 0.
         var doc = MapWithSkin(@"war3mapImported\hero.mdx", Model(800, camera: true));
 
-        var r = PortraitRepairCommand.Execute(doc, apply: false, stampVersion: 1800);
+        var r = PortraitRepairCommand.Execute(doc, apply: false, stampVersion: 1800, allowVersionStamp: true);
 
         Assert.Equal(1, r.ModelsResolved);
         Assert.Equal(1, r.ModelsAtRisk);
@@ -132,7 +132,7 @@ public class PortraitRepairSourcesTests
         // restamping it is not a portrait fix and only risks the geometry layout question.
         var doc = MapWithSkin(@"war3mapImported\plain.mdx", Model(800, camera: false));
 
-        var r = PortraitRepairCommand.Execute(doc, apply: false, stampVersion: 1800);
+        var r = PortraitRepairCommand.Execute(doc, apply: false, stampVersion: 1800, allowVersionStamp: true);
 
         Assert.Equal(1, r.ModelsResolved);
         Assert.Equal(0, r.ModelsAtRisk);
@@ -151,7 +151,7 @@ public class PortraitRepairSourcesTests
             [@"war3mapImported\hero.mdx"] = Model(800, camera: true),
         }));
 
-        var r = PortraitRepairCommand.Execute(doc, apply: false, stampVersion: 1800);
+        var r = PortraitRepairCommand.Execute(doc, apply: false, stampVersion: 1800, allowVersionStamp: true);
 
         Assert.Equal(1, r.ModelsResolved);
         Assert.Equal(1, r.ModelsAtRisk);
@@ -162,7 +162,7 @@ public class PortraitRepairSourcesTests
     {
         var doc = MapWithSkin(@"war3mapImported\hero.mdx", Model(800, camera: true));
 
-        var r = PortraitRepairCommand.Execute(doc, apply: true, stampVersion: 1800);
+        var r = PortraitRepairCommand.Execute(doc, apply: true, stampVersion: 1800, allowVersionStamp: true);
         Assert.Equal(1, r.ModelsRepaired);
 
         var reloaded = MapDocument.Load(doc.SaveToBytes());

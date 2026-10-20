@@ -121,12 +121,24 @@ public static class MapOptimizeCommand
         var diagnostics = new List<string>();
         int models = 0, textures = 0;
 
+        bool decimate = ratio < 1.0f;
+        if (decimate)
+            diagnostics.Add(
+                $"Models were decimated at ratio {ratio:0.###}. Decimation is known to produce a model "
+                + "the game crashes on in some maps (measured on Anime Choice Arena V0.31D, where a "
+                + "decimated build hit an ACCESS_VIOLATION on load while the same map with original "
+                + "models loaded). Prefer --ratio 1 for textures only, and load-test the result.");
+
         foreach (var entry in AssetReferences.ImportedEntries(doc))
         {
             var name = entry.FileName!;
             var ext = Path.GetExtension(name);
             if (ModelExtensions.Contains(ext))
             {
+                // ratio 1 is the textures-only mode: a model is never rewritten, so no decimation
+                // and no structural change can reach the game. Decimation is opt-in by naming a
+                // ratio below 1.
+                if (!decimate) continue;
                 if (OptimizeModel(doc, entry, name, ratio, diagnostics) is { } changed)
                 {
                     files.Add(changed);

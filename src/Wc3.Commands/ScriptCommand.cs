@@ -37,9 +37,21 @@ public static class ScriptCommand
         if (IsLua(file))
         {
             var e = Lua.LuaParser.Check(source);
-            var issues = e is null
-                ? Array.Empty<ScriptIssue>()
-                : new[] { new ScriptIssue(DiagnosticSeverity.Error, e.Line, e.Detail) };
+            var issues = new List<ScriptIssue>();
+            if (e is not null) issues.Add(new ScriptIssue(DiagnosticSeverity.Error, e.Line, e.Detail));
+
+            // A Lua map that carries the Wurst package runtime is almost always a JASS-to-Lua
+            // conversion of a Wurst map, which does not preserve package initialization. The script
+            // parses, so this is a warning rather than an error, but a spell can fail in play with
+            // "Could not initialize package". Detecting it here is the second guard after the
+            // to-lua refusal, for a map already converted or converted with the override.
+            if (WurstScriptDetector.Detect(source) is { } wurstMarker)
+                issues.Add(new ScriptIssue(DiagnosticSeverity.Warning, 0,
+                    $"This Lua script carries the Wurst package runtime (found '{wurstMarker}'). A "
+                    + "JASS-to-Lua conversion of a Wurst map does not preserve package initialization, "
+                    + "and a spell can fail in game with \"Could not initialize package\". Rebuild the "
+                    + "Wurst project with its own Lua target instead."));
+
             return new ScriptCheckResult(file, "lua", e is null, issues);
         }
         var jass = JassScriptCheck.Check(source).Select(i => new ScriptIssue(i.Severity, i.Line, i.Message)).ToList();

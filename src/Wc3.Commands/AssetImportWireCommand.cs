@@ -55,7 +55,8 @@ public static class AssetImportWireCommand
         MapDocument doc,
         IReadOnlyList<string> files,
         string? objectRawcode = null,
-        ObjectKind? kind = null)
+        ObjectKind? kind = null,
+        string? baseDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(doc);
         ArgumentNullException.ThrowIfNull(files);
@@ -76,7 +77,9 @@ public static class AssetImportWireCommand
                 diagnostics.Add($"'{file}' does not exist, skipped");
                 continue;
             }
-            var internalPath = ImportsCommand.DefaultImportPrefix + Path.GetFileName(file);
+            var internalPath = baseDirectory is { Length: > 0 }
+                ? ImportPathFor(baseDirectory, file)
+                : ImportsCommand.DefaultImportPrefix + Path.GetFileName(file);
             FileEditCommand.AddOrReplace(doc, internalPath, File.ReadAllBytes(file));
             imported.Add(internalPath);
             pairs.Add((file, internalPath));
@@ -93,6 +96,20 @@ public static class AssetImportWireCommand
         var message = $"imported {imported.Count} file(s)"
             + (fieldsSet.Count > 0 ? $", set {fieldsSet.Count} field(s)" : "");
         return new(true, message, imported, fieldsSet, diagnostics);
+    }
+
+    /// <summary>Internal path that keeps the file's path under <paramref name="baseDirectory"/>,
+    /// so a sound pack imported from <c>Content\Sound\x.mp3</c> lands at <c>Sound\x.mp3</c>
+    /// instead of flattening to <c>war3mapImported\x.mp3</c>. The engine's
+    /// <c>war3mapimported</c> folder is normalised to the canonical <c>war3mapImported</c>
+    /// spelling.</summary>
+    private static string ImportPathFor(string baseDirectory, string file)
+    {
+        var relative = Path.GetRelativePath(baseDirectory, file).Replace('/', '\\');
+        const string oldPrefix = "war3mapimported\\";
+        if (relative.StartsWith(oldPrefix, StringComparison.OrdinalIgnoreCase))
+            return ImportsCommand.DefaultImportPrefix + relative[oldPrefix.Length..];
+        return relative;
     }
 
     /// <summary>Registers every new path in war3map.imp, creating the manifest when the map has

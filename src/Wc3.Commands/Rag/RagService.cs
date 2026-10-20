@@ -37,8 +37,8 @@ public static class RagPaths
     public const string ModelSha256 = "828e1496d7fabb79cfa4dcd84fa38625c0d3d21da474a00f08db0f559940cf35";
     public const string VocabSha256 = "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3";
 
-    public const string DatasetUrl = "https://github.com/GodMephisto/wc3-mcp/releases/download/dataset-v1/wc3-corpus.tgz";
-    public const string DatasetSha256 = "32bf2562c3133f704a00208c60596e0450591c4be530d2db699f938a3ed5da16";
+    public const string DatasetUrl = "https://github.com/GodMephisto/wc3-mcp/releases/download/dataset-v2/wc3-corpus.tgz";
+    public const string DatasetSha256 = "bc1a4a234459a108f196574a4d06c2ac39b05066eb3b3c87fee6d08c48880d09";
 }
 
 /// <summary>

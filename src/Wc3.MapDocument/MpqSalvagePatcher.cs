@@ -142,13 +142,30 @@ internal static class MpqSalvagePatcher
             }
         }
 
-        // Payloads land after the archive's current end. Offsets in a block row are 32-bit
-        // and relative to the header, so the growth has a hard ceiling worth checking
+        // A replacement that fits in its original slot overwrites in place. That keeps the
+        // archive's offsets, and therefore the offset-derived encryption keys of every entry
+        // that is not being replaced (notably the encrypted (listfile) and (attributes)). Only
+        // a payload that outgrew its slot is appended.
+        var inPlace = new List<(int BlockIndex, uint Offset, byte[] Payload)>();
+        var appended = new List<(int BlockIndex, byte[] Payload)>();
+        foreach (var (blockIndex, payload) in replacements)
+        {
+            var row = blockTable.AsSpan(blockIndex * TableRowSize, TableRowSize);
+            uint origOffset = BinaryPrimitives.ReadUInt32LittleEndian(row[..4]);
+            uint origStored = BinaryPrimitives.ReadUInt32LittleEndian(row[4..8]);
+            if (payload.Length <= origStored)
+                inPlace.Add((blockIndex, origOffset, payload));
+            else
+                appended.Add((blockIndex, payload));
+        }
+
+        // Appended payloads land after the archive's current end. Offsets in a block row are
+        // 32-bit and relative to the header, so the growth has a hard ceiling worth checking
         // rather than letting a wrapped offset corrupt the map quietly.
         long appendAt = originalBytes.Length;
-        long appended = replacements.Sum(r => (long)r.Payload.Length)
-                      + resolvedAdditions.Sum(a => (long)a.Payload.Length);
-        long lastRelative = appendAt + appended - headerOffset;
+        long appendedBytes = appended.Sum(r => (long)r.Payload.Length)
+                           + resolvedAdditions.Sum(a => (long)a.Payload.Length);
+        long lastRelative = appendAt + appendedBytes - headerOffset;
         if (lastRelative > uint.MaxValue)
             throw new NotSupportedException(
                 "The patched payloads would push the archive past the 4 GB the MPQ format can address.");
@@ -160,8 +177,11 @@ internal static class MpqSalvagePatcher
             blockTable = grown;
         }
 
+        foreach (var (blockIndex, offset, payload) in inPlace)
+            WriteBlockRow(blockTable, blockIndex, offset, payload);
+
         long cursor = appendAt;
-        foreach (var (blockIndex, payload) in replacements)
+        foreach (var (blockIndex, payload) in appended)
         {
             WriteBlockRow(blockTable, blockIndex, (uint)(cursor - headerOffset), payload);
             cursor += payload.Length;
@@ -183,8 +203,10 @@ internal static class MpqSalvagePatcher
         long tail = relocateBlockTable ? blockTable.Length : 0;
         var output = new byte[cursor + tail];
         originalBytes.CopyTo(output, 0);
+        foreach (var (_, offset, payload) in inPlace)
+            payload.CopyTo(output, headerOffset + offset);
         long copyCursor = appendAt;
-        foreach (var (_, payload) in replacements)
+        foreach (var (_, payload) in appended)
         {
             payload.CopyTo(output, copyCursor);
             copyCursor += payload.Length;
@@ -214,7 +236,126 @@ internal static class MpqSalvagePatcher
             hashTable.CopyTo(output, header.HashTableAbsolute);
         }
 
-        return new Result(output, replacements.Count, resolvedAdditions.Count, nameOnly.Count, appended + tail);
+        return new Result(output, replacements.Count, resolvedAdditions.Count, nameOnly.Count, appendedBytes + tail);
+    }
+
+    /// <summary>
+    /// Compacting save. Writes every entry's stored payload back to back in block order, copies
+    /// the source hash table verbatim so every probe chain stays exactly as the author placed it,
+    /// and rebuilds only the block table. A rebuild re-places every hash slot, and on a map whose
+    /// new chains are long the game hosts fine then stalls forever on the loading screen while
+    /// every content check passes. DevoProtect writes maps this way for the same reason
+    /// (shrink.py, <c>_write</c>). Only dirty entries change their bytes, unchanged entries keep
+    /// their original stored bytes and flags.
+    /// </summary>
+    internal static Result CompactSave(
+        byte[] originalBytes,
+        int headerOffset,
+        IReadOnlyList<(int BlockIndex, byte[] Payload)> dirty)
+    {
+        var header = ReadHeader(originalBytes, headerOffset);
+        int rows = (int)header.BlockTableSize;
+        var blockTable = new byte[rows * TableRowSize];
+        Array.Copy(originalBytes, header.BlockTableAbsolute, blockTable, 0, blockTable.Length);
+        DecryptBlock(blockTable, BlockTableKey);
+
+        var dirtyByIndex = new Dictionary<int, byte[]>(dirty.Count);
+        foreach (var (blockIndex, payload) in dirty)
+            dirtyByIndex[blockIndex] = payload;
+
+        var payloads = new byte[rows][];
+        var flags = new uint[rows];
+        var fileSizes = new uint[rows];
+        var offsets = new uint[rows];
+        // Block offsets are relative to the header, and the first payload sits just past the
+        // 32-byte header, so the running offset starts at 32, not 0.
+        uint rel = 32;
+        for (int bi = 0; bi < rows; bi++)
+        {
+            var row = blockTable.AsSpan(bi * TableRowSize, TableRowSize);
+            uint rowFlags = BinaryPrimitives.ReadUInt32LittleEndian(row[12..]);
+            uint storedSize = BinaryPrimitives.ReadUInt32LittleEndian(row[4..]);
+            uint origOffset = BinaryPrimitives.ReadUInt32LittleEndian(row[..4]);
+            uint origFileSize = BinaryPrimitives.ReadUInt32LittleEndian(row[8..]);
+
+            byte[] payload;
+            if (dirtyByIndex.TryGetValue(bi, out var replacement))
+            {
+                payload = replacement;
+                flags[bi] = FlagsExistsOnly;
+                fileSizes[bi] = (uint)replacement.Length;
+            }
+            else
+            {
+                long abs = headerOffset + (long)origOffset;
+                if (abs < 0 || abs + storedSize > originalBytes.Length)
+                    throw new InvalidDataException($"Block {bi} lies outside the file.");
+                payload = originalBytes.AsSpan((int)abs, (int)storedSize).ToArray();
+                flags[bi] = rowFlags;
+                fileSizes[bi] = origFileSize;
+            }
+
+            payloads[bi] = payload;
+            offsets[bi] = rel;
+            rel += (uint)payload.Length;
+        }
+
+        // Lay the archive out the same way _write does: prefix, header placeholder, payloads,
+        // the untouched hash table, then a fresh block table.
+        long hashSizeBytes = (long)header.HashTableSize * TableRowSize;
+        long blockSizeBytes = (long)rows * TableRowSize;
+        long total = headerOffset + 32 + rel + hashSizeBytes + blockSizeBytes;
+        if (total > uint.MaxValue)
+            throw new NotSupportedException(
+                "The compacted archive would exceed the 4 GB the MPQ format can address.");
+        if (total > int.MaxValue)
+            throw new NotSupportedException("The compacted archive is too large for a managed byte array.");
+
+        var output = new byte[(int)total];
+        Array.Copy(originalBytes, 0, output, 0, headerOffset);
+
+        long cursor = headerOffset + 32;
+        for (int bi = 0; bi < rows; bi++)
+        {
+            payloads[bi].CopyTo(output, (int)cursor);
+            cursor += payloads[bi].Length;
+        }
+
+        long hashAbs = cursor;
+        Array.Copy(originalBytes, header.HashTableAbsolute, output, hashAbs, hashSizeBytes);
+        cursor += hashSizeBytes;
+        long blockAbs = cursor;
+
+        for (int bi = 0; bi < rows; bi++)
+        {
+            var row = blockTable.AsSpan(bi * TableRowSize, TableRowSize);
+            BinaryPrimitives.WriteUInt32LittleEndian(row[..4], offsets[bi]);
+            BinaryPrimitives.WriteUInt32LittleEndian(row[4..8], (uint)payloads[bi].Length);
+            BinaryPrimitives.WriteUInt32LittleEndian(row[8..12], fileSizes[bi]);
+            BinaryPrimitives.WriteUInt32LittleEndian(row[12..16], flags[bi]);
+        }
+        EncryptBlock(blockTable, BlockTableKey);
+        blockTable.CopyTo(output, blockAbs);
+
+        var hdr = output.AsSpan(headerOffset, 32);
+        BinaryPrimitives.WriteUInt32LittleEndian(hdr, 0x1A51504D);
+        BinaryPrimitives.WriteUInt32LittleEndian(hdr[4..], 32);
+        BinaryPrimitives.WriteUInt32LittleEndian(hdr[8..], (uint)(total - headerOffset));
+        BinaryPrimitives.WriteUInt16LittleEndian(hdr[12..], 0);
+        BinaryPrimitives.WriteUInt16LittleEndian(hdr[14..], SourceBlockShift(originalBytes, headerOffset));
+        BinaryPrimitives.WriteUInt32LittleEndian(hdr[16..], (uint)(hashAbs - headerOffset));
+        BinaryPrimitives.WriteUInt32LittleEndian(hdr[20..], (uint)(blockAbs - headerOffset));
+        BinaryPrimitives.WriteUInt32LittleEndian(hdr[24..], header.HashTableSize);
+        BinaryPrimitives.WriteUInt32LittleEndian(hdr[28..], (uint)rows);
+
+        return new Result(output, dirtyByIndex.Count, 0, 0, 0);
+    }
+
+    /// <summary>The source header's sector shift, or the 3 (4,096-byte sectors?) the format defaults to.</summary>
+    private static ushort SourceBlockShift(byte[] bytes, int headerOffset)
+    {
+        ushort shift = BinaryPrimitives.ReadUInt16LittleEndian(bytes.AsSpan(headerOffset + 14, 2));
+        return shift is >= 1 and <= 15 ? shift : (ushort)3;
     }
 
     /// <summary>Writes one hash-table row, the hash of a name and the block row it resolves to,

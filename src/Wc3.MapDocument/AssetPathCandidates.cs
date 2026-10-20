@@ -23,7 +23,15 @@ public static class AssetPathCandidates
     private static readonly string[] ModelExt = { ".mdx", ".mdl" };
     private static readonly string[] TextureExt = { ".blp", ".tga", ".dds" };
     private static readonly string[] SoundExt = { ".mp3", ".wav", ".flac" };
-    private static readonly string[] AllExt = ModelExt.Concat(TextureExt).Concat(SoundExt).ToArray();
+
+    // Interface and data files a map loads by a bare name with no folder in it, BlzLoadTOCFile
+    // ("tw_shop.toc") and an .fdf it names being the case that matters. Without these a shop's
+    // .toc and .fdf read as referenced nowhere, which is a false lead to delete a live UI file.
+    private static readonly string[] UiExt = { ".toc", ".fdf", ".png", ".jpg", ".jpeg", ".psd", ".bmp", ".gif" };
+    private static readonly string[] DataExt = { ".slk", ".ini", ".txt", ".w3s", ".w3u", ".w3a", ".w3t", ".w3h", ".w3b", ".w3d", ".w3q" };
+
+    private static readonly string[] AllExt = ModelExt.Concat(TextureExt).Concat(SoundExt)
+        .Concat(UiExt).Concat(DataExt).ToArray();
     private static readonly string[] IconPrefixes = { "BTN", "DISBTN", "PASBTN" };
 
     /// <summary>A token is worth probing as an asset iff it carries a known media extension
