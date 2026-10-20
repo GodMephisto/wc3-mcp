@@ -1,0 +1,76 @@
+name: Sync from wc3ctl
+
+# Fired by the wc3ctl release workflow with repository_dispatch, so a wc3ctl
+# release reaches npm without a manual mirror step. Copies the source, bumps
+# the patch version, pushes, and tags, which starts Release.
+
+on:
+  repository_dispatch:
+    types: [wc3ctl-release]
+  workflow_dispatch:
+    inputs:
+      wc3ctl_ref:
+        description: wc3ctl ref to mirror (a sha or branch)
+        required: false
+        default: master
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the mirror
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.MIRROR_DISPATCH_TOKEN }}
+
+      - name: Check out wc3ctl
+        uses: actions/checkout@v4
+        with:
+          repository: GodMephisto/wc3ctl
+          ref: ${{ github.event.client_payload.sha || inputs.wc3ctl_ref || 'master' }}
+          path: wc3ctl
+          token: ${{ secrets.MIRROR_DISPATCH_TOKEN }}
+
+      - name: Copy the source and the mirrored tests
+        run: |
+          set -euo pipefail
+          for d in Wc3.Commands Wc3.GameData Wc3.MapDocument Wc3.Mcp Wc3.Modeling Wc3.Render; do
+            rsync -a "wc3ctl/src/$d/" "src/$d/"
+          done
+          for f in McpToolSmokeTests.Analysis.cs McpServerTests.cs McpToolSmokeTests.Triggers.cs; do
+            cp "wc3ctl/tests/Wc3.Tests/$f" "tests/Wc3.Tests/$f"
+          done
+
+      - name: Bump the patch version
+        id: v
+        run: |
+          set -euo pipefail
+          cur=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -1)
+          ver="${cur%.*}.$(( ${cur##*.} + 1 ))"
+          sed -i "s|<Version>$cur</Version>|<Version>$ver</Version>|" Directory.Build.props
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "Bumped $cur to $ver"
+
+      - name: Build and test the mirror
+        run: |
+          dotnet build wc3-mcp.sln -c Release
+          dotnet test --filter "Category!=Corpus&Category!=GameData&Category!=Doctor" -c Release --no-build
+
+      - name: Commit, push and tag
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src tests Directory.Build.props
+          if git diff --cached --quiet; then
+            echo "Nothing to mirror, the source already matches"
+            exit 0
+          fi
+          git commit -m "chore(sync): mirror wc3ctl ${{ github.event.client_payload.sha || inputs.wc3ctl_ref || 'master' }}"
+          git push origin HEAD:main
+          git tag "v${{ steps.v.outputs.version }}"
+          git push origin "v${{ steps.v.outputs.version }}"
