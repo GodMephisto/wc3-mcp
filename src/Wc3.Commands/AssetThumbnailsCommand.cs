@@ -122,7 +122,7 @@ public static class AssetThumbnailsCommand
     /// "Foo.blp" in the folder. Unmatched or undecodable textures are simply absent and the
     /// renderer shades those geosets flat.
     /// </summary>
-    private static IReadOnlyDictionary<int, TextureImage> ResolveFolderTextures(string folder, Model3D model)
+    internal static IReadOnlyDictionary<int, TextureImage> ResolveFolderTextures(string folder, Model3D model)
     {
         var byBaseName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var file in Directory.EnumerateFiles(folder))

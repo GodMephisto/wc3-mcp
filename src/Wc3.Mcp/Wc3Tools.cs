@@ -485,6 +485,29 @@ public static class Wc3Tools
             return new AssetImportWireToolResult(full, r.Imported, r.FieldsSet, r.Diagnostics);
         });
 
+    [McpServerTool(Name = "model_compare", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Render two models from four angles and score how close they look, by SSIM on "
+        + "the shaded frame and silhouette intersection-over-union, per angle and as a mean and "
+        + "worst case. The gate a lossy model step has to pass. Read-only.")]
+    public static ModelCompareResult ModelCompare(
+        [Description("Path to the first .mdx or .mdl file.")] string a,
+        [Description("Path to the second .mdx or .mdl file.")] string b,
+        [Description("Render width in pixels.")] int width = 256,
+        [Description("Render height in pixels.")] int height = 256,
+        [Description("Folder to resolve textures from for both. Omit to use each model's own folder.")]
+        string? textures = null)
+        => Run(() => ModelCompareCommand.Execute(a, b, width, height, textureFolder: textures));
+
+    [McpServerTool(Name = "model_lint", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [Description("Lint one .mdx or .mdl for the structural problems the game renders wrongly or "
+        + "drops in silence: non-finite vertices, normals or UVs, zero-length normals, indices past "
+        + "the vertex array, zero-area triangles, skin bones the skeleton does not define, weight "
+        + "sets that do not sum to one, non-finite animation keys and textures no geoset references. "
+        + "Read-only.")]
+    public static ModelLintResult ModelLint(
+        [Description("Path to a .mdx or .mdl file.")] string model)
+        => Run(() => ModelLintCommand.ExecutePath(model));
+
     [McpServerTool(Name = "model_audit", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Audit a .mdx or .mdl model for the resource waste and draw-nothing problems an optimiser can remove, and report what it holds. Finds duplicate textures, geosets with no texture or no triangles, zero-area faces, unused skeleton nodes and non-finite vertices. Counts the effects an MDX carries, particle emitters, particle emitters 2, ribbons and popcorns, from the binary chunk list, and reads each particle emitter's payload to report one that references a node the model does not define or a texture outside its texture list. Read-only.")]
     public static ModelAuditResult ModelAudit(
