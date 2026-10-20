@@ -41,7 +41,7 @@ jobs:
           for d in Wc3.Commands Wc3.GameData Wc3.MapDocument Wc3.Mcp Wc3.Modeling Wc3.Render; do
             rsync -a "wc3ctl/src/$d/" "src/$d/"
           done
-          for f in McpToolSmokeTests.Analysis.cs McpServerTests.cs McpToolSmokeTests.Triggers.cs; do
+          for f in McpToolSmokeTests.Analysis.cs McpServerTests.cs McpToolSmokeTests.Triggers.cs \n                   McpToolSmokeTests.ModelAssets.cs AppearanceMetricTests.cs; do
             cp "wc3ctl/tests/Wc3.Tests/$f" "tests/Wc3.Tests/$f"
           done
 

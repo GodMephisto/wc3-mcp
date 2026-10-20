@@ -70,6 +70,26 @@ public sealed class McpSmokeModelAssetTests : McpSmokeBase
         Assert.True(Prop(r, "geosets").GetInt32() >= 1);
     }
 
+    [Fact, Covers("model_lint")]
+    public async Task Model_lint_reports_a_synthetic_model()
+    {
+        var modelFile = NewOut("lint", ".mdx");
+        File.WriteAllBytes(modelFile, SyntheticModel.TinyMdx());
+        var r = await Call("model_lint", Args(("model", modelFile)));
+        Assert.True(Prop(r, "geosets").GetInt32() >= 1);
+        Assert.NotNull(Prop(r, "findings"));
+    }
+
+    [Fact, Covers("model_compare")]
+    public async Task Model_compare_scores_a_model_against_itself()
+    {
+        var modelFile = NewOut("cmp", ".mdx");
+        File.WriteAllBytes(modelFile, SyntheticModel.TinyMdx());
+        var r = await Call("model_compare", Args(("a", modelFile), ("b", modelFile)));
+        Assert.Equal(1.0, Prop(r, "meanSsim").GetDouble(), 3);
+        Assert.Equal(1.0, Prop(r, "minSilhouetteIou").GetDouble(), 3);
+    }
+
     [Fact, Covers("model_optimize")]
     public async Task Model_optimize_writes_a_smaller_model()
     {
