@@ -146,7 +146,7 @@ public static class ModelOptimizeCommand
             indices = compacted;
         }
 
-        var dec = QemDecimator.Decimate(vertices, indices, ratio);
+        var dec = QemDecimator.Decimate(vertices, indices, ratio, ReadFirstUvSet(geoset));
         if (dec.OutputFaces >= indices.Length / 3)
         {
             vAfter += vertices.Length / 3;
@@ -190,6 +190,21 @@ public static class ModelOptimizeCommand
         for (int i = 0; i < remap.Length; i++)
             if (remap[i] >= 0) outBytes[4 + remap[i]] = seg.Payload[4 + i];
         geoset.Set(tag, outBytes);
+    }
+
+    /// <summary>The first UV set, for the seam guard in the decimator. Null when the geoset has
+    /// no UVAS or the first set is malformed, which leaves the weld on position alone as before.</summary>
+    private static float[]? ReadFirstUvSet(MdxGeoset geoset)
+    {
+        var seg = geoset.Segments.FirstOrDefault(s => s.Tag == "UVAS");
+        if (seg is null || seg.Payload.Length < 16) return null;
+        var payload = seg.Payload;
+        uint sets = BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(0, 4));
+        if (sets < 1 || payload.Length < 16) return null;
+        if (System.Text.Encoding.ASCII.GetString(payload, 4, 4) != "UVBS") return null;
+        uint n = BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(8, 4));
+        if (n == 0 || 12L + (long)n * 8 > payload.Length) return null;
+        return ReadFloats(payload, 12, 2);
     }
 
     private static void RemapUvs(MdxGeoset geoset, int[] remap, int newCount)
