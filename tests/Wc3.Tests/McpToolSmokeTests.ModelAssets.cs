@@ -82,6 +82,16 @@ public sealed class McpSmokeModelAssetTests : McpSmokeBase
         Assert.True(Prop(r, "steps").GetArrayLength() >= 1);
     }
 
+    [Fact, Covers("object_fix_model_ext")]
+    public async Task Object_fix_model_ext_writes_a_copy()
+    {
+        var outFile = NewOut("fix-ext", ".w3x");
+        var r = await Call("object_fix_model_ext",
+            Args(("map", Fixture), ("out_path", outFile)));
+        Assert.True(File.Exists(outFile));
+        Assert.NotNull(Prop(r, "referencesChanged"));
+    }
+
     [Fact, Covers("model_lint")]
     public async Task Model_lint_reports_a_synthetic_model()
     {

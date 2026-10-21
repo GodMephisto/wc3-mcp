@@ -41,6 +41,7 @@ public sealed record ModelAuditResult(
     int Faces,
     int Textures,
     int Sequences,
+    IReadOnlyList<ModelSequence> SequenceList,
     int Nodes,
     int ParticleEmitters,
     int ParticleEmitters2,
@@ -98,7 +99,8 @@ public static class ModelAuditCommand
         }
         catch (Exception ex)
         {
-            return new ModelAuditResult(name, "unknown", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, bytes.LongLength,
+            return new ModelAuditResult(name, "unknown", 0, 0, 0, 0, 0,
+                Array.Empty<ModelSequence>(), 0, 0, 0, 0, 0, bytes.LongLength,
                 Array.Empty<ModelIssue>(), new[] { $"could not parse '{name}': {ex.Message}" });
         }
 
@@ -176,7 +178,9 @@ public static class ModelAuditCommand
         return new ModelAuditResult(
             name, format,
             model.Geosets.Count, vertices, faces, model.Textures.Count,
-            model.Skeleton?.Sequences.Count ?? 0, model.Skeleton?.Nodes.Count ?? 0,
+            model.Skeleton?.Sequences.Count ?? 0,
+            model.Skeleton?.Sequences ?? (IReadOnlyList<ModelSequence>)Array.Empty<ModelSequence>(),
+            model.Skeleton?.Nodes.Count ?? 0,
             effects.ParticleEmitters, effects.ParticleEmitters2, effects.Ribbons, effects.Corns,
             bytes.LongLength, issues, Array.Empty<string>());
     }

@@ -1201,6 +1201,22 @@ public static class Wc3Tools
         [Description("Optional path to a schemas directory. When omitted, searches <AppContext.BaseDirectory>/schemas then walks up to data/schemas.")] string? schemas_dir = null)
         => Run(() => ObjectDeprecatedCommand.Execute(LoadMap(map), target, schemas_dir));
 
+    [McpServerTool(Name = "object_fix_model_ext", ReadOnly = false, Destructive = false, Idempotent = false, OpenWorld = false)]
+    [Description("Repair object-data model paths in one pass and save to out_path. A .mdl is rewritten to the .mdx that exists, a doubled war3mapImported prefix is collapsed, and any path still unresolved is redirected to redirect_missing when that file resolves. Base-game roots are left alone. The input map is NEVER modified in place.")]
+    public static ModelExtFixResult ObjectFixModelExt(
+        [Description("Path to the source .w3x/.w3m map file. Read-only, the edited copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map).")] string out_path,
+        [Description("Internal path that unresolved model references are pointed at, for example war3mapImported/dummy.mdx. Omit to leave unresolved references untouched.")] string? redirect_missing = null)
+        => Run(() =>
+        {
+            string full = ResolveOutPath(map, out_path);
+            var doc = LoadMap(map);
+            var r = ModelExtFixCommand.Execute(doc, apply: true, redirectMissing: redirect_missing);
+            if (Path.GetDirectoryName(full) is { Length: > 0 } dir) Directory.CreateDirectory(dir);
+            doc.Save(full);
+            return r;
+        });
+
     [McpServerTool(Name = "object_rawcode_suggest", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Propose free four-character rawcodes for one Object Editor kind that collide with neither the map's objects nor the base game data. Read-only. Without a game_dir the suggestions are checked against the map only.")]
     public static ObjectRawcodeSuggestResult ObjectRawcodeSuggest(

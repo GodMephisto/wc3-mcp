@@ -50,7 +50,7 @@ public class McpServerTests
         "mpq_add", "mpq_bytes_diff", "mpq_extract_all", "mpq_listfile", "mpq_merge",
         "mpq_name_recover", "mpq_rebuild", "mpq_remove", "mpq_remove_many",
         "mpq_strip_bookkeeping", "mpq_verify", "new_map", "object_bulk_set", "object_clone", "object_deprecated",
-        "object_export", "object_field_options", "object_form", "object_get", "object_import", "object_list",
+        "object_export", "object_field_options", "object_fix_model_ext", "object_form", "object_get", "object_import", "object_list",
         "object_migrate", "object_new", "object_noop_fields", "object_rawcode_suggest", "object_rename",
         "object_search", "object_set",
         "palette_doodad", "pathing_export_png", "pathing_import_png", "pathing_paint",
