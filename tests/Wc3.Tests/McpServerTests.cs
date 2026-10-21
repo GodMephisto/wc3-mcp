@@ -46,6 +46,7 @@ public class McpServerTests
         "model_lint",
         "model_lod",
         "model_optimize",
+        "model_squish",
         "mpq_add", "mpq_bytes_diff", "mpq_extract_all", "mpq_listfile", "mpq_merge",
         "mpq_name_recover", "mpq_rebuild", "mpq_remove", "mpq_remove_many",
         "mpq_strip_bookkeeping", "mpq_verify", "new_map", "object_bulk_set", "object_clone", "object_deprecated",

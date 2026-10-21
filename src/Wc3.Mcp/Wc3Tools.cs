@@ -485,6 +485,29 @@ public static class Wc3Tools
             return new AssetImportWireToolResult(full, r.Imported, r.FieldsSet, r.Diagnostics);
         });
 
+    [McpServerTool(Name = "model_squish", ReadOnly = false, Idempotent = false, OpenWorld = false)]
+    [Description("A lossy model run with a render gate. Applies the lossless key drop, then "
+        + "quadric decimation, renders the original and each candidate from four angles after "
+        + "every pass, and keeps a pass only while SSIM and silhouette stay above the floor. "
+        + "Writes a receipt per pass. Optionally shrinks the model's own textures into a side "
+        + "folder. The input is never modified.")]
+    public static ModelSquishResult ModelSquish(
+        [Description("Path to a .mdx or .mdl file.")] string model,
+        [Description("Output model path.")] string out_path,
+        [Description("Target face fraction for decimation, 0 to 1.")] float ratio = 0.5f,
+        [Description("Shrink the model's textures to this maximum side. 0 leaves them alone.")]
+        int texture_side = 0,
+        [Description("Folder for the shrunk textures. Required with texture_side.")]
+        string? texture_out = null,
+        [Description("Render gate, the minimum mean SSIM.")] double min_ssim = 0.90,
+        [Description("Render gate, the minimum silhouette overlap.")] double min_silhouette = 0.85,
+        [Description("Skip the lossless key drop.")] bool no_lossless = false,
+        [Description("Skip the decimation pass.")] bool no_decimate = false,
+        [Description("Strip effect chunks during decimation.")] bool strip_effects = false)
+        => Run(() => ModelSquishCommand.Execute(
+            model, out_path, ratio, !no_lossless, !no_decimate,
+            texture_side, texture_out, min_ssim, min_silhouette, strip_effects));
+
     [McpServerTool(Name = "model_compare", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Render two models from four angles and score how close they look, by SSIM on "
         + "the shaded frame and silhouette intersection-over-union, per angle and as a mean and "

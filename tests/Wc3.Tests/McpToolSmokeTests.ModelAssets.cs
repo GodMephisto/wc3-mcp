@@ -70,6 +70,18 @@ public sealed class McpSmokeModelAssetTests : McpSmokeBase
         Assert.True(Prop(r, "geosets").GetInt32() >= 1);
     }
 
+    [Fact, Covers("model_squish")]
+    public async Task Model_squish_writes_a_gated_copy()
+    {
+        var modelFile = NewOut("squish-in", ".mdx");
+        File.WriteAllBytes(modelFile, SyntheticModel.GridMdx(9));
+        var outFile = NewOut("squish-out", ".mdx");
+        var r = await Call("model_squish", Args(("model", modelFile), ("out_path", outFile)));
+        Assert.True(File.Exists(outFile));
+        Assert.True(Prop(r, "bytesAfter").GetInt64() > 0);
+        Assert.True(Prop(r, "steps").GetArrayLength() >= 1);
+    }
+
     [Fact, Covers("model_lint")]
     public async Task Model_lint_reports_a_synthetic_model()
     {
