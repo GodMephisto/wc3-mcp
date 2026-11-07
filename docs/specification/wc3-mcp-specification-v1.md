@@ -203,7 +203,7 @@ The public repository owns its README, installer, workflows, bundle manifest, re
 
 An ID is the group and a number, so `SAF-04` is the fourth requirement in the safety group. `SHALL` marks a requirement and `SHALL NOT` a prohibition. The Basis column names the evidence, the decision or the failure that the requirement rests on. Where a requirement is new in this revision, the basis says design decision and gives the reason.
 
-This version holds 173 requirements in 20 groups, and 38 acceptance checks that cover them. A requirement that no check covers is a sentence, not a requirement, and the traceability check in Appendix B lists the pairing.
+This version holds 174 requirements in 20 groups, and 39 acceptance checks that cover them. A requirement that no check covers is a sentence, not a requirement, and the traceability check in Appendix B lists the pairing.
 
 Numbers in this document are labelled. A number stated as measured came from a command or a file in this repository on 8 November 2026. A number stated as inferred came from reading the code and was not produced by a run. Nothing here is stated from memory.
 
@@ -219,8 +219,8 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 
 | Measure | Value |
 |---|---|
-| Tools | 270 |
-| Read-only tools | 156 |
+| Tools | 271 |
+| Read-only tools | 157 |
 | Writing tools | 114 |
 | Writing tools that declare `destructiveHint` true | 9 |
 | Writing tools that leave `destructiveHint` unset | 6 |
@@ -239,7 +239,7 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 
 The surface is computed by reflection over the `[McpServerTool]` methods on `Wc3Tools` and `Wc3Context`, so the client, the catalog resource, the annotation audit and the generated reference all read one list. That is the strongest structural property the build has today and SUR-01 keeps it.
 
-### 3.2 How the 270 tools divide
+### 3.2 How the 271 tools divide
 
 The groups below are the ones the inventory in section 6.5 uses. They follow the name prefix, which is how a client finds a family.
 
@@ -253,10 +253,10 @@ The groups below are the ones the inventory in section 6.5 uses. They follow the
 | Triggers and hero wiring | 35 |
 | Assets, models and textures | 33 |
 | Porting and bundles | 7 |
-| Repair, doctor and compatibility | 14 |
+| Repair, doctor and compatibility | 15 |
 | Leaks and benchmarks | 27 |
 | Product, catalog and context | 13 |
-| Total | 270 |
+| Total | 271 |
 
 Thirty-three of the 55 families carry fewer than five tools each, and several carry exactly one. The largest are `trigger` at 25, `script` at 25, `object` at 18 and `terrain` at 16.
 
@@ -266,13 +266,13 @@ Every tool carries a description and an input schema. The generated `docs/mcp-re
 
 | Measure | Value |
 |---|---|
-| Total description text across the surface | 82,116 characters, about 20,000 tokens |
+| Total description text across the surface | 82,487 characters, about 20,000 tokens |
 | Median description | 260 characters |
 | Longest description | 1,126 characters, on `model_import` |
 | Shortest description | 94 characters, on `camera_remove` |
 | Descriptions under 150 characters | 33 |
 | Descriptions from 150 to 299 characters | 136 |
-| Descriptions from 300 to 599 characters | 83 |
+| Descriptions from 300 to 599 characters | 84 |
 | Descriptions from 600 to 999 characters | 16 |
 | Descriptions of 1,000 characters or more | 2 |
 | Tools with a `title` annotation | 0 |
@@ -285,7 +285,7 @@ The surface repeats a small set of parameter names across most tools. That repet
 
 | Parameter | Tools that take it | Meaning |
 |---|---|---|
-| `map` | 199 | A map file, or for a few tools a folder. This ambiguity is a defect that PAR-01 removes |
+| `map` | 200 | A map file, or for a few tools a folder. This ambiguity is a defect that PAR-01 removes |
 | `out_path` | 108 | The output file. Required where the output is a different artifact, optional with a `.edited` default for a map edit |
 | `game_dir` | 36 | The Warcraft III install, overriding `WC3_GAME_DIR` and auto-detection |
 | `schemas_dir` | 26 | The schema dataset folder, overriding the saved setting |
@@ -295,7 +295,7 @@ The surface repeats a small set of parameter names across most tools. That repet
 | `folder` | 8 | A folder of maps, used by the library, asset and batch tools |
 | `out_dir` | 4 | An output directory rather than a single output file |
 
-The parameter types are 624 strings of which 139 are optional, 96 integers of which 8 are optional, 38 numbers, 41 booleans of which 1 is optional, and 13 arrays of which 4 are optional. The largest tool has eight required parameters, `force_set_flags`. Eighteen tools require none at all, which is the five with no parameters plus thirteen whose every parameter has a default.
+The parameter types are 625 strings of which 140 are optional, 96 integers of which 8 are optional, 38 numbers, 41 booleans of which 1 is optional, and 13 arrays of which 4 are optional. The largest tool has eight required parameters, `force_set_flags`. Eighteen tools require none at all, which is the five with no parameters plus thirteen whose every parameter has a default.
 
 Three tools accept a map but do not require it, `asset_list`, `leak_ab` and `replay_summary`, each for a stated reason. No tool requires more than eight parameters, which matters because a large required set is where an agent starts guessing.
 
@@ -307,7 +307,7 @@ The two reference documents are served whole, one resource each, read from `cont
 |---|---|---|
 | `wc3://context/ui-frames` | The Big UI-Frame Tutorial by Tasyen, in full | 331,895 bytes |
 | `wc3://context/abilities` | The Warcraft III Editor Ability Insight reference, in full | 336,818 bytes |
-| `wc3://tools` | Every tool with its description and four hints, as JSON | 116,076 bytes |
+| `wc3://tools` | Every tool with its description and four hints, as JSON | 116,570 bytes |
 
 The five prompts are `inspect_map`, `port_hero`, `repair_reforged_map`, `optimize_map_size` and `audit_hero_spells`. Each returns guidance text and a numbered list of tools to call. None performs a call itself, so serving a prompt has no side effect (PRM-01).
 
@@ -448,7 +448,7 @@ The capture above was taken on 8 November 2026. One edit has landed since, the `
 
 Every other count held exactly, including the 55 families, the 33 families under five tools, the 5 tools with no parameters, the 18 tools that require none, the 9 destructive tools, the 6 with the hint unset, the 3 resources, the 5 prompts and the five committed version values.
 
-A later slice added `object_batch_set`, so the current capture in section 3.1 is 270 tools and 82,116 description characters. This table stays as the record of the first slice, and the deltas below are what one description edit did.
+Two later slices added `object_batch_set` and `audit_ability_orders`, so the current capture in section 3.1 is 271 tools and 82,487 description characters. This table stays as the record of the first slice, and the deltas below are what one description edit did.
 
 The arithmetic is consistent with a capture, and it is not proof of one. What makes it a capture is that every number can be produced again from the exe, and Appendix E states the method so a reader can repeat it. Agreement between two documents is evidence that they match each other, not that they match the build.
 
@@ -758,6 +758,7 @@ The first slice makes one write safe to chain. A second review named what that s
 | CMP-07 | The server SHALL publish a tested protocol revision matrix naming the revision, the SDK version, the fields emitted and the features an older client loses | Design decision. CMP-01 promises a tested set, and the set has one entry today | gap |
 | SEC-08 | The parsers SHALL have a named fuzz corpus and a stated residual risk, and a malformed input SHALL return a tool error rather than terminate the process | Design decision. Managed code, no `eval` and native CascLib are not a proof | gap |
 | AUT-11 | The release SHALL write a machine-readable record of the source commit, the artifact digests and the tag, and a published version SHALL resolve to that record | Design decision. The npm 0.5.19 artifact has no tag that explains it | gap |
+| SAF-16 | A read-only audit SHALL report Channel-based abilities that share a Base Order ID, and SHALL distinguish levels that disagree and empty order ids | Measured. `audit orders` finds 105 shared ids in Anime Choice Arena V0.33A and 53 in Anime WoS2 v0.34h | met |
 | DOC-07 | The PDF SHALL offer a light printing edition with larger table text, and the cover statistics SHALL be generated from the document rather than typed | Design decision. The tables are 7.2pt and the cover was wrong three times in one revision | gap |
 
 ## 5. Flows
@@ -1064,7 +1065,7 @@ The server negotiates MCP over stdio. It answers the revision the client offers 
 | Transport | stdio, newline-delimited JSON-RPC |
 | Protocol revisions | 2024-11-05 today. A later revision is added only after the compatibility test in CMP-01 passes for it |
 | Server info | `name` from `McpServerName`, `version` from the assembly |
-| Tools | 270, computed once at start |
+| Tools | 271, computed once at start |
 | Resources | 3 fixed URIs, plus section templates after RSC-02 |
 | Prompts | 5, fixed at start |
 | Instructions | A short string, at most 1,000 characters after DSC-01 |
@@ -1393,6 +1394,7 @@ A requirement is met when its check passes. The checks are grouped by subject an
 | AC-35 | SAF-14, SAF-15 | The gate is reachable from a test without the MCP layer. A multi-file export leaves either every file and a manifest, or no output |
 | AC-36 | RES-11, PKG-13, AUT-11 | A port result carries two input roles and one output role with digests. A published version resolves to a commit and an artifact digest |
 | AC-37 | PRF-08, PRF-09, RSC-07 | Each named limit refuses with a code before allocation, the memory budget is measured on the reference machine, and editing a cached input invalidates its result |
+| AC-39 | SAF-16 | Two Channel abilities with one order id are reported together, a hero scope checks only that hero's list, and levels that disagree and empty ids are reported apart |
 | AC-38 | TST-14, CMP-07, SEC-08, DOC-07 | Each write family has a semantic assertion that fails when unrelated data changes, the revision matrix passes, the fuzz corpus runs, and the print edition builds |
 
 The sabotage half of AC-32 matters as much as the pass half. A guard that has never been seen to fail is a guard nobody knows works, and the project has already had a linter silently exempt every case it was meant to catch.
@@ -1924,7 +1926,7 @@ Two rules apply to every layer. A tool never writes in place, and a tool never l
 A specification that lives only in prose drifts. This one is kept as data, and the prose is the view.
 
 - `requirements.json` holds every requirement with its group, statement, basis, gap link and status.
-- The Status column and the gap link are generated from that file by `tools/sync_requirements.py`. The command is run before a commit that changes a requirement, and it rewrites the column rather than asking a person to edit 173 rows.
+- The Status column and the gap link are generated from that file by `tools/sync_requirements.py`. The command is run before a commit that changes a requirement, and it rewrites the column rather than asking a person to edit 174 rows.
 - The legend is three values. `gap` means a row in section 10 names the requirement. `unassessed` means no gap names it, which is not the same as proven. `met` is set only when a named test passes against the live surface.
 
 ### Definition of done
@@ -1985,6 +1987,7 @@ A slice is pulled when its dependencies are met. A new gap can reorder the queue
 | 1 | 8 November 2026 | First draft. States the server as measured on this date, the capability catalogue, the automation, the requirements for the version that follows, the acceptance checks, the assumptions, the open questions, the recorded history, the defects that produced each rule, and the requirement status data |
 | 1.1 | 8 November 2026 | Verified the measured claims against the published exe, added Appendix D for external sources and Appendix E for the verification log, recorded the re-measurement deltas in section 3.13, added DOC-06, and added G-46 to G-49 for the citation, guard, description and revision gaps the audit found |
 | 1.2 | 8 November 2026 | Adds `object_batch_set` and routes `object_bulk_set` through the gate, states the nine hardening items as SAF-13 to SAF-15, RES-11, PRF-08, PRF-09, RSC-07, PKG-13, TST-14, CMP-07, SEC-08, AUT-11 and DOC-07, with gaps G-50 to G-60 and checks AC-34 to AC-38, and re-measures the surface at 270 tools |
+| 1.3 | 8 November 2026 | Adds the read-only `audit_ability_orders` tool and `audit orders` verb, measured on Anime Choice Arena V0.33A and Anime WoS2 v0.34h, SAF-16 and AC-39, section 21 for the anime-map workstreams, and re-measures the surface at 271 tools |
 
 ## 20. Hardening beyond safe chaining
 
@@ -2028,7 +2031,64 @@ A write sweep that asserts the output loads is what the recorded defects already
 
 The tables are 7.2pt because the document is dense. A light edition at a larger size, with the same content, is a build flag rather than a second source. The cover statistics are already generated from the document, which is the part that matters for truth.
 
+## 21. Building a playable anime map
+
+The two reference maps are the target, not a hypothetical. Both were read on 8 November 2026 with `wc3ctl overview`.
+
+| Map | Players | Files | Content | BLP | MDX | MP3 | Abilities | Units |
+|---|---|---|---|---|---|---|---|---|
+| Anime Choice Arena V0.33A | 10 | 11,540 | 677 MB | 8,303 | 3,091 | 2 | 2,728 | 2,522 |
+| Anime WoS2 v0.34h | 15 | 7,099 | 356 MB | 4,134 | 1,207 | 1,374 | 763 | 100 |
+
+Every workstream below is a design recommendation, not a claim about the build. One has shipped, and it is the model for the rest because it produced numbers on both maps before any new content was generated.
+
+### 21.1 Ability packages and order conflicts
+
+An anime skill is a timeline, not one damage event, and a hero is a set of packages that must not collide. The first shipped check is the collision that costs a player a key press.
+
+`audit_ability_orders`, or `wc3ctl audit orders`, groups Channel-based abilities by their Base Order ID (`Ncl6`) and reports every string used twice or more. It also reports levels that disagree and empty ids. Read-only, no game install, no script run.
+
+| Map | Channel abilities | Distinct orders | Shared orders |
+|---|---|---|---|
+| Anime Choice Arena V0.33A | 1,105 | 172 | 105 |
+| Anime WoS2 v0.34h | 389 | 97 | 53 |
+
+The largest group in the arena map is `acidbomb` on 92 abilities, then `channel` and `decouple` on 75 each. In WoS2 it is `acolyteharvest` on 92. A hero that carries two abilities from one group can fire both from one press, and which one wins is not something the map author chose.
+
+The hero scope exists but WoS2 keeps its ability lists in the script rather than in `uabi`, so the whole-map mode is the one that works there. That is itself a finding, and the next check is a reader for `UnitAddAbility` in the script.
+
+The rest of the workstream is the cast model. A timeline with gameplay and presentation tracks, interruption rules per phase, a resource commitment point, independent state per cast, damage tags, a multi-hit policy, a hitbox shape independent of the model, and a swept-segment projectile test. Each is a requirement rather than a paragraph when it is implemented.
+
+### 21.2 The hero as a package
+
+Identity, presentation, combat, abilities, forms, an animation map, attachments, progression and bot behaviour. `hero export`, `hero lint` and `hero install` already carry a portable definition. The next step is to make the package complete and auditable, so a hero cannot install with a missing model, icon, sound or attachment point.
+
+### 21.3 Content roles and asset substitution
+
+A logical role such as `hero.flame_swordsman.ultimate_impact` lets placeholder art be replaced without finding every filename in every trigger. The role is authored, the file is bound to it, and a substitution edits the binding.
+
+### 21.4 Combat semantics
+
+A damage sequence with named stages, damage tags that stop reflection chains, explicit multi-hit rules, hitboxes that are not the visual model, projectile collision along the travelled segment, separate rules for dash, blink, leap, knockback and pull, an airborne state, and status stacking that explains why a unit cannot act.
+
+### 21.5 Presentation budgets
+
+Model cost by geoset, material, texture, bone, track and emitter, then per animation. Texture memory from decoded dimensions rather than compressed bytes. VFX as a composition with a live-particle estimate and a screen-coverage warning. Audio as semantic events with concurrency limits and a warning priority above spectacle.
+
+### 21.6 Encounters and world
+
+Terrain laid out for dashes and projectiles, route checks for knockback and summons, boss phases with ordered transitions, telegraph scheduling that cannot demand two contradictory safe zones, and a complete match reset.
+
+### 21.7 Progression and UI
+
+A project manifest for player count, match length, camera and progression, scaling rules that say what adds and what multiplies, generated UI that reads the same data as the gameplay, camera changes that restore, and per-player presentation intensity that cannot change combat state.
+
+### 21.8 Verification on the real maps
+
+The order audit is the pattern. Each workstream gets a read-only check that runs against these two maps and reports numbers, before a generator is allowed to write anything. The next three are hero package completeness, ability timeline coverage, and a VFX budget per simultaneous ultimate. A generation step earns its place only after its audit can measure the maps it is meant to improve.
+
 ## Appendix A. Prior documents and decisions
+
 
 These are the documents this specification builds on. Where one of them is authoritative, this document cites it rather than restating it.
 
@@ -2086,7 +2146,7 @@ Every requirement group maps to at least one acceptance check. The pairing is li
 | IDN, identity and version | 6 | AC-01, AC-02 |
 | TRN, transport and lifecycle | 7 | AC-03, AC-04 |
 | SUR, tool surface and naming | 10 | AC-05, AC-06 |
-| SAF, safety and annotations | 15 | AC-08, AC-09, AC-10, AC-11, AC-34, AC-35 |
+| SAF, safety and annotations | 16 | AC-08, AC-09, AC-10, AC-11, AC-34, AC-35, AC-39 |
 | PAR, parameters and environment | 9 | AC-07, AC-12, AC-13 |
 | RES, results and the context budget | 11 | AC-14, AC-15, AC-16, AC-17, AC-36 |
 | ERR, errors | 7 | AC-18, AC-19 |
@@ -2126,7 +2186,7 @@ Every tool name, grouped by family. A name alone is the index, and the tool itse
 
 **Porting and bundles** (7). `bundle_diff`, `bundle_merge`, `bundle_unit`, `port_deps`, `port_into_version`, `port_preview`, `port_unit`.
 
-**Repair, doctor and compatibility** (14). `compat_explain`, `compat_matrix`, `deprotect_map`, `doctor_check`, `doctor_compare`, `doctor_fix`, `doctor_inspect`, `new_map`, `repair_audit_errors`, `repair_generated`, `repair_portraits`, `target_get`, `target_list`, `target_set`.
+**Repair, doctor and compatibility** (15). `audit_ability_orders`, `compat_explain`, `compat_matrix`, `deprotect_map`, `doctor_check`, `doctor_compare`, `doctor_fix`, `doctor_inspect`, `new_map`, `repair_audit_errors`, `repair_generated`, `repair_portraits`, `target_get`, `target_list`, `target_set`.
 
 **Leaks and benchmarks** (27). `bench_compat`, `bench_leaks`, `bench_open`, `bench_perf_gate`, `bench_schema_coverage`, `ci_all`, `ci_compat`, `ci_lint`, `ci_schema`, `ci_validate`, `leak_ab`, `leak_benchmark`, `leak_harness`, `leak_join`, `leak_list`, `leak_model`, `library_audit`, `library_compare`, `library_report`, `library_scan`, `library_validate`, `replay_diff`, `replay_find_map`, `replay_players`, `replay_stats`, `replay_summary`, `replay_timeline`.
 
@@ -2152,7 +2212,7 @@ The vault page `wiki/topics/The MCP Surface.md` was also read. It is a useful ca
 
 ## Appendix E. Verification log
 
-The numbers in section 3 were re-derived on 8 November 2026 from the published exe rather than from the document, to answer one question. The log below records the 269 tool capture. A later slice added `object_batch_set`, so the current surface is 270 and the live values in section 3.1 are the ones to use. Is this document a measurement or a composition.
+The numbers in section 3 were re-derived on 8 November 2026 from the published exe rather than from the document. The log below records the 269 tool capture. Two later slices added `object_batch_set` and `audit_ability_orders`, so the current surface is 271 and the live values in section 3.1 are the ones to use. The question the log answers is whether this document is a measurement or a composition.
 
 The method is five requests over stdio and one read of each version file. The server is started with no arguments and driven with `initialize`, the initialized notification, `tools/list`, `prompts/list` and `resources/list`. The reply is parsed and every count below is computed from it. No number was taken from an earlier draft, and the script was written before the numbers were compared, so it could disagree.
 
