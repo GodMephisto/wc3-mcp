@@ -227,9 +227,9 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 | Tools that declare `openWorldHint` true | 1, which is `rag_install` |
 | Tools that declare no annotations at all | 0 |
 | Tools with no parameters | 5, which are `mcp_audit_annotations`, `leak_benchmark`, `rag_status`, `script_conversion_notes` and `version_info` |
-| Resources | 3, which are `wc3://context/ui-frames`, `wc3://context/abilities` and `wc3://tools` |
+| Resources | 6, which are `wc3://context/ui-frames`, `wc3://context/abilities`, `wc3://tools` and the three skills |
 | Prompts | 5 |
-| Protocol revision answered | 2024-11-05 to a client offering 2025-06-18, 2025-11-25 to a client offering the latest revision |
+| Protocol revision answered | Every revision the pin knows, echoed: 2024-11-05, 2025-03-26, 2025-06-18 and 2025-11-25. An unknown offer gets 2025-11-25 |
 | SDK package | `ModelContextProtocol` 1.4.1 |
 | Server name and version in initialize | `wc3ctl` 0.4.13 |
 | Initialize instructions | 405 characters, the product and version, the target and its source, whether game data is there, the three safety rules and the quickstart hint |
@@ -308,6 +308,9 @@ The two reference documents are served whole, one resource each, read from `cont
 | `wc3://context/ui-frames` | The Big UI-Frame Tutorial by Tasyen, in full | 331,895 bytes |
 | `wc3://context/abilities` | The Warcraft III Editor Ability Insight reference, in full | 336,818 bytes |
 | `wc3://tools` | Every tool with its description and four hints, as JSON | 122,218 bytes |
+| `wc3://skills/map-safety` | Read before write, never overwrite the input, chain on the output | Shipped markdown |
+| `wc3://skills/hero-package` | The five roles and the compiler gate for a generated hero | Shipped markdown |
+| `wc3://skills/publish` | Publishing is user granted, the agent asks | Shipped markdown |
 
 The five prompts are `inspect_map`, `port_hero`, `repair_reforged_map`, `optimize_map_size` and `audit_hero_spells`. Each returns guidance text and a numbered list of tools to call. None performs a call itself, so serving a prompt has no side effect (PRM-01).
 
@@ -701,7 +704,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| CMP-01 | The server SHALL answer a tested set of protocol revisions, currently 2024-11-05, and SHALL NOT claim a revision until a test exercises it. A new revision from an SDK upgrade is a compatibility decision, not an automatic grant | Measured. The pin answers 2025-11-25 to a client that offers it and 2024-11-05 to a 2025-06-18 offer. One test now pins the newest revision, and no test exercises an older one or names the set | gap |
+| CMP-01 | The server SHALL answer every protocol revision it claims, each proven by a test, and SHALL state what an unknown offer resolves to | Measured. `ProtocolRevisionTests` drives 2024-11-05, 2025-03-26, 2025-06-18 and 2025-11-25, each echoes, unknown offers resolve to 2025-11-25, and the tool count holds at 275 | met |
 | CMP-02 | The SDK version SHALL be pinned, and an upgrade SHALL include a protocol test run and a note in the release | Measured. The package is pinned at 1.4.1 and the transitive host packages are isolated to this exe | unassessed |
 | CMP-03 | A tool rename SHALL follow the alias window in SUR-03, and the removed name SHALL be listed in the release note that removes it | Design decision. A client's saved prompt is the reason | unassessed |
 | CMP-04 | A result field SHALL change only additively within a major version, and a removed field SHALL be announced one minor release before | Design decision. A caller writes against names | unassessed |
@@ -757,7 +760,7 @@ The first slice makes one write safe to chain. A second review named what that s
 | RSC-07 | A cached result SHALL be keyed by the content digest of its input, the options, the target build and the tool version, and a changed input SHALL invalidate it | Design decision. The doctor cache is keyed by path, so a file edited at the same path is served a stale verdict | gap |
 | PKG-13 | Every published artifact SHALL name its source commit, its artifact digest and the tag it was built from, and a version number alone SHALL NOT be treated as provenance | Measured. npm `latest` is 0.5.19 while the newest tag is v0.5.16, created on 20 October 2026 | gap |
 | TST-14 | Each write family SHALL have a semantic test that asserts the intended change and the preservation of unrelated data, not only that the output loads | Design decision. A model with missing UVs and a map with a wrong trigger subtree both load | gap |
-| CMP-07 | The server SHALL publish a tested protocol revision matrix naming the revision, the SDK version, the fields emitted and the features an older client loses | Design decision. CMP-01 promises a tested set, and the set has one entry today | gap |
+| CMP-07 | The server SHALL publish a tested protocol revision matrix naming the revision, the SDK version, the fields emitted and the features an older client loses | Measured. `ProtocolRevisionTests` pins the matrix and the item surface at the negotiated revision | met |
 | SEC-08 | The parsers SHALL have a named fuzz corpus and a stated residual risk, and a malformed input SHALL return a tool error rather than terminate the process | Design decision. Managed code, no `eval` and native CascLib are not a proof | gap |
 | AUT-11 | The release SHALL write a machine-readable record of the source commit, the artifact digests and the tag, and a published version SHALL resolve to that record | Design decision. The npm 0.5.19 artifact has no tag that explains it | gap |
 | SAF-16 | A read-only audit SHALL report Channel-based abilities that share a Base Order ID, and SHALL distinguish levels that disagree and empty order ids | Measured. `audit orders` finds 105 shared ids in Anime Choice Arena V0.33A and 53 in Anime WoS2 v0.34h | met |
@@ -1070,10 +1073,10 @@ The server negotiates MCP over stdio. It answers the revision the client offers 
 | Element | Value |
 |---|---|
 | Transport | stdio, newline-delimited JSON-RPC |
-| Protocol revisions | The newest revision the pinned SDK speaks is answered when the client offers it, which is 2025-11-25 today, and an older client is answered with the newest revision it also offers, which is 2024-11-05 for a 2025-06-18 offer. The set and what an older client loses are CMP-07 |
+| Protocol revisions | 2024-11-05, 2025-03-26, 2025-06-18 and 2025-11-25, each echoed to a client that offers it, with 2025-11-25 as the answer to an unknown offer (CMP-01) |
 | Server info | `name` from `McpServerName`, `version` from the assembly |
 | Tools | 275, computed once at start |
-| Resources | 3 fixed URIs, plus section templates after RSC-02 |
+| Resources | 6 fixed URIs, plus section templates after RSC-02 |
 | Prompts | 5, fixed at start |
 | Instructions | A short string, at most 1,000 characters after DSC-01 |
 | Capabilities | `tools`, `resources`, `prompts`, `logging`. `listChanged` SHALL be false because the collections are fixed at start (TRN-05) |
@@ -1497,7 +1500,6 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | G-65 | The `map` parameter descriptions on 202 tools do not say whether a folder map is accepted, so the ambiguity PAR-01 names is still in the wording | PAR-01 | The parameter descriptions |
 | G-46 | The document cites no external source, so a basis that claims a protocol rule or a client behaviour cannot be checked by its reader | DOC-06 | Appendix D and the Basis column |
 | G-47 | The body numbers are a snapshot with no guard, and one description edit moved the total by 157 characters and two parameter counts by one each before anyone noticed | DOC-03, TST-12 | The docs guard and section 3.13 |
-| G-49 | The specification names one protocol revision while the pin answers at least two, and no test names the set the pinned SDK negotiates or what an older client loses | CMP-01 | The protocol test and the SDK pin |
 | G-50 | Batches exist for object edits only. Placed instances, terrain, strings and triggers still need a chain | SAF-13 | `ObjectBatchSetCommand` and the write families |
 | G-51 | The write gate lives in `Wc3.Mcp`, so the CLI and the Studio cannot use it | SAF-14 | The shared layer and the three front ends |
 | G-52 | Exports write several files directly, with no staged directory, manifest or multi-output envelope | SAF-15, RES-11 | The export commands and the result records |
@@ -2013,6 +2015,7 @@ A slice is pulled when its dependencies are met. A new gap can reorder the queue
 | 1.11 | 8 November 2026 | Closes SAF-01, SAF-02, SAF-03, PAR-01 and DSC-01. Every tool declares all four hints, the audit fails an unset hint and a writing tool that says read-only, five descriptions stop claiming read-only, `map` refuses a folder and a wrong extension before opening anything, and the initialize instructions carry the product, the target, the game build, the three rules and the quickstart hint in 405 characters. Catalog grows to 122,218 bytes and the description total to 84,319 characters |
 | 1.12 | 8 November 2026 | Closes DOC-07. `build_pdf.py --light` renders a light printing edition with 8.6pt table text, 73 pages against 63, and a page luminance of 189 against 13, and the prune keeps one file per edition |
 | 1.13 | 8 November 2026 | Reopens PAR-01. A folder map is a real Studio workflow, so `map` accepts a file or a folder and the description must say which. Restores the nine folder and Lua smoke tests. Adds the permission file and the three skills as resources, with overwrite refused as `PERMISSION_DENIED` unless the user granted it. |
+| 1.14 | 8 November 2026 | Records the measured protocol matrix, all four SDK revisions echoed and unknown offers resolving to 2025-11-25, closes CMP-01 and CMP-07 and removes G-49. Records six resources and the three skills. A stale comment in `Wc3McpServer` claimed a 2025-06-18 offer got 2024-11-05, which the matrix disproved. |
 
 ## 20. Hardening beyond safe chaining
 
