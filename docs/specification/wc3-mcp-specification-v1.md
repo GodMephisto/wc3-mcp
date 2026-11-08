@@ -285,7 +285,7 @@ The surface repeats a small set of parameter names across most tools. That repet
 
 | Parameter | Tools that take it | Meaning |
 |---|---|---|
-| `map` | 202 | A map file, or for a few tools a folder. This ambiguity is a defect that PAR-01 removes |
+| `map` | 202 | A map file, or for a few tools a folder. PAR-01 requires the description to say which |
 | `out_path` | 111 | The output file. Required where the output is a different artifact, optional with a `.edited` default for a map edit |
 | `game_dir` | 37 | The Warcraft III install, overriding `WC3_GAME_DIR` and auto-detection |
 | `schemas_dir` | 26 | The schema dataset folder, overriding the saved setting |
@@ -540,7 +540,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| PAR-01 | `map` SHALL name a map file, `.w3x` or `.w3m`, and `folder` SHALL name a directory. A tool SHALL NOT accept a directory where `map` is declared. The extension SHALL be checked before the archive is opened | Measured. `LoadMap` refuses a directory with a message that names `folder`, and refuses an extension that is neither `.w3x` nor `.w3m`, before any archive is opened | met |
+| PAR-01 | `map` SHALL accept either a map file (`.w3x` or `.w3m`) or an unpacked map folder, and the parameter description SHALL say which a tool takes. A file's extension SHALL be checked before the archive is opened | Measured. `LoadMap` accepts a folder and checks the extension only for a file, and the folder map and Lua suites pass on folder fixtures | met |
 | PAR-02 | The game directory SHALL resolve from the tool argument, then `WC3_GAME_DIR`, then auto-detection. A value holding an unfilled placeholder SHALL count as unset | Measured. `ResolveGameDir` implements exactly this, including the `${...}` check that an MCPB host needs | unassessed |
 | PAR-03 | The target build SHALL resolve from the tool argument, then `WC3_TARGET_BUILD`, then the saved setting, then the default, and `target_get` SHALL report which source won | Measured. `TargetBuildSettings` reports the source and the initialize line names it. The precedence is not in one place a caller can read | unassessed |
 | PAR-04 | A tool that needs game data SHALL state in its description what it returns without it, and its result SHALL mark any degraded field rather than returning an empty value that reads as real | Design decision. 36 tools take `game_dir`, and a missing install currently turns base names into absences that look like data | unassessed |
@@ -1113,7 +1113,7 @@ Every parameter has one meaning across the surface. A tool that needs a differen
 
 | Parameter | Type | Meaning | Precedence or default |
 |---|---|---|---|
-| `map` | string | One map file, `.w3x` or `.w3m` | Required where present. A folder is refused (PAR-01) |
+| `map` | string | One map file, `.w3x` or `.w3m`, or a folder map | Required where present. A folder map is accepted, and the description says so (PAR-01) |
 | `folder` | string | A directory of maps, searched one level or recursively as stated | Required where present |
 | `internal_path` | string | One archive path, either slash accepted | Required where present |
 | `out_path` | string | The output file | Optional with `<map>.edited.<ext>` for a map edit. Required for a different artifact (PAR-06) |
@@ -1379,7 +1379,7 @@ A requirement is met when its check passes. The checks are grouped by subject an
 | AC-09 | SAF-05, SAF-06, SAF-08, SAF-09, SAF-11, SAF-12 | For each refusal, a call with output equal to input, output inside a folder map, and existing output without `overwrite` returns its code and writes nothing. A valid write returns both digests and a rewritten count. The temp file is gone after the call |
 | AC-10 | SAF-07 | A write with a correct digest succeeds and a write with a stale digest returns `STALE_INPUT` and leaves both files untouched |
 | AC-11 | SAF-10 | A destructive tool without `confirm` returns `CONFIRM_REQUIRED` and names the item. The same call with `confirm` true succeeds |
-| AC-12 | PAR-01, PAR-02, PAR-03, PAR-04 | `map` on a folder is refused, `game_dir` precedence follows the argument then the variable then detection, `target_get` names the winning source, and a base-data tool with no install marks its missing fields |
+| AC-12 | PAR-01, PAR-02, PAR-03, PAR-04 | `map` accepts a folder map and a file, `game_dir` precedence follows the argument then the variable then detection, `target_get` names the winning source, and a base-data tool with no install marks its missing fields |
 | AC-13 | PAR-06, PAR-07, PAR-08, PAR-09 | Every artifact-producing tool requires its output, every coordinate description states its unit, an array above its maximum is refused, and a path with either slash resolves |
 | AC-14 | RES-01, RES-02, RES-06, RES-07, RES-08 | Every result parses as JSON, every tool publishes an output schema, the structured content validates against it, the CLI `--json` shape matches, and enums are names |
 | AC-15 | RES-03, RES-10 | Each list family returns its default page, states the total, and a request above the maximum returns `RESULT_TOO_LARGE` rather than a truncated page that reads as complete |
@@ -1494,6 +1494,7 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | G-43 | `docs` and the publish script answer no `--json`, so an agent cannot drive them from one shape | AUT-07 | `DocsCommand` and the publish script |
 | G-44 | Nothing checks the committed changelog against the commits since the last tag | AUT-10 | A changelog guard test |
 | G-45 | The capability catalogue in section 14 is hand-written and can drift from the surface, the way a stale README can | DOC-03, TST-12 | A generated capability map from the tool families |
+| G-65 | The `map` parameter descriptions on 202 tools do not say whether a folder map is accepted, so the ambiguity PAR-01 names is still in the wording | PAR-01 | The parameter descriptions |
 | G-46 | The document cites no external source, so a basis that claims a protocol rule or a client behaviour cannot be checked by its reader | DOC-06 | Appendix D and the Basis column |
 | G-47 | The body numbers are a snapshot with no guard, and one description edit moved the total by 157 characters and two parameter counts by one each before anyone noticed | DOC-03, TST-12 | The docs guard and section 3.13 |
 | G-49 | The specification names one protocol revision while the pin answers at least two, and no test names the set the pinned SDK negotiates or what an older client loses | CMP-01 | The protocol test and the SDK pin |
@@ -2011,6 +2012,7 @@ A slice is pulled when its dependencies are met. A new gap can reorder the queue
 | 1.10 | 8 November 2026 | Corrects the tag claim in 3.7, PKG-13 and G-25. The mirror has 26 tags and the newest is v0.5.16, on a commit dated 20 October 2026, not v0.5.9. The provenance gap stands, because the published package is 0.5.19 and no tag explains it |
 | 1.11 | 8 November 2026 | Closes SAF-01, SAF-02, SAF-03, PAR-01 and DSC-01. Every tool declares all four hints, the audit fails an unset hint and a writing tool that says read-only, five descriptions stop claiming read-only, `map` refuses a folder and a wrong extension before opening anything, and the initialize instructions carry the product, the target, the game build, the three rules and the quickstart hint in 405 characters. Catalog grows to 122,218 bytes and the description total to 84,319 characters |
 | 1.12 | 8 November 2026 | Closes DOC-07. `build_pdf.py --light` renders a light printing edition with 8.6pt table text, 73 pages against 63, and a page luminance of 189 against 13, and the prune keeps one file per edition |
+| 1.13 | 8 November 2026 | Reopens PAR-01. A folder map is a real Studio workflow, so `map` accepts a file or a folder and the description must say which. Restores the nine folder and Lua smoke tests. Adds the permission file and the three skills as resources, with overwrite refused as `PERMISSION_DENIED` unless the user granted it. |
 
 ## 20. Hardening beyond safe chaining
 
