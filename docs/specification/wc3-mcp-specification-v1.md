@@ -203,7 +203,7 @@ The public repository owns its README, installer, workflows, bundle manifest, re
 
 An ID is the group and a number, so `SAF-04` is the fourth requirement in the safety group. `SHALL` marks a requirement and `SHALL NOT` a prohibition. The Basis column names the evidence, the decision or the failure that the requirement rests on. Where a requirement is new in this revision, the basis says design decision and gives the reason.
 
-This version holds 174 requirements in 20 groups, and 39 acceptance checks that cover them. A requirement that no check covers is a sentence, not a requirement, and the traceability check in Appendix B lists the pairing.
+This version holds 179 requirements in 20 groups, and 41 acceptance checks that cover them. A requirement that no check covers is a sentence, not a requirement, and the traceability check in Appendix B lists the pairing.
 
 Numbers in this document are labelled. A number stated as measured came from a command or a file in this repository on 8 November 2026. A number stated as inferred came from reading the code and was not produced by a run. Nothing here is stated from memory.
 
@@ -223,16 +223,16 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 | Read-only tools | 157 |
 | Writing tools | 118 |
 | Writing tools that declare `destructiveHint` true | 9 |
-| Writing tools that leave `destructiveHint` unset | 6 |
+| Tools that leave any annotation hint unset | 0 |
 | Tools that declare `openWorldHint` true | 1, which is `rag_install` |
 | Tools that declare no annotations at all | 0 |
 | Tools with no parameters | 5, which are `mcp_audit_annotations`, `leak_benchmark`, `rag_status`, `script_conversion_notes` and `version_info` |
 | Resources | 3, which are `wc3://context/ui-frames`, `wc3://context/abilities` and `wc3://tools` |
 | Prompts | 5 |
-| Protocol revision answered | 2024-11-05 |
+| Protocol revision answered | 2024-11-05 to a client offering 2025-06-18, 2025-11-25 to a client offering the latest revision |
 | SDK package | `ModelContextProtocol` 1.4.1 |
 | Server name and version in initialize | `wc3ctl` 0.4.13 |
-| Initialize instructions | `target  Beta-ROC-v1.00  (settings), game install 3.0.1.24371` |
+| Initialize instructions | 405 characters, the product and version, the target and its source, whether game data is there, the three safety rules and the quickstart hint |
 | Capabilities declared | logging, prompts with `listChanged`, resources with `listChanged`, tools with `listChanged` |
 | Tools publishing an output schema | 0 |
 | Tools using progress notifications or a cancellation token | 0 |
@@ -266,14 +266,14 @@ Every tool carries a description and an input schema. The generated `docs/mcp-re
 
 | Measure | Value |
 |---|---|
-| Total description text across the surface | 84,315 characters, about 20,000 tokens |
-| Median description | 260 characters |
+| Total description text across the surface | 84,319 characters, about 20,000 tokens |
+| Median description | 264 characters |
 | Longest description | 1,126 characters, on `model_import` |
 | Shortest description | 94 characters, on `camera_remove` |
 | Descriptions under 150 characters | 33 |
 | Descriptions from 150 to 299 characters | 136 |
-| Descriptions from 300 to 599 characters | 85 |
-| Descriptions from 600 to 999 characters | 16 |
+| Descriptions from 300 to 599 characters | 87 |
+| Descriptions from 600 to 999 characters | 17 |
 | Descriptions of 1,000 characters or more | 2 |
 | Tools with a `title` annotation | 0 |
 
@@ -285,17 +285,17 @@ The surface repeats a small set of parameter names across most tools. That repet
 
 | Parameter | Tools that take it | Meaning |
 |---|---|---|
-| `map` | 200 | A map file, or for a few tools a folder. This ambiguity is a defect that PAR-01 removes |
-| `out_path` | 109 | The output file. Required where the output is a different artifact, optional with a `.edited` default for a map edit |
-| `game_dir` | 36 | The Warcraft III install, overriding `WC3_GAME_DIR` and auto-detection |
+| `map` | 202 | A map file, or for a few tools a folder. This ambiguity is a defect that PAR-01 removes |
+| `out_path` | 111 | The output file. Required where the output is a different artifact, optional with a `.edited` default for a map edit |
+| `game_dir` | 37 | The Warcraft III install, overriding `WC3_GAME_DIR` and auto-detection |
 | `schemas_dir` | 26 | The schema dataset folder, overriding the saved setting |
-| `kind` | 20 | An Object Editor kind, one of unit, item, ability, destructable, doodad, buff or upgrade |
+| `kind` | 21 | An Object Editor kind, one of unit, item, ability, destructable, doodad, buff or upgrade |
 | `target` | 14 | A target build name or schema path |
 | `rawcode` | 12 | A four-character object code |
 | `folder` | 8 | A folder of maps, used by the library, asset and batch tools |
-| `out_dir` | 4 | An output directory rather than a single output file |
+| `out_dir` | 5 | An output directory rather than a single output file |
 
-The parameter types are 628 strings of which 141 are optional, 97 integers of which 8 are optional, 41 numbers, 41 booleans of which 1 is optional, and 13 arrays of which 4 are optional. The largest tool has eight required parameters, `force_set_flags`. Eighteen tools require none at all, which is the five with no parameters plus thirteen whose every parameter has a default.
+The parameter types are 834 in total, 641 strings of which 170 are optional, 97 integers of which 33 are optional, 41 numbers of which 23 are optional, 42 booleans of which 33 are optional, and 13 arrays of which 4 are optional. A nullable type is counted as its base type, and a parameter counts as optional when it is not required or when its type accepts null. The largest tool has eight required parameters, `force_set_flags`. Eighteen tools require none at all, which is the five with no parameters plus thirteen whose every parameter has a default.
 
 Three tools accept a map but do not require it, `asset_list`, `leak_ab` and `replay_summary`, each for a stated reason. No tool requires more than eight parameters, which matters because a large required set is where an agent starts guessing.
 
@@ -307,7 +307,7 @@ The two reference documents are served whole, one resource each, read from `cont
 |---|---|---|
 | `wc3://context/ui-frames` | The Big UI-Frame Tutorial by Tasyen, in full | 331,895 bytes |
 | `wc3://context/abilities` | The Warcraft III Editor Ability Insight reference, in full | 336,818 bytes |
-| `wc3://tools` | Every tool with its description and four hints, as JSON | 118,934 bytes |
+| `wc3://tools` | Every tool with its description and four hints, as JSON | 122,218 bytes |
 
 The five prompts are `inspect_map`, `port_hero`, `repair_reforged_map`, `optimize_map_size` and `audit_hero_spells`. Each returns guidance text and a numbered list of tools to call. None performs a call itself, so serving a prompt has no side effect (PRM-01).
 
@@ -342,9 +342,9 @@ The version is not in one place today. Each value below was read from its file o
 | wc3-mcp `mcpb/manifest.json` | 0.3.0 |
 | wc3-mcp `server.json` | 0.3.0 |
 | The published `wc3-mcp` package on npm, `latest` | 0.5.19 |
-| The stale `npm/wc3-mcp/package.json` inside this repository | 0.5.9, never published |
+| The stale `npm/wc3-mcp/package.json` in the wc3ctl repository | 0.5.9, never published |
 
-The registry value matters most. The mirror repository's tags stop at `v0.5.9`, its tree says 0.5.16 and 0.5.8, and the package a user installs today is 0.5.19. So the published artifact is newer than every tag and every committed file, and nothing in either repository explains where its version came from (IDN-02). The release workflow rewrites the npm version, the bundle manifest version and `server.json` from the tag and smoke-tests that the published exe prints the tag, so a release made by that path is consistent. The tree between releases is not, and a reader who compares two files cannot tell which value is authoritative.
+The registry value matters most. The mirror repository carries 26 tags and the newest is `v0.5.16`, on a commit dated 20 October 2026, its tree says 0.5.16 and 0.5.8, and the package a user installs today is 0.5.19. So the published artifact is newer than every tag and every committed file, and nothing in either repository explains where its version came from (IDN-02). The release workflow rewrites the npm version, the bundle manifest version and `server.json` from the tag and smoke-tests that the published exe prints the tag, so a release made by that path is consistent. The tree between releases is not, and a reader who compares two files cannot tell which value is authoritative.
 
 ### 3.8 What is verified today
 
@@ -377,11 +377,13 @@ The initialize reply is the whole first impression. It is reproduced here as the
     "tools": { "listChanged": true }
   },
   "serverInfo": { "name": "wc3ctl", "version": "0.4.13" },
-  "instructions": "target  Beta-ROC-v1.00  (settings), game install 3.0.1.24371"
+  "instructions": "wc3ctl 0.4.13, target Beta-ROC-v1.00 (settings), game data available (3.0.1.24371). Three rules. Read a map before you change it. A write never overwrites its input, it writes a sibling .edited copy or the out_path you name. Chain edits by passing the previous output as the next call's map. Call quickstart when the request names an outcome rather than a tool, and read wc3://tools for the whole surface."
 }
 ```
 
-The instructions name the target build and the installed game build. They do not name the product, the rule that a write never overwrites its input, or the tool a caller should start with. On a surface of 270 tools that is the largest single usability gap the build has (DSC-01).
+The revision in that reply is the one the client offered, because the capture sent 2025-06-18. The same build answers 2025-11-25 to a client that offers it, and the start line names that newest revision.
+
+The instructions now carry the product, the target and where it came from, whether base game data is installed, the three rules that make a write safe to chain, and the two places a caller can start, `quickstart` and the catalog resource. They are 405 characters against the 1,000 the requirement allows, which leaves room to name a new rule without shortening an old one.
 
 ### 3.10 What a write returns
 
@@ -448,7 +450,7 @@ The capture above was taken on 8 November 2026. One edit has landed since, the `
 
 Every other count held exactly, including the 55 families, the 33 families under five tools, the 5 tools with no parameters, the 18 tools that require none, the 9 destructive tools, the 6 with the hint unset, the 3 resources, the 5 prompts and the five committed version values.
 
-Two later slices added `object_batch_set` and `audit_ability_orders`, so the current capture in section 3.1 is 271 tools and 82,487 description characters. This table stays as the record of the first slice, and the deltas below are what one description edit did.
+Later slices added `object_batch_set`, `audit_ability_orders`, `model_primitive`, `sound_import_events`, `hero_generate` and `content_scaffold`, so the current capture in section 3.1 is 275 tools and 84,315 description characters. The total grew by 2,543 characters across six tool additions, which is consistent with a capture and is not a substitute for one. This table stays as the record of the first slice, and the deltas below are what one description edit did.
 
 The arithmetic is consistent with a capture, and it is not proof of one. What makes it a capture is that every number can be produced again from the exe, and Appendix E states the method so a reader can repeat it. Agreement between two documents is evidence that they match each other, not that they match the build.
 
@@ -484,7 +486,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
 | IDN-01 | The server SHALL take its product id, its registered server name and its version from assembly metadata written at build time, and SHALL NOT hardcode them in source or branch on a repository name | Measured. The identity today comes from `McpProductId` and `McpServerName` in `Wc3.Mcp.csproj`, overridden by each repository's `Directory.Build.props`, so one source builds `wc3ctl` and `wc3-mcp` | unassessed |
-| IDN-02 | One product version SHALL be the source of every version a caller can read, which is the exe, `version_info`, the npm package, the `.mcpb` manifest, `server.json` and the release tag. The release SHALL refuse a tag that differs from the exe. A committed check SHALL report every place the values disagree, even between releases | Measured. Five live artifacts carry values that disagree today, 0.4.13, 0.5.16, 0.5.8 and 0.3.0 in two files. The release aligns them, the tree does not | gap |
+| IDN-02 | One product version SHALL be the source of every version a caller can read, which is the exe, `version_info`, the npm package, the `.mcpb` manifest, `server.json` and the release tag. The release SHALL refuse a tag that differs from the exe. A committed check SHALL report every place the values disagree, even between releases | Measured. Six live artifacts carry five disagreeing values today, 0.4.13, 0.5.16, 0.5.8, 0.3.0 in two files, and 0.5.19 on npm. The release aligns them, the tree does not | gap |
 | IDN-03 | `version_info` SHALL return the product id, the server name, the version, the git short hash, the UTC build time, the MCP protocol revision and the SDK version | Design decision. A caller diagnosing a client problem needs the whole build identity in one call, not four | unassessed |
 | IDN-04 | The registered server name SHALL be stable for a product, `wc3ctl` for the CLI and `wc3` for the public server, and SHALL be the name used to remove or reinstall it | Measured. Setup writes the name, then removes by the same name. A name that moved would leave a stale entry behind | unassessed |
 | IDN-05 | A build without git SHALL report `nogit` and an unknown time rather than a git error message, and the fallback SHALL be tested | Measured. The build target validates the hash shape for exactly this reason | unassessed |
@@ -498,7 +500,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | TRN-02 | stdout SHALL carry protocol messages only. Every log line, banner and warning SHALL go to stderr | Measured. `Program.cs` sends console logging to stderr. A stray stdout write corrupts the stream and the client cannot report why | unassessed |
 | TRN-03 | The server SHALL exit 0 when stdin closes, and SHALL finish the in-flight call before exiting where the client allows it | Design decision. A client closes the pipe on shutdown, and a half-written output map is worse than a slow exit | unassessed |
 | TRN-04 | Every call SHALL load its inputs, do its work and return, with no session state carried between calls other than caches documented in OBS and PRF | Design decision. A stateless call is what lets two clients share the server and what makes a retry safe | unassessed |
-| TRN-05 | The server SHALL declare only the capabilities it has, and SHALL NOT advertise `listChanged` for a collection that cannot change during a session | Measured. All three collections advertise `listChanged` true while the surface is fixed at start | gap |
+| TRN-05 | The server SHALL declare only the capabilities it has, and SHALL NOT advertise `listChanged` for a collection that cannot change during a session | Measured. All three collections advertise `listChanged` true while the surface is fixed at start. Setting `Capabilities` to false in `CreateOptions` does not change the reply, because the pinned SDK 1.4.1 derives the capabilities from the registered collections and ignores the options, proven by a handshake test that fails on the configured value. The change lands in the SDK pin (CMP-02) or a wrapper, not in this repository | gap |
 | TRN-06 | The server SHALL NOT add a network transport in version 1. If one is added later it SHALL require authentication, an explicit workspace root and a separate specification | Design decision. A local process uses the user's own file permissions. A socket needs a tenancy and authorization model that does not exist | unassessed |
 | TRN-07 | A second server instance SHALL be safe. Two clients may start the server at once, and neither may hold a lock that blocks the other, except a short lock on the RAG index build | Design decision. A user may run Claude and Cursor together | unassessed |
 
@@ -511,8 +513,8 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | SUR-03 | A renamed tool SHALL keep an alias for at least one minor release, the alias SHALL say it is deprecated and name the replacement, and `wc3://tools` SHALL list the replacement. The alias may be removed in the first major release after the rename, never in a minor release | Design decision. An agent may have a cached prompt that names the old tool, and a hard removal turns that into a failed task | gap |
 | SUR-04 | One operation SHALL have one tool. A tool that only reformats another tool's result SHALL be a parameter of that tool, unless it answers a different question | Measured. `leak_list` is a presentation over `script_leaks`, and `map_overview` is a composition of three reads. The second is justified, the first is a candidate to merge | unassessed |
 | SUR-05 | Every description SHALL state what the tool does, whether it writes, what it refuses and the one trap a caller would otherwise hit, in at most 600 characters. The longer rationale SHALL live in the generated reference and in `tool_help` | Measured. Two descriptions exceed 1,000 characters and the surface totals about 20,000 tokens before the user asks anything | gap |
-| SUR-06 | Every tool SHALL belong to exactly one family, and the family SHALL be visible in the catalog resource and the generated reference | Design decision. With 270 tools a caller needs a grouping that is not guesswork | gap |
-| SUR-07 | The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface | Measured. The surface is 270 tools and 82,116 characters today, so the budget is a guard against growth rather than a cut | gap |
+| SUR-06 | Every tool SHALL belong to exactly one family, and the family SHALL be visible in the catalog resource and the generated reference | Design decision. With 275 tools a caller needs a grouping that is not guesswork | gap |
+| SUR-07 | The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface | Measured. The surface is 275 tools and 84,315 characters today, so the 300 tool ceiling is a guard against growth and the 70,000 character ceiling is a cut of 14,315 characters | gap |
 | SUR-08 | No tool SHALL require more than eight parameters, and a requirement for more SHALL become a parameter object with its own schema | Measured. The maximum is eight today, `force_set_flags`. More than that is where a model starts inventing values | unassessed |
 | SUR-09 | Every parameter SHALL have a type, a description and, when it is optional, a stated default. An enumerated value SHALL list its legal values in the description and SHALL NOT accept an unknown one silently | Measured. All parameters are typed and described today, and most enums are listed. PAR-05 makes the refusal uniform | unassessed |
 | SUR-10 | Every tool SHALL carry a `title` annotation, a short human label, so a client can show a readable name without parsing the description | Design decision. No tool sets a title today, and a client that displays one falls back to the snake case name | gap |
@@ -521,9 +523,9 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| SAF-01 | Every tool SHALL set all four annotation hints explicitly. An unset hint SHALL fail the annotation audit | Measured. Six writing tools leave `destructiveHint` unset, which per the protocol means true, so a non-destructive tool can be read as destructive and the signal loses meaning | gap |
-| SAF-02 | `readOnlyHint` true SHALL mean the call writes no byte anywhere in the user's workspace. A tool that writes a PNG, a CSV, a report or a temp map SHALL NOT claim to be read-only | Measured. `render_model`, `terrain_export_heightmap`, `pathing_export_png` and `library_report` write files, and `render_model` correctly declares not read-only. The rule is sound, the audit does not check the description | gap |
-| SAF-03 | `destructiveHint` true SHALL mean the call can discard map content that cannot be recovered from its output, such as a removed placement, object, region, trigger, variable, sound or archive entry. A tool that only adds, rebuilds or copies SHALL declare false. A transformation that discards information in its output, such as lossy model compression or a texture re-encode, SHALL state what it discards and SHALL declare the hint for that loss. Replacing an existing destination is a separate fact and is governed by `overwrite` | Measured. Nine tools declare it true. Six leave it unset, `gamedata_export_schemas`, `pathing_export_png`, `terrain_export_heightmap`, `model_squish`, `target_set` and `rag_install`. All six are non-destructive by this definition, but an unset hint defaults to true, so the value a client reads is wrong in every one of them | unassessed |
+| SAF-01 | Every tool SHALL set all four annotation hints explicitly. An unset hint SHALL fail the annotation audit | Measured. Every one of the 275 tools declares all four hints, the seven writing tools that left `destructiveHint` unset now declare false, and the audit reports an unset hint per tool by name | met |
+| SAF-02 | `readOnlyHint` true SHALL mean the call writes no byte anywhere in the user's workspace. A tool that writes a PNG, a CSV, a report or a temp map SHALL NOT claim to be read-only | Measured. Five writing tools said read-only in their description, `mpq_extract_all`, `terrain_export_heightmap`, `pathing_export_png`, `asset_thumbnails` and `asset_convert_batch`, and all five now say what they write and that the input is untouched. The audit fails any writing tool whose description carries the word | met |
+| SAF-03 | `destructiveHint` true SHALL mean the call can discard map content that cannot be recovered from its output, such as a removed placement, object, region, trigger, variable, sound or archive entry. A tool that only adds, rebuilds or copies SHALL declare false. A transformation that discards information in its output, such as lossy model compression or a texture re-encode, SHALL state what it discards and SHALL declare the hint for that loss. Replacing an existing destination is a separate fact and is governed by `overwrite` | Measured. Nine tools declare it true. The seven that left it unset, `gamedata_export_schemas`, `pathing_export_png`, `terrain_export_heightmap`, `model_primitive`, `model_squish`, `target_set` and `rag_install`, all declare false, which matches the definition because each writes a new artifact and discards no map content | met |
 | SAF-04 | Every write SHALL pass through one write gate in `Wc3.Mcp`, which resolves the output path, applies the refusal rules, creates the parent directory, writes and returns the digests | Design decision. Today the rule is implemented twice, in `ResolveOutPath` and again inside several commands, so a new tool can miss it | gap |
 | SAF-05 | The write gate SHALL refuse an output equal to the input, an output inside an input folder map, and an existing output unless the caller passes `overwrite` true. It SHALL NOT refuse a new file in the input's folder | Measured. The first two refusals exist in `ResolveOutPath` and are not on every path. The third is new and stops a rerun from silently replacing a previous good build | unassessed |
 | SAF-06 | A write result SHALL report `savedTo`, `inputSha256`, `outputSha256`, `filesRewritten` and `bytesWritten`, so a caller can verify what changed and chain the next edit on the right file. `filesRewritten` proves the declared change size, not the preservation of the other entries, which the round-trip comparison and the write sweep establish | Design decision. A count of rewritten internal files is available from the dirty set and is the cheapest fidelity signal a caller can get | gap |
@@ -538,7 +540,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| PAR-01 | `map` SHALL name a map file, `.w3x` or `.w3m`, and `folder` SHALL name a directory. A tool SHALL NOT accept a directory where `map` is declared. The extension SHALL be checked before the archive is opened | Measured. `LoadMap` accepts a directory, so `map_info` on a folder loads a folder map while its description promises a file. `library_*`, `asset_*` and `uabi_profile` already use `folder` or `paths` | gap |
+| PAR-01 | `map` SHALL name a map file, `.w3x` or `.w3m`, and `folder` SHALL name a directory. A tool SHALL NOT accept a directory where `map` is declared. The extension SHALL be checked before the archive is opened | Measured. `LoadMap` refuses a directory with a message that names `folder`, and refuses an extension that is neither `.w3x` nor `.w3m`, before any archive is opened | met |
 | PAR-02 | The game directory SHALL resolve from the tool argument, then `WC3_GAME_DIR`, then auto-detection. A value holding an unfilled placeholder SHALL count as unset | Measured. `ResolveGameDir` implements exactly this, including the `${...}` check that an MCPB host needs | unassessed |
 | PAR-03 | The target build SHALL resolve from the tool argument, then `WC3_TARGET_BUILD`, then the saved setting, then the default, and `target_get` SHALL report which source won | Measured. `TargetBuildSettings` reports the source and the initialize line names it. The precedence is not in one place a caller can read | unassessed |
 | PAR-04 | A tool that needs game data SHALL state in its description what it returns without it, and its result SHALL mark any degraded field rather than returning an empty value that reads as real | Design decision. 36 tools take `game_dir`, and a missing install currently turns base names into absences that look like data | unassessed |
@@ -600,7 +602,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| DSC-01 | The initialize instructions SHALL state the product and version, the target build and its source, whether game data is available, the three safety rules (read before write, never overwrite the input, chain edits on the output), and that `quickstart` routes a broad request. The whole field SHALL stay under 1,000 characters | Measured. Today it is one line that names the target and nothing else, on a surface of 270 tools | gap |
+| DSC-01 | The initialize instructions SHALL state the product and version, the target build and its source, whether game data is available, the three safety rules (read before write, never overwrite the input, chain edits on the output), and that `quickstart` routes a broad request. The whole field SHALL stay under 1,000 characters | Measured. The field is 405 characters and carries every one of those facts | met |
 | DSC-02 | `quickstart` SHALL cover every family and SHALL return, for each workflow, the prompt name, the tools in order and the CLI equivalent | Measured. It names ten workflows. Several families, including replay, MPQ, library and game data, are not in any of them | gap |
 | DSC-03 | A `tool_help` tool SHALL return the full description, every parameter with its default and legal values, the result shape, the error codes and an example call for one named tool | Design decision. With descriptions capped at 600 characters, the long form needs one place a caller can ask for | gap |
 | DSC-04 | The catalog resource, `wc3ctl mcp tools`, `mcp_audit_annotations` and the live `tools/list` SHALL be computed from one reflection call, and a test SHALL compare all four | Measured. This holds today. It is the property that stops documentation drift | unassessed |
@@ -614,8 +616,8 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | ENV-01 | Every environment variable the server reads SHALL be listed in one table with its effect, its default and its precedence | Design decision. `WC3_GAME_DIR`, `WC3_TARGET_BUILD`, `WC3_MCP_NPX`, `WC3_MCP_LOG` and `CODEX_HOME` are read in different files | unassessed |
 | ENV-02 | The precedence of each variable against its tool argument and its saved setting SHALL be tested, including the placeholder case | Measured. `ResolveGameDir` handles the placeholder and no test names `WC3_TARGET_BUILD` | gap |
 | ENV-03 | An undocumented environment variable SHALL NOT change behaviour, and a variable read for a test SHALL be namespaced and listed | Design decision. A hidden switch is a behaviour nobody can reproduce | unassessed |
-| ENV-04 | On start the server SHALL write one line to stderr with the product, version, protocol revision, tool count, target, game directory and profile | Design decision. The first question in a client bug report is which build it was, and stderr is where a human looks | gap |
-| ENV-05 | `WC3_MCP_LOG` SHALL set the log level, default to warn, and never accept a value that turns on per-call payload logging | Design decision. A debug log that writes map text to disk is a privacy incident | gap |
+| ENV-04 | On start the server SHALL write one line to stderr with the product, version, the newest protocol revision the build speaks, tool count, target, game directory and profile | Measured. `BuildStartLine` writes `wc3ctl 0.4.13  protocol 2025-11-25  tools 275  target Beta-ROC-v1.00 (settings)  game 3.0.1.24371  profile full` at 0.31 seconds, and the line costs 0.03 seconds of the cold start | met |
+| ENV-05 | `WC3_MCP_LOG` SHALL set the log level, default to warn, and never accept a value that turns on per-call payload logging | Measured. `McpLogLevel` maps `error`, `warn`, `info` and `debug`, and an unknown value falls back to warn. The published exe writes nothing to stderr at the default, 16 lines at `info` and 24 at `debug`, and every line goes to stderr | met |
 | ENV-06 | A configuration file SHALL NOT be needed. The server SHALL work with no file, no environment variable and no game install, for the tools that do not need them | Measured. This is the current behaviour and it is the property that makes a one-line install work | unassessed |
 
 ### Setup and registration
@@ -678,7 +680,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| PRF-01 | A cold start to the first initialize reply SHALL be under 1 second on a warm disk, and the surface SHALL NOT be recomputed per session | Measured. The instruction string is already computed once with a lazy, after recomputing it per session made the test suite take minutes | unassessed |
+| PRF-01 | A cold start to the first initialize reply SHALL be under 1 second on a warm disk, and the surface SHALL NOT be recomputed per session | Measured. The lazy holds, and the cold start is 1.2 seconds on a warm disk on the development machine, four runs between 1.15 and 1.27 after the first. The start line reaches stderr at 0.31 seconds and costs 0.03 seconds, measured with the line suppressed | gap |
 | PRF-02 | `tools/list` SHALL answer in under 100 ms after start | Design decision. It is reflection over a fixed list, and a client calls it on every launch | unassessed |
 | PRF-03 | A call SHALL load each input once. A tool SHALL NOT load the same map twice, and `LoadMap` SHALL be the only entry point | Measured. `port_unit` deliberately loads the source and the target once each and never feeds output back | unassessed |
 | PRF-04 | A tool expected to exceed 2 seconds SHALL report progress and SHALL observe cancellation. The families are map optimisation, folder audits, model import and export, atlas and texture work, and the doctor repair | Measured. No tool reports progress or accepts a cancellation token today, and several of these run for minutes | gap |
@@ -699,7 +701,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| CMP-01 | The server SHALL answer a tested set of protocol revisions, currently 2024-11-05, and SHALL NOT claim a revision until a test exercises it. A new revision from an SDK upgrade is a compatibility decision, not an automatic grant | Measured. The SDK negotiates 2024-11-05 today and no test names any other revision | gap |
+| CMP-01 | The server SHALL answer a tested set of protocol revisions, currently 2024-11-05, and SHALL NOT claim a revision until a test exercises it. A new revision from an SDK upgrade is a compatibility decision, not an automatic grant | Measured. The pin answers 2025-11-25 to a client that offers it and 2024-11-05 to a 2025-06-18 offer. One test now pins the newest revision, and no test exercises an older one or names the set | gap |
 | CMP-02 | The SDK version SHALL be pinned, and an upgrade SHALL include a protocol test run and a note in the release | Measured. The package is pinned at 1.4.1 and the transitive host packages are isolated to this exe | unassessed |
 | CMP-03 | A tool rename SHALL follow the alias window in SUR-03, and the removed name SHALL be listed in the release note that removes it | Design decision. A client's saved prompt is the reason | unassessed |
 | CMP-04 | A result field SHALL change only additively within a major version, and a removed field SHALL be announced one minor release before | Design decision. A caller writes against names | unassessed |
@@ -740,9 +742,9 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | AUT-10 | The changelog SHALL be checked for staleness against the commits it covers, the way the reference documents are checked, so a release cannot ship notes that miss a commit | Design decision. Nothing checks the committed changelog (G-44) | gap |
 
 
-### 4.1 Hardening requirements from the second review
+### 4.1 Hardening requirements from the later reviews
 
-The first slice makes one write safe to chain. A second review named what that slice does not reach, and these requirements state each one so it can be tested rather than remembered.
+The first slice makes one write safe to chain. A second review named what that slice does not reach, and a third adopted the permission model in section 23. These requirements state each one so it can be tested rather than remembered.
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
@@ -753,13 +755,18 @@ The first slice makes one write safe to chain. A second review named what that s
 | PRF-08 | The server SHALL apply explicit limits to archive entry count, decompressed bytes per entry and per call, parser depth, array size, temporary disk and child-process time, and SHALL refuse with a code before allocation | Design decision. Managed code and an exception handler are not a resource bound | gap |
 | PRF-09 | The server SHALL state a memory budget on a named reference machine for the largest supported map, and a call that would exceed it SHALL be refused rather than attempted | Design decision. PRF-05 counts the input and output and ignores parsed sections, assets, schemas and concurrent calls | gap |
 | RSC-07 | A cached result SHALL be keyed by the content digest of its input, the options, the target build and the tool version, and a changed input SHALL invalidate it | Design decision. The doctor cache is keyed by path, so a file edited at the same path is served a stale verdict | gap |
-| PKG-13 | Every published artifact SHALL name its source commit, its artifact digest and the tag it was built from, and a version number alone SHALL NOT be treated as provenance | Measured. npm `latest` is 0.5.19 while the tags stop at v0.5.9 | gap |
+| PKG-13 | Every published artifact SHALL name its source commit, its artifact digest and the tag it was built from, and a version number alone SHALL NOT be treated as provenance | Measured. npm `latest` is 0.5.19 while the newest tag is v0.5.16, created on 20 October 2026 | gap |
 | TST-14 | Each write family SHALL have a semantic test that asserts the intended change and the preservation of unrelated data, not only that the output loads | Design decision. A model with missing UVs and a map with a wrong trigger subtree both load | gap |
 | CMP-07 | The server SHALL publish a tested protocol revision matrix naming the revision, the SDK version, the fields emitted and the features an older client loses | Design decision. CMP-01 promises a tested set, and the set has one entry today | gap |
 | SEC-08 | The parsers SHALL have a named fuzz corpus and a stated residual risk, and a malformed input SHALL return a tool error rather than terminate the process | Design decision. Managed code, no `eval` and native CascLib are not a proof | gap |
 | AUT-11 | The release SHALL write a machine-readable record of the source commit, the artifact digests and the tag, and a published version SHALL resolve to that record | Design decision. The npm 0.5.19 artifact has no tag that explains it | gap |
 | SAF-16 | A read-only audit SHALL report Channel-based abilities that share a Base Order ID, and SHALL distinguish levels that disagree and empty order ids | Measured. `audit orders` finds 105 shared ids in Anime Choice Arena V0.33A and 53 in Anime WoS2 v0.34h | met |
-| DOC-07 | The PDF SHALL offer a light printing edition with larger table text, and the cover statistics SHALL be generated from the document rather than typed | Design decision. The tables are 7.2pt and the cover was wrong three times in one revision | gap |
+| SUR-11 | Every command in `Wc3.Commands` that writes a map, a model or a script SHALL be reachable from the CLI and from the MCP surface, or the parity map SHALL name it and state why it has no front end. A command with tests and no front end SHALL NOT be counted as shipped | Measured. `SoundScriptSpliceCommand` inserts a generated dispatcher into `war3map.j` and has eight tests, three of them pjass facts, and it has no CLI verb and no tool, so the only caller is the test suite | gap |
+| SAF-17 | A permission file SHALL be read at start from a path outside every folder the server writes, SHALL name the tools or families that need a person's approval and the tools that are refused outright, and a denied call SHALL fail with `POLICY_DENIED` naming the rule. A missing file SHALL deny nothing, and a malformed file SHALL refuse what it cannot classify | Design decision. Adopted on 8 November 2026 from the Roblox Studio MCP server, where a file the agent cannot reach is the authority and `confirm` is only intent. Section 23.1 states the design | gap |
+| SAF-18 | `confirm` SHALL state intent and SHALL NOT grant permission. A denial in the permission file SHALL fail a call that carries `confirm` true, and the tool text SHALL say which of the two decides | Design decision. SAF-10 already says a flag proves the caller included it, not that a person approved it, and today nothing else decides | gap |
+| RSC-08 | Each bundled skill document SHALL be served as a resource and as a section resource through a URI template, with the size and digest RSC-05 requires, read from the installed folder and never from a caller path | Design decision. A skill is the same kind of artifact as the two reference documents, and a client that can read one procedure whole can follow it without a prompt | gap |
+| TST-15 | A test of a generator SHALL assert the generator's own output. It SHALL NOT rename, rewrite or normalise that output before asserting, and a repair a test needs SHALL be fixed at the source instead | Measured. The splice test renamed a parameter and repaired an escaped path before asserting, so pjass proved a repaired block while both defects stayed in the generator. Both were fixed on 8 November 2026 and the repairs were removed. `SoundScriptSpliceCommandTests` and `SoundImportCommandTests` pass, 12 tests between them | met |
+| DOC-07 | The PDF SHALL offer a light printing edition with larger table text, and the cover statistics SHALL be generated from the document rather than typed | Measured. `build_pdf.py --light` renders the same source with a light palette and 8.6pt table text, 73 pages against the dark edition's 63, and a mean page luminance of 189 against 13. The cover statistics are computed from the document by `document_facts` | met |
 
 ## 5. Flows
 
@@ -789,7 +796,7 @@ sequenceDiagram
     P-->>C: serverInfo, capabilities, instructions (DSC-01)
     C->>P: notifications/initialized
     C->>P: tools/list (PRF-02)
-    P-->>C: 270 tools with schemas and hints
+    P-->>C: 275 tools with schemas and hints
     C->>P: resources/read wc3://tools (RSC-03)
     P-->>C: the same surface as JSON
     C->>P: tools/call map_overview (SUR-01)
@@ -1063,7 +1070,7 @@ The server negotiates MCP over stdio. It answers the revision the client offers 
 | Element | Value |
 |---|---|
 | Transport | stdio, newline-delimited JSON-RPC |
-| Protocol revisions | 2024-11-05 today. A later revision is added only after the compatibility test in CMP-01 passes for it |
+| Protocol revisions | The newest revision the pinned SDK speaks is answered when the client offers it, which is 2025-11-25 today, and an older client is answered with the newest revision it also offers, which is 2024-11-05 for a 2025-06-18 offer. The set and what an older client loses are CMP-07 |
 | Server info | `name` from `McpServerName`, `version` from the assembly |
 | Tools | 275, computed once at start |
 | Resources | 3 fixed URIs, plus section templates after RSC-02 |
@@ -1177,6 +1184,7 @@ The code set below is the initial one. ERR-03 keeps it in one place and TST-11 r
 | `OUTPUT_EXISTS` | The output exists and `overwrite` was not set | Pass `overwrite` true or choose a new name |
 | `STALE_INPUT` | `expect_input_sha256` does not match the file | Read the file again and chain on the current output |
 | `CONFIRM_REQUIRED` | A destructive call did not state intent | Pass `confirm` true |
+| `POLICY_DENIED` | The permission file refuses this tool or family | Ask the user to change the permission file, then retry |
 | `INVALID_ARGUMENT` | A value is outside its legal set | The message lists the legal set |
 | `LOSSY_DECODE` | The text would not survive a UTF-8 decode | Use the raw extract tool, or pass `allow_lossy` |
 | `RESULT_TOO_LARGE` | The result would exceed the page limit | Ask for a page or a narrower query |
@@ -1213,11 +1221,12 @@ erDiagram
   }
   LIST_PAGE {
     array items "later"
-    int count "later"
-    int total "later"
+    int returnedCount "later"
+    int totalCount "later"
     int offset "later"
     int limit "later"
-    bool truncated "later"
+    bool hasMore "later"
+    int nextOffset "later"
   }
   ERROR_RESULT {
     string code "later"
@@ -1239,16 +1248,16 @@ title: Tools by family
 ---
 pie showData
   "Map and archive" : 22
-  "Objects and game data" : 29
+  "Objects and game data" : 30
   "Placed, regions, players" : 37
   "Terrain and pathing" : 20
   "Scripts" : 32
   "Triggers and heroes" : 35
-  "Assets and textures" : 33
-  "Porting and bundles" : 7
-  "Repair and compatibility" : 14
+  "Assets and textures" : 35
+  "Porting and bundles" : 8
+  "Repair and compatibility" : 15
   "Leaks and benchmarks" : 27
-  "Product and context" : 13
+  "Product and context" : 14
 ```
 
 ### 6.6 Resources
@@ -1261,6 +1270,9 @@ pie showData
 | `wc3://spec` | Document, whole | This specification, added by RSC-04 |
 | `wc3://context/ui-frames/{section}` | Template | One heading of the tutorial, added by RSC-02 |
 | `wc3://context/abilities/{section}` | Template | One heading of the ability reference, added by RSC-02 |
+| `wc3://skills` | Generated index | Every bundled skill with its name, description and size, added by RSC-08 |
+| `wc3://skills/{name}` | Template | One skill document, added by RSC-08 |
+| `wc3://skills/{name}/{section}` | Template | One heading of a skill, added by RSC-08 |
 
 A resource read is a file read from the installed folder and nothing else. It does not accept a caller path, it does not run a tool, and it cannot modify anything.
 
@@ -1288,7 +1300,7 @@ Every argument is optional and carries a placeholder default. A prompt returns t
 | `CODEX_HOME` | Where Codex keeps `config.toml` | `%USERPROFILE%\.codex` | Setup |
 | `USERPROFILE`, `APPDATA`, `LOCALAPPDATA` | The profile folders every client path is built from | The operating system values | Setup |
 
-`WC3_MCP_PROFILE` and `WC3_MCP_LOG` do not exist today. They are the two additions ENV-01 and SUR-07 require, and both are listed here so a reader sees the whole set in one place.
+`WC3_MCP_PROFILE` does not exist today. It is the addition SUR-07 requires. `WC3_MCP_LOG` landed on 8 November 2026 and is read at start by the stdio host.
 
 Two further variables are read by the map model rather than by the server, and both are diagnostic only. `WC3CTL_FORCE_SALVAGE` forces the in-place patch save that keeps the source hash table, and `WC3CTL_COMPACT_SAVE` keeps the source hash table and rewrites only the block table. Neither is part of the server contract, they exist to diagnose a map that stalls on the loading screen, and they are named here so a process environment that carries one is not a mystery.
 
@@ -1389,13 +1401,14 @@ A requirement is met when its check passes. The checks are grouped by subject an
 | AC-31 | CMP-01 to CMP-06 | The protocol test passes against the supported revisions, an SDK upgrade runs the same test, aliases follow the window, result changes are additive, and a tools-only client still works |
 | AC-32 | TST-01 to TST-13 | The hermetic suite passes, the read sweep and the write sweep pass over synthetic maps, the four audits fail when sabotaged, the parity, docs and size guards run in CI, and the surface count matches in the README, the reference and this document |
 | AC-33 | AUT-01 to AUT-10 | Generate a changelog over a known range and compare it with the commits, run the readiness command on a clean tree and see one verdict, change a source file under watch and see build, test, docs and publish run in order, fail a gate and see publish refused, and start each published exe and read its version |
-
 | AC-34 | SAF-13 | A batch of three edits writes one output that reads back all three. A batch whose second edit fails returns its code, writes no output, and leaves the input unchanged |
 | AC-35 | SAF-14, SAF-15 | The gate is reachable from a test without the MCP layer. A multi-file export leaves either every file and a manifest, or no output |
 | AC-36 | RES-11, PKG-13, AUT-11 | A port result carries two input roles and one output role with digests. A published version resolves to a commit and an artifact digest |
 | AC-37 | PRF-08, PRF-09, RSC-07 | Each named limit refuses with a code before allocation, the memory budget is measured on the reference machine, and editing a cached input invalidates its result |
-| AC-39 | SAF-16 | Two Channel abilities with one order id are reported together, a hero scope checks only that hero's list, and levels that disagree and empty ids are reported apart |
 | AC-38 | TST-14, CMP-07, SEC-08, DOC-07 | Each write family has a semantic assertion that fails when unrelated data changes, the revision matrix passes, the fuzz corpus runs, and the print edition builds |
+| AC-39 | SAF-16 | Two Channel abilities with one order id are reported together, a hero scope checks only that hero's list, and levels that disagree and empty ids are reported apart |
+| AC-40 | SAF-17, SAF-18, RSC-08 | A denied tool fails with `POLICY_DENIED` although `confirm` is true, a missing permission file denies nothing, a malformed one refuses what it cannot classify, and every bundled skill reads and reports its size and digest |
+| AC-41 | SUR-11, TST-15 | Every writing command has a CLI verb and a tool or a named exception in the parity map, and no generator test changes the generated text before asserting |
 
 The sabotage half of AC-32 matters as much as the pass half. A guard that has never been seen to fail is a guard nobody knows works, and the project has already had a linter silently exempt every case it was meant to catch.
 
@@ -1422,9 +1435,9 @@ Each question has the evidence that would settle it. None of them blocks the req
 
 | Question | Why it is open | What settles it |
 |---|---|---|
-| Q1 Should the surface split into several servers, one per family, instead of one server with 270 tools | A small model may do better with 40 tools than with 270, and a user may not want to install five servers | A task success comparison on the same ten prompts, one server against five, with the token cost of each recorded |
+| Q1 Should the surface split into several servers, one per family, instead of one server with 275 tools | A small model may do better with 40 tools than with 270, and a user may not want to install five servers | A task success comparison on the same ten prompts, one server against five, with the token cost of each recorded |
 | Q2 Should the `core` profile be the default, with the full surface opt-in | The default decides what most users get, and SUR-07 currently keeps full as the default | The same comparison as Q1, plus a count of how often each family is actually called in real sessions |
-| Q3 Is an output schema on all 270 tools worth its cost | It is the largest mechanical change in this document, and its value depends on client support | A check of the four most used clients for `structuredContent`, and one family implemented as a trial |
+| Q3 Is an output schema on all 275 tools worth its cost | It is the largest mechanical change in this document, and its value depends on client support | A check of the four most used clients for `structuredContent`, and one family implemented as a trial |
 | Q4 Do clients act on the destructive hint in a way a caller can perceive | If no client reads it, SAF-03 and SAF-10 are the only safety, and the hint is metadata | A test in Claude Desktop, Claude Code, Cursor and VS Code, recording whether a confirmation appears |
 | Q5 How long should an alias live | One minor release is the proposal. Too short breaks a saved prompt, too long doubles the surface | A count of real client configs and prompts that name a renamed tool, over one release cycle |
 | Q6 How far should the batch extend beyond object edits | `object_batch_set` answers it for objects, and the other families have different arguments and validations | The share of real sessions that edit more than one family in one task, and whether a general batch stays explainable in one description |
@@ -1440,22 +1453,20 @@ This is the work queue. Each row names the measured state, the requirement it fa
 
 | Gap | What is wrong today | Requirement | Where the change lands |
 |---|---|---|---|
-| G-01 | The initialize instructions are one line naming the target and the game build | DSC-01 | `Wc3McpServer.BuildInstructions` |
 | G-02 | No tool publishes an output schema, and no result carries structured content | RES-02 | Tool creation options and the result POCOs |
 | G-03 | No result size limit. `list_files` has `brief` and `docs_search` cuts at 1,600 characters, and nothing else has a bound | RES-03, RES-10 | One result envelope in `Wc3.Mcp` |
 | G-04 | No progress notification and no cancellation token, on a surface that includes folder audits and model import | PRF-04 | Tool signatures and the long commands |
 | G-05 | `file_get_text` decodes UTF-8 with replacement characters, silently, and no tool extracts raw bytes | RES-04 | `FileEditCommand.ReadText` and a new extract tool |
-| G-06 | 18 descriptions exceed the 600 character cap and two exceed 1,000, while 33 are under 150 and do not state a trap | SUR-05 | Every `[Description]` on the surface |
-| G-07 | The surface is 270 tools and 82,116 characters, with no profile | SUR-07 | The surface builder and a profile filter |
+| G-06 | 19 descriptions exceed the 600 character cap and two exceed 1,000, while 33 are under 150 and do not state a trap | SUR-05 | Every `[Description]` on the surface |
+| G-07 | The surface is 275 tools and 84,315 characters, with no profile | SUR-07 | The surface builder and a profile filter |
 | G-08 | Nine names need a canonical rename, including one true duplicate pair, `list_files` and `file_list` | SUR-02, SUR-03 | `Wc3Tools`, the alias table, the parity map |
 | G-09 | No tool has a title annotation | SUR-10 | Every `[McpServerTool]` |
-| G-10 | Six writing tools leave `destructiveHint` unset, which the protocol reads as true, and the audit does not check the hint against behaviour. Two of the six, `terrain_export_heightmap` and `pathing_export_png`, also say "Read-only" in their description while they write a file and declare `ReadOnly` false | SAF-01, SAF-02, TST-04 | The attributes, the descriptions and `McpToolAudit` |
+| G-10 | The audit checks an unset hint, a mutating name marked read-only and a writing tool that says read-only, and it does not yet check the two rules TST-04 adds, a read-only name that declares `destructiveHint` true and a destructive tool that declares false | TST-04 | `McpToolAudit` and its test |
 | G-11 | The output rule is implemented twice, in `ResolveOutPath` and again inside several commands | SAF-04 | One gate in `Wc3.Mcp` and the command defaults |
 | G-12 | `object_set`, `object_bulk_set`, `object_batch_set` and the tools behind `SaveEdit` and `SaveTerrain` return digests, a rewritten count and bytes. The remaining direct writes carry none | SAF-06 | The write gate, one family at a time |
 | G-13 | `object_set`, `object_bulk_set` and `object_batch_set` accept `expect_input_sha256`. The other writes cannot refuse a call whose input changed after it was read. The digest verifies the input revision and does not prevent an unchanged base being used twice | SAF-07 | The write gate, one family at a time |
 | G-14 | No destructive tool requires stated intent | SAF-10 | The destructive tools |
 | G-15 | A save writes the destination directly, so a failure can leave a truncated map | SAF-11 | `MapDocument.Save` path used by the server |
-| G-16 | `map` accepts a directory although its description says a file | PAR-01 | `LoadMap` and the parameter descriptions |
 | G-17 | No error carries a code and there is no documented code set | ERR-02, ERR-03 | `Run` and the error table |
 | G-18 | No error code has a test | TST-11 | The MCP test suite |
 | G-19 | The two documents are served whole and there is no section resource | RSC-02 | `Wc3Context.CreateResources` |
@@ -1463,15 +1474,13 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | G-21 | Five prompts exist and `quickstart` names ten workflows | PRM-02 | `Wc3Prompts` |
 | G-22 | `quickstart` covers ten workflows and leaves replay, MPQ, library and game data in none | DSC-02 | `QuickstartCommand` |
 | G-23 | No `tool_help`, so the long rationale has nowhere to live once descriptions are capped | DSC-03 | A new tool and the generated reference |
-| G-24 | Every collection advertises `listChanged` true while nothing changes at run time | TRN-05 | `Wc3McpServer.CreateOptions` |
-| G-25 | Six live artifacts carry five different versions, and the published npm package is 0.5.19 while the mirror's tags stop at v0.5.9 and its tree says 0.5.16, so the tree cannot reproduce what a user installs | IDN-02 | Both `Directory.Build.props`, npm, mcpb, `server.json`, the tag, CI |
+| G-24 | Every collection advertises `listChanged` true while nothing changes at run time. `McpServerOptions.Capabilities` is set to false and the pinned SDK 1.4.1 ignores it, so this is blocked on the SDK pin rather than on this repository | TRN-05 | The `ModelContextProtocol` pin, or a wrapper that rewrites the reply |
+| G-25 | Six live artifacts carry five different versions, and the published npm package is 0.5.19 while the mirror's newest tag is v0.5.16 and its tree says 0.5.16 and 0.5.8, so the tree and the tags cannot reproduce what a user installs | IDN-02 | Both `Directory.Build.props`, npm, mcpb, `server.json`, the tag, CI |
 | G-26 | `doctor` checks the exe, CascLib, the game and the clients, not the context folder or the version | SET-06 | `SetupCli.Doctor` |
 | G-27 | The read sweep selects read-only tools by name prefix and needs a real map, so a write tool with a read-like name escapes it | TST-02 | `McpToolSweepTests` over synthetic maps |
 | G-28 | No test calls every writing tool, checks that the output loads, or checks that the input is unchanged | TST-03 | A new write sweep |
 | G-29 | The generated MCP reference carries no parameters, no result shape and no error codes | DOC-01 | `DocsReference.RenderMcp` |
 | G-30 | The npm launcher has no test for its version path, cache, digest mismatch or offline behaviour | TST-08 | A new launcher test |
-| G-31 | No start line names the build, target, game directory and profile on stderr | ENV-04 | `Program.RunServerAsync` |
-| G-32 | The log level is fixed and there is no `WC3_MCP_LOG` | ENV-05 | The host builder |
 | G-33 | No test names `WC3_TARGET_BUILD` or the placeholder rule, so the precedence is only read in code | ENV-02 | The setup and MCP tests |
 | G-34 | No tool reports its family, and the catalog carries description and hints only | SUR-06, RSC-03 | The catalog record and the resource |
 | G-35 | No map or archive list tool has `limit` or `offset`. `list_files` has `brief` and the graph tools have a count limit, and an object list or a script function list is still returned whole | RES-03 | The list tools |
@@ -1487,9 +1496,7 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | G-45 | The capability catalogue in section 14 is hand-written and can drift from the surface, the way a stale README can | DOC-03, TST-12 | A generated capability map from the tool families |
 | G-46 | The document cites no external source, so a basis that claims a protocol rule or a client behaviour cannot be checked by its reader | DOC-06 | Appendix D and the Basis column |
 | G-47 | The body numbers are a snapshot with no guard, and one description edit moved the total by 157 characters and two parameter counts by one each before anyone noticed | DOC-03, TST-12 | The docs guard and section 3.13 |
-| G-48 | `terrain_export_heightmap` and `pathing_export_png` say "Read-only" in their description while both declare `ReadOnly` false and write a file | SAF-02 | The two descriptions |
-| G-49 | The protocol target is 2024-11-05 while four later revisions are published, and no test names the revision set the pinned SDK negotiates | CMP-01 | The protocol test and the SDK pin |
-
+| G-49 | The specification names one protocol revision while the pin answers at least two, and no test names the set the pinned SDK negotiates or what an older client loses | CMP-01 | The protocol test and the SDK pin |
 | G-50 | Batches exist for object edits only. Placed instances, terrain, strings and triggers still need a chain | SAF-13 | `ObjectBatchSetCommand` and the write families |
 | G-51 | The write gate lives in `Wc3.Mcp`, so the CLI and the Studio cannot use it | SAF-14 | The shared layer and the three front ends |
 | G-52 | Exports write several files directly, with no staged directory, manifest or multi-output envelope | SAF-15, RES-11 | The export commands and the result records |
@@ -1500,13 +1507,16 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | G-57 | The write sweep asserts that an output loads, not that the intended change is present and the rest is preserved | TST-14 | The write sweep |
 | G-58 | No protocol revision matrix exists, and only 2024-11-05 is tested | CMP-07 | The protocol test |
 | G-59 | No fuzz corpus runs against the archive, object, trigger or script parsers | SEC-08 | The test suite and the native reader |
-| G-60 | The print edition is one dark theme at 7.2pt, and a light edition for annotation is not built | DOC-07 | `tools/build_pdf.py` |
+| G-61 | `SoundScriptSpliceCommand` has eight tests and no CLI verb and no tool, so nothing a caller can reach writes the generated dispatcher into `war3map.j` | SUR-11 | `Program.cs` and `Wc3Tools.cs` |
+| G-62 | No permission file exists, so the only thing that stops a destructive call is the caller's own `confirm` flag, and nothing the user writes can refuse a tool | SAF-17, SAF-18 | A new policy type, the host, and section 23.1 |
+| G-63 | Every skill is served by no resource. The two reference documents are readable and a skill is not | RSC-08 | `Wc3Context.CreateResources` and section 23.2 |
+| G-64 | A cold start to the initialize reply is 1.2 seconds against the 1 second requirement. The start line costs 0.03 seconds of it, so the cost is the host building the surface and the SDK handshake | PRF-01 | `Program.RunServerAsync` and the tool collection |
 
-The six narrowest rows are G-20, G-24, G-32, G-34, G-36 and G-45, and the six broadest are G-02, G-04, G-07, G-11, G-39 and G-40. That ordering is an inference from the shape of the change, not a measurement of effort, and the only honest statement about effort is that the first row is visible in one function and the broadest rows touch the whole surface.
+The narrowest rows are the ones a single function closes, G-20, G-31, G-36 and G-45, and the six broadest are G-02, G-04, G-07, G-11, G-39 and G-40. That ordering is an inference from the shape of the change, not a measurement of effort, and the only honest statement about effort is that the first row is visible in one function and the broadest rows touch the whole surface.
 
 ## 11. What has been done
 
-The server did not arrive as a plan. It grew from a seam stub in July 2026 to a surface of 270 tools, and the record of how it grew is the strongest evidence this specification has. Every row below is a commit or a release, and every one is cited.
+The server did not arrive as a plan. It grew from a seam stub in July 2026 to a surface of 275 tools, and the record of how it grew is the strongest evidence this specification has. Every row below is a commit or a release, and every one is cited.
 
 ### 11.1 The timeline
 
@@ -1572,6 +1582,7 @@ Every row below happened. The evidence column names the release or commit that r
 
 | Defect | Evidence | Rule |
 |---|---|---|
+| Five writing tools said Read-only in their description, `mpq_extract_all`, `terrain_export_heightmap`, `pathing_export_png`, `asset_thumbnails` and `asset_convert_batch`, while every one of them writes files | `McpToolAudit`, 8 November 2026 | SAF-02 |
 | `deprotect_map` declared read-only while writing a whole map, so a client could write a file believing nothing would be written | `3f531ed`, `0.4.4` | SAF-01, SAF-02 |
 | `terrain_corner_set` and its siblings refused an omitted `out_path` although every description promised a sibling `.edited` default | `c81c959`, `0.4.2` | SAF-08, PAR-06 |
 | `target_get` promised the target's schema sections and never carried them | `c81c959`, `0.4.2` | RES-01, PAR-04, TST-02 |
@@ -1612,6 +1623,7 @@ Every row below happened. The evidence column names the release or commit that r
 | `repair_portraits` advertised a VERS re-stamp that the project's own Reforged report records as crashing the map on load | `ToolSafetyRegressionTests` | SAF-10, DOC-03 |
 | A config writer left a trailing comma in the last entry | `4d9b58d`, `2026-10-16` | SET-03 |
 | MCP sessions hung CI on a two-core runner | `fix(tests): MCP sessions hung CI on two cores`, `2026-10-12` | TST-13, TRN-03 |
+| The splice test renamed a generated parameter and rewrote an escaped path before asserting, so pjass proved a repaired block and both generator defects stayed in the code | `SoundScriptSpliceCommandTests`, 8 November 2026 | TST-15 |
 | A non-ASCII script read through `file_get_text` came back with replacement characters, and rewriting it corrupted the map while validate, compat and script check all reported OK | `CLAUDE.md`, ACA 0.32A, 2026-10-22 | RES-04, TST-03 |
 | A missing dummy model left 2,586 object references pointing at nothing, 137 of them redirected | `changelog/0.4.13.md`, `CLAUDE.md` | RES-05, PAR-04 |
 
@@ -1637,6 +1649,8 @@ These are measured facts about the format and the toolkit that shape what a tool
 | `file_get_text` is the wrong tool for a script payload, and the right one is an extract of raw bytes followed by a byte-level transform | `CLAUDE.md` | RES-04 |
 | A Reforged patch can leave a map referencing names the build no longer defines, and the answer is a compat report plus a repair, never a version stamp | `docs/reforged-3.0.0-blizzard-bug-report.md`, `0.4.9` | `map_compat`, `compat_explain`, `repair_*` |
 | The doctor is a pinned third-party binary that costs about five seconds per spawn, which is why its answers are cached for the life of the process | `0.4.7` | PRF-04, PRF-06 |
+| `event` is a declared JASS type, `type event extends agent` at line 6 of `common.j`, so a generated function parameter of that name collides with it. The dispatcher now takes `ev` | `common.j`, 8 November 2026 | the generated dispatcher and `hero_generate` |
+| A JASS string literal carrying a Windows path doubles its backslashes, and the repository's convention is `war3mapImported\\x.wav`. An unrepaired block with either defect failed pjass | `SoundImportCommand.JassPath`, 8 November 2026 | every generated JASS block |
 
 ## 14. Capability catalogue
 
@@ -1926,8 +1940,8 @@ Two rules apply to every layer. A tool never writes in place, and a tool never l
 A specification that lives only in prose drifts. This one is kept as data, and the prose is the view.
 
 - `requirements.json` holds every requirement with its group, statement, basis, gap link and status.
-- The Status column and the gap link are generated from that file by `tools/sync_requirements.py`. The command is run before a commit that changes a requirement, and it rewrites the column rather than asking a person to edit 174 rows.
-- The legend is three values. `gap` means a row in section 10 names the requirement. `unassessed` means no gap names it, which is not the same as proven. `met` is set only when a named test passes against the live surface.
+- The Status column and the gap link are generated from that file by `tools/sync_requirements.py`. The command is run before a commit that changes a requirement, and it rewrites the column rather than asking a person to edit 179 rows.
+- The legend is three values. `gap` means a row in section 10 names the requirement. `unassessed` means no gap names it, which is not the same as proven. `met` is set only when a named test passes against the live surface. A requirement may carry a `test` while staying `gap`, and SAF-05, SAF-06 and SAF-07 do, because the test settles the three object tools that pass through the gate and not the rest of the surface.
 
 ### Definition of done
 
@@ -1973,7 +1987,7 @@ flowchart LR
 ```
 
 - **Safe chaining.** The write gate, the digests, `expect_input_sha256`, `confirm`, atomic save and the error codes. It unlocks every workflow where an agent makes more than one edit. The first part is in, and `object_batch_set` removes the chained-edit mistake for object fields by applying up to 500 edits in one load and one save.
-- **Small client.** Output schemas, the result cap and paging, the lossy decode report, `file_extract` and `tool_help`. It makes the server usable from a context that cannot hold 270 descriptions.
+- **Small client.** Output schemas, the result cap and paging, the lossy decode report, `file_extract` and `tool_help`. It makes the server usable from a context that cannot hold 275 descriptions.
 - **First run.** Real initialize instructions, `quickstart` covering every family, the ten prompts and a capability report. It is what a new user meets.
 - **One command release.** Changelog with requirement IDs, docs with schemas, watch and rebuild, the readiness verdict and JSON output. It is what keeps the spec true between releases.
 - **One grammar.** The canonical renames with aliases, the alias window, titles and the description cap. It is the last slice because it touches every tool and is safest after the surface settles.
@@ -1990,6 +2004,13 @@ A slice is pulled when its dependencies are met. A new gap can reorder the queue
 | 1.3 | 8 November 2026 | Adds the read-only `audit_ability_orders` tool and `audit orders` verb, measured on Anime Choice Arena V0.33A and Anime WoS2 v0.34h, SAF-16 and AC-39, section 21 for the anime-map workstreams, and re-measures the surface at 271 tools |
 | 1.4 | 8 November 2026 | Adds section 22, the content pipeline, audio analyze and trim, sound event import, the sequence, material and emitter writers, the primitive mesher, the package scaffold and the hero generator. Re-measures the surface at 272 tools. The gate is the compiler and the audit, not a game launch |
 | 1.5 | 8 November 2026 | Adds `sound_import_events`, the dispatcher splice with pjass proving the assembled script, `hero_generate`, `content_scaffold`, and the surface guard `measure_surface.py`, which now refuses a PDF whose numbers disagree with the exe. Re-measures at 275 tools. The splice also fixed two generator defects, a parameter named `event` and an unescaped path. |
+| 1.6 | 8 November 2026 | Re-measures the body against the published 0.4.13 exe and corrects the drift `measure_surface.py` found. 275 tools and 84,315 description characters everywhere, the 6.5 family chart restored to 275, the result model renamed to the RES-10 paging fields, the seventh unset `destructiveHint` named as `model_primitive`, the parameter and description counts re-taken, the stale copy in 3.7 located in wc3ctl, and the AC-33 and G-49 table breaks closed |
+| 1.7 | 8 November 2026 | Adds what the 8 November pipeline actually is. Section 22 names the CLI verb and the tool for each piece, the pjass gate over the spliced dispatcher with its before and after counts, and the two generator defects that were being repaired by a test. SUR-11, SAF-17, SAF-18, RSC-08 and TST-15 join section 4.1 with gaps G-61 to G-63, checks AC-40 and AC-41, the `POLICY_DENIED` code and section 23, which states the permission file and the skills as resources. 179 requirements and 41 checks |
+| 1.8 | 8 November 2026 | Closes ENV-05. `WC3_MCP_LOG` sets the level, an unknown value falls back to warn, and the published exe writes nothing at the default, 16 lines at `info` and 24 at `debug`, all on stderr. Records why TRN-05 cannot be closed here, the pinned SDK derives `listChanged` from the collections and ignores `McpServerOptions.Capabilities`, proven by a handshake test, so G-24 now names the pin as the blocker. G-32 is closed and removed |
+| 1.9 | 8 November 2026 | Closes ENV-04. The server writes one start line to stderr with the product, the newest protocol revision, the tool count, the target, the game build and the profile, and `ToolCount` counts the surface without building a handler for each tool, so the line costs 0.03 seconds. Records what the start line exposed, a cold start of 1.2 seconds against the 1 second requirement, which becomes G-64, and the revision the pin actually answers, 2025-11-25 to a client that offers it and 2024-11-05 to a 2025-06-18 offer |
+| 1.10 | 8 November 2026 | Corrects the tag claim in 3.7, PKG-13 and G-25. The mirror has 26 tags and the newest is v0.5.16, on a commit dated 20 October 2026, not v0.5.9. The provenance gap stands, because the published package is 0.5.19 and no tag explains it |
+| 1.11 | 8 November 2026 | Closes SAF-01, SAF-02, SAF-03, PAR-01 and DSC-01. Every tool declares all four hints, the audit fails an unset hint and a writing tool that says read-only, five descriptions stop claiming read-only, `map` refuses a folder and a wrong extension before opening anything, and the initialize instructions carry the product, the target, the game build, the three rules and the quickstart hint in 405 characters. Catalog grows to 122,218 bytes and the description total to 84,319 characters |
+| 1.12 | 8 November 2026 | Closes DOC-07. `build_pdf.py --light` renders a light printing edition with 8.6pt table text, 73 pages against 63, and a page luminance of 189 against 13, and the prune keeps one file per edition |
 
 ## 20. Hardening beyond safe chaining
 
@@ -2031,7 +2052,7 @@ A write sweep that asserts the output loads is what the recorded defects already
 
 ### 20.9 The print edition
 
-The tables are 7.2pt because the document is dense. A light edition at a larger size, with the same content, is a build flag rather than a second source. The cover statistics are already generated from the document, which is the part that matters for truth.
+The tables are 7.2pt because the document is dense. A light edition at a larger size, with the same content, is a build flag rather than a second source, and it is `--light`, which renders a light palette with 8.6pt table text into a `-light` file beside the dark one. The cover statistics are generated from the document, which is the part that matters for truth.
 
 ## 21. Building a playable anime map
 
@@ -2105,9 +2126,70 @@ The pipeline built after the audit turns a brief into artifacts. Measured on 8 N
 | Package | `ContentScaffoldCommand` | body, effect, icon, WAV and a manifest whose roles can be rebound |
 | Hero | `HeroGenerateCommand` | two forms, unique `Ncl6` per ability, `uabi` scoped per form, JASS compiles |
 
+A piece is only usable if a caller can reach it. The table names the CLI verb and the tool that carry each one, measured on 8 November 2026.
+
+| Piece | CLI verb | MCP tool |
+|---|---|---|
+| Audio measure | `sound analyze` | none, CLI only and named in the parity allowlist |
+| Audio trim | `sound trim` | none, CLI only and on the same allowlist |
+| Sound events | `sound import` | `sound_import_events` |
+| Dispatcher splice | none | none |
+| Primitive mesh | `model primitive` | `model_primitive` |
+| Content package | `content scaffold` | `content_scaffold` |
+| Hero generation | `hero generate` | `hero_generate` |
+
+The splice is the row with no front end. `SoundScriptSpliceCommand` inserts the generated dispatcher into an existing `war3map.j`, and it has no CLI verb and no tool, so its only caller today is the test suite. A caller therefore receives the JASS block from `sound_import_events` and has to write it into the script itself, which is G-61 and SUR-11.
+
+### 22.1 The gate behind the dispatcher
+
+The splice is proven by running pjass over the assembled script, not by counting functions. Measured on 8 November 2026 against the installed pjass and the CASC `common.j` and `Blizzard.j`, on synthetic scripts.
+
+| Case | Before the generator fix | After |
+|---|---|---|
+| A script with an existing `globals` block | 78 errors | parse successful, 16,168 lines, 3,437 bytes spliced, one `globals` line |
+| A script with no `globals` block | 2 errors | parse successful, 16,167 lines, 3,460 bytes spliced, one block created before the first function |
+| The same script spliced twice | not covered | `already` true, 0 bytes added, parse successful, one `SND_EventPlay` |
+
+Two generator defects produced those errors and both were fixed at the source rather than repaired by the test. The dispatcher took a parameter named `event`, which is a declared JASS type, and it emitted a single backslash in the `CreateSound` path. The parameter is now `ev` and the path goes through `JassPath`, which doubles every backslash. The splice test no longer renames or rewrites anything, so the block pjass proves is the block the generator emits.
+
+The three pjass facts also assert that pjass ran. A machine without the binary or without CASC fails the test rather than passing through an early return.
+
 The gate is the compiler and the audit, not a game launch. A generated script must compile, a generated model must audit with zero issues, and every artifact must parse with the shipped reader. What that does not prove is rendering, engine behaviour, or whether a transformation keeps level and items, and those stay as stated risks rather than tests.
 
 The rest of section 21, damage timelines, hitboxes, projectiles, transformations and presentation budgets, is design until it has an encoder and a test. This section lists only what runs.
+
+### 22.2 What this does not prove
+
+The pipeline is in the wc3ctl working tree and in no commit, so neither repository cites it and the export to the mirror does not carry it. The two suites behind these claims, `SoundImportCommandTests` and `SoundScriptSpliceCommandTests`, pass with 12 tests between them and no failure on 8 November 2026. The splice facts run on synthetic scripts, and no real map was opened for them. A generated model that parses is not a model the engine renders, and a dispatcher that compiles is not a sound that plays.
+
+## 23. Permission, and the skills as resources
+
+Two gaps share one cause. The server decides what a call may do from the call itself, and it carries reference documents but not the procedures written to use them. This section states the design for both, and neither exists today.
+
+### 23.1 A permission file the caller cannot edit
+
+SAF-10 says plainly that `confirm` proves the caller included a flag, not that a person approved anything. A model that has read a hostile string in a map description can send `confirm` true, and nothing on the server can tell that apart from a person deciding. The control has to be a statement the user made in advance, in a file the server reads and the agent cannot reach through a tool.
+
+- The file lives at `%LOCALAPPDATA%\wc3ctl\permissions.json`, outside every folder the server writes and outside any map folder a caller names.
+- It names the tools and families that need a person's approval, and the tools that are refused outright. A rule matches a tool name or a family prefix, and the narrower rule wins.
+- The server reads it once at start, names it in the start line (ENV-04) and in `version_info`, and refuses a denied call with `POLICY_DENIED`, naming the rule and the tool.
+- A missing file denies nothing, because ENV-06 says the server works with no configuration at all. A malformed file refuses every tool it cannot classify, because an unreadable policy is not permission.
+- `confirm` true does not override a denial. The file is permission, the flag is intent, and the tool text says so (SAF-18).
+
+What this is not. It is not a sandbox. An agent that can run a shell can write any file the user can, and the server cannot stop that. It is a boundary inside the server, which is the only place the server can enforce, and it removes the case where a model widens its own permissions through a tool call. SEC-05 already states that the operating system account is the real boundary, and this section does not contradict it.
+
+No tool can write the file, because every write tool produces a map, a model, a texture or a report, and SAF-09 refuses a path that escapes its output folder. The next step for a user who wants a rule is to edit the file themselves.
+
+### 23.2 The skills as resources
+
+The two reference documents are served whole and, after RSC-02, by section. The skills are the same kind of artifact and they are not served at all. A skill is a procedure written for an agent, and a client that can read one whole does not have to be handed the same text in a prompt.
+
+- `wc3://skills` lists every bundled skill with its name, its description and its size.
+- `wc3://skills/{name}` returns one skill as markdown, and `wc3://skills/{name}/{section}` returns one heading of it, the same way RSC-02 serves a reference document.
+- A skill names tools, so it ages the way a prompt does. PRM-05 already fails a prompt that names a removed tool, and a skill SHALL be held to the same test.
+- The folder is the one beside the exe, never a path from the caller (SEC-07), and every read reports the size and digest RSC-05 requires.
+
+What this is not. A skill is not an instruction the server enforces. Serving one changes nothing, and a client that ignores it loses guidance rather than a guarantee. The tool descriptions and the initialize instructions stay the contract.
 
 ## Appendix A. Prior documents and decisions
 
@@ -2167,12 +2249,12 @@ Every requirement group maps to at least one acceptance check. The pairing is li
 |---|---|---|
 | IDN, identity and version | 6 | AC-01, AC-02 |
 | TRN, transport and lifecycle | 7 | AC-03, AC-04 |
-| SUR, tool surface and naming | 10 | AC-05, AC-06 |
-| SAF, safety and annotations | 16 | AC-08, AC-09, AC-10, AC-11, AC-34, AC-35, AC-39 |
+| SUR, tool surface and naming | 11 | AC-05, AC-06, AC-41 |
+| SAF, safety and annotations | 18 | AC-08, AC-09, AC-10, AC-11, AC-34, AC-35, AC-39, AC-40 |
 | PAR, parameters and environment | 9 | AC-07, AC-12, AC-13 |
 | RES, results and the context budget | 11 | AC-14, AC-15, AC-16, AC-17, AC-36 |
 | ERR, errors | 7 | AC-18, AC-19 |
-| RSC, resources | 7 | AC-20, AC-37 |
+| RSC, resources | 8 | AC-20, AC-37, AC-40 |
 | PRM, prompts | 5 | AC-21 |
 | DSC, discovery and guidance | 6 | AC-22 |
 | ENV, environment and configuration | 6 | AC-23 |
@@ -2183,7 +2265,7 @@ Every requirement group maps to at least one acceptance check. The pairing is li
 | PRF, performance and resources | 9 | AC-29, AC-37 |
 | OBS, observability | 4 | AC-30 |
 | CMP, compatibility and deprecation | 7 | AC-31, AC-38 |
-| TST, testing and CI | 14 | AC-32, AC-38 |
+| TST, testing and CI | 15 | AC-32, AC-38, AC-41 |
 | AUT, automation | 11 | AC-33, AC-36 |
 
 Two checks are wider than one group. AC-07 settles the type and enum half of SUR-09 as well as PAR-05, and AC-08 settles the write half of SAF-02 that AC-09 also exercises. Where two checks overlap, the stricter one is the gate.
