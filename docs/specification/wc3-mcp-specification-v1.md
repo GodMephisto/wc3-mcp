@@ -219,9 +219,9 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 
 | Measure | Value |
 |---|---|
-| Tools | 272 |
+| Tools | 275 |
 | Read-only tools | 157 |
-| Writing tools | 115 |
+| Writing tools | 118 |
 | Writing tools that declare `destructiveHint` true | 9 |
 | Writing tools that leave `destructiveHint` unset | 6 |
 | Tools that declare `openWorldHint` true | 1, which is `rag_install` |
@@ -239,7 +239,7 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 
 The surface is computed by reflection over the `[McpServerTool]` methods on `Wc3Tools` and `Wc3Context`, so the client, the catalog resource, the annotation audit and the generated reference all read one list. That is the strongest structural property the build has today and SUR-01 keeps it.
 
-### 3.2 How the 272 tools divide
+### 3.2 How the 275 tools divide
 
 The groups below are the ones the inventory in section 6.5 uses. They follow the name prefix, which is how a client finds a family.
 
@@ -251,12 +251,12 @@ The groups below are the ones the inventory in section 6.5 uses. They follow the
 | Terrain, pathing and time of day | 20 |
 | Scripts | 32 |
 | Triggers and hero wiring | 35 |
-| Assets, models and textures | 34 |
-| Porting and bundles | 7 |
+| Assets, models and textures | 35 |
+| Porting and bundles | 8 |
 | Repair, doctor and compatibility | 15 |
 | Leaks and benchmarks | 27 |
-| Product, catalog and context | 13 |
-| Total | 272 |
+| Product, catalog and context | 14 |
+| Total | 275 |
 
 Thirty-three of the 55 families carry fewer than five tools each, and several carry exactly one. The largest are `trigger` at 25, `script` at 25, `object` at 18 and `terrain` at 16.
 
@@ -266,7 +266,7 @@ Every tool carries a description and an input schema. The generated `docs/mcp-re
 
 | Measure | Value |
 |---|---|
-| Total description text across the surface | 82,804 characters, about 20,000 tokens |
+| Total description text across the surface | 84,315 characters, about 20,000 tokens |
 | Median description | 260 characters |
 | Longest description | 1,126 characters, on `model_import` |
 | Shortest description | 94 characters, on `camera_remove` |
@@ -307,7 +307,7 @@ The two reference documents are served whole, one resource each, read from `cont
 |---|---|---|
 | `wc3://context/ui-frames` | The Big UI-Frame Tutorial by Tasyen, in full | 331,895 bytes |
 | `wc3://context/abilities` | The Warcraft III Editor Ability Insight reference, in full | 336,818 bytes |
-| `wc3://tools` | Every tool with its description and four hints, as JSON | 117,001 bytes |
+| `wc3://tools` | Every tool with its description and four hints, as JSON | 118,934 bytes |
 
 The five prompts are `inspect_map`, `port_hero`, `repair_reforged_map`, `optimize_map_size` and `audit_hero_spells`. Each returns guidance text and a numbered list of tools to call. None performs a call itself, so serving a prompt has no side effect (PRM-01).
 
@@ -1065,7 +1065,7 @@ The server negotiates MCP over stdio. It answers the revision the client offers 
 | Transport | stdio, newline-delimited JSON-RPC |
 | Protocol revisions | 2024-11-05 today. A later revision is added only after the compatibility test in CMP-01 passes for it |
 | Server info | `name` from `McpServerName`, `version` from the assembly |
-| Tools | 272, computed once at start |
+| Tools | 275, computed once at start |
 | Resources | 3 fixed URIs, plus section templates after RSC-02 |
 | Prompts | 5, fixed at start |
 | Instructions | A short string, at most 1,000 characters after DSC-01 |
@@ -1989,6 +1989,7 @@ A slice is pulled when its dependencies are met. A new gap can reorder the queue
 | 1.2 | 8 November 2026 | Adds `object_batch_set` and routes `object_bulk_set` through the gate, states the nine hardening items as SAF-13 to SAF-15, RES-11, PRF-08, PRF-09, RSC-07, PKG-13, TST-14, CMP-07, SEC-08, AUT-11 and DOC-07, with gaps G-50 to G-60 and checks AC-34 to AC-38, and re-measures the surface at 270 tools |
 | 1.3 | 8 November 2026 | Adds the read-only `audit_ability_orders` tool and `audit orders` verb, measured on Anime Choice Arena V0.33A and Anime WoS2 v0.34h, SAF-16 and AC-39, section 21 for the anime-map workstreams, and re-measures the surface at 271 tools |
 | 1.4 | 8 November 2026 | Adds section 22, the content pipeline, audio analyze and trim, sound event import, the sequence, material and emitter writers, the primitive mesher, the package scaffold and the hero generator. Re-measures the surface at 272 tools. The gate is the compiler and the audit, not a game launch |
+| 1.5 | 8 November 2026 | Adds `sound_import_events`, the dispatcher splice with pjass proving the assembled script, `hero_generate`, `content_scaffold`, and the surface guard `measure_surface.py`, which now refuses a PDF whose numbers disagree with the exe. Re-measures at 275 tools. The splice also fixed two generator defects, a parameter named `event` and an unescaped path. |
 
 ## 20. Hardening beyond safe chaining
 
@@ -2203,15 +2204,15 @@ Every tool name, grouped by family. A name alone is the index, and the tool itse
 
 **Triggers and hero wiring** (35). `audit_ability`, `audit_fidelity`, `audit_hero`, `audit_map`, `audit_readiness`, `audit_trend`, `hero_install`, `hero_lint`, `hero_roster`, `trigger_add`, `trigger_add_category`, `trigger_add_eca`, `trigger_catalog_describe`, `trigger_catalog_list`, `trigger_dead`, `trigger_diff`, `trigger_export`, `trigger_lint`, `trigger_move`, `trigger_recover_from_script`, `trigger_remove`, `trigger_remove_eca`, `trigger_rename`, `trigger_set_code`, `trigger_set_eca_enabled`, `trigger_set_enabled`, `trigger_set_initially_on`, `trigger_set_run_on_map_init`, `trigger_sync_bodies`, `trigger_to_script`, `trigger_var_add`, `trigger_var_list`, `trigger_var_remove`, `trigger_var_set`, `triggers_read`.
 
-**Assets, models and textures** (34). `model_primitive`, `asset_audit`, `asset_convert_batch`, `asset_duplicates`, `asset_import_wire`, `asset_list`, `asset_model_lint`, `asset_replace`, `asset_report`, `asset_size_report`, `asset_thumbnails`, `asset_unused`, `model_audit`, `model_compare`, `model_export_obj`, `model_import`, `model_lint`, `model_lod`, `model_optimize`, `model_squish`, `render_model`, `sound_add`, `sound_list`, `sound_optimize`, `sound_remove`, `sound_set`, `strings_diff`, `strings_find`, `strings_list`, `strings_missing`, `strings_set`, `strings_unused`, `texture_atlas`, `texture_optimize`.
+**Assets, models and textures** (35). `model_primitive`, `sound_import_events`, `asset_audit`, `asset_convert_batch`, `asset_duplicates`, `asset_import_wire`, `asset_list`, `asset_model_lint`, `asset_replace`, `asset_report`, `asset_size_report`, `asset_thumbnails`, `asset_unused`, `model_audit`, `model_compare`, `model_export_obj`, `model_import`, `model_lint`, `model_lod`, `model_optimize`, `model_squish`, `render_model`, `sound_add`, `sound_list`, `sound_optimize`, `sound_remove`, `sound_set`, `strings_diff`, `strings_find`, `strings_list`, `strings_missing`, `strings_set`, `strings_unused`, `texture_atlas`, `texture_optimize`.
 
-**Porting and bundles** (7). `bundle_diff`, `bundle_merge`, `bundle_unit`, `port_deps`, `port_into_version`, `port_preview`, `port_unit`.
+**Porting and bundles** (8). `bundle_diff`, `bundle_merge`, `bundle_unit`, `port_deps`, `port_into_version`, `port_preview`, `port_unit`, `hero_generate`.
 
 **Repair, doctor and compatibility** (15). `audit_ability_orders`, `compat_explain`, `compat_matrix`, `deprotect_map`, `doctor_check`, `doctor_compare`, `doctor_fix`, `doctor_inspect`, `new_map`, `repair_audit_errors`, `repair_generated`, `repair_portraits`, `target_get`, `target_list`, `target_set`.
 
 **Leaks and benchmarks** (27). `bench_compat`, `bench_leaks`, `bench_open`, `bench_perf_gate`, `bench_schema_coverage`, `ci_all`, `ci_compat`, `ci_lint`, `ci_schema`, `ci_validate`, `leak_ab`, `leak_benchmark`, `leak_harness`, `leak_join`, `leak_list`, `leak_model`, `library_audit`, `library_compare`, `library_report`, `library_scan`, `library_validate`, `replay_diff`, `replay_find_map`, `replay_players`, `replay_stats`, `replay_summary`, `replay_timeline`.
 
-**Product, catalog and context** (13). `changelog`, `docs_search`, `editor_catalog_get`, `editor_catalog_list`, `graph_hubs`, `graph_neighbors`, `graph_path`, `mcp_audit_annotations`, `mcp_export_verify`, `quickstart`, `rag_install`, `rag_status`, `version_info`.
+**Product, catalog and context** (14). `changelog`, `content_scaffold`, `docs_search`, `editor_catalog_get`, `editor_catalog_list`, `graph_hubs`, `graph_neighbors`, `graph_path`, `mcp_audit_annotations`, `mcp_export_verify`, `quickstart`, `rag_install`, `rag_status`, `version_info`.
 
 
 ## Appendix D. External sources
@@ -2233,7 +2234,7 @@ The vault page `wiki/topics/The MCP Surface.md` was also read. It is a useful ca
 
 ## Appendix E. Verification log
 
-The numbers in section 3 were re-derived on 8 November 2026 from the published exe rather than from the document. The log below records the 269 tool capture. Later slices added `object_batch_set`, `audit_ability_orders` and `model_primitive`, so the current surface is 272 and the live values in section 3.1 are the ones to use. The question the log answers is whether this document is a measurement or a composition.
+The numbers in section 3 were re-derived on 8 November 2026 from the published exe rather than from the document. The log below records the 269 tool capture. Later slices added `object_batch_set`, `audit_ability_orders` and `model_primitive`, so the current surface is 275 and the live values in section 3.1 are the ones to use. The question the log answers is whether this document is a measurement or a composition.
 
 The method is five requests over stdio and one read of each version file. The server is started with no arguments and driven with `initialize`, the initialized notification, `tools/list`, `prompts/list` and `resources/list`. The reply is parsed and every count below is computed from it. No number was taken from an earlier draft, and the script was written before the numbers were compared, so it could disagree.
 
