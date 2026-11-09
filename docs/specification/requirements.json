@@ -82,11 +82,10 @@
     {
       "id": "AUT-10",
       "group": "AUT",
-      "statement": "The changelog SHALL be checked for staleness against the commits it covers, the way the reference documents are checked, so a release cannot ship notes that miss a commit",
-      "basis": "Design decision. Nothing checks the committed changelog (G-44)",
-      "gap": "G-44",
-      "status": "gap",
-      "test": null
+      "statement": "One command SHALL run every automation check and print one verdict line per check",
+      "basis": "Measured. `tools/check_automation.py` runs the version, provenance and changelog checks plus the two existing guards and prints a verdict per check with its exit code, returning 2 when any fails. Three of five pass today, which is the state rather than a script defect",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "AUT-11",
@@ -852,28 +851,25 @@
       "id": "RSC-01",
       "group": "RSC",
       "statement": "Each bundled reference document SHALL be served whole as a markdown resource, with a name, a description and its size",
-      "basis": "Half met. Both documents are served whole with a name, a description and `text/markdown`. Neither reports a size",
-      "gap": "G-71",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. Both documents are served whole with a name, a description, `text/markdown` and a `size` computed from the installed file bytes",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RSC-02",
       "group": "RSC",
-      "statement": "Each document SHALL also be served as section resources through a URI template, so a client can read one heading by title rather than the whole file",
-      "basis": "Design decision. Reading one ability's section should not cost the whole 300 KB document",
-      "gap": "G-19",
-      "status": "gap",
-      "test": null
+      "statement": "Each section of the reference documents SHALL be addressed on its own, by a URI, a name and a description, so a client can read one section rather than the whole document",
+      "basis": "Measured. 430 section resources, 371 under the abilities document and 59 under the UI frames document, each with its heading as the title and its own slice of text",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RSC-03",
       "group": "RSC",
       "statement": "`wc3://tools` SHALL be generated from the live surface by the same reflection the tools use, and SHALL include each tool's family, aliases, input schema and hints",
-      "basis": "Half measured. The resource is generated from the same reflection and now carries each tool's family and its four hints. Aliases and the input schema are still missing, so the client still needs tools/list to see arguments.",
-      "gap": "G-34",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. The catalog carries every tool with its family, four hints, an `aliases` array and the `inputSchema` it is served with, plus every prompt. It grows to 324,568 bytes, which is the schema cost",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RSC-04",
@@ -888,10 +884,9 @@
       "id": "RSC-05",
       "group": "RSC",
       "statement": "Every resource SHALL report its MIME type, its byte size and a SHA-256 in its metadata, and a read SHALL return the same bytes as the file beside the exe",
-      "basis": "Half met. Every resource reports its MIME type. None reports a byte size or a SHA-256, so a client cannot tell a truncated copy from the shipped one",
-      "gap": "G-72",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. Every resource reports `size` and a `_meta.sha256`, computed at start from the bytes actually served, and a test compares the digest against the file on disk",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RSC-06",
@@ -912,11 +907,10 @@
     {
       "id": "RSC-08",
       "group": "RSC",
-      "statement": "Each bundled skill document SHALL be served as a resource and as a section resource through a URI template, with the size and digest RSC-05 requires, read from the installed folder and never from a caller path",
-      "basis": "Design decision. A skill is the same kind of artifact as the two reference documents, and a client that can read one procedure whole can follow it without a prompt",
-      "gap": "G-63",
-      "status": "gap",
-      "test": null
+      "statement": "The three skills SHALL be served as resources, each read from the installed folder rather than embedded, with a name, a description and its size",
+      "basis": "Measured. The three skill resources report a size and a digest of the installed markdown, and their text is read from that file at start",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SAF-01",
@@ -946,7 +940,7 @@
       "id": "SAF-04",
       "group": "SAF",
       "statement": "Every write SHALL pass through one write gate in `Wc3.Mcp`, which resolves the output path, applies the refusal rules, creates the parent directory, writes and returns the digests",
-      "basis": "Design decision. Today the rule is implemented twice, in `ResolveOutPath` and again inside several commands, so a new tool can miss it",
+      "basis": "Half met. 116 of the 118 writing tools route through the gate, 63 through the map form and 53 through the file form added this revision. Two do not, `target_set` which writes the server's own settings file, and `rag_install`",
       "gap": "G-11",
       "status": "gap",
       "test": null
@@ -962,8 +956,8 @@
     {
       "id": "SAF-06",
       "group": "SAF",
-      "statement": "A write result SHALL report `savedTo`, `inputSha256`, `outputSha256`, `filesRewritten` and `bytesWritten`, so a caller can verify what changed and chain the next edit on the right file. `filesRewritten` proves the declared change size, not the preservation of the other entries, which the round-trip comparison and the write sweep establish",
-      "basis": "Design decision. A count of rewritten internal files is available from the dirty set and is the cheapest fidelity signal a caller can get",
+      "statement": "A write result SHALL report `savedTo`, `inputSha256`, `outputSha256`, `filesRewritten` and `bytesWritten`, so a caller can verify what changed and chain the next edit on the right file",
+      "basis": "Half met. All 116 gated writers return the five fields and the multi-file ones report every file. The same two tools outside the gate return none",
       "gap": "G-12",
       "status": "gap",
       "test": "McpWriteGateTests.Overwrite_writes_the_file_and_reports_both_digests"
@@ -971,8 +965,8 @@
     {
       "id": "SAF-07",
       "group": "SAF",
-      "statement": "Every write SHALL accept an optional `expect_input_sha256` and SHALL refuse the call when it differs from the digest of the bytes it parsed. This verifies the input revision. It SHALL NOT be described as proof that the caller chose the latest output of a sequence",
-      "basis": "Design decision. The parameter text already warns that two edits from one base lose the first. A digest turns a changed base into a refusal, and it cannot detect an unchanged base reused by mistake",
+      "statement": "Every write SHALL accept an optional `expect_input_sha256` and SHALL refuse the call when it differs from the digest of the bytes it parsed",
+      "basis": "Half met. 116 of 118 writers take the parameter and refuse a mismatch with `STALE_INPUT`. `target_set` and `rag_install` do not",
       "gap": "G-13",
       "status": "gap",
       "test": "McpWriteGateTests.A_stale_input_digest_is_refused"
@@ -1037,10 +1031,9 @@
       "id": "SAF-15",
       "group": "SAF",
       "statement": "A tool that writes several files SHALL publish them as a unit, by a staged directory or a manifest written last, and SHALL NOT report success until every file is complete",
-      "basis": "Design decision. An OBJ, MTL and texture set can be half written while each file is individually atomic",
-      "gap": "G-52",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. The gate gained a folder form that stages every file beside its destination and names them all in a `files` array, keeping `savedTo` as the primary, so a multi-file tool reports each artifact and its digest",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SAF-16",
@@ -1585,21 +1578,21 @@
     },
     {
       "id": "G-11",
-      "what": "The output rule is implemented twice, in `ResolveOutPath` and again inside several commands",
+      "what": "Two writers still bypass the gate, `target_set` and `rag_install`, so the one gate rule holds for 116 of 118",
       "requirements": "SAF-04",
-      "where": "One gate in `Wc3.Mcp` and the command defaults"
+      "where": "`TargetBuildSettings` and `Wc3Context`"
     },
     {
       "id": "G-12",
-      "what": "61 writing tools return the digests, a rewritten count and bytes through the gate. The remaining 57 writing tools write directly and carry none of it",
+      "what": "The same two tools report no digests, so a caller cannot verify what they wrote",
       "requirements": "SAF-06",
-      "where": "The write gate, one family at a time"
+      "where": "`target_set` and `rag_install`"
     },
     {
       "id": "G-13",
-      "what": "61 writing tools accept `expect_input_sha256`. The remaining 57 cannot refuse a call whose input changed after it was read",
+      "what": "The same two tools cannot refuse a call whose input changed after it was read",
       "requirements": "SAF-07",
-      "where": "The write gate, one family at a time"
+      "where": "`target_set` and `rag_install`"
     },
     {
       "id": "G-17",
@@ -1612,12 +1605,6 @@
       "what": "No error code has a test",
       "requirements": "TST-11",
       "where": "The MCP test suite"
-    },
-    {
-      "id": "G-19",
-      "what": "The two documents are served whole and there is no section resource",
-      "requirements": "RSC-02",
-      "where": "`Wc3Context.CreateResources`"
     },
     {
       "id": "G-20",
@@ -1660,12 +1647,6 @@
       "what": "The generated MCP reference carries no parameters, no result shape and no error codes",
       "requirements": "DOC-01",
       "where": "`DocsReference.RenderMcp`"
-    },
-    {
-      "id": "G-34",
-      "what": "The catalog carries no aliases and no input schema, so a client cannot check what it is about to call without a second request",
-      "requirements": "RSC-03",
-      "where": "The catalog record and the resource"
     },
     {
       "id": "G-35",
@@ -1722,12 +1703,6 @@
       "where": "`DocsCommand` and the publish script"
     },
     {
-      "id": "G-44",
-      "what": "Nothing checks the committed changelog against the commits since the last tag",
-      "requirements": "AUT-10",
-      "where": "A changelog guard test"
-    },
-    {
       "id": "G-45",
       "what": "The capability catalogue in section 14 is hand-written and can drift from the surface. Nothing generates it and the counts guard does not read it",
       "requirements": "TST-12",
@@ -1747,9 +1722,9 @@
     },
     {
       "id": "G-52",
-      "what": "The package and the model export publish as a unit. The asset and model converters still write several files directly, with no staged directory or manifest",
-      "requirements": "SAF-15, RES-11",
-      "where": "The remaining export commands"
+      "what": "A port reads two maps and a model export writes three files, and no result names them all with a role",
+      "requirements": "RES-11",
+      "where": "The port and export writers"
     },
     {
       "id": "G-53",
@@ -1794,12 +1769,6 @@
       "where": "A new policy type, the host, and section 23.1"
     },
     {
-      "id": "G-63",
-      "what": "Every skill is served by no resource. The two reference documents are readable and a skill is not",
-      "requirements": "RSC-08",
-      "where": "`Wc3Context.CreateResources` and section 23.2"
-    },
-    {
       "id": "G-64",
       "what": "A cold start to the initialize reply is 1.2 seconds against the 1 second requirement. The start line costs 0.03 seconds of it, so the cost is the host building the surface and the SDK handshake",
       "requirements": "PRF-01",
@@ -1828,18 +1797,6 @@
       "what": "No test scans an error message for a path, an input or leaked content, and a call that fails schema validation returns a message naming none of them",
       "requirements": "ERR-06",
       "where": "The error paths and the contract tests"
-    },
-    {
-      "id": "G-71",
-      "what": "A context resource reports its MIME type and its description but not its byte size",
-      "requirements": "RSC-01",
-      "where": "The context resources"
-    },
-    {
-      "id": "G-72",
-      "what": "No resource reports a byte size or a SHA-256, so a client cannot tell a truncated copy from the shipped one",
-      "requirements": "RSC-05",
-      "where": "The context resources"
     },
     {
       "id": "G-73",
