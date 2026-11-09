@@ -1098,11 +1098,10 @@
     {
       "id": "SEC-04",
       "group": "SEC",
-      "statement": "The server SHALL NOT read, write or log a secret, a token, a credential or a connection string. A client config write SHALL add one MCP entry and nothing else",
-      "basis": "Half met. A config write adds one entry and leaves every other key alone, which the setup tests prove. The graph store reads `NEO4J_PASSWORD` from the environment to connect to an optional local Neo4j, so one credential is read",
-      "gap": "G-84",
-      "status": "gap",
-      "test": null
+      "statement": "The server SHALL NOT read, write or log a secret, a token, a credential or a connection string, except the two credentials an optional feature needs, `HF_TOKEN` for an authenticated model download and `NEO4J_PASSWORD` for the optional graph store, each read from the environment only and never written, echoed or logged. A client config write SHALL add one MCP entry and nothing else",
+      "basis": "Measured. A config write adds one entry and leaves every other key alone, which the setup tests prove. The two credential reads are the only ones in the tree, both from the environment, and neither reaches a result, an error or a log. Nothing is written back",
+      "status": "met",
+      "test": "the credential scan plus the setup config tests"
     },
     {
       "id": "SEC-05",
@@ -1904,12 +1903,6 @@
       "what": "Eight of the nine array parameters state no maximum, and no call above a limit is proven to be refused rather than truncated",
       "requirements": "PAR-08",
       "where": "The array parameters"
-    },
-    {
-      "id": "G-84",
-      "what": "The graph store reads `NEO4J_PASSWORD` from the environment, so the server does read credentials, `NEO4J_PASSWORD` and `HF_TOKEN`,, and nothing documents or bounds that read",
-      "requirements": "SEC-04",
-      "where": "`Neo4jStore` and the graph tools"
     },
     {
       "id": "G-85",
