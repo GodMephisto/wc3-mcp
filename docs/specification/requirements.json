@@ -906,9 +906,8 @@
       "group": "RSC",
       "statement": "A cached result SHALL be keyed by the content digest of its input, the options, the target build and the tool version, and a changed input SHALL invalidate it",
       "basis": "Design decision. The doctor cache is keyed by path, so a file edited at the same path is served a stale verdict",
-      "gap": "G-55",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "MapDoctorCommandTests"
     },
     {
       "id": "RSC-08",
@@ -1031,9 +1030,8 @@
       "group": "SAF",
       "statement": "The write gate SHALL live in the shared layer and SHALL be reachable from the CLI, the Studio and MCP, so a guarantee does not depend on the front end",
       "basis": "Design decision. SUR-01 promises one behaviour per command, and SAF-04 places the gate in the adapter",
-      "gap": "G-51",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "ArtifactWriterTests"
     },
     {
       "id": "SAF-15",
@@ -1074,57 +1072,59 @@
       "id": "SEC-01",
       "group": "SEC",
       "statement": "The server SHALL NOT collect telemetry, analytics or usage data, and SHALL NOT contact any endpoint that is not named in SEC-02",
-      "basis": "Design decision. It runs on a user's machine over their files",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. A scan of the tree finds no analytics package, no telemetry call and no phone home. The only outbound addresses in code are the three retrieval downloads and the release check, both named in SEC-02, and the rest of the `https://` strings are documentation links printed by `clients`",
+      "status": "met",
+      "test": "measured against the tree and the published exe"
     },
     {
       "id": "SEC-02",
       "group": "SEC",
       "statement": "Every network access SHALL be listed here with its purpose, its trigger and its verification. Today there are four. `rag_install` fetches the model and the corpus. `update` fetches a GitHub release. The npm postinstall fetches the release archive. `install.ps1` fetches and unpacks a release",
-      "basis": "Measured. These are the only four paths in the source",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The scan finds exactly those, the three retrieval URLs and the self-updater's release call in code, and the launcher and the installer script in the packages. Nothing else opens a socket",
+      "status": "met",
+      "test": "measured against the tree and the published exe"
     },
     {
       "id": "SEC-03",
       "group": "SEC",
       "statement": "Every download SHALL be verified against a pinned SHA-256 and, where a size is known, a size, and the RAG corpus SHALL be the fixed bundled dataset, never a folder named by the caller",
-      "basis": "Measured. The launcher checks the release digest, the RAG installer pins its digests, and `rag_install` takes no path argument",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The model, the vocabulary and the dataset carry pinned SHA-256 constants, the launcher verifies the release archive against its published digest, the corpus URL is a fixed release asset, and `rag_install` takes only `threads` and `batch`, so no caller can name a folder",
+      "status": "met",
+      "test": "measured against the tree and the published exe"
     },
     {
       "id": "SEC-04",
       "group": "SEC",
       "statement": "The server SHALL NOT read, write or log a secret, a token, a credential or a connection string. A client config write SHALL add one MCP entry and nothing else",
-      "basis": "Design decision. A setup tool editing a config file is exactly where a broad rewrite would leak or destroy",
-      "status": "unassessed",
+      "basis": "Half met. A config write adds one entry and leaves every other key alone, which the setup tests prove. The graph store reads `NEO4J_PASSWORD` from the environment to connect to an optional local Neo4j, so one credential is read",
+      "gap": "G-84",
+      "status": "gap",
       "test": null
     },
     {
       "id": "SEC-05",
       "group": "SEC",
       "statement": "The threat model SHALL state that the boundary is the operating system account, that any client the user starts can call any tool, and that the server does not sandbox the client",
-      "basis": "Design decision. A tool server that pretends to be a security boundary is worse than one that states it is not",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. Section 6.11 now states all three, that the server runs as the signed-in user, that any client the user starts can call any tool, and that the server does not sandbox the client, then says what it does enforce, its own boundary",
+      "status": "met",
+      "test": "measured against the tree and the published exe"
     },
     {
       "id": "SEC-06",
       "group": "SEC",
       "statement": "A parser bug on a hostile map SHALL NOT execute code, write outside the output path or crash the process without a tool error",
-      "basis": "Design decision. A map is untrusted input, and several tools parse thousands of bytes from one",
-      "status": "unassessed",
+      "basis": "Not measured. The design holds, managed code with no `eval` and no assembly loading, writes bounded by the gate, and a parser failure becomes a tool error in every case observed. No hostile input has been fed to it, so the claim rests on the design rather than on a run",
+      "gap": "G-85",
+      "status": "gap",
       "test": null
     },
     {
       "id": "SEC-07",
       "group": "SEC",
       "statement": "A resource read SHALL return a file from the installed `context/` folder and SHALL NOT accept a path from the caller",
-      "basis": "Measured. Resources are built from a fixed folder at start",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `wc3://context/abilities` returns the shipped markdown, and `wc3://context/../../secret`, the same with an encoded traversal, and `file:///C:/Windows/win.ini` are all refused as unknown resources",
+      "status": "met",
+      "test": "measured against the tree and the published exe"
     },
     {
       "id": "SEC-08",
@@ -1380,9 +1380,9 @@
       "id": "TST-01",
       "group": "TST",
       "statement": "The protocol tests SHALL drive the real server wiring through an in-memory client, covering initialize, tools/list, one real call, one error, the catalog resource, a prompt and a context resource",
-      "basis": "Measured. `McpServerTests` does this today",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `McpServerTests` drives the real wiring and covers all seven, initialize with identity, the tool list, `list_files` round tripping a real map, a missing map as a clean error, the catalog resource as JSON, a prompt round trip, and the context documents as resources",
+      "status": "met",
+      "test": "McpServerTests"
     },
     {
       "id": "TST-02",
@@ -1414,25 +1414,25 @@
       "id": "TST-05",
       "group": "TST",
       "statement": "Every tool SHALL have a CLI parity entry, and a new tool SHALL fail the parity test until one is added",
-      "basis": "Measured. `CliMcpParityTests` holds a full map and asserts both directions",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `CliMcpParityTests` asserts both directions, `Every_mcp_tool_has_a_real_cli_command` and `Every_cli_command_is_mapped_or_allowlisted`, and `Mapping_covers_exactly_the_real_mcp_tool_set` fails the moment a tool exists without a mapping",
+      "status": "met",
+      "test": "the suite named in the basis"
     },
     {
       "id": "TST-06",
       "group": "TST",
       "statement": "The generated references SHALL be regenerated in memory and compared byte for byte with the committed files",
-      "basis": "Measured. The CLI reference guard does this. The MCP reference is guarded the same way",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `DocsReferenceTests` renders both documents from the live tree in memory, reports the first differing line, and the committed file is the comparison",
+      "status": "met",
+      "test": "the suite named in the basis"
     },
     {
       "id": "TST-07",
       "group": "TST",
       "statement": "The setup writers SHALL be tested over a temporary home, a temporary app data and a temporary PATH for every client, including the comment refusal, the backup and the idempotence",
-      "basis": "Measured. `SetupTests` does this",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `SetupTests` runs every fixture over a temp home, temp app data and a temp PATH, and asserts the comment handling, the backup file and that a second install changes nothing, plus a round trip per client",
+      "status": "met",
+      "test": "the suite named in the basis"
     },
     {
       "id": "TST-08",
@@ -1446,17 +1446,18 @@
       "id": "TST-09",
       "group": "TST",
       "statement": "Each family SHALL have a result size test, asserting the documented page and the cap",
-      "basis": "Design decision. RES-03 is unenforceable without a test per family",
-      "status": "unassessed",
+      "basis": "Not implemented. No test asserts a page size and a cap per family, so the result limits in RES-03 have no guard",
+      "gap": "G-86",
+      "status": "gap",
       "test": null
     },
     {
       "id": "TST-10",
       "group": "TST",
       "statement": "A hermetic test SHALL NOT depend on a map outside the repository and MAY build a synthetic map in a temporary folder. The Corpus category SHALL be excluded from the hermetic run",
-      "basis": "Measured. The categories already exist and the hermetic command excludes them",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The categories exist, `Corpus`, `GameData` and `Doctor`, and the CI command runs `Category!=Corpus&Category!=GameData&Category!=Doctor`. The hermetic fixtures build their maps in a temporary folder",
+      "status": "met",
+      "test": "the suite named in the basis"
     },
     {
       "id": "TST-11",
@@ -1480,9 +1481,9 @@
       "id": "TST-13",
       "group": "TST",
       "statement": "The MCP and setup suites SHALL run on Windows in CI on every pull request, and a corpus run SHALL be available by hand",
-      "basis": "Measured. The hermetic suites ran in 3 seconds locally, so they are cheap enough to gate on",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The workflow runs on `windows-latest` for every push to the two long lived branches and every pull request against `master`, and the hermetic filter runs the MCP, setup and map suites in about three seconds",
+      "status": "met",
+      "test": "the suite named in the basis"
     },
     {
       "id": "TST-14",
@@ -1714,16 +1715,10 @@
       "where": "The CI step, beside `tools/check_counts.py`"
     },
     {
-      "id": "G-51",
-      "what": "The write gate lives in `Wc3.Mcp`, so the CLI and the Studio cannot use it",
-      "requirements": "SAF-14",
-      "where": "The shared layer and the three front ends"
-    },
-    {
       "id": "G-52",
-      "what": "Exports write several files directly, with no staged directory, manifest or multi-output envelope",
+      "what": "The package and the model export publish as a unit. The asset and model converters still write several files directly, with no staged directory or manifest",
       "requirements": "SAF-15, RES-11",
-      "where": "The export commands and the result records"
+      "where": "The remaining export commands"
     },
     {
       "id": "G-53",
@@ -1736,12 +1731,6 @@
       "what": "PRF-05 counts the input and output bytes and ignores parsed sections, assets, schemas and concurrent calls",
       "requirements": "PRF-09",
       "where": "`MapDocument.Load` and the command layer"
-    },
-    {
-      "id": "G-55",
-      "what": "The doctor cache is keyed by path, so an edited file at the same path keeps a stale verdict",
-      "requirements": "RSC-07",
-      "where": "The doctor cache"
     },
     {
       "id": "G-56",
@@ -1898,6 +1887,24 @@
       "what": "Eight of the nine array parameters state no maximum, and no call above a limit is proven to be refused rather than truncated",
       "requirements": "PAR-08",
       "where": "The array parameters"
+    },
+    {
+      "id": "G-84",
+      "what": "The graph store reads `NEO4J_PASSWORD` from the environment, so the server does read one credential, and nothing documents or bounds that read",
+      "requirements": "SEC-04",
+      "where": "`Neo4jStore` and the graph tools"
+    },
+    {
+      "id": "G-85",
+      "what": "No hostile input has been fed to the parsers, so the claim that a parser bug cannot escape rests on the design rather than on a run",
+      "requirements": "SEC-06",
+      "where": "The parsers and the fuzz corpus"
+    },
+    {
+      "id": "G-86",
+      "what": "No test asserts a page size and a cap per family, so the result limits have a rule and no guard",
+      "requirements": "TST-09",
+      "where": "The family tests"
     }
   ]
 }
