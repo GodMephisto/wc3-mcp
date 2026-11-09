@@ -74,6 +74,18 @@ CONTRACT = (
         "timeout": 600,
     },
     {
+        "script": "check_mirror_lag.py",
+        "argv": ["--json"],
+        "keys": ["ok", "exit", "exe", "reference", "declared", "exe_count", "reference_count", "missing", "extra", "rows"],
+        "timeout": 300,
+    },
+    {
+        "script": "check_reference.py",
+        "argv": ["--json"],
+        "keys": ["ok", "exit", "exe", "reference", "tools", "declared", "named", "fields", "rows"],
+        "timeout": 300,
+    },
+    {
         "script": "release_record.py",
         "argv": [
             "write",

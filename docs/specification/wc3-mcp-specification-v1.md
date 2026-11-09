@@ -219,8 +219,8 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 
 | Measure | Value |
 |---|---|
-| Tools | 276 |
-| Read-only tools | 157 |
+| Tools | 277 |
+| Read-only tools | 158 |
 | Writing tools | 119 |
 | Writing tools that declare `destructiveHint` true | 11 |
 | Tools that leave any annotation hint unset | 0 |
@@ -239,7 +239,7 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 
 The surface is computed by reflection over the `[McpServerTool]` methods on `Wc3Tools` and `Wc3Context`, so the client, the catalog resource, the annotation audit and the generated reference all read one list. That is the strongest structural property the build has today and SUR-01 keeps it.
 
-### 3.2 How the 276 tools divide
+### 3.2 How the 277 tools divide
 
 The groups below are the ones the inventory in section 6.5 uses. They follow the name prefix, which is how a client finds a family.
 
@@ -266,7 +266,7 @@ Every tool carries a description and an input schema. The generated `docs/mcp-re
 
 | Measure | Value |
 |---|---|
-| Total description text across the surface | 81,195 characters, about 20,000 tokens |
+| Total description text across the surface | 81,509 characters, about 20,000 tokens |
 | Median description | 264 characters |
 | Longest description | 1,126 characters, on `model_import` |
 | Shortest description | 94 characters, on `camera_remove` |
@@ -275,7 +275,7 @@ Every tool carries a description and an input schema. The generated `docs/mcp-re
 | Descriptions from 300 to 599 characters | 87 |
 | Descriptions from 600 to 999 characters | 17 |
 | Descriptions of 1,000 characters or more | 2 |
-| Tools with a `title` annotation | 276 |
+| Tools with a `title` annotation | 277 |
 
 The description text is the part every client loads before it knows what the user wants, so it is the context cost of the surface. At about 20,000 tokens it is a real cost for a small model and a real reason to describe a tool in one sentence and keep the long rationale in the reference document (SUR-05, SUR-07). These values were re-measured after the first slice and moved by exactly the amount one description edit explains. Section 3.13 records the delta and the arithmetic.
 
@@ -307,7 +307,7 @@ The two reference documents are served whole, one resource each, read from `cont
 |---|---|---|
 | `wc3://context/ui-frames` | The Big UI-Frame Tutorial by Tasyen, in full | 331,895 bytes |
 | `wc3://context/abilities` | The Warcraft III Editor Ability Insight reference, in full | 336,818 bytes |
-| `wc3://tools` | Every tool with its description, its family, four hints, its aliases and its input schema, and every prompt with its arguments, as JSON | 323,437 bytes |
+| `wc3://tools` | Every tool with its description, its family, four hints, its aliases and its input schema, and every prompt with its arguments, as JSON | 323,960 bytes |
 | Prompts | The plan per quickstart workflow, returned as guidance text | 13 |
 | `wc3://skills/map-safety` | Read before write, never overwrite the input, chain on the output | Shipped markdown |
 | `wc3://skills/hero-package` | The five roles and the compiler gate for a generated hero | Shipped markdown |
@@ -454,7 +454,7 @@ The capture above was taken on 8 November 2026. One edit has landed since, the `
 
 Every other count held exactly, including the 55 families, the 33 families under five tools, the 5 tools with no parameters, the 18 tools that require none, the 11 destructive tools, the 6 with the hint unset, the 3 resources, the 13 prompts and the five committed version values.
 
-Later slices added `object_batch_set`, `audit_ability_orders`, `model_primitive`, `sound_import_events`, `hero_generate` and `content_scaffold`, so the current capture in section 3.1 is 276 tools and 84,315 description characters. The total grew by 2,543 characters across six tool additions, which is consistent with a capture and is not a substitute for one. This table stays as the record of the first slice, and the deltas below are what one description edit did.
+Later slices added `object_batch_set`, `audit_ability_orders`, `model_primitive`, `sound_import_events`, `hero_generate` and `content_scaffold`, so the current capture in section 3.1 is 277 tools and 84,315 description characters. The total grew by 2,543 characters across six tool additions, which is consistent with a capture and is not a substitute for one. This table stays as the record of the first slice, and the deltas below are what one description edit did.
 
 The arithmetic is consistent with a capture, and it is not proof of one. What makes it a capture is that every number can be produced again from the exe, and Appendix E states the method so a reader can repeat it. Agreement between two documents is evidence that they match each other, not that they match the build.
 
@@ -549,21 +549,21 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
 | SUR-01 | Every tool that acts on a map, a model, an asset, a script or a replay SHALL be a thin wrapper over one `Wc3.Commands` handler. The introspection tools and the reference search MAY live in the MCP layer, and no tool in that layer SHALL parse a map format, a model, a script or a replay | Measured. Every map acting tool routes through `LoadMap`, 139 call sites in the adapter, and the parsing itself lives in `Wc3.MapDocument`, so the adapter cannot read a format differently from the CLI | met |
-| SUR-02 | A tool name SHALL follow `<domain>_<verb>[_<noun>]`, lower case, one canonical name per operation, and the verb SHALL be the operation rather than a synonym. `map_info` and `map_info_get` SHALL NOT both exist. `list_files` and `file_list` SHALL NOT both exist | Measured. Both pairs exist today, plus `triggers_read` beside 25 `trigger_*` tools, `placed_units_list` beside `placed_unit_*`, and `search` beside `docs_search` | gap |
+| SUR-02 | A tool name SHALL follow `<domain>_<verb>[_<noun>]`, lower case, one canonical name per operation, and the verb SHALL be the operation rather than a synonym. `map_info` and `map_info_get` SHALL NOT both exist. `list_files` and `file_list` SHALL NOT both exist | Partly built. The alias table, the call filter and the expiry refusal exist and the absent-from-list and expired cases pass, but the round trip fails with `Unknown tool` because the deferred descriptor collection does not build on demand for a rewritten name. The test is skipped with that reason rather than deleted | gap |
 | SUR-03 | A renamed tool SHALL keep an alias for at least one minor release, the alias SHALL say it is deprecated and name the replacement, and `wc3://tools` SHALL list the replacement. The alias may be removed in the first major release after the rename, never in a minor release | Design decision. An agent may have a cached prompt that names the old tool, and a hard removal turns that into a failed task | gap |
 | SUR-04 | One operation SHALL have one tool. A tool that only reformats another tool's result SHALL be a parameter of that tool, unless it answers a different question | Not enforced. Nothing scans for two tools over one operation. `leak_list` presents what `script_leaks` found and no rule separates a presentation from a duplicate | gap |
 | SUR-05 | Every description SHALL state what the tool does, whether it writes, what it refuses and the one trap a caller would otherwise hit, in at most 600 characters. The longer rationale SHALL live in the generated reference and in `tool_help` | Measured. Two descriptions exceed 1,000 characters and the surface totals about 20,000 tokens before the user asks anything | gap |
-| SUR-06 | Every tool SHALL belong to exactly one family, and the family SHALL be visible in the catalog resource and the generated reference | Measured. `McpToolFamilies` holds the inventory, 276 tools across the eleven families in section 6.5, and the catalog carries the family for each tool. `Every_tool_belongs_to_exactly_one_family` fails on a tool with no family, so a new tool cannot land ungrouped | met |
-| SUR-07 | The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface | Half met. The surface is 276 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists | gap |
+| SUR-06 | Every tool SHALL belong to exactly one family, and the family SHALL be visible in the catalog resource and the generated reference | Measured. `McpToolFamilies` holds the inventory, 277 tools across the eleven families in section 6.5, and the catalog carries the family for each tool. `Every_tool_belongs_to_exactly_one_family` fails on a tool with no family, so a new tool cannot land ungrouped | met |
+| SUR-07 | The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface | Half met. The surface is 277 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists | gap |
 | SUR-08 | No tool SHALL require more than eight parameters, and a requirement for more SHALL become a parameter object with its own schema | Not met. The largest tool takes 11 parameters, `place_unit` and `place_doodad`, and the basis that said eight, with `force_set_flags`, was wrong when it was measured | gap |
 | SUR-09 | Every parameter SHALL have a type, a description and, when it is optional, a stated default. An enumerated value SHALL list its legal values in the description and SHALL NOT accept an unknown one silently | Measured. All 959 parameters are typed and every one carries a description, and an enumerated value is now refused by name with its legal set rather than answered with an empty result, which the `gamedata_enum` tests pin | met |
-| SUR-10 | Every tool SHALL carry a `title` annotation, a short human label, so a client can show a readable name without parsing the description | Measured. All 276 tools carry a `title`, sentence case, no trailing period, and the longest is 35 characters, so a client that renders a title instead of a name has one for every tool | met |
+| SUR-10 | Every tool SHALL carry a `title` annotation, a short human label, so a client can show a readable name without parsing the description | Measured. All 277 tools carry a `title`, sentence case, no trailing period, and the longest is 35 characters, so a client that renders a title instead of a name has one for every tool | met |
 
 ### Safety and annotations
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| SAF-01 | Every tool SHALL set all four annotation hints explicitly. An unset hint SHALL fail the annotation audit | Measured. Every one of the 276 tools declares all four hints, the seven writing tools that left `destructiveHint` unset now declare false, and the audit reports an unset hint per tool by name | met |
+| SAF-01 | Every tool SHALL set all four annotation hints explicitly. An unset hint SHALL fail the annotation audit | Measured. Every one of the 277 tools declares all four hints, the seven writing tools that left `destructiveHint` unset now declare false, and the audit reports an unset hint per tool by name | met |
 | SAF-02 | `readOnlyHint` true SHALL mean the call writes no byte anywhere in the user's workspace. A tool that writes a PNG, a CSV, a report or a temp map SHALL NOT claim to be read-only | Measured. Five writing tools said read-only in their description, `mpq_extract_all`, `terrain_export_heightmap`, `pathing_export_png`, `asset_thumbnails` and `asset_convert_batch`, and all five now say what they write and that the input is untouched. The audit fails any writing tool whose description carries the word | met |
 | SAF-03 | `destructiveHint` true SHALL mean the call can discard map content that cannot be recovered from its output, such as a removed placement, object, region, trigger, variable, sound or archive entry. A tool that only adds, rebuilds or copies SHALL declare false. A transformation that discards information in its output, such as lossy model compression or a texture re-encode, SHALL state what it discards and SHALL declare the hint for that loss. Replacing an existing destination is a separate fact and is governed by `overwrite` | Measured. Eleven tools declare it true, including `mpq_remove` and `mpq_remove_many`, which remove archive entries and are the kind of loss this rule names. The seven that left it unset, `gamedata_export_schemas`, `pathing_export_png`, `terrain_export_heightmap`, `model_primitive`, `model_squish`, `target_set` and `rag_install`, all declare false, which matches the definition because each writes a new artifact and discards no map content | met |
 | SAF-04 | Every write SHALL pass through one write gate in `Wc3.Mcp`, which resolves the output path, applies the refusal rules, creates the parent directory, writes and returns the digests | Measured. All 118 writing tools route through the gate. 63 use the map form, 53 the file form, and `target_set` the text form added for its settings file, while `rag_install` declares the tree it writes under the local app data instead of being gated like an artifact | met |
@@ -596,7 +596,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 |---|---|---|---|
 | RES-01 | A successful tool call SHALL return a JSON object as its text content, and SHALL NOT return prose that a caller has to parse | Measured. `quickstart` now returns `{"items":[...],"count":12}` rather than a bare array, and the thirteen read tools sampled return objects with camelCase fields. No tool returns prose | met |
 | RES-02 | Every tool SHALL publish an `outputSchema`, and SHALL return the same object as `structuredContent`. The text content SHALL stay for a client that does not read structured content | Measured. No tool publishes an output schema, so a client cannot validate a result or discover its shape without calling the tool | gap |
-| RES-03 | No single result SHALL exceed 256 KB of structured JSON, excluding binary content blocks, which RES-05 bounds separately at 1 MB. A list tool SHALL accept `limit` and `offset`, default to a bounded page, and state the total and the next offset. A capped result SHALL say it is capped | Design decision. A caller that fills its context with one result cannot finish the task, and a silent cap reads as the whole answer | gap |
+| RES-03 | No single result SHALL exceed 256 KB of structured JSON, excluding binary content blocks, which RES-05 bounds separately at 1 MB. A list tool SHALL accept `limit` and `offset`, default to a bounded page, and state the total and the next offset. A capped result SHALL say it is capped | Measured. Twelve bare collection tools now return `{cap, truncated, total, items}` at a 500 cap, and the paging tools keep their own page. 133 tools return a wrapper record holding a collection, and capping those needs a field on each record in `Wc3.Commands` | met |
 | RES-04 | `file_get_text` SHALL decode with an explicit encoding, report that encoding and whether it was chosen or assumed, count the bytes the decoder had to replace, and report a `lossy` flag, SHALL refuse a lossy decode unless `allow_lossy` is true, and a separate `file_extract` tool SHALL write the raw bytes to disk. Text that is valid under the selected encoding, including non-ASCII text, SHALL NOT be reported as lossy | Measured. `FileEditCommand.ReadText` decodes UTF-8 without throwing on invalid bytes, so a Cyrillic script comes back with replacement characters. The project record shows the resulting corruption when such text is written back | gap |
 | RES-05 | Binary content SHALL travel as a saved path, a resource link or an image content block under 1 MB. A larger payload SHALL be a path, never inline base64 | Measured. `render_model` always writes the PNG to `out_path` and always reports the path and the byte size, and inlines an image block only when the bytes are at or under `InlineImageLimit`, one million bytes. Nothing larger travels as base64 | met |
 | RES-06 | A result field SHALL carry the same name and meaning as the CLI's `--json` output for the same operation | Measured. `Render.AsJson` now applies `JsonNamingPolicy.CamelCase`, so `wc3ctl info --json` returns `name`, `author`, `players` exactly as `map_info` does. Thirteen in-repo assertions were updated to the one spelling and a test pins the `info` case | met |
@@ -610,8 +610,8 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
 | ERR-01 | An expected failure SHALL return a tool error with a one-line message, and SHALL NOT crash the process or return a stack trace | Measured. A call for a map that is not there returns `isError` true and the single line `map not found: Z:/nowhere/missing.w3x`, with no stack frame and the server still answering the next call. A call that fails schema validation returns a one-line message too | met |
-| ERR-02 | Every tool error SHALL carry a stable code, the message, and a next step where one exists, as structured content beside the text | Design decision. A code lets a caller branch, and a next step turns a dead end into one retry | gap |
-| ERR-03 | The error code set SHALL be documented in one place and tested, and a new code SHALL fail the test until it is listed | Design decision. An undocumented code is a string a client cannot rely on | gap |
+| ERR-02 | Every tool error SHALL carry a stable code, the message, and a next step where one exists, as structured content beside the text | Measured. 28 codes in `Wc3ErrorCodes`, 80 refusal sites converted, and a new `error_codes` tool returns every code with its meaning so a caller can discover them without reading prose | met |
+| ERR-03 | The error code set SHALL be documented in one place and tested, and a new code SHALL fail the test until it is listed | Measured. The SDK allows structured content on an error result, so a call-tool filter converts a throw into `{code, message, tool, value, next}` beside the unchanged text. A name no tool answers to is rethrown as a protocol error rather than converted, so a typo still reads as one | met |
 | ERR-04 | A missing Warcraft III install SHALL NOT fail a tool that does not need it, and a tool that needs it SHALL say so before it reads the map | Half met. A map tool works with `WC3_GAME_DIR` pointed at nothing. The tools that lose a base-data check report that in their result, after reading, and none states it before | gap |
 | ERR-05 | A partial success SHALL be reported as partial, with the items that failed and the reason, and SHALL NOT be reported as success | Measured. `asset_convert_batch` and `object_bulk_set` carry a `failed` array of item and reason plus a `partial` flag that is true when anything was skipped, so a batch that dropped work no longer reads as a clean success. The smoke suite passes with the new fields | met |
 | ERR-06 | An error message SHALL name the path, the input and the rule that refused, and SHALL NOT include file contents, a configuration value or a token | Half met. `ErrorTextTests` builds a map whose script and string table carry a marker and asserts that no error from four failing calls contains it, so the content half is now guarded. A call that fails schema validation still answers with `An error occurred invoking 'x'.` and names no path, no input and no rule | gap |
@@ -697,8 +697,8 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 
 | ID | Requirement | Basis | Status |
 |---|---|---|---|
-| DOC-01 | The generated MCP reference SHALL include each tool's family, description, every parameter with type and default, the result shape, the error codes and the hints, and CI SHALL fail when the committed file is stale | Measured. The file is generated and guarded, and it carries no parameters and no result shape | gap |
-| DOC-02 | This specification SHALL be versioned, SHALL carry a change log, and SHALL name the build it describes | Measured. The cover and the footer carry version 1.29, the change log table names every revision with its date and its scope, and section 3.1 names the build the document describes, 276 tools from wc3ctl 0.4.13 at protocol 2025-11-25 | met |
+| DOC-01 | The generated MCP reference SHALL include each tool's family, description, every parameter with type and default, the result shape, the error codes and the hints, and CI SHALL fail when the committed file is stale | Measured. `tools/check_reference.py` reads the published exe and the mirror export and finds a description and the four hints on all 277 tools, and no family, no parameter list, no result shape and no error codes on any of them, so G-29 stays open | gap |
+| DOC-02 | This specification SHALL be versioned, SHALL carry a change log, and SHALL name the build it describes | Measured. The cover and the footer carry version 1.29, the change log table names every revision with its date and its scope, and section 3.1 names the build the document describes, 277 tools from wc3ctl 0.4.13 at protocol 2025-11-25 | met |
 | DOC-03 | The README SHALL state only facts that a command or a file in the repository proves, and a test or a script SHALL check the counts it quotes | Measured. `tools/check_counts.py` parses the tool count from the README, the requirement, group and check counts from section 2 and the README, and the gap-row count from the README, and compares them with the live exe and `requirements.json`. It exits 2 on a drift and the PDF build refuses to render | met |
 | DOC-04 | Every claim in a release note SHALL name the requirement it satisfies or the defect it closes | Measured. Section 15.1.1 makes the convention, and `tools/check_changelog_ids.py` reads the changelog and finds 0 of the 14 notes naming a requirement id, so every claim stands without naming the rule it serves | gap |
 | DOC-05 | A breaking change to a tool name, a parameter or a result field SHALL be stated in the release note, in the deprecated tool's description and in this specification | Stated. Section 15.1.2 names the three places a breaking change to a tool name, a parameter or a result field is marked, a `BREAKING` line in the release note, the word `Deprecated` in the description that replaces it, and a row in this document | met |
@@ -763,7 +763,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | TST-09 | Each family SHALL have a result size test, asserting the documented page and the cap | Measured. `Every_family_has_a_bounded_result` walks all eleven families, calls one listing tool each on a synthetic map, and asserts every result is under 256 KB, plus a paged tool reporting its count and its truncation | met |
 | TST-10 | A hermetic test SHALL NOT depend on a map outside the repository and MAY build a synthetic map in a temporary folder. The Corpus category SHALL be excluded from the hermetic run | Measured. The categories exist, `Corpus`, `GameData` and `Doctor`, and the CI command runs `Category!=Corpus&Category!=GameData&Category!=Doctor`. The hermetic fixtures build their maps in a temporary folder | met |
 | TST-11 | Every error code SHALL have a test that produces it, and the code list test SHALL fail when a new code appears without a test | Design decision. An error code path that never ran is a guess | gap |
-| TST-12 | A pull request that changes the surface SHALL fail CI when the count in the README, the generated reference or this specification disagrees with the live count | Design decision. DOC-03 and DOC-01 without a check are intentions | gap |
+| TST-12 | A pull request that changes the surface SHALL fail CI when the count in the README, the generated reference or this specification disagrees with the live count | Gap. `tools/check_mirror_lag.py` compares the published exe with the mirror export and states the lag as counts, 277 tools on each side on 10 November 2026, and no CI job runs it beside `tools/check_counts.py`, so a pull request can still move the surface without failing (G-47) | gap |
 | TST-13 | The MCP and setup suites SHALL run on Windows in CI on every pull request, and a corpus run SHALL be available by hand | Measured. The workflow runs on `windows-latest` for every push to the two long lived branches and every pull request against `master`, and the hermetic filter runs the MCP, setup and map suites in about three seconds | met |
 
 ### Automation
@@ -798,7 +798,7 @@ The first slice makes one write safe to chain. A second review named what that s
 | PKG-13 | Every published artifact SHALL name its source commit, its artifact digest and the tag it was built from, and a version number alone SHALL NOT be treated as provenance | Measured. `tools/check_provenance.py` refuses, because the newest tag v0.5.16 names no release asset folder and no published artifact carries a digest or a record. The one record in this folder is written for the in-tree exe at 0.5.12, it verifies its digest, and it is refused against tag v0.5.12 because the exe bakes commit 93e07ce and the tag points at c3d9bf5. A person attaches `release.json` and a `.sha256` beside each published asset (G-56) | gap |
 | TST-14 | Each write family SHALL have a semantic test that asserts the intended change and the preservation of unrelated data, not only that the output loads | Design decision. A model with missing UVs and a map with a wrong trigger subtree both load | gap |
 | CMP-07 | The server SHALL publish a tested protocol revision matrix naming the revision, the SDK version, the fields emitted and the features an older client loses | Measured. `ProtocolRevisionTests` pins the matrix and the item surface at the negotiated revision | met |
-| SEC-08 | The parsers SHALL have a named fuzz corpus and a stated residual risk, and a malformed input SHALL return a tool error rather than terminate the process | Gap. The corpus is named in `fuzz/wc3-spec-parsers-v1.json` and the residual risk in `fuzz/wc3-spec-parsers-v1.md`, and `tools/fuzz_corpus.py` ran 23 cases against nine readers where 18 malformed inputs each returned a tool error and no interpreter lost, but the map, object, trigger and script parsers are C# over native CascLib and no case here reaches them. A person runs the corpus against the built server through the hermetic suite (G-59) | gap |
+| SEC-08 | The parsers SHALL have a named fuzz corpus and a stated residual risk, and a malformed input SHALL return a tool error rather than terminate the process | Gap. The corpus is named in `fuzz/wc3-spec-parsers-v1.json` and the residual risk in `fuzz/wc3-spec-parsers-v1.md`. `tools/fuzz_corpus.py` ran 36 cases, 23 against nine readers of the tools and 13 through the published exe against the map, object, trigger and script parsers, with 23 tool errors, 13 values and 0 crashes. A malformed object table and a malformed trigger tree return a value rather than a tool error through `object_list` and `triggers_read`, and a script holding every byte value passes `script_check`, so the statement is not met. A person still runs the corpus through the hermetic suite (G-59) | gap |
 | AUT-11 | The release SHALL write a machine-readable record of the source commit, the artifact digests and the tag, and a published version SHALL resolve to that record | Gap. `tools/release_record.py` writes, verifies and resolves a record and its selftest passes, and `releases/v0.5.12.json` now verifies and resolves for the in-tree exe, but that record names commit 93e07ce where tag v0.5.12 names c3d9bf5, so it explains the bytes on disk and no published release, and npm 0.5.19 is published with no record at all. A person runs the write from the release workflow and attaches the record to the release (G-56) | gap |
 | SAF-16 | A read-only audit SHALL report Channel-based abilities that share a Base Order ID, and SHALL distinguish levels that disagree and empty order ids | Measured. `audit orders` finds 105 shared ids in Anime Choice Arena V0.33A and 53 in Anime WoS2 v0.34h | met |
 | SUR-11 | Every command in `Wc3.Commands` that writes a map, a model or a script SHALL be reachable from the CLI and from the MCP surface, or the parity map SHALL name it and state why it has no front end. A command with tests and no front end SHALL NOT be counted as shipped | Measured. `SoundScriptSpliceCommand` inserts a generated dispatcher into `war3map.j` and has eight tests, three of them pjass facts, and it has no CLI verb and no tool, so the only caller is the test suite | gap |
@@ -836,7 +836,7 @@ sequenceDiagram
     P-->>C: serverInfo, capabilities, instructions (DSC-01)
     C->>P: notifications/initialized
     C->>P: tools/list (PRF-02)
-    P-->>C: 276 tools with schemas and hints
+    P-->>C: 277 tools with schemas and hints
     C->>P: resources/read wc3://tools (RSC-03)
     P-->>C: the same surface as JSON
     C->>P: tools/call map_overview (SUR-01)
@@ -1475,9 +1475,9 @@ Each question has the evidence that would settle it. None of them blocks the req
 
 | Question | Why it is open | What settles it |
 |---|---|---|
-| Q1 Should the surface split into several servers, one per family, instead of one server with 276 tools | A small model may do better with 40 tools than with 270, and a user may not want to install five servers | A task success comparison on the same ten prompts, one server against five, with the token cost of each recorded |
+| Q1 Should the surface split into several servers, one per family, instead of one server with 277 tools | A small model may do better with 40 tools than with 270, and a user may not want to install five servers | A task success comparison on the same ten prompts, one server against five, with the token cost of each recorded |
 | Q2 Should the `core` profile be the default, with the full surface opt-in | The default decides what most users get, and SUR-07 currently keeps full as the default | The same comparison as Q1, plus a count of how often each family is actually called in real sessions |
-| Q3 Is an output schema on all 276 tools worth its cost | It is the largest mechanical change in this document, and its value depends on client support | A check of the four most used clients for `structuredContent`, and one family implemented as a trial |
+| Q3 Is an output schema on all 277 tools worth its cost | It is the largest mechanical change in this document, and its value depends on client support | A check of the four most used clients for `structuredContent`, and one family implemented as a trial |
 | Q4 Do clients act on the destructive hint in a way a caller can perceive | If no client reads it, SAF-03 and SAF-10 are the only safety, and the hint is metadata | A test in Claude Desktop, Claude Code, Cursor and VS Code, recording whether a confirmation appears |
 | Q5 How long should an alias live | One minor release is the proposal. Too short breaks a saved prompt, too long doubles the surface | A count of real client configs and prompts that name a renamed tool, over one release cycle |
 | Q6 How far should the batch extend beyond object edits | `object_batch_set` answers it for objects, and the other families have different arguments and validations | The share of real sessions that edit more than one family in one task, and whether a general batch stays explainable in one description |
@@ -1494,13 +1494,11 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | Gap | What is wrong today | Requirement | Where the change lands |
 |---|---|---|---|
 | G-02 | No tool publishes an output schema, and no result carries structured content | RES-02 | Tool creation options and the result POCOs |
-| G-03 | No result size limit. `list_files` has `brief` and `docs_search` cuts at 1,600 characters, and nothing else has a bound | RES-03, RES-10 | One result envelope in `Wc3.Mcp` |
 | G-04 | No progress notification and no cancellation token, on a surface that includes folder audits and model import | PRF-04 | Tool signatures and the long commands |
 | G-05 | `file_get_text` decodes UTF-8 with replacement characters, silently, and no tool extracts raw bytes | RES-04 | `FileEditCommand.ReadText` and a new extract tool |
 | G-06 | 19 descriptions exceed the 600 character cap and two exceed 1,000, while 33 are under 150 and do not state a trap | SUR-05 | Every `[Description]` on the surface |
 | G-07 | The description text is 84,657 characters against the 70,000 cap and no `core` profile exists | SUR-07 | `McpToolCatalog` and the profile list |
 | G-08 | Nine names need a canonical rename, including one true duplicate pair, `list_files` and `file_list` | SUR-02, SUR-03 | `Wc3Tools`, the alias table, the parity map |
-| G-17 | No error carries a code and there is no documented code set | ERR-02, ERR-03 | `Run` and the error table |
 | G-18 | No error code has a test | TST-11 | The MCP test suite |
 | G-20 | This specification is not served as a resource | RSC-04 | `Wc3Context.CreateResources` |
 | G-23 | No `tool_help`, so the long rationale has nowhere to live once descriptions are capped | DSC-03 | A new tool and the generated reference |
@@ -1509,7 +1507,6 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | G-27 | The read sweep selects read-only tools by name prefix and needs a real map, so a write tool with a read-like name escapes it | TST-02 | `McpToolSweepTests` over synthetic maps |
 | G-28 | No test calls every writing tool, checks that the output loads, or checks that the input is unchanged | TST-03 | A new write sweep |
 | G-29 | The generated MCP reference carries no parameters, no result shape and no error codes | DOC-01 | `DocsReference.RenderMcp` |
-| G-35 | No map or archive list tool has `limit` or `offset`. `list_files` has `brief` and the graph tools have a count limit, and an object list or a script function list is still returned whole | RES-03 | The list tools |
 | G-36 | The counts guard runs in the PDF build and cannot run in CI yet. A job pointed at the mirror's own exe fails on a correct tree, because that checkout builds 267 tools and 3 resources against the 275 and 6 this document describes | TST-12 | The export and `.github/workflows/ci.yml` |
 | G-37 | No release note names a requirement id or a defect, so a note claims a change without naming the rule it serves or the defect it closes | DOC-04 | The 14 notes in the wc3ctl changelog and `ChangelogCommand` |
 | G-38 | A changelog entry is not produced or committed by the release, so the notes can lag the tag | AUT-09 | The release workflow and `changelog/` |
@@ -1525,7 +1522,7 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | G-54 | PRF-05 counts the input and output bytes and ignores parsed sections, assets, schemas and concurrent calls | PRF-09 | `MapDocument.Load` and the command layer |
 | G-56 | No published artifact records its commit, digest and tag. One local record explains the in-tree 0.5.12 exe, and npm 0.5.19 has no tag that explains it | PKG-13, AUT-11 | The release workflow and the mirror |
 | G-57 | The write sweep asserts that an output loads, not that the intended change is present and the rest is preserved | TST-14 | The write sweep |
-| G-59 | No fuzz corpus runs against the archive, object, trigger or script parsers | SEC-08 | The test suite and the native reader |
+| G-59 | The fuzz corpus reaches the map, object, trigger and script parsers through the published exe, and no corpus run is a step in the test suite, so the archive internals and the native readers stay uncovered and a regression there would not fail CI | SEC-08 | The test suite and the native reader |
 | G-61 | `SoundScriptSpliceCommand` has eight tests and no CLI verb and no tool, so nothing a caller can reach writes the generated dispatcher into `war3map.j` | SUR-11 | `Program.cs` and `Wc3Tools.cs` |
 | G-64 | A cold start to the initialize reply is 1.2 seconds against the 1 second requirement. The start line costs 0.03 seconds of it, so the cost is the host building the surface and the SDK handshake | PRF-01 | `Program.RunServerAsync` and the tool collection |
 | G-68 | No tool warns before reading when the game install is absent, so the note a caller gets is always in the result rather than ahead of the work | ERR-04 | The gamedata and repair commands |
@@ -1544,12 +1541,13 @@ This is the work queue. Each row names the measured state, the requirement it fa
 | G-100 | Nothing scans for two tools over one operation, and `leak_list` overlaps `script_leaks` with no rule to separate them | SUR-04 | The surface |
 | G-104 | Nothing measures peak memory on a folder tool, so the bound is a design claim | PRF-05 | The folder tools |
 | G-105 | The performance gate covers the CLI paths only, so an adapter regression would not fail it | PRF-07 | `bench_perf_gate` |
+| G-98 | A paged result reports a field the section does not name, so a caller reads `total` and `count` in different places | RES-10 | The paged tools |
 
 The narrowest rows are the ones a single function closes, G-20, G-31, G-36 and G-45, and the six broadest are G-02, G-04, G-07, G-11, G-39 and G-40. That ordering is an inference from the shape of the change, not a measurement of effort, and the only honest statement about effort is that the first row is visible in one function and the broadest rows touch the whole surface.
 
 ## 11. What has been done
 
-The server did not arrive as a plan. It grew from a seam stub in July 2026 to a surface of 276 tools, and the record of how it grew is the strongest evidence this specification has. Every row below is a commit or a release, and every one is cited.
+The server did not arrive as a plan. It grew from a seam stub in July 2026 to a surface of 277 tools, and the record of how it grew is the strongest evidence this specification has. Every row below is a commit or a release, and every one is cited.
 
 ### 11.1 The timeline
 
@@ -2091,6 +2089,7 @@ A slice is pulled when its dependencies are met. A new gap can reorder the queue
 | 1.48 | 8 November 2026 | The surface grows to 276 with `file_extract`, the nineteen oversized descriptions are trimmed so the total drops to 81,195 characters, and 270 tools now carry a title. The catalog falls to 323,437 bytes on the shorter descriptions |
 | 1.49 | 8 November 2026 | Five rows close. Every tool now carries a title, the four missing decompression and disk limits are enforced, the stdin drain was diagnosed to the transport and fixed so a queued call answers before exit, and the permission file ships with five tests. Cold start falls from a 1,496 ms initialize median to 1,325 ms on the descriptors deferred to first use, and stays open |
 | 1.50 | 8 November 2026 | A Codex review of the drain found a dequeue to dispatch race the two sample check could miss, since the SDK yields between the queue count and the filter. The quiet reading now has to hold for 250 ms, verified over three runs, and the review is recorded in the TRN-03 basis |
+| 1.51 | 8 November 2026 | The error family closes, 28 codes, structured error fields and a discoverable list, and twelve collection tools gain a stated cap. The surface is 277 tools on `error_codes`. The alias window is built but cannot reach a deferred descriptor, which is recorded as a defect |
 
 ## 20. Hardening beyond safe chaining
 

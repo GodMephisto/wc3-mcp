@@ -1,4 +1,4 @@
-"""Run a named fuzz corpus against the readers this folder can reach.
+"""Run a named fuzz corpus against the readers and the published server.
 
 SEC-08 says the parsers SHALL have a named fuzz corpus and a stated residual
 risk, and that a malformed input SHALL return a tool error rather than terminate
@@ -7,12 +7,17 @@ process that dies is visible, and records what happened.
 
 The corpus is `fuzz/wc3-spec-parsers-v1.json`, one case per reader call. The
 residual risk is `fuzz/wc3-spec-parsers-v1.md`, which names what the corpus does
-not reach. The map, object and trigger readers are C# over native CascLib, and no
-case here touches them.
+not reach. Nine readers of this folder's own tools run in the child interpreter.
+The map, object, trigger and script parsers of the product run in the published
+exe, so a case naming `exe_tool` starts the exe, speaks MCP over stdio and calls
+one tool with one malformed map.
 
 Each case runs in its own interpreter. A case that raises a named exception is a
 tool error and the process survives. A case that ends the interpreter without its
-result line is a crash, whatever the exit code, and the run fails.
+result line is a crash, whatever the exit code, and the run fails. A tool call
+that answers with `isError` is a tool error. A server that exits, or stops
+answering, before the call returns is a crash, because the case child exits
+without its result line and says why on stderr.
 
 The run record is state, so it lives outside this corpus. One line is appended to
 `fuzz-runs.jsonl` in the state folder, under a lock that carries an owner, a token
@@ -22,10 +27,11 @@ when that is set, else `<LOCALAPPDATA>/wc3-mcp/spec-state`.
     python tools/fuzz_corpus.py
     python tools/fuzz_corpus.py --json
     python tools/fuzz_corpus.py --no-record
+    python tools/fuzz_corpus.py --exe C:\\\\path\\\\to\\\\Wc3.Mcp.exe
     python tools/fuzz_corpus.py --selftest
 
 Exit 0 when every case behaved as the corpus says, 2 when one did not, 1 when the
-corpus, a reader or the state folder cannot be read.
+corpus, a reader, the exe or the state folder cannot be read.
 """
 
 from __future__ import annotations
@@ -152,6 +158,86 @@ ADAPTERS = {
 }
 
 
+class ToolFailed(RuntimeError):
+    """The tool answered with isError, which is the tool error SEC-08 asks for."""
+
+
+class ServerDied(RuntimeError):
+    """The server exited or stopped answering, so the case has no result line."""
+
+
+def entry_bytes(spec: dict) -> bytes:
+    """One setup entry, from hex or from text, the same two shapes a payload uses."""
+    payload = spec.get("payload", "")
+    if spec.get("encoding") == "hex":
+        return bytes.fromhex(payload)
+    return payload.encode("utf-8")
+
+
+def build_input(case: dict, work: Path) -> Path:
+    """Write the case's one malformed map, as a folder or as an archive file."""
+    setup = case.get("setup") or {"kind": "none"}
+    kind = setup.get("kind", "none")
+    if kind == "folder":
+        target = work / "map"
+        target.mkdir()
+        for name, spec in (setup.get("entries") or {}).items():
+            entry = target / name
+            entry.parent.mkdir(parents=True, exist_ok=True)
+            entry.write_bytes(entry_bytes(spec))
+        return target
+    if kind == "file":
+        target = work / setup.get("name", "map.w3x")
+        target.write_bytes(entry_bytes(setup))
+        return target
+    raise CorpusError(f"case {case.get('id')} has setup kind {kind!r}, which no builder here writes")
+
+
+def call_tool(exe: Path, case: dict, work: Path, seconds: float) -> str:
+    """Start the exe, call the case's tool once, and return its text or raise.
+
+    A tool error is raised as `ToolFailed` so the case is an error result. A server
+    that dies or stops answering is raised as `ServerDied`, and the case child then
+    exits without a result line, which the parent reports as a crash.
+    """
+    from measure_surface import MeasureError, Session
+
+    target = build_input(case, work)
+    arguments = {}
+    for key, value in (case.get("arguments") or {}).items():
+        if isinstance(value, str):
+            value = value.replace("{work}", str(work))
+        arguments[key] = value
+    arguments[case.get("argument", "map")] = str(target)
+
+    session = Session(exe, seconds)
+    try:
+        session.request(
+            "initialize",
+            {
+                "protocolVersion": "2025-06-18",
+                "capabilities": {},
+                "clientInfo": {"name": "fuzz_corpus", "version": "1"},
+            },
+        )
+        session.notify("notifications/initialized")
+        result = session.request(
+            "tools/call", {"name": case["tool"], "arguments": arguments}
+        )
+    except MeasureError as exc:
+        raise ServerDied(str(exc)) from exc
+    finally:
+        session.close()
+
+    contents = result.get("content") or []
+    text = " ".join(
+        str(part.get("text", "")) for part in contents if isinstance(part, dict)
+    ).strip()
+    if result.get("isError"):
+        raise ToolFailed(text or "the tool answered isError with no text")
+    return text or json.dumps(result)[:200]
+
+
 def load_corpus(path: Path) -> dict:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
@@ -164,8 +250,13 @@ def load_corpus(path: Path) -> dict:
     for case in document["cases"]:
         if not isinstance(case, dict) or not case.get("id") or not case.get("parser"):
             raise CorpusError(f"{path} has a case with no id or no parser, {case!r}")
-        if case["parser"] not in ADAPTERS:
+        if case["parser"] not in ADAPTERS and case["parser"] != "exe_tool":
             raise CorpusError(f"case {case['id']} names parser {case['parser']!r}, which no adapter here runs")
+        if case["parser"] == "exe_tool":
+            if not case.get("tool"):
+                raise CorpusError(f"case {case['id']} reaches the exe and names no tool")
+            if not isinstance(case.get("setup"), dict):
+                raise CorpusError(f"case {case['id']} reaches the exe and carries no setup")
         if case.get("expect") not in ("error", "value"):
             raise CorpusError(f"case {case['id']} expects {case.get('expect')!r}, which is neither error nor value")
     return document
@@ -178,7 +269,7 @@ def case_bytes(case: dict) -> bytes:
     return payload.encode("utf-8")
 
 
-def run_case(corpus_path: Path, case_id: str, work: Path) -> int:
+def run_case(corpus_path: Path, case_id: str, work: Path, exe: Path | None = None) -> int:
     """One case, in the child interpreter. Prints one result line and exits 0."""
     document = load_corpus(corpus_path)
     case = next((c for c in document["cases"] if c["id"] == case_id), None)
@@ -189,7 +280,16 @@ def run_case(corpus_path: Path, case_id: str, work: Path) -> int:
     payload = work / "payload.bin"
     payload.write_bytes(case_bytes(case))
     try:
-        value = ADAPTERS[case["parser"]](payload, work)
+        if case["parser"] == "exe_tool":
+            if exe is None:
+                raise CorpusError("no published server was named for a case that reaches the exe")
+            value = call_tool(exe, case, work, float(case.get("timeout", 30.0)))
+        else:
+            value = ADAPTERS[case["parser"]](payload, work)
+    except ServerDied as exc:
+        # No result line, so the parent reports a crash and carries this reason.
+        print(f"the server did not answer case {case_id}, {exc}", file=sys.stderr)
+        return 3
     except Exception as exc:  # the point of the run, a reader error is a result
         result = {
             "case": case_id,
@@ -336,7 +436,7 @@ def judge(case: dict, result: dict) -> tuple[bool, str]:
     outcome = result.get("outcome")
     if expected == "error":
         if outcome == "error":
-            return True, result.get("error", "")
+            return True, result.get("detail") or result.get("error", "")
         return False, f"expected an error and got {outcome}, {result.get('detail', '')}"
     if outcome != "value":
         return False, f"expected a value and got {outcome}, {result.get('error', '')}"
@@ -346,15 +446,37 @@ def judge(case: dict, result: dict) -> tuple[bool, str]:
     return True, result.get("detail", "")
 
 
-def run_corpus(corpus_path: Path, limit: float = 60.0) -> tuple[list[dict], dict]:
+def run_corpus(
+    corpus_path: Path, limit: float = 60.0, exe: Path | None = None
+) -> tuple[list[dict], dict]:
     document = load_corpus(corpus_path)
+    reaches_exe = any(case["parser"] == "exe_tool" for case in document["cases"])
+    if reaches_exe and exe is None:
+        from measure_surface import MeasureError, find_exe
+
+        try:
+            exe = find_exe(None)
+        except MeasureError as exc:
+            raise CorpusError(
+                f"the corpus reaches the exe and no server could be found, {exc}"
+            ) from exc
     rows: list[dict] = []
     for case in document["cases"]:
         work = Path(tempfile.mkdtemp(prefix="fuzz-case-"))
         started = time.perf_counter()
+        argv = [
+            sys.executable,
+            str(Path(__file__).resolve()),
+            "--run-case",
+            str(corpus_path),
+            case["id"],
+            str(work),
+        ]
+        if exe is not None:
+            argv.extend(["--exe", str(exe)])
         try:
             done = subprocess.run(
-                [sys.executable, str(Path(__file__).resolve()), "--run-case", str(corpus_path), case["id"], str(work)],
+                argv,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
@@ -386,6 +508,7 @@ def run_corpus(corpus_path: Path, limit: float = 60.0) -> tuple[list[dict], dict
             {
                 "case": case["id"],
                 "parser": case["parser"],
+                "reader": case.get("tool") or case["parser"],
                 "expected": case["expect"],
                 "outcome": result.get("outcome"),
                 "error": result.get("error", ""),
@@ -396,6 +519,7 @@ def run_corpus(corpus_path: Path, limit: float = 60.0) -> tuple[list[dict], dict
         )
     summary = {
         "corpus": document.get("corpus", corpus_path.stem),
+        "exe": str(exe) if exe is not None else None,
         "cases": len(rows),
         "ok": sum(1 for r in rows if r["ok"]),
         "failed": [r["case"] for r in rows if not r["ok"]],
@@ -408,18 +532,19 @@ def run_corpus(corpus_path: Path, limit: float = 60.0) -> tuple[list[dict], dict
 def render(rows: list[dict], summary: dict) -> str:
     widths = {
         "case": max([len("Case")] + [len(r["case"]) for r in rows]),
-        "parser": max([len("Reader")] + [len(r["parser"]) for r in rows]),
+        "reader": max([len("Reader")] + [len(r.get("reader") or r["parser"]) for r in rows]),
         "outcome": max([len("Outcome")] + [len(str(r["outcome"])) for r in rows]),
         "error": max([len("Error")] + [len(r["error"] or "-") for r in rows]),
     }
     head = (
-        f"{'Case'.ljust(widths['case'])}  {'Reader'.ljust(widths['parser'])}  "
+        f"{'Case'.ljust(widths['case'])}  {'Reader'.ljust(widths['reader'])}  "
         f"{'Outcome'.ljust(widths['outcome'])}  {'Error'.ljust(widths['error'])}  Verdict"
     )
     lines = [head, "-" * len(head)]
     for row in rows:
+        reader = row.get("reader") or row["parser"]
         lines.append(
-            f"{row['case'].ljust(widths['case'])}  {row['parser'].ljust(widths['parser'])}  "
+            f"{row['case'].ljust(widths['case'])}  {reader.ljust(widths['reader'])}  "
             f"{str(row['outcome']).ljust(widths['outcome'])}  {(row['error'] or '-').ljust(widths['error'])}  "
             f"{'ok' if row['ok'] else 'FAIL'}"
         )
@@ -433,10 +558,13 @@ def render(rows: list[dict], summary: dict) -> str:
             if not row["ok"]:
                 lines.append(f"  {row['case']}  {row['detail']}")
     else:
+        values = sum(1 for row in rows if row["outcome"] == "value")
         lines.append(
-            f"all {summary['cases']} cases behaved, {summary['errors']} malformed inputs each returned a tool "
-            "error and no interpreter ended without its result line"
+            f"all {summary['cases']} cases behaved, {summary['errors']} returned a tool error and "
+            f"{values} returned a value, and no interpreter or server ended without its result line"
         )
+    if summary.get("exe"):
+        lines.append(f"server {summary['exe']}")
     return "\n".join(lines)
 
 
@@ -557,6 +685,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--state", default=None, help="the state folder the run log lives in")
     parser.add_argument("--no-record", action="store_true", help="run the cases and write no run record")
     parser.add_argument("--limit", type=float, default=60.0, help="seconds one case may take")
+    parser.add_argument("--exe", help="path to the published Wc3.Mcp executable")
     parser.add_argument("--json", action="store_true", help="print the result as JSON")
     parser.add_argument("--selftest", action="store_true", help="run the built in selftest")
     parser.add_argument("--run-case", nargs=3, metavar=("CORPUS", "CASE", "WORK"), help=argparse.SUPPRESS)
@@ -566,12 +695,19 @@ def main(argv: list[str] | None = None) -> int:
     if args.selftest:
         return selftest()
     if args.run_case:
-        return run_case(Path(args.run_case[0]), args.run_case[1], Path(args.run_case[2]))
+        return run_case(
+            Path(args.run_case[0]),
+            args.run_case[1],
+            Path(args.run_case[2]),
+            Path(args.exe) if args.exe else None,
+        )
     if args.append_many:
         return append_many(args.append_many[0], int(args.append_many[1]))
 
     try:
-        rows, summary = run_corpus(Path(args.corpus), args.limit)
+        rows, summary = run_corpus(
+            Path(args.corpus), args.limit, Path(args.exe) if args.exe else None
+        )
     except CorpusError as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -583,6 +719,7 @@ def main(argv: list[str] | None = None) -> int:
         record = {
             "run": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "corpus": summary["corpus"],
+            "exe": summary["exe"],
             "cases": summary["cases"],
             "ok": summary["ok"],
             "errors": summary["errors"],

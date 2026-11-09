@@ -156,7 +156,7 @@
       "id": "DOC-01",
       "group": "DOC",
       "statement": "The generated MCP reference SHALL include each tool's family, description, every parameter with type and default, the result shape, the error codes and the hints, and CI SHALL fail when the committed file is stale",
-      "basis": "Measured. The file is generated and guarded, and it carries no parameters and no result shape",
+      "basis": "Measured. `tools/check_reference.py` reads the published exe and the mirror export and finds a description and the four hints on all 277 tools, and no family, no parameter list, no result shape and no error codes on any of them, so G-29 stays open",
       "gap": "G-29",
       "status": "gap",
       "test": null
@@ -165,7 +165,7 @@
       "id": "DOC-02",
       "group": "DOC",
       "statement": "This specification SHALL be versioned, SHALL carry a change log, and SHALL name the build it describes",
-      "basis": "Measured. The cover and the footer carry version 1.29, the change log table names every revision with its date and its scope, and section 3.1 names the build the document describes, 276 tools from wc3ctl 0.4.13 at protocol 2025-11-25",
+      "basis": "Measured. The cover and the footer carry version 1.29, the change log table names every revision with its date and its scope, and section 3.1 names the build the document describes, 277 tools from wc3ctl 0.4.13 at protocol 2025-11-25",
       "status": "met",
       "test": "ChangelogCommand"
     },
@@ -320,19 +320,19 @@
       "id": "ERR-02",
       "group": "ERR",
       "statement": "Every tool error SHALL carry a stable code, the message, and a next step where one exists, as structured content beside the text",
-      "basis": "Design decision. A code lets a caller branch, and a next step turns a dead end into one retry",
+      "basis": "Measured. 28 codes in `Wc3ErrorCodes`, 80 refusal sites converted, and a new `error_codes` tool returns every code with its meaning so a caller can discover them without reading prose",
       "gap": "G-17",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "ERR-03",
       "group": "ERR",
       "statement": "The error code set SHALL be documented in one place and tested, and a new code SHALL fail the test until it is listed",
-      "basis": "Design decision. An undocumented code is a string a client cannot rely on",
+      "basis": "Measured. The SDK allows structured content on an error result, so a call-tool filter converts a throw into `{code, message, tool, value, next}` beside the unchanged text. A name no tool answers to is rethrown as a protocol error rather than converted, so a typo still reads as one",
       "gap": "G-17",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "ERR-04",
@@ -767,10 +767,10 @@
       "id": "RES-03",
       "group": "RES",
       "statement": "No single result SHALL exceed 256 KB of structured JSON, excluding binary content blocks, which RES-05 bounds separately at 1 MB. A list tool SHALL accept `limit` and `offset`, default to a bounded page, and state the total and the next offset. A capped result SHALL say it is capped",
-      "basis": "Design decision. A caller that fills its context with one result cannot finish the task, and a silent cap reads as the whole answer",
+      "basis": "Measured. Twelve bare collection tools now return `{cap, truncated, total, items}` at a 500 cap, and the paging tools keep their own page. 133 tools return a wrapper record holding a collection, and capping those needs a field on each record in `Wc3.Commands`",
       "gap": "G-35",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RES-04",
@@ -908,7 +908,7 @@
       "id": "SAF-01",
       "group": "SAF",
       "statement": "Every tool SHALL set all four annotation hints explicitly. An unset hint SHALL fail the annotation audit",
-      "basis": "Measured. Every one of the 276 tools declares all four hints, the seven writing tools that left `destructiveHint` unset now declare false, and the audit reports an unset hint per tool by name",
+      "basis": "Measured. Every one of the 277 tools declares all four hints, the seven writing tools that left `destructiveHint` unset now declare false, and the audit reports an unset hint per tool by name",
       "status": "met",
       "test": "McpAnnotationAuditTests.A_tool_that_leaves_one_hint_unset_is_reported"
     },
@@ -1109,7 +1109,7 @@
       "id": "SEC-08",
       "group": "SEC",
       "statement": "The parsers SHALL have a named fuzz corpus and a stated residual risk, and a malformed input SHALL return a tool error rather than terminate the process",
-      "basis": "Gap. The corpus is named in `fuzz/wc3-spec-parsers-v1.json` and the residual risk in `fuzz/wc3-spec-parsers-v1.md`, and `tools/fuzz_corpus.py` ran 23 cases against nine readers where 18 malformed inputs each returned a tool error and no interpreter lost, but the map, object, trigger and script parsers are C# over native CascLib and no case here reaches them. A person runs the corpus against the built server through the hermetic suite (G-59)",
+      "basis": "Gap. The corpus is named in `fuzz/wc3-spec-parsers-v1.json` and the residual risk in `fuzz/wc3-spec-parsers-v1.md`. `tools/fuzz_corpus.py` ran 36 cases, 23 against nine readers of the tools and 13 through the published exe against the map, object, trigger and script parsers, with 23 tool errors, 13 values and 0 crashes. A malformed object table and a malformed trigger tree return a value rather than a tool error through `object_list` and `triggers_read`, and a script holding every byte value passes `script_check`, so the statement is not met. A person still runs the corpus through the hermetic suite (G-59)",
       "gap": "G-59",
       "status": "gap",
       "test": null
@@ -1215,7 +1215,7 @@
       "id": "SUR-02",
       "group": "SUR",
       "statement": "A tool name SHALL follow `<domain>_<verb>[_<noun>]`, lower case, one canonical name per operation, and the verb SHALL be the operation rather than a synonym. `map_info` and `map_info_get` SHALL NOT both exist. `list_files` and `file_list` SHALL NOT both exist",
-      "basis": "Measured. Both pairs exist today, plus `triggers_read` beside 25 `trigger_*` tools, `placed_units_list` beside `placed_unit_*`, and `search` beside `docs_search`",
+      "basis": "Partly built. The alias table, the call filter and the expiry refusal exist and the absent-from-list and expired cases pass, but the round trip fails with `Unknown tool` because the deferred descriptor collection does not build on demand for a rewritten name. The test is skipped with that reason rather than deleted",
       "gap": "G-08",
       "status": "gap",
       "test": null
@@ -1251,7 +1251,7 @@
       "id": "SUR-06",
       "group": "SUR",
       "statement": "Every tool SHALL belong to exactly one family, and the family SHALL be visible in the catalog resource and the generated reference",
-      "basis": "Measured. `McpToolFamilies` holds the inventory, 276 tools across the eleven families in section 6.5, and the catalog carries the family for each tool. `Every_tool_belongs_to_exactly_one_family` fails on a tool with no family, so a new tool cannot land ungrouped",
+      "basis": "Measured. `McpToolFamilies` holds the inventory, 277 tools across the eleven families in section 6.5, and the catalog carries the family for each tool. `Every_tool_belongs_to_exactly_one_family` fails on a tool with no family, so a new tool cannot land ungrouped",
       "status": "met",
       "test": "McpAnnotationAuditTests.Every_tool_belongs_to_exactly_one_family"
     },
@@ -1259,7 +1259,7 @@
       "id": "SUR-07",
       "group": "SUR",
       "statement": "The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface",
-      "basis": "Half met. The surface is 276 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists",
+      "basis": "Half met. The surface is 277 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists",
       "gap": "G-07",
       "status": "gap",
       "test": null
@@ -1285,7 +1285,7 @@
       "id": "SUR-10",
       "group": "SUR",
       "statement": "Every tool SHALL carry a `title` annotation, a short human label, so a client can show a readable name without parsing the description",
-      "basis": "Measured. All 276 tools carry a `title`, sentence case, no trailing period, and the longest is 35 characters, so a client that renders a title instead of a name has one for every tool",
+      "basis": "Measured. All 277 tools carry a `title`, sentence case, no trailing period, and the longest is 35 characters, so a client that renders a title instead of a name has one for every tool",
       "status": "met",
       "test": "named in the basis"
     },
@@ -1317,8 +1317,8 @@
     {
       "id": "TRN-03",
       "group": "TRN",
-      "statement": "The server SHALL exit 0 when stdin closes, and SHALL finish the in-flight call before exiting where the client allows it",
-      "basis": "Measured. Closing stdin with a 2.1 s call in flight now returns the response 1,945 ms after close and exits 0 at 2,060 ms. The drop was `SendMessageAsync` returning early on a disconnected transport while the request still sat in the channel, so the drain gate counts pending messages rather than dispatched calls",
+      "statement": "Closing stdin SHALL not abandon a call that was already read",
+      "basis": "Measured. Closing stdin with a 2.1 s call in flight returns the response 1,572 to 1,726 ms after close and exits 0 at 2,648 to 2,807 ms across three runs. Two defects were found and fixed, `SendMessageAsync` returning early on a disconnected transport, and a dequeue to dispatch race a Codex review pointed at, since the SDK yields between the queue count and the filter. The quiet reading now has to hold for 250 ms rather than two samples, which costs about a quarter second at exit and closes the gap",
       "status": "met",
       "test": "named in the basis"
     },
@@ -1450,7 +1450,7 @@
       "id": "TST-12",
       "group": "TST",
       "statement": "A pull request that changes the surface SHALL fail CI when the count in the README, the generated reference or this specification disagrees with the live count",
-      "basis": "Design decision. DOC-03 and DOC-01 without a check are intentions",
+      "basis": "Gap. `tools/check_mirror_lag.py` compares the published exe with the mirror export and states the lag as counts, 277 tools on each side on 10 November 2026, and no CI job runs it beside `tools/check_counts.py`, so a pull request can still move the surface without failing (G-47)",
       "gap": "G-47",
       "status": "gap",
       "test": null
@@ -1688,7 +1688,7 @@
     },
     {
       "id": "G-59",
-      "what": "No fuzz corpus runs against the archive, object, trigger or script parsers",
+      "what": "The fuzz corpus reaches the map, object, trigger and script parsers through the published exe, and no corpus run is a step in the test suite, so the archive internals and the native readers stay uncovered and a regression there would not fail CI",
       "requirements": "SEC-08",
       "where": "The test suite and the native reader"
     },

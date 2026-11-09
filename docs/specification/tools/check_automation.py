@@ -9,6 +9,8 @@ call rather than a list to remember. It runs, in order
   * check_changelog_ids.py, DOC-04 and AUT-02, every note names a known id
   * check_counts.py, the document's own figures against requirements.json
   * measure_surface.py, the body figures against the published server
+  * check_mirror_lag.py, the mirror export's tool count against the published server
+  * check_reference.py, the mirror export's DOC-01 clauses against the published server
 
 and prints one verdict line per check, with the check's own closing line as the
 detail. Nothing is summarised away, every line names the file that spoke.
@@ -40,6 +42,8 @@ CHECKS = (
     ("check_changelog_ids.py", "DOC-04, AUT-02"),
     ("check_counts.py", "section 2 and the README counts"),
     ("measure_surface.py", "sections 3.1, 3.3 and 3.5"),
+    ("check_mirror_lag.py", "TST-12, the reference count against the live surface"),
+    ("check_reference.py", "DOC-01, the reference clauses against the live surface"),
 )
 
 
