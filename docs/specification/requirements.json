@@ -321,7 +321,6 @@
       "group": "ERR",
       "statement": "Every tool error SHALL carry a stable code, the message, and a next step where one exists, as structured content beside the text",
       "basis": "Measured. 28 codes in `Wc3ErrorCodes`, 80 refusal sites converted, and a new `error_codes` tool returns every code with its meaning so a caller can discover them without reading prose",
-      "gap": "G-17",
       "status": "met",
       "test": "named in the basis"
     },
@@ -330,7 +329,6 @@
       "group": "ERR",
       "statement": "The error code set SHALL be documented in one place and tested, and a new code SHALL fail the test until it is listed",
       "basis": "Measured. The SDK allows structured content on an error result, so a call-tool filter converts a throw into `{code, message, tool, value, next}` beside the unchanged text. A name no tool answers to is rethrown as a protocol error rather than converted, so a typo still reads as one",
-      "gap": "G-17",
       "status": "met",
       "test": "named in the basis"
     },
@@ -355,10 +353,10 @@
       "id": "ERR-06",
       "group": "ERR",
       "statement": "An error message SHALL name the path, the input and the rule that refused, and SHALL NOT include file contents, a configuration value or a token",
-      "basis": "Half met. `ErrorTextTests` builds a map whose script and string table carry a marker and asserts that no error from four failing calls contains it, so the content half is now guarded. A call that fails schema validation still answers with `An error occurred invoking 'x'.` and names no path, no input and no rule",
+      "basis": "Measured. A schema failure names the tool and the missing argument, `the call to \"map_info\" is missing the required argument \"map\"`, with the argument also carried in the structured `value` field. A parameter whose schema admits null is left to the binder so a documented optional call is not refused",
       "gap": "G-70",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "ERR-07",
@@ -758,17 +756,16 @@
       "id": "RES-02",
       "group": "RES",
       "statement": "Every tool SHALL publish an `outputSchema`, and SHALL return the same object as `structuredContent`. The text content SHALL stay for a client that does not read structured content",
-      "basis": "Measured. No tool publishes an output schema, so a client cannot validate a result or discover its shape without calling the tool",
+      "basis": "Measured. SDK 1.4.1 publishes an output schema when a tool sets `UseStructuredContent`, and the schema is derived from the method return type rather than written by hand. Twelve wrapper record tools carry one, and `ProtocolRevisionTests` pins exactly those twelve",
       "gap": "G-02",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RES-03",
       "group": "RES",
       "statement": "No single result SHALL exceed 256 KB of structured JSON, excluding binary content blocks, which RES-05 bounds separately at 1 MB. A list tool SHALL accept `limit` and `offset`, default to a bounded page, and state the total and the next offset. A capped result SHALL say it is capped",
       "basis": "Measured. Twelve bare collection tools now return `{cap, truncated, total, items}` at a 500 cap, and the paging tools keep their own page. 133 tools return a wrapper record holding a collection, and capping those needs a field on each record in `Wc3.Commands`",
-      "gap": "G-35",
       "status": "met",
       "test": "named in the basis"
     },
@@ -826,7 +823,7 @@
       "group": "RES",
       "statement": "A paged result SHALL use `returnedCount` for the page size, `totalCount` for the total, `hasMore` for whether another page exists and `nextOffset` for the next page. It SHALL NOT use a bare `count`, which a caller reads as the total",
       "basis": "Design decision. A caller reading `count` as the total is the common mistake with a paged result",
-      "gap": "G-03",
+      "gap": "G-98",
       "status": "gap",
       "test": null
     },
@@ -1092,7 +1089,7 @@
       "id": "SEC-06",
       "group": "SEC",
       "statement": "A parser bug on a hostile map SHALL NOT execute code, write outside the output path or crash the process without a tool error",
-      "basis": "Not measured. The design holds, managed code with no `eval` and no assembly loading, writes bounded by the gate, and a parser failure becomes a tool error in every case observed. No hostile input has been fed to it, so the claim rests on the design rather than on a run",
+      "basis": "Measured, and partly contradicted. 36 fuzz cases ran against the published exe with no crash and no write outside the gate, which holds the first and second clause. The third does not hold for every parser. A malformed `war3map.w3u` returns a value with a diagnostic through `map_overview` and a silent empty list through `object_list`, a malformed `war3map.wtg` returns empty structures, and a script of every byte value passes `script_check` with `ok` true, so a malformed input can return a value rather than an error. The row stays gap on that clause with the cases recorded in the fuzz corpus",
       "gap": "G-85",
       "status": "gap",
       "test": null
@@ -1215,19 +1212,19 @@
       "id": "SUR-02",
       "group": "SUR",
       "statement": "A tool name SHALL follow `<domain>_<verb>[_<noun>]`, lower case, one canonical name per operation, and the verb SHALL be the operation rather than a synonym. `map_info` and `map_info_get` SHALL NOT both exist. `list_files` and `file_list` SHALL NOT both exist",
-      "basis": "Partly built. The alias table, the call filter and the expiry refusal exist and the absent-from-list and expired cases pass, but the round trip fails with `Unknown tool` because the deferred descriptor collection does not build on demand for a rewritten name. The test is skipped with that reason rather than deleted",
+      "basis": "Measured. The alias table resolves before dispatch, so an old name reaches the tool it was renamed to with its arguments unchanged and the reply names both. The deferred descriptor collection now answers a name lookup on demand, which is what the rewrite needed, and the four alias tests pass without a skip",
       "gap": "G-08",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SUR-03",
       "group": "SUR",
       "statement": "A renamed tool SHALL keep an alias for at least one minor release, the alias SHALL say it is deprecated and name the replacement, and `wc3://tools` SHALL list the replacement. The alias may be removed in the first major release after the rename, never in a minor release",
-      "basis": "Design decision. An agent may have a cached prompt that names the old tool, and a hard removal turns that into a failed task",
+      "basis": "Measured. `tools/list` lists each tool once under its current name and an old name never appears there, tested. An entry past its removal version is refused with a code naming that version",
       "gap": "G-08",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SUR-04",
@@ -1268,10 +1265,10 @@
       "id": "SUR-08",
       "group": "SUR",
       "statement": "No tool SHALL require more than eight parameters, and a requirement for more SHALL become a parameter object with its own schema",
-      "basis": "Not met. The largest tool takes 11 parameters, `place_unit` and `place_doodad`, and the basis that said eight, with `force_set_flags`, was wrong when it was measured",
+      "basis": "Measured. `place_unit` and `place_doodad` take one `placement` object with every field named, described and defaulted, so required top level arguments drop from five to two. The flattened arguments still work for one version and a call that mixes the two forms is refused with `INVALID_ARGUMENT`",
       "gap": "G-99",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SUR-09",
@@ -1489,12 +1486,6 @@
       "where": "Tool creation options and the result POCOs"
     },
     {
-      "id": "G-03",
-      "what": "No result size limit. `list_files` has `brief` and `docs_search` cuts at 1,600 characters, and nothing else has a bound",
-      "requirements": "RES-03, RES-10",
-      "where": "One result envelope in `Wc3.Mcp`"
-    },
-    {
       "id": "G-04",
       "what": "No progress notification and no cancellation token, on a surface that includes folder audits and model import",
       "requirements": "PRF-04",
@@ -1543,12 +1534,6 @@
       "where": "`bench_perf_gate`"
     },
     {
-      "id": "G-17",
-      "what": "No error carries a code and there is no documented code set",
-      "requirements": "ERR-02, ERR-03",
-      "where": "`Run` and the error table"
-    },
-    {
       "id": "G-18",
       "what": "No error code has a test",
       "requirements": "TST-11",
@@ -1595,12 +1580,6 @@
       "what": "The generated MCP reference carries no parameters, no result shape and no error codes",
       "requirements": "DOC-01",
       "where": "`DocsReference.RenderMcp`"
-    },
-    {
-      "id": "G-35",
-      "what": "No map or archive list tool has `limit` or `offset`. `list_files` has `brief` and the graph tools have a count limit, and an object list or a script function list is still returned whole",
-      "requirements": "RES-03",
-      "where": "The list tools"
     },
     {
       "id": "G-36",
@@ -1781,6 +1760,12 @@
       "what": "Undocumented variables changed behaviour, the seven `WC3CTL_*` switches among them, which is what the rule forbade. Section 3.14 lists them and states the rule",
       "requirements": "Closed",
       "where": "ENV-03, section 3.14"
+    },
+    {
+      "id": "G-98",
+      "what": "A paged result reports a field the section does not name, so a caller reads `total` and `count` in different places",
+      "requirements": "RES-10",
+      "where": "The paged tools"
     },
     {
       "id": "G-99",
