@@ -28,7 +28,7 @@
       "id": "AUT-04",
       "group": "AUT",
       "statement": "One command SHALL build, publish and verify every front end into a fresh folder, swap it in, and print the timestamp of every published exe",
-      "basis": "Measured. `publish-all.ps1` publishes and prints the timestamps. It does not run the tests or regenerate the docs",
+      "basis": "Gap. Publishing needs `dotnet publish` for the CLI and the server and `npm pack` for the wrapper, and this folder runs neither. A person publishes each front end into a fresh folder with `scripts/publish-all.ps1`, swaps it in and reads the timestamp it prints for every exe (G-41)",
       "gap": "G-41",
       "status": "gap",
       "test": null
@@ -37,7 +37,7 @@
       "id": "AUT-05",
       "group": "AUT",
       "statement": "A watch command SHALL rebuild, run the hermetic suite, regenerate the docs and publish when a source file changes, and SHALL refuse to publish when a gate fails",
-      "basis": "Design decision. No watch exists today (G-39)",
+      "basis": "Gap. A watch loop has to run the build, the hermetic suite, `wc3ctl docs all --force` and the publish, so a person runs those four by hand after a change and nothing refuses a publish when a gate fails (G-39)",
       "gap": "G-39",
       "status": "gap",
       "test": null
@@ -46,7 +46,7 @@
       "id": "AUT-06",
       "group": "AUT",
       "statement": "A release-readiness command SHALL run the build, the hermetic suite, the docs guard, the surface audit, the parity check and the publish verification, and SHALL print one verdict with one exit code",
-      "basis": "Design decision. The parts exist and no command folds them (G-40)",
+      "basis": "Gap. `tools/check_automation.py` already folds the five guards into one verdict with one exit code, and the three pieces it does not run are `dotnet build`, `dotnet test` and `tools/verify_publish.py`, so a person runs those three beside it and reads their verdicts with the guard's (G-40)",
       "gap": "G-40",
       "status": "gap",
       "test": null
@@ -55,7 +55,7 @@
       "id": "AUT-07",
       "group": "AUT",
       "statement": "Every automation command SHALL answer `--json` with a stable object, so an agent can drive the same loop a person drives",
-      "basis": "Design decision. `changelog` and `ci` answer JSON. `docs` and the publish script do not (G-43)",
+      "basis": "Gap. Six of the eight scripts in this folder answer `--json` with one object carrying `ok`. `build_pdf.py` and `sync_requirements.py` take no flag, and `wc3ctl docs` and `publish-all.ps1` answer no JSON at all, so a person adds it to those four (G-43)",
       "gap": "G-43",
       "status": "gap",
       "test": null
@@ -64,16 +64,15 @@
       "id": "AUT-08",
       "group": "AUT",
       "statement": "A published binary SHALL be verified by starting it and reading its version and, for the server, its tool count, and the check SHALL fail on a stale version or timestamp",
-      "basis": "Measured. The release smoke does this once. The local publish does not (G-42)",
-      "gap": "G-42",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `tools/verify_publish.py` starts the exe, reads the version it prints and counts the tools it lists, compares both with `Directory.Build.props` and section 3.1, and compares the timestamp of the exe with the newest source file. Against `dist-mcp/wc3-mcp.exe` it reports 0.5.12 where the source declares 0.5.16, 260 tools where the document states 275 and a source file newer than the exe, and exits 2, so a stale folder fails rather than ships. No publish step calls it yet",
+      "status": "met",
+      "test": "verify_publish.py"
     },
     {
       "id": "AUT-09",
       "group": "AUT",
       "statement": "A release SHALL be one tag, one version, one changelog entry and one handoff to the mirror, and the changelog entry SHALL be committed before the tag",
-      "basis": "Measured. The tag and the handoff are automated. The changelog entry is not part of the gate (G-38)",
+      "basis": "Gap. The tag and the mirror handoff belong to the release workflow and to the mirror repository, so this folder cannot cut a release. A person commits the changelog entry, tags that same version and watches the handoff, and no gate checks that order today (G-38)",
       "gap": "G-38",
       "status": "gap",
       "test": null
@@ -90,7 +89,7 @@
       "id": "AUT-11",
       "group": "AUT",
       "statement": "The release SHALL write a machine-readable record of the source commit, the artifact digests and the tag, and a published version SHALL resolve to that record",
-      "basis": "Design decision. The npm 0.5.19 artifact has no tag that explains it",
+      "basis": "Gap. `tools/release_record.py` writes a record of the commit, the tag and a sha256 per artifact, verifies it and resolves a version to it, and its selftest passes, but no release calls it, so a person runs it from the release workflow and publishes the record beside the artifact. `resolve --version 0.5.19` finds nothing today (G-56)",
       "gap": "G-56",
       "status": "gap",
       "test": null
@@ -241,10 +240,9 @@
       "id": "DSC-04",
       "group": "DSC",
       "statement": "The catalog resource, `wc3ctl mcp tools`, `mcp_audit_annotations` and the live `tools/list` SHALL be computed from one reflection call, and a test SHALL compare all four",
-      "basis": "Half met. All four come from the same reflection over the same registrations. No single test compares all four outputs against each other",
-      "gap": "G-102",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `The_four_surface_views_agree` compares the catalog names, the live list and the inventory as sets and asserts the audit count is zero, so a divergence fails rather than being noticed later",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "DSC-05",
@@ -935,10 +933,9 @@
       "id": "SAF-04",
       "group": "SAF",
       "statement": "Every write SHALL pass through one write gate in `Wc3.Mcp`, which resolves the output path, applies the refusal rules, creates the parent directory, writes and returns the digests",
-      "basis": "Half met. 116 of the 118 writing tools route through the gate, 63 through the map form and 53 through the file form added this revision. Two do not, `target_set` which writes the server's own settings file, and `rag_install`",
-      "gap": "G-11",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. All 118 writing tools route through the gate. 63 use the map form, 53 the file form, and `target_set` the text form added for its settings file, while `rag_install` declares the tree it writes under the local app data instead of being gated like an artifact",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SAF-05",
@@ -952,19 +949,17 @@
       "id": "SAF-06",
       "group": "SAF",
       "statement": "A write result SHALL report `savedTo`, `inputSha256`, `outputSha256`, `filesRewritten` and `bytesWritten`, so a caller can verify what changed and chain the next edit on the right file",
-      "basis": "Half met. All 116 gated writers return the five fields and the multi-file ones report every file. The same two tools outside the gate return none",
-      "gap": "G-12",
-      "status": "gap",
-      "test": "McpWriteGateTests.Overwrite_writes_the_file_and_reports_both_digests"
+      "basis": "Measured. All 117 gated writers return the five fields, `target_set` reports the settings file it replaced, and `rag_install` reports its root and the count of files it wrote",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SAF-07",
       "group": "SAF",
       "statement": "Every write SHALL accept an optional `expect_input_sha256` and SHALL refuse the call when it differs from the digest of the bytes it parsed",
-      "basis": "Half met. 116 of 118 writers take the parameter and refuse a mismatch with `STALE_INPUT`. `target_set` and `rag_install` do not",
-      "gap": "G-13",
-      "status": "gap",
-      "test": "McpWriteGateTests.A_stale_input_digest_is_refused"
+      "basis": "Measured. 117 of 118 writers take the parameter and refuse a mismatch with `STALE_INPUT`. The settings file is both input and output for `target_set`, which reports the digest it read instead of offering a comparison that cannot fail",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SAF-08",
@@ -1267,7 +1262,7 @@
       "id": "SUR-07",
       "group": "SUR",
       "statement": "The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface",
-      "basis": "Half met. The surface is 275 tools, under the 300 limit. The description text is 84,657 characters against a 70,000 cap, and no `core` profile exists",
+      "basis": "Half met. The surface is 275 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists",
       "gap": "G-07",
       "status": "gap",
       "test": null
@@ -1435,10 +1430,9 @@
       "id": "TST-09",
       "group": "TST",
       "statement": "Each family SHALL have a result size test, asserting the documented page and the cap",
-      "basis": "Not implemented. No test asserts a page size and a cap per family, so the result limits in RES-03 have no guard",
-      "gap": "G-86",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `Every_family_has_a_bounded_result` walks all eleven families, calls one listing tool each on a synthetic map, and asserts every result is under 256 KB, plus a paged tool reporting its count and its truncation",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "TST-10",
@@ -1548,12 +1542,6 @@
       "where": "The surface"
     },
     {
-      "id": "G-102",
-      "what": "No test compares the catalog, the CLI list, the audit and the live list in one assertion",
-      "requirements": "DSC-04",
-      "where": "The catalog tests"
-    },
-    {
       "id": "G-104",
       "what": "Nothing measures peak memory on a folder tool, so the bound is a design claim",
       "requirements": "PRF-05",
@@ -1564,24 +1552,6 @@
       "what": "The performance gate covers the CLI paths only, so an adapter regression would not fail it",
       "requirements": "PRF-07",
       "where": "`bench_perf_gate`"
-    },
-    {
-      "id": "G-11",
-      "what": "Two writers still bypass the gate, `target_set` and `rag_install`, so the one gate rule holds for 116 of 118",
-      "requirements": "SAF-04",
-      "where": "`TargetBuildSettings` and `Wc3Context`"
-    },
-    {
-      "id": "G-12",
-      "what": "The same two tools report no digests, so a caller cannot verify what they wrote",
-      "requirements": "SAF-06",
-      "where": "`target_set` and `rag_install`"
-    },
-    {
-      "id": "G-13",
-      "what": "The same two tools cannot refuse a call whose input changed after it was read",
-      "requirements": "SAF-07",
-      "where": "`target_set` and `rag_install`"
     },
     {
       "id": "G-17",
@@ -1678,12 +1648,6 @@
       "what": "`publish-all.ps1` is PowerShell only, is not run by CI, and neither tests nor regenerates the docs",
       "requirements": "AUT-04",
       "where": "`scripts/publish-all.ps1` and `ci.yml`"
-    },
-    {
-      "id": "G-42",
-      "what": "A local publish is not verified by starting the exe, and only the release does that",
-      "requirements": "AUT-08",
-      "where": "The publish script and the smoke script"
     },
     {
       "id": "G-43",
@@ -1822,12 +1786,6 @@
       "what": "No hostile input has been fed to the parsers, so the claim that a parser bug cannot escape rests on the design rather than on a run",
       "requirements": "SEC-06",
       "where": "The parsers and the fuzz corpus"
-    },
-    {
-      "id": "G-86",
-      "what": "No test asserts a page size and a cap per family, so the result limits have a rule and no guard",
-      "requirements": "TST-09",
-      "where": "The family tests"
     },
     {
       "id": "G-93",

@@ -10,9 +10,11 @@ This folder holds the specification for the wc3-mcp server, the PDF printed from
 | `tools/build_pdf.py` | The build that turns the markdown into the PDF |
 | `tools/measure_surface.py` | The guard that compares sections 3.1, 3.3 and 3.5 with the published exe |
 | `tools/sync_requirements.py` | Regenerates `requirements.json` and the Status column |
+| `tools/verify_publish.py` | The guard that starts a published exe and checks its version, tool count and timestamp |
+| `tools/release_record.py` | Writes, verifies and resolves the record of a release |
 | `requirements.json` | Every requirement, its gap link, its status and its test |
 
-The document describes wc3ctl 0.4.13 and wc3-mcp 0.5.16, with the tool surface measured on 8 November 2026 and re-measured after each slice. It states 179 requirements in 20 groups, 41 acceptance checks, the 275-tool inventory, 61 gap rows, the hardening designs in section 20, the anime-map workstreams in section 21, the content pipeline and its pjass gate in section 22, the permission model in section 23, and the sources and verification log in Appendices D and E.
+The document describes wc3ctl 0.4.13 and wc3-mcp 0.5.16, with the tool surface measured on 8 November 2026 and re-measured after each slice. It states 179 requirements in 20 groups, 41 acceptance checks, the 275-tool inventory, 55 gap rows, the hardening designs in section 20, the anime-map workstreams in section 21, the content pipeline and its pjass gate in section 22, the permission model in section 23, and the sources and verification log in Appendices D and E.
 
 ## Rebuild the PDF
 
