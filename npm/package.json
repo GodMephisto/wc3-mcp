@@ -1,7 +1,7 @@
 {
   "name": "wc3-mcp",
   "mcpName": "io.github.GodMephisto/wc3-mcp",
-  "version": "0.5.8",
+  "version": "0.5.16",
   "description": "MCP server that lets AI assistants read, audit and edit Warcraft III (.w3x and .w3m) maps byte-faithfully",
   "license": "Apache-2.0",
   "repository": {
@@ -18,7 +18,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "postinstall": "node ./bin/wc3-mcp.js --preload-binary"
+    "postinstall": "node ./bin/wc3-mcp.js --preload-binary",
+    "test": "node --test \"test/*.test.js\""
   },
   "engines": {
     "node": ">=18.0.0"
