@@ -803,10 +803,9 @@
       "id": "RES-06",
       "group": "RES",
       "statement": "A result field SHALL carry the same name and meaning as the CLI's `--json` output for the same operation",
-      "basis": "Not met. The same map record comes back as `Name`, `Author`, `Players` from `wc3ctl info --json` and as `name`, `author`, `players` from `map_info`, so a caller moving between the two front ends renames every field",
-      "gap": "G-88",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `Render.AsJson` now applies `JsonNamingPolicy.CamelCase`, so `wc3ctl info --json` returns `name`, `author`, `players` exactly as `map_info` does. Thirteen in-repo assertions were updated to the one spelling and a test pins the `info` case",
+      "status": "met",
+      "test": "Render.AsJson camel case plus the CLI json assertions"
     },
     {
       "id": "RES-07",
@@ -820,10 +819,9 @@
       "id": "RES-08",
       "group": "RES",
       "statement": "A result field SHALL be camel case, stable within a major version, and additive only. A field SHALL NOT be renamed or removed without a major version",
-      "basis": "Half met. The MCP surface is camel case throughout, which the sampled results confirm. Nothing pins a name, and the CLI already emits the same record in PascalCase, so the stability rule rests on care",
-      "gap": "G-89",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. Both front ends now emit camel case through one policy, which the CLI json assertions across five commands confirm. The naming is pinned from this revision on, so a rename fails a test rather than passing a review",
+      "status": "met",
+      "test": "Render.AsJson camel case plus the CLI json assertions"
     },
     {
       "id": "RES-09",
@@ -1915,18 +1913,6 @@
       "what": "No test asserts a page size and a cap per family, so the result limits have a rule and no guard",
       "requirements": "TST-09",
       "where": "The family tests"
-    },
-    {
-      "id": "G-88",
-      "what": "The CLI's `--json` emits PascalCase field names where the tool emits camelCase for the same record, so the two front ends disagree",
-      "requirements": "RES-06",
-      "where": "The CLI serializer and `JsonOptions`"
-    },
-    {
-      "id": "G-89",
-      "what": "Nothing pins a result field name, so the additive-only rule rests on care rather than on a test",
-      "requirements": "RES-08",
-      "where": "The result records"
     },
     {
       "id": "G-93",
