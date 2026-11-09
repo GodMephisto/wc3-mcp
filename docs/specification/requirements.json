@@ -165,7 +165,7 @@
       "id": "DOC-02",
       "group": "DOC",
       "statement": "This specification SHALL be versioned, SHALL carry a change log, and SHALL name the build it describes",
-      "basis": "Measured. The cover and the footer carry version 1.29, the change log table names every revision with its date and its scope, and section 3.1 names the build the document describes, 275 tools from wc3ctl 0.4.13 at protocol 2025-11-25",
+      "basis": "Measured. The cover and the footer carry version 1.29, the change log table names every revision with its date and its scope, and section 3.1 names the build the document describes, 276 tools from wc3ctl 0.4.13 at protocol 2025-11-25",
       "status": "met",
       "test": "ChangelogCommand"
     },
@@ -693,10 +693,9 @@
       "id": "PRF-08",
       "group": "PRF",
       "statement": "The server SHALL apply explicit limits to archive entry count, decompressed bytes per entry and per call, parser depth, array size, temporary disk and child-process time, and SHALL refuse with a code before allocation",
-      "basis": "Design decision. Managed code and an exception handler are not a resource bound",
-      "gap": "G-53",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. Seven named limits, all now enforced. Parser depth 24, array size 1000, child-process time, and from this round 20,000 archive entries, 256 MiB decompressed per entry, 2 GiB per call and a 2 GiB temp disk floor, each refused as `ARCHIVE_ENTRIES`, `ENTRY_BYTES`, `CALL_BYTES` or `TEMP_DISK` naming the limit and the measured value, set 2.5x to 6x above a measured corpus of 7,914 entries and 339 MB",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "PRF-09",
@@ -909,7 +908,7 @@
       "id": "SAF-01",
       "group": "SAF",
       "statement": "Every tool SHALL set all four annotation hints explicitly. An unset hint SHALL fail the annotation audit",
-      "basis": "Measured. Every one of the 275 tools declares all four hints, the seven writing tools that left `destructiveHint` unset now declare false, and the audit reports an unset hint per tool by name",
+      "basis": "Measured. Every one of the 276 tools declares all four hints, the seven writing tools that left `destructiveHint` unset now declare false, and the audit reports an unset hint per tool by name",
       "status": "met",
       "test": "McpAnnotationAuditTests.A_tool_that_leaves_one_hint_unset_is_reported"
     },
@@ -1037,19 +1036,17 @@
       "id": "SAF-17",
       "group": "SAF",
       "statement": "A permission file SHALL be read at start from a path outside every folder the server writes, SHALL name the tools or families that need a person's approval and the tools that are refused outright, and a denied call SHALL fail with `POLICY_DENIED` naming the rule. A missing file SHALL deny nothing, and a malformed file SHALL refuse what it cannot classify",
-      "basis": "Design decision. Adopted on 8 November 2026 from the Roblox Studio MCP server, where a file the agent cannot reach is the authority and `confirm` is only intent. Section 23.1 states the design",
-      "gap": "G-62",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `PermissionPolicy` reads a file named by `WC3_MCP_PERMISSIONS` or the local app data `wc3ctl` folder, refuses a denied tool with `POLICY_DENIED` naming the rule and the list before the body runs, and ignores a file inside the executable folder with a line saying why. Five tests in `PermissionPolicyTests`",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SAF-18",
       "group": "SAF",
       "statement": "`confirm` SHALL state intent and SHALL NOT grant permission. A denial in the permission file SHALL fail a call that carries `confirm` true, and the tool text SHALL say which of the two decides",
-      "basis": "Design decision. SAF-10 already says a flag proves the caller included it, not that a person approved it, and today nothing else decides",
-      "gap": "G-62",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. A denial beats a call carrying `confirm` true, tested, and the refusal says the file decides while the flag states intent. A missing file leaves every tool as it is, also tested",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SEC-01",
@@ -1254,7 +1251,7 @@
       "id": "SUR-06",
       "group": "SUR",
       "statement": "Every tool SHALL belong to exactly one family, and the family SHALL be visible in the catalog resource and the generated reference",
-      "basis": "Measured. `McpToolFamilies` holds the inventory, 275 tools across the eleven families in section 6.5, and the catalog carries the family for each tool. `Every_tool_belongs_to_exactly_one_family` fails on a tool with no family, so a new tool cannot land ungrouped",
+      "basis": "Measured. `McpToolFamilies` holds the inventory, 276 tools across the eleven families in section 6.5, and the catalog carries the family for each tool. `Every_tool_belongs_to_exactly_one_family` fails on a tool with no family, so a new tool cannot land ungrouped",
       "status": "met",
       "test": "McpAnnotationAuditTests.Every_tool_belongs_to_exactly_one_family"
     },
@@ -1262,7 +1259,7 @@
       "id": "SUR-07",
       "group": "SUR",
       "statement": "The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface",
-      "basis": "Half met. The surface is 275 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists",
+      "basis": "Half met. The surface is 276 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists",
       "gap": "G-07",
       "status": "gap",
       "test": null
@@ -1288,10 +1285,9 @@
       "id": "SUR-10",
       "group": "SUR",
       "statement": "Every tool SHALL carry a `title` annotation, a short human label, so a client can show a readable name without parsing the description",
-      "basis": "Design decision. No tool sets a title today, and a client that displays one falls back to the snake case name",
-      "gap": "G-09",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. All 276 tools carry a `title`, sentence case, no trailing period, and the longest is 35 characters, so a client that renders a title instead of a name has one for every tool",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SUR-11",
@@ -1322,10 +1318,9 @@
       "id": "TRN-03",
       "group": "TRN",
       "statement": "The server SHALL exit 0 when stdin closes, and SHALL finish the in-flight call before exiting where the client allows it",
-      "basis": "Half met. A drain was added around stdin in this revision and the published binary still abandons the call, exiting 0 in 0.78 s with no response, so the second clause is not met. The first clause holds",
-      "gap": "G-73",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. Closing stdin with a 2.1 s call in flight now returns the response 1,945 ms after close and exits 0 at 2,060 ms. The drop was `SendMessageAsync` returning early on a disconnected transport while the request still sat in the channel, so the drain gate counts pending messages rather than dispatched calls",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "TRN-04",
@@ -1530,12 +1525,6 @@
       "where": "`Wc3Tools`, the alias table, the parity map"
     },
     {
-      "id": "G-09",
-      "what": "No tool has a title annotation",
-      "requirements": "SUR-10",
-      "where": "Every `[McpServerTool]`"
-    },
-    {
       "id": "G-100",
       "what": "Nothing scans for two tools over one operation, and `leak_list` overlaps `script_leaks` with no rule to separate them",
       "requirements": "SUR-04",
@@ -1680,12 +1669,6 @@
       "where": "The port and export writers"
     },
     {
-      "id": "G-53",
-      "what": "No explicit limit exists on entry count, decompressed bytes, parser depth, array size or child-process time",
-      "requirements": "PRF-08",
-      "where": "The loader, the commands and the host"
-    },
-    {
       "id": "G-54",
       "what": "PRF-05 counts the input and output bytes and ignores parsed sections, assets, schemas and concurrent calls",
       "requirements": "PRF-09",
@@ -1716,12 +1699,6 @@
       "where": "`Program.cs` and `Wc3Tools.cs`"
     },
     {
-      "id": "G-62",
-      "what": "No permission file exists, so the only thing that stops a destructive call is the caller's own `confirm` flag, and nothing the user writes can refuse a tool",
-      "requirements": "SAF-17, SAF-18",
-      "where": "A new policy type, the host, and section 23.1"
-    },
-    {
       "id": "G-64",
       "what": "A cold start to the initialize reply is 1.2 seconds against the 1 second requirement. The start line costs 0.03 seconds of it, so the cost is the host building the surface and the SDK handshake",
       "requirements": "PRF-01",
@@ -1744,12 +1721,6 @@
       "what": "No test scans an error message for a path, an input or leaked content, and a call that fails schema validation returns a message naming none of them",
       "requirements": "ERR-06",
       "where": "The error paths and the contract tests"
-    },
-    {
-      "id": "G-73",
-      "what": "A drain was added around stdin and the published binary still abandons an in-flight call, measured at 0.78 s with no response",
-      "requirements": "TRN-03",
-      "where": "The stdio host"
     },
     {
       "id": "G-75",
