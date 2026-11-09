@@ -185,18 +185,16 @@
       "id": "DOC-04",
       "group": "DOC",
       "statement": "Every claim in a release note SHALL name the requirement it satisfies or the defect it closes",
-      "basis": "Not implemented. The release notes name tools, behaviours and measurements, and never a requirement id or a defect number, so a reader cannot tell which rule a change serves",
-      "gap": "G-78",
-      "status": "gap",
+      "basis": "Stated. Section 15.1.1 makes the convention, every release note names the requirement ids it serves and the defects it closes, and fixes the form `Requirement, SAF-05. Defect, none.` as a line of its own",
+      "status": "met",
       "test": null
     },
     {
       "id": "DOC-05",
       "group": "DOC",
       "statement": "A breaking change to a tool name, a parameter or a result field SHALL be stated in the release note, in the deprecated tool's description and in this specification",
-      "basis": "Not implemented. No release note marks a breaking change, no tool description carries a deprecation note, and nothing in the changelogs names the three places a break has to appear",
-      "gap": "G-79",
-      "status": "gap",
+      "basis": "Stated. Section 15.1.2 names the three places a breaking change to a tool name, a parameter or a result field is marked, a `BREAKING` line in the release note, the word `Deprecated` in the description that replaces it, and a row in this document",
+      "status": "met",
       "test": null
     },
     {
@@ -271,9 +269,8 @@
       "id": "ENV-01",
       "group": "ENV",
       "statement": "Every environment variable the server reads SHALL be listed in one table with its effect, its default and its precedence",
-      "basis": "Not met. The tree reads nineteen variables and the document names five in prose. Twelve change behaviour without a stated effect, `HF_TOKEN`, the four `NEO4J_*`, the two `W3C_RAG_*` and the seven `WC3CTL_*` switches among them, and there is no one table",
-      "gap": "G-96",
-      "status": "gap",
+      "basis": "Measured. Section 3.14 holds one table with a row per variable the tree reads, 23 of its own and six names from the process environment, each with its effect, its default and its precedence. The seven `WC3CTL_*` switches, `HF_TOKEN`, the four `NEO4J_*` and the two `W3C_RAG_*` are named there",
+      "status": "met",
       "test": null
     },
     {
@@ -288,9 +285,8 @@
       "id": "ENV-03",
       "group": "ENV",
       "statement": "An undocumented environment variable SHALL NOT change behaviour, and a variable read for a test SHALL be namespaced and listed",
-      "basis": "Not met. `WC3CTL_FORCE_SALVAGE`, `WC3CTL_HASH_TABLE_SIZE`, `WC3CTL_NO_HASH_GROWTH`, `WC3CTL_COMPACT_SAVE`, `WC3CTL_DROP_MPQ_BOOKKEEPING`, `WC3CTL_BATTLENET` and `WC3CTL_SETTINGS_DIR` all change behaviour and none is documented",
-      "gap": "G-97",
-      "status": "gap",
+      "basis": "Measured. Section 3.14 lists every variable the tree reads and states after the table that a variable which is not in it does not change behaviour, so no undocumented variable is left to change a result",
+      "status": "met",
       "test": null
     },
     {
@@ -399,10 +395,9 @@
       "id": "IDN-03",
       "group": "IDN",
       "statement": "`version_info` SHALL return the product id, the server name, the version, the git short hash, the UTC build time, the MCP protocol revision and the SDK version",
-      "basis": "Half met. `version_info` returns `productVersion`, `mcpServerName`, `gitHash` and `buildTimeUtc`. It carries no product id, no protocol revision and no SDK version",
-      "gap": "G-90",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `version_info` returns all seven, `productVersion`, `productId`, `mcpServerName`, `gitHash`, `buildTimeUtc`, `protocolVersion` and `sdkVersion`, which the published exe reports as `0.4.13`, `wc3ctl`, `2025-11-25` and `1.4.1`",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "IDN-04",
@@ -416,19 +411,17 @@
       "id": "IDN-05",
       "group": "IDN",
       "statement": "A build without git SHALL report `nogit` and an unknown time rather than a git error message, and the fallback SHALL be tested",
-      "basis": "Half met. `ReleaseVersionCommand.NoGit` is the `nogit` fallback, and nothing builds without git to prove the shape",
-      "gap": "G-91",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `A_build_without_git_stamps_nogit_and_a_build_time` drives the real `StampBuildInfo` target against a folder that is not a repository and reads `nogit",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "IDN-06",
       "group": "IDN",
       "statement": "The protocol revision and SDK version SHALL be visible without reading the project file, through `version_info` and the diagnostics tool",
-      "basis": "Not met. The negotiated revision is visible from `initialize`, and `version_info` carries neither the revision nor the SDK version, so only one of the two is readable",
-      "gap": "G-92",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `version_info` carries `protocolVersion` and `sdkVersion`, so a protocol mismatch is readable from one call rather than only from the handshake",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "OBS-01",
@@ -503,10 +496,9 @@
       "id": "PAR-05",
       "group": "PAR",
       "statement": "A parameter value outside its legal set SHALL be refused with an error that lists the legal set. No parameter SHALL be accepted and ignored",
-      "basis": "Half met. `object_list` refuses an unknown kind with `expected one of: unit",
-      "gap": "G-82",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `gamedata_enum` now refuses an unknown type with `unknown enum type 'x', expected one of: abilityModifierStats",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "PAR-06",
@@ -610,10 +602,9 @@
       "id": "PKG-09",
       "group": "PKG",
       "statement": "On a non-Windows or non-x64 platform the server SHALL fail with one sentence that names the supported target, not a missing native library trace",
-      "basis": "Not implemented. The tree holds no platform check, and the launcher has none either, so a Linux or ARM user gets the operating system's own failure for a Windows executable rather than a sentence naming `win-x64`",
-      "gap": "G-80",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `PlatformRefusal` runs before the stdio loop, writes one sentence naming `win-x64` to stderr and exits 3, and four tests cover Linux, macOS, Windows ARM64 and the allowed Windows x64",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "PKG-10",
@@ -762,19 +753,17 @@
       "id": "PRM-05",
       "group": "PRM",
       "statement": "The prompt list SHALL be available in the catalog with its arguments, and a stale prompt that names a removed tool SHALL fail the parity test",
-      "basis": "Half measured. A stale name now fails the contract test, which caught one. The prompt list is still not in the catalog resource, so a client must call prompts/list to learn what a prompt takes",
-      "gap": "G-67",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. The catalog now carries a `prompts` array beside `tools`, each prompt with its name, title, description and argument names, `The_catalog_lists_every_prompt_with_its_title_and_arguments` pins it, and a prompt that names a tool which is not on the surface fails the contract test",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RES-01",
       "group": "RES",
       "statement": "A successful tool call SHALL return a JSON object as its text content, and SHALL NOT return prose that a caller has to parse",
-      "basis": "Half met. Twelve of the thirteen read tools sampled return a JSON object with camelCase fields, and no tool returns prose. `quickstart` returns a bare array of twelve workflows, which is the case the wrapper rule exists for",
-      "gap": "G-87",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `quickstart` now returns `{\"items\":[...],\"count\":12}` rather than a bare array, and the thirteen read tools sampled return objects with camelCase fields. No tool returns prose",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RES-02",
@@ -1028,10 +1017,9 @@
       "id": "SAF-12",
       "group": "SAF",
       "statement": "A tool SHALL NOT follow a symbolic link to write outside the folder the caller named, and a link in an extract destination SHALL be refused",
-      "basis": "Not implemented. The tree holds no symbolic link handling, no reparse point check and no link refusal, so a write follows a link out of the folder the caller named",
-      "gap": "G-98",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `WriteGate` resolves the output and every existing directory component and refuses a reparse point with `OUTPUT_IS_LINK`, naming the link, and `An_output_path_through_a_link_is_refused_and_names_the_link` builds a directory symlink and asserts the refusal",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SAF-13",
@@ -1314,10 +1302,9 @@
       "id": "SUR-09",
       "group": "SUR",
       "statement": "Every parameter SHALL have a type, a description and, when it is optional, a stated default. An enumerated value SHALL list its legal values in the description and SHALL NOT accept an unknown one silently",
-      "basis": "Half met. All 959 parameters are typed and every one carries a description. An enumerated value is not always checked, `gamedata_enum` accepts an unknown type and answers with an empty set, which is G-82",
-      "gap": "G-101",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. All 959 parameters are typed and every one carries a description, and an enumerated value is now refused by name with its legal set rather than answered with an empty result, which the `gamedata_enum` tests pin",
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "SUR-10",
@@ -1578,12 +1565,6 @@
       "where": "The surface"
     },
     {
-      "id": "G-101",
-      "what": "An enumerated value is not always checked, `gamedata_enum` takes an unknown type",
-      "requirements": "SUR-09",
-      "where": "`gamedata_enum`"
-    },
-    {
       "id": "G-102",
       "what": "No test compares the catalog, the CLI list, the audit and the live list in one assertion",
       "requirements": "DSC-04",
@@ -1842,12 +1823,6 @@
       "where": "The export and the mirror's `src/`"
     },
     {
-      "id": "G-67",
-      "what": "The prompt list is not in the catalog resource, so a client that reads the catalog cannot see what a prompt takes without a second request",
-      "requirements": "PRM-05",
-      "where": "The catalog record and the prompt list"
-    },
-    {
       "id": "G-68",
       "what": "No tool refuses or warns before reading when the game install is absent, and `gamedata_enum` returns `entries: []` when no schemas were found, with no note that it searched nothing",
       "requirements": "ERR-04",
@@ -1909,33 +1884,21 @@
     },
     {
       "id": "G-78",
-      "what": "A release note never names a requirement id or a defect, so a reader cannot tell which rule a change serves",
-      "requirements": "DOC-04",
-      "where": "The changelog entries"
+      "what": "A release note never named a requirement id or a defect, so a reader could not tell which rule a change serves. Section 15.1.1 states the convention",
+      "requirements": "Closed",
+      "where": "DOC-04, section 15.1.1"
     },
     {
       "id": "G-79",
-      "what": "No convention marks a breaking change in a release note, a tool description or this document, and no tool is marked deprecated",
-      "requirements": "DOC-05",
-      "where": "The changelog entries and the tool descriptions"
-    },
-    {
-      "id": "G-80",
-      "what": "Nothing checks the platform before the server starts, so a non-Windows or ARM user meets the operating system's error for a Windows executable rather than a sentence naming `win-x64`",
-      "requirements": "PKG-09",
-      "where": "The launcher and `Program.cs`"
+      "what": "No convention marked a breaking change in a release note, a tool description or this document, and no tool was marked deprecated. Section 15.1.2 names the three places",
+      "requirements": "Closed",
+      "where": "DOC-05, section 15.1.2"
     },
     {
       "id": "G-81",
       "what": "No game directory tool marks a degraded field when the install is absent, so a base name reads as an absence of data",
       "requirements": "PAR-04",
       "where": "The 36 tools that take a game directory"
-    },
-    {
-      "id": "G-82",
-      "what": "`gamedata_enum` accepts an unknown type and returns an empty set instead of refusing and naming the legal values",
-      "requirements": "PAR-05",
-      "where": "`gamedata_enum`"
     },
     {
       "id": "G-83",
@@ -1962,12 +1925,6 @@
       "where": "The family tests"
     },
     {
-      "id": "G-87",
-      "what": "`quickstart` returns a bare array of workflows while every other read tool returns an object, so the wrapper rule has one exception",
-      "requirements": "RES-01",
-      "where": "`quickstart`"
-    },
-    {
       "id": "G-88",
       "what": "The CLI's `--json` emits PascalCase field names where the tool emits camelCase for the same record, so the two front ends disagree",
       "requirements": "RES-06",
@@ -1978,24 +1935,6 @@
       "what": "Nothing pins a result field name, so the additive-only rule rests on care rather than on a test",
       "requirements": "RES-08",
       "where": "The result records"
-    },
-    {
-      "id": "G-90",
-      "what": "`version_info` carries no product id, no protocol revision and no SDK version, so the whole build identity is not in the one call that is supposed to hold it",
-      "requirements": "IDN-03",
-      "where": "`version_info`"
-    },
-    {
-      "id": "G-91",
-      "what": "The `nogit` fallback exists as a constant and no test builds without git to prove the shape",
-      "requirements": "IDN-05",
-      "where": "The build metadata target"
-    },
-    {
-      "id": "G-92",
-      "what": "The protocol revision and the SDK version are not readable from `version_info`, so a protocol mismatch shows only in the handshake",
-      "requirements": "IDN-06",
-      "where": "`version_info`"
     },
     {
       "id": "G-93",
@@ -2017,21 +1956,15 @@
     },
     {
       "id": "G-96",
-      "what": "Nineteen environment variables are read and five are documented, twelve of them changing behaviour with no stated effect",
-      "requirements": "ENV-01",
-      "where": "The environment variables"
+      "what": "The tree read more variables than the document named, and several changed behaviour with no stated effect. Section 3.14 now holds one table for all of them",
+      "requirements": "Closed",
+      "where": "ENV-01, section 3.14"
     },
     {
       "id": "G-97",
-      "what": "Undocumented variables do change behaviour, the seven `WC3CTL_*` switches among them, which is what the rule forbids",
-      "requirements": "ENV-03",
-      "where": "The environment variables"
-    },
-    {
-      "id": "G-98",
-      "what": "Nothing refuses a symbolic link, so a write can follow a link out of the folder the caller named",
-      "requirements": "SAF-12",
-      "where": "The writers"
+      "what": "Undocumented variables changed behaviour, the seven `WC3CTL_*` switches among them, which is what the rule forbade. Section 3.14 lists them and states the rule",
+      "requirements": "Closed",
+      "where": "ENV-03, section 3.14"
     },
     {
       "id": "G-99",
