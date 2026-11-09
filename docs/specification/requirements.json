@@ -460,11 +460,10 @@
     {
       "id": "PAR-01",
       "group": "PAR",
-      "statement": "`map` SHALL accept either a map file (`.w3x` or `.w3m`) or an unpacked map folder, and the parameter description SHALL say which a tool takes. A file's extension SHALL be checked before the archive is opened",
-      "basis": "Measured. `LoadMap` accepts a folder and checks the extension only for a file, and the folder map and Lua suites pass on folder fixtures. Seven of the 202 `map` parameter descriptions say a folder is accepted, so the wording half of the requirement is not done",
-      "gap": "G-65",
-      "status": "gap",
-      "test": null
+      "statement": "`map` SHALL accept either a map file (.w3x or .w3m) or an unpacked map folder, and the parameter description SHALL say which a tool takes. A file's extension SHALL be checked before the archive is opened",
+      "basis": "Measured. `LoadMap` accepts a folder and checks the extension only for a file. A sweep of the published surface finds 202 tools with a `map` parameter, 201 of them now name the folder form in the description and the last one, `replay_summary`, says it is a filter rather than a path to read",
+      "status": "met",
+      "test": "a sweep of the published surface over every map parameter"
     },
     {
       "id": "PAR-02",
@@ -1805,12 +1804,6 @@
       "what": "A cold start to the initialize reply is 1.2 seconds against the 1 second requirement. The start line costs 0.03 seconds of it, so the cost is the host building the surface and the SDK handshake",
       "requirements": "PRF-01",
       "where": "`Program.RunServerAsync` and the tool collection"
-    },
-    {
-      "id": "G-65",
-      "what": "195 of the 202 `map` parameter descriptions do not say whether a folder map is accepted. Seven do, all in the Lua and script family",
-      "requirements": "PAR-01",
-      "where": "The parameter descriptions"
     },
     {
       "id": "G-66",
