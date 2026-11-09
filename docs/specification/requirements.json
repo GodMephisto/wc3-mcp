@@ -135,10 +135,9 @@
       "id": "CMP-05",
       "group": "CMP",
       "statement": "A tool SHALL keep working when the target build or the game install is absent, where it does not need them, and the failure mode SHALL be stated",
-      "basis": "Half met. Map tools work with `WC3_GAME_DIR` pointed at nothing, which every capture shows. The failure mode is not stated where it happens, `gamedata_enum` with no world data returns `entries: []` and says nothing",
-      "gap": "G-95",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. Map tools work with `WC3_GAME_DIR` pointed at nothing. A base-data tool that cannot answer now refuses by name rather than returning an empty set, `unknown enum type 'x', expected one of: ...`, and the schema loader that raised the empty answer I recorded in 1.37 always falls back to the bundled schemas, so a silent absence cannot occur",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "CMP-06",
@@ -343,7 +342,7 @@
       "id": "ERR-04",
       "group": "ERR",
       "statement": "A missing Warcraft III install SHALL NOT fail a tool that does not need it, and a tool that needs it SHALL say so before it reads the map",
-      "basis": "Half measured. A map tool works with `WC3_GAME_DIR` pointed at nothing. The tools that lose a check say so in the result rather than before reading, and `gamedata_enum` with no schemas found returns `entries: []` with no note that it searched nothing",
+      "basis": "Half met. A map tool works with `WC3_GAME_DIR` pointed at nothing. The tools that lose a base-data check report that in their result, after reading, and none states it before",
       "gap": "G-68",
       "status": "gap",
       "test": null
@@ -361,7 +360,7 @@
       "id": "ERR-06",
       "group": "ERR",
       "statement": "An error message SHALL name the path, the input and the rule that refused, and SHALL NOT include file contents, a configuration value or a token",
-      "basis": "Not tested. A map error names the path and the rule, but a call that fails schema validation returns a message naming none of them, and no test scans error text for content that should not travel",
+      "basis": "Half met. `ErrorTextTests` builds a map whose script and string table carry a marker and asserts that no error from four failing calls contains it, so the content half is now guarded. A call that fails schema validation still answers with `An error occurred invoking 'x'.` and names no path, no input and no rule",
       "gap": "G-70",
       "status": "gap",
       "test": null
@@ -1824,7 +1823,7 @@
     },
     {
       "id": "G-68",
-      "what": "No tool refuses or warns before reading when the game install is absent, and `gamedata_enum` returns `entries: []` when no schemas were found, with no note that it searched nothing",
+      "what": "No tool warns before reading when the game install is absent, so the note a caller gets is always in the result rather than ahead of the work",
       "requirements": "ERR-04",
       "where": "The gamedata and repair commands"
     },
@@ -1947,12 +1946,6 @@
       "what": "Nothing keeps result field names additive and no field removal carries a notice",
       "requirements": "CMP-04",
       "where": "The result records"
-    },
-    {
-      "id": "G-95",
-      "what": "A base-data tool with no world data says nothing about the degraded result",
-      "requirements": "CMP-05",
-      "where": "`gamedata_enum` and the base-data tools"
     },
     {
       "id": "G-96",
