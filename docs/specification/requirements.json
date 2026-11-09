@@ -109,41 +109,44 @@
       "id": "CMP-02",
       "group": "CMP",
       "statement": "The SDK version SHALL be pinned, and an upgrade SHALL include a protocol test run and a note in the release",
-      "basis": "Measured. The package is pinned at 1.4.1 and the transitive host packages are isolated to this exe",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `Wc3.Mcp.csproj` pins `ModelContextProtocol` at 1.4.1, the transitive host packages are isolated to this exe, and `ProtocolRevisionTests` is the run an upgrade has to pass, covering four revisions",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "CMP-03",
       "group": "CMP",
       "statement": "A tool rename SHALL follow the alias window in SUR-03, and the removed name SHALL be listed in the release note that removes it",
-      "basis": "Design decision. A client's saved prompt is the reason",
-      "status": "unassessed",
+      "basis": "Not implemented. There is no alias window. A name exists or it does not, so a rename would break a saved client prompt with no overlap",
+      "gap": "G-93",
+      "status": "gap",
       "test": null
     },
     {
       "id": "CMP-04",
       "group": "CMP",
       "statement": "A result field SHALL change only additively within a major version, and a removed field SHALL be announced one minor release before",
-      "basis": "Design decision. A caller writes against names",
-      "status": "unassessed",
+      "basis": "Not implemented. Nothing keeps field names additive and no removal carries a notice, which the two spellings of one record already show",
+      "gap": "G-94",
+      "status": "gap",
       "test": null
     },
     {
       "id": "CMP-05",
       "group": "CMP",
       "statement": "A tool SHALL keep working when the target build or the game install is absent, where it does not need them, and the failure mode SHALL be stated",
-      "basis": "Measured. Map tools work without the game and base-data tools do not",
-      "status": "unassessed",
+      "basis": "Half met. Map tools work with `WC3_GAME_DIR` pointed at nothing, which every capture shows. The failure mode is not stated where it happens, `gamedata_enum` with no world data returns `entries: []` and says nothing",
+      "gap": "G-95",
+      "status": "gap",
       "test": null
     },
     {
       "id": "CMP-06",
       "group": "CMP",
       "statement": "The server SHALL record the minimum client capability it relies on, which is tools. Resources and prompts SHALL degrade gracefully when a client does not offer them, and the server SHALL NOT require sampling, elicitation, roots or a completion handler",
-      "basis": "Design decision. A client that offers only tools still gets a usable server",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The initialize reply offers tools, resources and prompts and nothing else, no sampling, no elicitation, no roots and no completion handler, and a client that sends empty capabilities is served",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "CMP-07",
@@ -242,32 +245,35 @@
       "id": "DSC-04",
       "group": "DSC",
       "statement": "The catalog resource, `wc3ctl mcp tools`, `mcp_audit_annotations` and the live `tools/list` SHALL be computed from one reflection call, and a test SHALL compare all four",
-      "basis": "Measured. This holds today. It is the property that stops documentation drift",
-      "status": "unassessed",
+      "basis": "Half met. All four come from the same reflection over the same registrations. No single test compares all four outputs against each other",
+      "gap": "G-102",
+      "status": "gap",
       "test": null
     },
     {
       "id": "DSC-05",
       "group": "DSC",
       "statement": "An error for a missing capability SHOULD name the tool that has it, for example a call to read a replay from `search` naming `replay_summary`",
-      "basis": "Design decision. The surface is too large to browse and an error is a free routing hint",
-      "status": "unassessed",
+      "basis": "Not implemented. No error names the tool that would have answered. The only routing hint in the tree names trigger functions, not tools",
+      "gap": "G-103",
+      "status": "gap",
       "test": null
     },
     {
       "id": "DSC-06",
       "group": "DSC",
       "statement": "`quickstart` with no arguments, and the initialize instructions, SHALL answer with a short orientation rather than a required-parameter error. A tool whose schema requires a map SHALL still require it",
-      "basis": "Design decision. A fresh client often calls the first tool it sees with nothing",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `quickstart` with no arguments returns all twelve workflows, the initialize instructions are 405 characters of orientation, and `map_info` with no arguments is refused by its schema",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "ENV-01",
       "group": "ENV",
       "statement": "Every environment variable the server reads SHALL be listed in one table with its effect, its default and its precedence",
-      "basis": "Design decision. `WC3_GAME_DIR`, `WC3_TARGET_BUILD`, `WC3_MCP_NPX`, `WC3_MCP_LOG` and `CODEX_HOME` are read in different files",
-      "status": "unassessed",
+      "basis": "Not met. The tree reads nineteen variables and the document names five in prose. Twelve change behaviour without a stated effect, `HF_TOKEN`, the four `NEO4J_*`, the two `W3C_RAG_*` and the seven `WC3CTL_*` switches among them, and there is no one table",
+      "gap": "G-96",
+      "status": "gap",
       "test": null
     },
     {
@@ -282,8 +288,9 @@
       "id": "ENV-03",
       "group": "ENV",
       "statement": "An undocumented environment variable SHALL NOT change behaviour, and a variable read for a test SHALL be namespaced and listed",
-      "basis": "Design decision. A hidden switch is a behaviour nobody can reproduce",
-      "status": "unassessed",
+      "basis": "Not met. `WC3CTL_FORCE_SALVAGE`, `WC3CTL_HASH_TABLE_SIZE`, `WC3CTL_NO_HASH_GROWTH`, `WC3CTL_COMPACT_SAVE`, `WC3CTL_DROP_MPQ_BOOKKEEPING`, `WC3CTL_BATTLENET` and `WC3CTL_SETTINGS_DIR` all change behaviour and none is documented",
+      "gap": "G-97",
+      "status": "gap",
       "test": null
     },
     {
@@ -306,9 +313,9 @@
       "id": "ENV-06",
       "group": "ENV",
       "statement": "A configuration file SHALL NOT be needed. The server SHALL work with no file, no environment variable and no game install, for the tools that do not need them",
-      "basis": "Measured. This is the current behaviour and it is the property that makes a one-line install work",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. Every capture in this document started the exe with no settings file and no variable of its own, and map tools worked with `WC3_GAME_DIR` pointed at a folder that does not exist",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "ERR-01",
@@ -654,17 +661,17 @@
       "id": "PRF-02",
       "group": "PRF",
       "statement": "`tools/list` SHALL answer in under 100 ms after start",
-      "basis": "Design decision. It is reflection over a fixed list, and a client calls it on every launch",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `tools/list` answered in 42 ms after the handshake, a fifth of the budget",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "PRF-03",
       "group": "PRF",
       "statement": "A call SHALL load each input once. A tool SHALL NOT load the same map twice, and `LoadMap` SHALL be the only entry point",
-      "basis": "Measured. `port_unit` deliberately loads the source and the target once each and never feeds output back",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `LoadMap` is the only loader in the adapter, all 139 sites use it, and the port loads its source and its target once each and never feeds an output back as an input",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "PRF-04",
@@ -679,24 +686,26 @@
       "id": "PRF-05",
       "group": "PRF",
       "statement": "Memory SHALL stay bounded by the largest single input plus its output, and a folder tool SHALL process one map at a time",
-      "basis": "Design decision. A library of 500 maps must not be loaded at once",
-      "status": "unassessed",
+      "basis": "Not measured. The folder tools loop one map at a time and nothing measures the peak, so the bound is a design claim",
+      "gap": "G-104",
+      "status": "gap",
       "test": null
     },
     {
       "id": "PRF-06",
       "group": "PRF",
       "statement": "The RAG index and the embedder SHALL load once per process and stay loaded, and a failed load SHALL fall back to lexical search rather than fail the call",
-      "basis": "Measured. Both are lazy and kept. The fallback is the current behaviour",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The index and the embedder load once and stay, and with an empty retrieval folder `rag_status` reports nothing installed while `docs_search` answers lexically, which is the fallback",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "PRF-07",
       "group": "PRF",
       "statement": "A performance gate SHALL fail CI when a read-only call on the reference map regresses past a stated multiple of its baseline",
-      "basis": "Design decision. `bench_perf_gate` already exists and the MCP layer is not in it",
-      "status": "unassessed",
+      "basis": "Not implemented for the adapter. `bench_perf_gate` covers the CLI paths and the MCP layer is not in it",
+      "gap": "G-105",
+      "status": "gap",
       "test": null
     },
     {
@@ -987,17 +996,17 @@
       "id": "SAF-08",
       "group": "SAF",
       "statement": "No tool SHALL overwrite its input map, model, texture or replay. A map edit with no `out_path` SHALL default to `<map>.edited.<ext>`, a port to `<target>.ported.<ext>`, and every other output SHALL be required",
-      "basis": "Measured. The defaults exist and the parameter text states them. Two implementations, one gate",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The twelve map edits that make `out_path` optional default to a sibling `.edited` copy and say so, `port_unit` writes `<target>.ported.<ext>` and says so, the gate refuses an output equal to the input, and every other output is required",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "SAF-09",
       "group": "SAF",
       "statement": "An extract tool SHALL refuse a relative path that escapes its output folder, a rooted path, a drive letter, a device name and a `..` segment after normalization, applying one shared rule",
-      "basis": "Measured. `mpq_extract_all` uses the same rule as the CLI `extract`. It is not applied to every folder-writing tool",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. One class, `ExtractPaths`, holds the rule, and the extract command, the MCP extract tool and the CLI writer all delegate to it, so the escape shapes are refused in one place rather than three",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "SAF-10",
@@ -1019,8 +1028,9 @@
       "id": "SAF-12",
       "group": "SAF",
       "statement": "A tool SHALL NOT follow a symbolic link to write outside the folder the caller named, and a link in an extract destination SHALL be refused",
-      "basis": "Design decision. The server writes where the caller says, not where a link points",
-      "status": "unassessed",
+      "basis": "Not implemented. The tree holds no symbolic link handling, no reparse point check and no link refusal, so a write follows a link out of the folder the caller named",
+      "gap": "G-98",
+      "status": "gap",
       "test": null
     },
     {
@@ -1233,10 +1243,10 @@
     {
       "id": "SUR-01",
       "group": "SUR",
-      "statement": "Every tool that acts on a map, a model, an asset, a script or a replay SHALL be a thin wrapper over one `Wc3.Commands` handler. The introspection tools and the reference search MAY live in the MCP layer, and no tool in that layer SHALL parse a map format, a model, a script or an archive, or reimplement logic the shared layer owns",
-      "basis": "Measured. This is the architecture today and the reason the CLI, the Studio and MCP cannot drift in behaviour. Two tools are introspection (`mcp_audit_annotations`, `version_info`) and one is the lexical reference search (`docs_search`), which lives in `Wc3Context` over the shared heading rule",
-      "status": "unassessed",
-      "test": null
+      "statement": "Every tool that acts on a map, a model, an asset, a script or a replay SHALL be a thin wrapper over one `Wc3.Commands` handler. The introspection tools and the reference search MAY live in the MCP layer, and no tool in that layer SHALL parse a map format, a model, a script or a replay",
+      "basis": "Measured. Every map acting tool routes through `LoadMap`, 139 call sites in the adapter, and the parsing itself lives in `Wc3.MapDocument`, so the adapter cannot read a format differently from the CLI",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "SUR-02",
@@ -1260,8 +1270,9 @@
       "id": "SUR-04",
       "group": "SUR",
       "statement": "One operation SHALL have one tool. A tool that only reformats another tool's result SHALL be a parameter of that tool, unless it answers a different question",
-      "basis": "Measured. `leak_list` is a presentation over `script_leaks`, and `map_overview` is a composition of three reads. The second is justified, the first is a candidate to merge",
-      "status": "unassessed",
+      "basis": "Not enforced. Nothing scans for two tools over one operation. `leak_list` presents what `script_leaks` found and no rule separates a presentation from a duplicate",
+      "gap": "G-100",
+      "status": "gap",
       "test": null
     },
     {
@@ -1294,16 +1305,18 @@
       "id": "SUR-08",
       "group": "SUR",
       "statement": "No tool SHALL require more than eight parameters, and a requirement for more SHALL become a parameter object with its own schema",
-      "basis": "Measured. The maximum is eight today, `force_set_flags`. More than that is where a model starts inventing values",
-      "status": "unassessed",
+      "basis": "Not met. The largest tool takes 11 parameters, `place_unit` and `place_doodad`, and the basis that said eight, with `force_set_flags`, was wrong when it was measured",
+      "gap": "G-99",
+      "status": "gap",
       "test": null
     },
     {
       "id": "SUR-09",
       "group": "SUR",
       "statement": "Every parameter SHALL have a type, a description and, when it is optional, a stated default. An enumerated value SHALL list its legal values in the description and SHALL NOT accept an unknown one silently",
-      "basis": "Measured. All parameters are typed and described today, and most enums are listed. PAR-05 makes the refusal uniform",
-      "status": "unassessed",
+      "basis": "Half met. All 959 parameters are typed and every one carries a description. An enumerated value is not always checked, `gamedata_enum` accepts an unknown type and answers with an empty set, which is G-82",
+      "gap": "G-101",
+      "status": "gap",
       "test": null
     },
     {
@@ -1557,6 +1570,42 @@
       "what": "No tool has a title annotation",
       "requirements": "SUR-10",
       "where": "Every `[McpServerTool]`"
+    },
+    {
+      "id": "G-100",
+      "what": "Nothing scans for two tools over one operation, and `leak_list` overlaps `script_leaks` with no rule to separate them",
+      "requirements": "SUR-04",
+      "where": "The surface"
+    },
+    {
+      "id": "G-101",
+      "what": "An enumerated value is not always checked, `gamedata_enum` takes an unknown type",
+      "requirements": "SUR-09",
+      "where": "`gamedata_enum`"
+    },
+    {
+      "id": "G-102",
+      "what": "No test compares the catalog, the CLI list, the audit and the live list in one assertion",
+      "requirements": "DSC-04",
+      "where": "The catalog tests"
+    },
+    {
+      "id": "G-103",
+      "what": "No error names the tool that would have answered a call for a capability the server has elsewhere",
+      "requirements": "DSC-05",
+      "where": "The error paths"
+    },
+    {
+      "id": "G-104",
+      "what": "Nothing measures peak memory on a folder tool, so the bound is a design claim",
+      "requirements": "PRF-05",
+      "where": "The folder tools"
+    },
+    {
+      "id": "G-105",
+      "what": "The performance gate covers the CLI paths only, so an adapter regression would not fail it",
+      "requirements": "PRF-07",
+      "where": "`bench_perf_gate`"
     },
     {
       "id": "G-11",
@@ -1896,7 +1945,7 @@
     },
     {
       "id": "G-84",
-      "what": "The graph store reads `NEO4J_PASSWORD` from the environment, so the server does read one credential, and nothing documents or bounds that read",
+      "what": "The graph store reads `NEO4J_PASSWORD` from the environment, so the server does read credentials, `NEO4J_PASSWORD` and `HF_TOKEN`,, and nothing documents or bounds that read",
       "requirements": "SEC-04",
       "where": "`Neo4jStore` and the graph tools"
     },
@@ -1947,6 +1996,48 @@
       "what": "The protocol revision and the SDK version are not readable from `version_info`, so a protocol mismatch shows only in the handshake",
       "requirements": "IDN-06",
       "where": "`version_info`"
+    },
+    {
+      "id": "G-93",
+      "what": "No alias window exists, so a renamed tool breaks a saved client prompt with no overlap",
+      "requirements": "CMP-03",
+      "where": "The tool names"
+    },
+    {
+      "id": "G-94",
+      "what": "Nothing keeps result field names additive and no field removal carries a notice",
+      "requirements": "CMP-04",
+      "where": "The result records"
+    },
+    {
+      "id": "G-95",
+      "what": "A base-data tool with no world data says nothing about the degraded result",
+      "requirements": "CMP-05",
+      "where": "`gamedata_enum` and the base-data tools"
+    },
+    {
+      "id": "G-96",
+      "what": "Nineteen environment variables are read and five are documented, twelve of them changing behaviour with no stated effect",
+      "requirements": "ENV-01",
+      "where": "The environment variables"
+    },
+    {
+      "id": "G-97",
+      "what": "Undocumented variables do change behaviour, the seven `WC3CTL_*` switches among them, which is what the rule forbids",
+      "requirements": "ENV-03",
+      "where": "The environment variables"
+    },
+    {
+      "id": "G-98",
+      "what": "Nothing refuses a symbolic link, so a write can follow a link out of the folder the caller named",
+      "requirements": "SAF-12",
+      "where": "The writers"
+    },
+    {
+      "id": "G-99",
+      "what": "The largest tool takes 11 parameters where the rule allows 8",
+      "requirements": "SUR-08",
+      "where": "`place_unit` and `place_doodad`"
     }
   ]
 }

@@ -40,7 +40,7 @@ def parse(md: str):
                 "statement": c[1],
                 "basis": basis,
             }
-        elif len(c) >= 4 and re.match(r"^G-\d{2}$", c[0]):
+        elif len(c) >= 4 and re.match(r"^G-\d{2,3}$", c[0]):
             gaps[c[0]] = {"id": c[0], "what": c[1], "requirements": c[2], "where": c[3]}
             for rid in re.findall(r"[A-Z]{2,4}-\d{2}", c[2]):
                 if rid in reqs:

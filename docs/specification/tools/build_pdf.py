@@ -88,7 +88,7 @@ def document_facts(text: str) -> dict:
     reqs = len([1 for m in re.finditer(r"^\| ([A-Z]{2,4}-\d{2}) \|", text, re.M)
                 if not m.group(1).startswith(("AC-", "G-"))])
     acs = len(re.findall(r"^\| AC-\d{2} \|", text, re.M))
-    gaps = len(re.findall(r"^\| G-\d{2} \|", text, re.M))
+    gaps = len(re.findall(r"^\| G-\d{2,3} \|", text, re.M))
     versions = re.findall(r"^\| (\d+(?:\.\d+)?) \| \d+ \w+ \d{4} \|", text, re.M)
     version = versions[-1] if versions else "1"
     return {"tools": tools, "requirements": reqs, "acs": acs, "gaps": gaps, "version": version}
