@@ -1,0 +1,15 @@
+{
+  "record": "wc3-release-record/1",
+  "version": "0.5.12",
+  "tag": "v0.5.12",
+  "commit": "93e07ce6645d5a7c23d6844eff4be95e982c05ef",
+  "written": "2026-11-09T17:58:21Z",
+  "artifacts": [
+    {
+      "name": "wc3-mcp.exe",
+      "path": "dist-mcp/wc3-mcp.exe",
+      "bytes": 151552,
+      "sha256": "2ae5d8e90e9ba04a76c1637c1847b09b8e24ea86c824916bf34253ed53b73751"
+    }
+  ]
+}

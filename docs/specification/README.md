@@ -12,9 +12,15 @@ This folder holds the specification for the wc3-mcp server, the PDF printed from
 | `tools/sync_requirements.py` | Regenerates `requirements.json` and the Status column |
 | `tools/verify_publish.py` | The guard that starts a published exe and checks its version, tool count and timestamp |
 | `tools/release_record.py` | Writes, verifies and resolves the record of a release |
+| `tools/check_json_contract.py` | Runs every script here with `--json` and names the object it promises |
+| `tools/fuzz_corpus.py` | Runs the named fuzz corpus against the readers and records the run outside this folder |
+| `tools/check_automation.py` | Runs the automation guards and prints one verdict each |
+| `releases/v<version>.json` | One release record per tag, written by `release_record.py`. `releases/README.md` says which are release evidence and which are local readings |
+| `fuzz/wc3-spec-parsers-v1.json` | The named fuzz corpus SEC-08 asks for |
+| `fuzz/wc3-spec-parsers-v1.md` | The corpus scope and the residual risk it does not cover |
 | `requirements.json` | Every requirement, its gap link, its status and its test |
 
-The document describes wc3ctl 0.4.13 and wc3-mcp 0.5.16, with the tool surface measured on 8 November 2026 and re-measured after each slice. It states 179 requirements in 20 groups, 41 acceptance checks, the 275-tool inventory, 55 gap rows, the hardening designs in section 20, the anime-map workstreams in section 21, the content pipeline and its pjass gate in section 22, the permission model in section 23, and the sources and verification log in Appendices D and E.
+The document describes wc3ctl 0.4.13 and wc3-mcp 0.5.16, with the tool surface measured on 8 November 2026 and re-measured after each slice. It states 179 requirements in 20 groups, 41 acceptance checks, the 276-tool inventory, 55 gap rows, the hardening designs in section 20, the anime-map workstreams in section 21, the content pipeline and its pjass gate in section 22, the permission model in section 23, and the sources and verification log in Appendices D and E.
 
 ## Rebuild the PDF
 

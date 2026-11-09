@@ -28,7 +28,7 @@
       "id": "AUT-04",
       "group": "AUT",
       "statement": "One command SHALL build, publish and verify every front end into a fresh folder, swap it in, and print the timestamp of every published exe",
-      "basis": "Gap. Publishing needs `dotnet publish` for the CLI and the server and `npm pack` for the wrapper, and this folder runs neither. A person publishes each front end into a fresh folder with `scripts/publish-all.ps1`, swaps it in and reads the timestamp it prints for every exe (G-41)",
+      "basis": "Gap. Nothing in this folder builds a front end. `dotnet publish` makes the server and the CLI exe and `npm pack` makes the wrapper, so no command here fills a fresh folder, swaps it in or reads a timestamp for each exe. A person runs `scripts/publish-all.ps1` in the Wc3_CLI tree and reads the timestamp it prints (G-41)",
       "gap": "G-41",
       "status": "gap",
       "test": null
@@ -37,7 +37,7 @@
       "id": "AUT-05",
       "group": "AUT",
       "statement": "A watch command SHALL rebuild, run the hermetic suite, regenerate the docs and publish when a source file changes, and SHALL refuse to publish when a gate fails",
-      "basis": "Gap. A watch loop has to run the build, the hermetic suite, `wc3ctl docs all --force` and the publish, so a person runs those four by hand after a change and nothing refuses a publish when a gate fails (G-39)",
+      "basis": "Gap. A watch loop has to run `dotnet build`, `dotnet test`, `wc3ctl docs all --force` and a publish, and three of those four need dotnet or npm, so a program here can watch a file but cannot run the loop or refuse a publish on a failed gate. A person runs the four by hand after a change (G-39)",
       "gap": "G-39",
       "status": "gap",
       "test": null
@@ -46,7 +46,7 @@
       "id": "AUT-06",
       "group": "AUT",
       "statement": "A release-readiness command SHALL run the build, the hermetic suite, the docs guard, the surface audit, the parity check and the publish verification, and SHALL print one verdict with one exit code",
-      "basis": "Gap. `tools/check_automation.py` already folds the five guards into one verdict with one exit code, and the three pieces it does not run are `dotnet build`, `dotnet test` and `tools/verify_publish.py`, so a person runs those three beside it and reads their verdicts with the guard's (G-40)",
+      "basis": "Gap. `tools/check_automation.py` folds five guards into one verdict and one exit code, and it runs neither `dotnet build`, `dotnet test`, a parity check nor `tools/verify_publish.py`, and no parity tool exists in this tree, so no command here answers for the six steps the statement names. A person runs the build, the suite and the publish verification beside the guard verdict (G-40)",
       "gap": "G-40",
       "status": "gap",
       "test": null
@@ -55,7 +55,7 @@
       "id": "AUT-07",
       "group": "AUT",
       "statement": "Every automation command SHALL answer `--json` with a stable object, so an agent can drive the same loop a person drives",
-      "basis": "Gap. Six of the eight scripts in this folder answer `--json` with one object carrying `ok`. `build_pdf.py` and `sync_requirements.py` take no flag, and `wc3ctl docs` and `publish-all.ps1` answer no JSON at all, so a person adds it to those four (G-43)",
+      "basis": "Gap. Eleven of the twelve scripts in this folder answer `--json` with one object carrying the keys they promise, which `tools/check_json_contract.py` runs and reports, and it exits 2 for `build_pdf.py`, which takes no flag, while `wc3ctl docs` and `publish-all.ps1` sit outside this folder and answer no JSON at all. A person adds the flag to those three (G-43)",
       "gap": "G-43",
       "status": "gap",
       "test": null
@@ -72,7 +72,7 @@
       "id": "AUT-09",
       "group": "AUT",
       "statement": "A release SHALL be one tag, one version, one changelog entry and one handoff to the mirror, and the changelog entry SHALL be committed before the tag",
-      "basis": "Gap. The tag and the mirror handoff belong to the release workflow and to the mirror repository, so this folder cannot cut a release. A person commits the changelog entry, tags that same version and watches the handoff, and no gate checks that order today (G-38)",
+      "basis": "Gap. `sync.yml` pushes the tag and `release.yml` cuts the release, and neither writes a changelog entry, so no tag in this tree has one and the release notes are the mirroring commit message. A person writes the entry, commits it, then lets the sync push the tag, and nothing checks that order (G-38)",
       "gap": "G-38",
       "status": "gap",
       "test": null
@@ -89,7 +89,7 @@
       "id": "AUT-11",
       "group": "AUT",
       "statement": "The release SHALL write a machine-readable record of the source commit, the artifact digests and the tag, and a published version SHALL resolve to that record",
-      "basis": "Gap. `tools/release_record.py` writes a record of the commit, the tag and a sha256 per artifact, verifies it and resolves a version to it, and its selftest passes, but no release calls it, so a person runs it from the release workflow and publishes the record beside the artifact. `resolve --version 0.5.19` finds nothing today (G-56)",
+      "basis": "Gap. `tools/release_record.py` writes, verifies and resolves a record and its selftest passes, and `releases/v0.5.12.json` now verifies and resolves for the in-tree exe, but that record names commit 93e07ce where tag v0.5.12 names c3d9bf5, so it explains the bytes on disk and no published release, and npm 0.5.19 is published with no record at all. A person runs the write from the release workflow and attaches the record to the release (G-56)",
       "gap": "G-56",
       "status": "gap",
       "test": null
@@ -380,7 +380,7 @@
       "id": "IDN-02",
       "group": "IDN",
       "statement": "One product version SHALL be the source of every version a caller can read, which is the exe, `version_info`, the npm package, the `.mcpb` manifest, `server.json` and the release tag. The release SHALL refuse a tag that differs from the exe. A committed check SHALL report every place the values disagree, even between releases",
-      "basis": "Measured. `tools/check_versions.py` reads eight version statements and they carry four values. The exe states 0.4.13, `Directory.Build.props` and the newest tag state 0.5.16, `npm/package.json` and the npm package entry in `server.json` state 0.5.8, and `mcpb/manifest.json` and `server.json` itself state 0.3.0, so no source can be called authoritative. The release aligns them, the tree does not",
+      "basis": "Measured. `tools/check_versions.py` reads eight version statements and they carry four values, 0.3.0 in the `.mcpb` manifest and `server.json`, 0.4.13 in the CLI exe, 0.5.8 in npm and `server.json`, and 0.5.16 in `Directory.Build.props` and the newest tag, and it never reads the in-tree `dist-mcp/wc3-mcp.exe`, which states 0.5.12 while baking commit 93e07ce where tag v0.5.12 names c3d9bf5. A person aligns the statements on one version and rebuilds the exe, which needs dotnet (G-25)",
       "gap": "G-25",
       "status": "gap",
       "test": null
@@ -624,7 +624,7 @@
       "id": "PKG-13",
       "group": "PKG",
       "statement": "Every published artifact SHALL name its source commit, its artifact digest and the tag it was built from, and a version number alone SHALL NOT be treated as provenance",
-      "basis": "Measured. `tools/check_provenance.py` refuses in this tree. The newest tag v0.5.16 names no release asset folder, so no artifact records its digest, the commit it was built from or the tag it belongs to, and the tag name alone is a version number, not provenance",
+      "basis": "Measured. `tools/check_provenance.py` refuses, because the newest tag v0.5.16 names no release asset folder and no published artifact carries a digest or a record. The one record in this folder is written for the in-tree exe at 0.5.12, it verifies its digest, and it is refused against tag v0.5.12 because the exe bakes commit 93e07ce and the tag points at c3d9bf5. A person attaches `release.json` and a `.sha256` beside each published asset (G-56)",
       "gap": "G-56",
       "status": "gap",
       "test": null
@@ -1112,7 +1112,7 @@
       "id": "SEC-08",
       "group": "SEC",
       "statement": "The parsers SHALL have a named fuzz corpus and a stated residual risk, and a malformed input SHALL return a tool error rather than terminate the process",
-      "basis": "Design decision. Managed code, no `eval` and native CascLib are not a proof",
+      "basis": "Gap. The corpus is named in `fuzz/wc3-spec-parsers-v1.json` and the residual risk in `fuzz/wc3-spec-parsers-v1.md`, and `tools/fuzz_corpus.py` ran 23 cases against nine readers where 18 malformed inputs each returned a tool error and no interpreter lost, but the map, object, trigger and script parsers are C# over native CascLib and no case here reaches them. A person runs the corpus against the built server through the hermetic suite (G-59)",
       "gap": "G-59",
       "status": "gap",
       "test": null
@@ -1585,7 +1585,7 @@
     },
     {
       "id": "G-25",
-      "what": "Six live artifacts carry five different versions, and the published npm package is 0.5.19 while the mirror's newest tag is v0.5.16 and its tree says 0.5.16 and 0.5.8, so the tree and the tags cannot reproduce what a user installs",
+      "what": "Eight version statements carry four values, 0.3.0, 0.4.13, 0.5.8 and 0.5.16, the in-tree exe states 0.5.12 while baking a commit that tag v0.5.12 does not name, and npm 0.5.19 has no tag, so the tree and the tags cannot reproduce what a user installs",
       "requirements": "IDN-02",
       "where": "Both `Directory.Build.props`, npm, mcpb, `server.json`, the tag, CI"
     },
@@ -1651,7 +1651,7 @@
     },
     {
       "id": "G-43",
-      "what": "`docs` and the publish script answer no `--json`, so an agent cannot drive them from one shape",
+      "what": "`docs`, `build_pdf.py` and the publish script answer no `--json`, so an agent cannot drive them from one shape",
       "requirements": "AUT-07",
       "where": "`DocsCommand` and the publish script"
     },
@@ -1693,7 +1693,7 @@
     },
     {
       "id": "G-56",
-      "what": "No artifact records its commit, digest and tag, and npm 0.5.19 has no tag that explains it",
+      "what": "No published artifact records its commit, digest and tag. One local record explains the in-tree 0.5.12 exe, and npm 0.5.19 has no tag that explains it",
       "requirements": "PKG-13, AUT-11",
       "where": "The release workflow and the mirror"
     },
