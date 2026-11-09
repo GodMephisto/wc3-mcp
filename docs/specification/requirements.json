@@ -375,9 +375,9 @@
       "id": "IDN-01",
       "group": "IDN",
       "statement": "The server SHALL take its product id, its registered server name and its version from assembly metadata written at build time, and SHALL NOT hardcode them in source or branch on a repository name",
-      "basis": "Measured. The identity today comes from `McpProductId` and `McpServerName` in `Wc3.Mcp.csproj`, overridden by each repository's `Directory.Build.props`, so one source builds `wc3ctl` and `wc3-mcp`",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `Wc3.Mcp.csproj` writes `McpProductId` and `McpServerName` into assembly metadata and `ServerIdentity` reads them back through `AssemblyMetadataAttribute`, with no string literal to branch on. The initialize reply and `version_info` report the same `wc3ctl`",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "IDN-02",
@@ -392,32 +392,35 @@
       "id": "IDN-03",
       "group": "IDN",
       "statement": "`version_info` SHALL return the product id, the server name, the version, the git short hash, the UTC build time, the MCP protocol revision and the SDK version",
-      "basis": "Design decision. A caller diagnosing a client problem needs the whole build identity in one call, not four",
-      "status": "unassessed",
+      "basis": "Half met. `version_info` returns `productVersion`, `mcpServerName`, `gitHash` and `buildTimeUtc`. It carries no product id, no protocol revision and no SDK version",
+      "gap": "G-90",
+      "status": "gap",
       "test": null
     },
     {
       "id": "IDN-04",
       "group": "IDN",
       "statement": "The registered server name SHALL be stable for a product, `wc3ctl` for the CLI and `wc3` for the public server, and SHALL be the name used to remove or reinstall it",
-      "basis": "Measured. Setup writes the name, then removes by the same name. A name that moved would leave a stale entry behind",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The initialize reply and `version_info` both report `wc3ctl` for this product, and setup writes and removes by that same name, which the round trip tests assert for every client",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "IDN-05",
       "group": "IDN",
       "statement": "A build without git SHALL report `nogit` and an unknown time rather than a git error message, and the fallback SHALL be tested",
-      "basis": "Measured. The build target validates the hash shape for exactly this reason",
-      "status": "unassessed",
+      "basis": "Half met. `ReleaseVersionCommand.NoGit` is the `nogit` fallback, and nothing builds without git to prove the shape",
+      "gap": "G-91",
+      "status": "gap",
       "test": null
     },
     {
       "id": "IDN-06",
       "group": "IDN",
       "statement": "The protocol revision and SDK version SHALL be visible without reading the project file, through `version_info` and the diagnostics tool",
-      "basis": "Design decision. A client bug is often a protocol mismatch, and the build is the only place it can be seen",
-      "status": "unassessed",
+      "basis": "Not met. The negotiated revision is visible from `initialize`, and `version_info` carries neither the revision nor the SDK version, so only one of the two is readable",
+      "gap": "G-92",
+      "status": "gap",
       "test": null
     },
     {
@@ -759,8 +762,9 @@
       "id": "RES-01",
       "group": "RES",
       "statement": "A successful tool call SHALL return a JSON object as its text content, and SHALL NOT return prose that a caller has to parse",
-      "basis": "Measured. Every result is a POCO serialized by the SDK. The exception is a result that is genuinely a list, which SHALL be wrapped as `{ items, count }` (RES-02)",
-      "status": "unassessed",
+      "basis": "Half met. Twelve of the thirteen read tools sampled return a JSON object with camelCase fields, and no tool returns prose. `quickstart` returns a bare array of twelve workflows, which is the case the wrapper rule exists for",
+      "gap": "G-87",
+      "status": "gap",
       "test": null
     },
     {
@@ -794,41 +798,43 @@
       "id": "RES-05",
       "group": "RES",
       "statement": "Binary content SHALL travel as a saved path, a resource link or an image content block under 1 MB. A larger payload SHALL be a path, never inline base64",
-      "basis": "Measured. `render_model` inlines a PNG up to 1 MB and reports the path, which is the right shape",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `render_model` always writes the PNG to `out_path` and always reports the path and the byte size, and inlines an image block only when the bytes are at or under `InlineImageLimit`, one million bytes. Nothing larger travels as base64",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "RES-06",
       "group": "RES",
       "statement": "A result field SHALL carry the same name and meaning as the CLI's `--json` output for the same operation",
-      "basis": "Measured. Both front ends serialize the same POCO, so this holds today and is easy to break",
-      "status": "unassessed",
+      "basis": "Not met. The same map record comes back as `Name`, `Author`, `Players` from `wc3ctl info --json` and as `name`, `author`, `players` from `map_info`, so a caller moving between the two front ends renames every field",
+      "gap": "G-88",
+      "status": "gap",
       "test": null
     },
     {
       "id": "RES-07",
       "group": "RES",
       "statement": "An enum SHALL serialize as its name, not its number",
-      "basis": "Measured. `JsonOptions` adds `JsonStringEnumConverter`, and a placed unit's scale needed its own converter",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `JsonOptions` adds `JsonStringEnumConverter`, and the observed results carry enum names rather than ordinals, `scriptLanguage` and the object kind fields among them",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "RES-08",
       "group": "RES",
       "statement": "A result field SHALL be camel case, stable within a major version, and additive only. A field SHALL NOT be renamed or removed without a major version",
-      "basis": "Design decision. A caller writes code against these names",
-      "status": "unassessed",
+      "basis": "Half met. The MCP surface is camel case throughout, which the sampled results confirm. Nothing pins a name, and the CLI already emits the same record in PascalCase, so the stability rule rests on care",
+      "gap": "G-89",
+      "status": "gap",
       "test": null
     },
     {
       "id": "RES-09",
       "group": "RES",
       "statement": "A tool that allocates an identifier, such as a rawcode or a creation number, SHALL produce the same identifier for the same inputs and the same starting map, so a test can assert it",
-      "basis": "Design decision. A random allocator makes the write sweep flaky and makes a caller's retry produce a second object",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. Two `object_new` calls against two copies of the same map allocated `h000` both times, so an allocated rawcode is a function of the input rather than of the process",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "RES-10",
@@ -1905,6 +1911,42 @@
       "what": "No test asserts a page size and a cap per family, so the result limits have a rule and no guard",
       "requirements": "TST-09",
       "where": "The family tests"
+    },
+    {
+      "id": "G-87",
+      "what": "`quickstart` returns a bare array of workflows while every other read tool returns an object, so the wrapper rule has one exception",
+      "requirements": "RES-01",
+      "where": "`quickstart`"
+    },
+    {
+      "id": "G-88",
+      "what": "The CLI's `--json` emits PascalCase field names where the tool emits camelCase for the same record, so the two front ends disagree",
+      "requirements": "RES-06",
+      "where": "The CLI serializer and `JsonOptions`"
+    },
+    {
+      "id": "G-89",
+      "what": "Nothing pins a result field name, so the additive-only rule rests on care rather than on a test",
+      "requirements": "RES-08",
+      "where": "The result records"
+    },
+    {
+      "id": "G-90",
+      "what": "`version_info` carries no product id, no protocol revision and no SDK version, so the whole build identity is not in the one call that is supposed to hold it",
+      "requirements": "IDN-03",
+      "where": "`version_info`"
+    },
+    {
+      "id": "G-91",
+      "what": "The `nogit` fallback exists as a constant and no test builds without git to prove the shape",
+      "requirements": "IDN-05",
+      "where": "The build metadata target"
+    },
+    {
+      "id": "G-92",
+      "what": "The protocol revision and the SDK version are not readable from `version_info`, so a protocol mismatch shows only in the handshake",
+      "requirements": "IDN-06",
+      "where": "`version_info`"
     }
   ]
 }
