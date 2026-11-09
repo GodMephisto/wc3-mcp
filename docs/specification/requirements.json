@@ -468,65 +468,68 @@
       "id": "PAR-02",
       "group": "PAR",
       "statement": "The game directory SHALL resolve from the tool argument, then `WC3_GAME_DIR`, then auto-detection. A value holding an unfilled placeholder SHALL count as unset",
-      "basis": "Measured. `ResolveGameDir` implements exactly this, including the `${...}` check that an MCPB host needs",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `McpEnvPrecedenceTests` proves the argument wins over the environment, the environment is used when no argument is given, and an unfilled `${...}` in either place counts as unset rather than as a folder name",
+      "status": "met",
+      "test": "McpEnvPrecedenceTests"
     },
     {
       "id": "PAR-03",
       "group": "PAR",
       "statement": "The target build SHALL resolve from the tool argument, then `WC3_TARGET_BUILD`, then the saved setting, then the default, and `target_get` SHALL report which source won",
-      "basis": "Measured. `TargetBuildSettings` reports the source and the initialize line names it. The precedence is not in one place a caller can read",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. The same test class proves the argument beats the environment, the environment beats the settings file, the settings file is used when both are clear, and each tier reports its own source",
+      "status": "met",
+      "test": "McpEnvPrecedenceTests"
     },
     {
       "id": "PAR-04",
       "group": "PAR",
       "statement": "A tool that needs game data SHALL state in its description what it returns without it, and its result SHALL mark any degraded field rather than returning an empty value that reads as real",
-      "basis": "Design decision. 36 tools take `game_dir`, and a missing install currently turns base names into absences that look like data",
-      "status": "unassessed",
+      "basis": "Half met. `placed_fix_refs` says a base-game check was skipped, which is the shape the rule wants, and the rest of the game directory tools return unmarked results",
+      "gap": "G-81",
+      "status": "gap",
       "test": null
     },
     {
       "id": "PAR-05",
       "group": "PAR",
       "statement": "A parameter value outside its legal set SHALL be refused with an error that lists the legal set. No parameter SHALL be accepted and ignored",
-      "basis": "Measured. Some tools parse enums with a clear error, others fall back. One rule, one message shape",
-      "status": "unassessed",
+      "basis": "Half met. `object_list` refuses an unknown kind with `expected one of: unit",
+      "gap": "G-82",
+      "status": "gap",
       "test": null
     },
     {
       "id": "PAR-06",
       "group": "PAR",
       "statement": "`out_path` SHALL be required where the output is a different artifact type, such as a PNG, CSV, OBJ, atlas or report, and optional with a stated default where the output is an edited map",
-      "basis": "Measured. This is the current split and it is right. It is not stated in one place",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. 98 writing tools require `out_path`, the 12 that make it optional are the map edits and each states the default in its own description, a sibling `.edited` copy, and a tool whose output is a folder takes `out_dir` instead",
+      "status": "met",
+      "test": "measured over the surface"
     },
     {
       "id": "PAR-07",
       "group": "PAR",
       "statement": "A coordinate SHALL state its unit and frame in the parameter description, either world units, terrain cells, pathing cells or corners, and a rotation SHALL state radians or degrees",
-      "basis": "Measured. `placed_unit_set` states radians and names the map's own convention, and `pathing_paint` states four cells per tile. Both are the kind of fact a caller guesses wrong",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. All 13 coordinate parameters say world coordinate or world units, and all three rotation parameters say radians and name the map's own convention",
+      "status": "met",
+      "test": "measured over the surface"
     },
     {
       "id": "PAR-08",
       "group": "PAR",
       "statement": "An array parameter SHALL have a stated maximum, and a call above it SHALL be refused rather than truncated",
-      "basis": "Design decision. `mpq_remove_many`, `object_bulk_set`, `uabi_profile` and `model_lod` take arrays. A silent truncation looks like success",
-      "status": "unassessed",
+      "basis": "Half met. `object_batch_set` states its limit, at most 500 edits. The other eight array parameters state no maximum and none is proven to refuse an oversized call",
+      "gap": "G-83",
+      "status": "gap",
       "test": null
     },
     {
       "id": "PAR-09",
       "group": "PAR",
       "statement": "A path parameter SHALL accept forward slashes on Windows, and an internal archive path SHALL accept either slash and normalize it",
-      "basis": "Design decision. A model emits both, and a failed path looks like a missing file",
-      "status": "unassessed",
-      "test": null
+      "basis": "Measured. `file_get_text` returns the same bytes for `war3map.j` and `(listfile)` written with either slash, a name that is not in the map is refused by name, and every filesystem path in this document's measurements is written with forward slashes on Windows",
+      "status": "met",
+      "test": "measured over the surface"
     },
     {
       "id": "PKG-01",
@@ -1877,6 +1880,24 @@
       "what": "Nothing checks the platform before the server starts, so a non-Windows or ARM user meets the operating system's error for a Windows executable rather than a sentence naming `win-x64`",
       "requirements": "PKG-09",
       "where": "The launcher and `Program.cs`"
+    },
+    {
+      "id": "G-81",
+      "what": "No game directory tool marks a degraded field when the install is absent, so a base name reads as an absence of data",
+      "requirements": "PAR-04",
+      "where": "The 36 tools that take a game directory"
+    },
+    {
+      "id": "G-82",
+      "what": "`gamedata_enum` accepts an unknown type and returns an empty set instead of refusing and naming the legal values",
+      "requirements": "PAR-05",
+      "where": "`gamedata_enum`"
+    },
+    {
+      "id": "G-83",
+      "what": "Eight of the nine array parameters state no maximum, and no call above a limit is proven to be refused rather than truncated",
+      "requirements": "PAR-08",
+      "where": "The array parameters"
     }
   ]
 }
