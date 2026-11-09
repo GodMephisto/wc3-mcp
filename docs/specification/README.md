@@ -12,7 +12,7 @@ This folder holds the specification for the wc3-mcp server, the PDF printed from
 | `tools/sync_requirements.py` | Regenerates `requirements.json` and the Status column |
 | `requirements.json` | Every requirement, its gap link, its status and its test |
 
-The document describes wc3ctl 0.4.13 and wc3-mcp 0.5.16, with the tool surface measured on 8 November 2026 and re-measured after each slice. It states 179 requirements in 20 groups, 41 acceptance checks, the 275-tool inventory, 62 gap rows, the hardening designs in section 20, the anime-map workstreams in section 21, the content pipeline and its pjass gate in section 22, the permission model in section 23, and the sources and verification log in Appendices D and E.
+The document describes wc3ctl 0.4.13 and wc3-mcp 0.5.16, with the tool surface measured on 8 November 2026 and re-measured after each slice. It states 179 requirements in 20 groups, 41 acceptance checks, the 275-tool inventory, 63 gap rows, the hardening designs in section 20, the anime-map workstreams in section 21, the content pipeline and its pjass gate in section 22, the permission model in section 23, and the sources and verification log in Appendices D and E.
 
 ## Rebuild the PDF
 
