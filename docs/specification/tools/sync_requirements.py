@@ -19,7 +19,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SPEC = HERE.parent / "wc3-mcp-specification-v1.md"
 DATA = HERE.parent / "requirements.json"
-ID = re.compile(r"^[A-Z]{2,4}-\d{2}$")
+ID = re.compile(r"^[A-Z]{2,4}-\d{2,3}$")
 
 
 def cells(line: str):
@@ -42,7 +42,7 @@ def parse(md: str):
             }
         elif len(c) >= 4 and re.match(r"^G-\d{2,3}$", c[0]):
             gaps[c[0]] = {"id": c[0], "what": c[1], "requirements": c[2], "where": c[3]}
-            for rid in re.findall(r"[A-Z]{2,4}-\d{2}", c[2]):
+            for rid in re.findall(r"[A-Z]{2,4}-\d{2,3}", c[2]):
                 if rid in reqs:
                     reqs[rid]["gap"] = c[0]
     return reqs, gaps

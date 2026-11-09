@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
 jobs:
   build:
     runs-on: windows-latest
@@ -18,6 +28,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      # The repo has no lock files, so the cache is keyed on every project and props file.
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - name: Restore
         run: dotnet restore
 
@@ -29,3 +47,30 @@ jobs:
 
       - name: Validate the MCP bundle manifest
         run: npx -y @anthropic-ai/mcpb@2.1.2 validate mcpb/manifest.json
+
+# Notes on the specification checks
+#
+# `python tools/check_automation.py`, run from docs/specification, is the one command
+# that runs the five guards the specification names, and it exits non zero when one of
+# them fails. It is not a step in this job yet, because this job cannot supply two of
+# the things those guards read. Section 10 row G-36 records the same limit.
+#
+# 1. The job builds and never publishes, and dist-mcp is ignored by git, so a runner
+#    holds no published server. check_counts.py and measure_surface.py both open
+#    dist-mcp/Wc3.Mcp.exe and exit 1 with "no published server found" on a runner.
+# 2. check_changelog_ids.py defaults to C:\playground\Programming\Wc3_CLI\changelog,
+#    the release notes of the other repository, and exits 1 when that folder is absent,
+#    which it is on a runner.
+#
+# Two guards also fail on the tree as it stands, because IDN-02 and PKG-13 are open.
+# check_versions.py exits 2 on four live values and check_provenance.py exits 2 because
+# no release folder records a digest and a commit. Run in a job that publishes the exe
+# and checks out the changelog, the command would report those two as failures, which
+# is the verdict the requirements already carry.
+#
+# The step is written and ready for that job. Add it after the last step above.
+#
+#   - name: Run the specification checks
+#     working-directory: docs/specification
+#     run: python tools/check_automation.py
+

@@ -62,7 +62,7 @@ README_COUNTS = re.compile(
 
 AC_ROW = re.compile(r"^\| AC-\d{2} \|", re.M)
 GAP_ROW = re.compile(r"^\| G-\d{2,3} \|")
-REQ_REF = re.compile(r"[A-Z]{2,4}-\d{2}")
+REQ_REF = re.compile(r"[A-Z]{2,4}-\d{2,3}")
 
 
 class CountError(MeasureError):

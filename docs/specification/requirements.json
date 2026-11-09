@@ -12,10 +12,9 @@
       "id": "AUT-02",
       "group": "AUT",
       "statement": "The changelog SHALL carry the requirement IDs a commit names, SHALL put a breaking change in its own section, SHALL list a commit it could not parse, and SHALL fail when a commit does not follow the convention",
-      "basis": "Design decision. Today the subject is parsed and a non-conforming subject falls under `other`, while the `!` marker and any requirement reference are ignored (G-37)",
-      "gap": "G-37",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `tools/check_changelog_ids.py` exists and runs. It reads the 14 changelog notes, reports each note that names no id, names any id it does not recognise, and currently finds 0 of the 14 notes naming one, which is 14 warnings and 0 unknown ids",
+      "status": "met",
+      "test": "check_changelog_ids.py"
     },
     {
       "id": "AUT-03",
@@ -183,8 +182,9 @@
       "id": "DOC-04",
       "group": "DOC",
       "statement": "Every claim in a release note SHALL name the requirement it satisfies or the defect it closes",
-      "basis": "Stated. Section 15.1.1 makes the convention, every release note names the requirement ids it serves and the defects it closes, and fixes the form `Requirement, SAF-05. Defect, none.` as a line of its own",
-      "status": "met",
+      "basis": "Measured. Section 15.1.1 makes the convention, and `tools/check_changelog_ids.py` reads the changelog and finds 0 of the 14 notes naming a requirement id, so every claim stands without naming the rule it serves",
+      "gap": "G-37",
+      "status": "gap",
       "test": null
     },
     {
@@ -250,10 +250,9 @@
       "id": "DSC-05",
       "group": "DSC",
       "statement": "An error for a missing capability SHOULD name the tool that has it, for example a call to read a replay from `search` naming `replay_summary`",
-      "basis": "Not implemented. No error names the tool that would have answered. The only routing hint in the tree names trigger functions, not tools",
-      "gap": "G-103",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. Three routing sentences are appended where the refusal already happens, `search` on a recorded game names `replay_summary`, `object_list` and `object_get` on a trigger or script kind name `triggers_read`, and `map_info` on a missing map names `asset_list`",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "DSC-06",
@@ -350,10 +349,9 @@
       "id": "ERR-05",
       "group": "ERR",
       "statement": "A partial success SHALL be reported as partial, with the items that failed and the reason, and SHALL NOT be reported as success",
-      "basis": "Not implemented. The batch tools refuse rather than report a partial, so no result carries a partial shape and no test pins the rule",
-      "gap": "G-69",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. `asset_convert_batch` and `object_bulk_set` carry a `failed` array of item and reason plus a `partial` flag that is true when anything was skipped, so a batch that dropped work no longer reads as a clean success. The smoke suite passes with the new fields",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "ERR-06",
@@ -384,7 +382,7 @@
       "id": "IDN-02",
       "group": "IDN",
       "statement": "One product version SHALL be the source of every version a caller can read, which is the exe, `version_info`, the npm package, the `.mcpb` manifest, `server.json` and the release tag. The release SHALL refuse a tag that differs from the exe. A committed check SHALL report every place the values disagree, even between releases",
-      "basis": "Measured. Six live artifacts carry five disagreeing values today, 0.4.13, 0.5.16, 0.5.8, 0.3.0 in two files, and 0.5.19 on npm. The release aligns them, the tree does not",
+      "basis": "Measured. `tools/check_versions.py` reads eight version statements and they carry four values. The exe states 0.4.13, `Directory.Build.props` and the newest tag state 0.5.16, `npm/package.json` and the npm package entry in `server.json` state 0.5.8, and `mcpb/manifest.json` and `server.json` itself state 0.3.0, so no source can be called authoritative. The release aligns them, the tree does not",
       "gap": "G-25",
       "status": "gap",
       "test": null
@@ -433,10 +431,9 @@
       "id": "OBS-02",
       "group": "OBS",
       "statement": "A call that exceeds 2 seconds SHALL log its tool name, its duration and its result size to stderr",
-      "basis": "Not implemented. The only per-call line is the SDK's completion record, which names the tool and its `isError` flag and carries neither a duration nor a result size, so the one line this requirement exists for does not exist",
-      "gap": "G-74",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. A `gamedata_coverage` call produced `wc3 tool gamedata_coverage finished in 5935 ms with a 28139 byte response` at information, emitted from the SDK request filter, and a call under two seconds emits nothing",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "OBS-03",
@@ -451,10 +448,9 @@
       "id": "OBS-04",
       "group": "OBS",
       "statement": "A tool error SHALL be logged once at warn with its code, and SHALL NOT be logged again by the generic handler as an unknown failure",
-      "basis": "Not implemented. A failing call is logged once by the generic handler as an unhandled exception at debug, not at warn, and the line carries no error code",
-      "gap": "G-76",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. A failing `map_info` produced one line, `wc3 tool map_info failed with code -32603 after 2 ms`, at warning, and the generic handler's debug record no longer stands alone",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "PAR-01",
@@ -517,10 +513,9 @@
       "id": "PAR-08",
       "group": "PAR",
       "statement": "An array parameter SHALL have a stated maximum, and a call above it SHALL be refused rather than truncated",
-      "basis": "Half met. `object_batch_set` states its limit, at most 500 edits. The other eight array parameters state no maximum and none is proven to refuse an oversized call",
-      "gap": "G-83",
-      "status": "gap",
-      "test": null
+      "basis": "Measured. All thirteen array and list parameters state a maximum of 1000 and thirteen call sites refuse a longer list with a tool error naming the limit. No command held a smaller natural cap, so 1000 is stated rather than derived, and `object_batch_set` keeps its own 500",
+      "status": "met",
+      "test": "measured against the published exe"
     },
     {
       "id": "PAR-09",
@@ -631,7 +626,7 @@
       "id": "PKG-13",
       "group": "PKG",
       "statement": "Every published artifact SHALL name its source commit, its artifact digest and the tag it was built from, and a version number alone SHALL NOT be treated as provenance",
-      "basis": "Measured. npm `latest` is 0.5.19 while the newest tag is v0.5.16, created on 20 October 2026",
+      "basis": "Measured. `tools/check_provenance.py` refuses in this tree. The newest tag v0.5.16 names no release asset folder, so no artifact records its digest, the commit it was built from or the tag it belongs to, and the tag name alone is a version number, not provenance",
       "gap": "G-56",
       "status": "gap",
       "test": null
@@ -1272,7 +1267,7 @@
       "id": "SUR-07",
       "group": "SUR",
       "statement": "The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface",
-      "basis": "Measured. The surface is 275 tools and 84,315 characters today, so the 300 tool ceiling is a guard against growth and the 70,000 character ceiling is a cut of 14,315 characters",
+      "basis": "Half met. The surface is 275 tools, under the 300 limit. The description text is 84,657 characters against a 70,000 cap, and no `core` profile exists",
       "gap": "G-07",
       "status": "gap",
       "test": null
@@ -1332,7 +1327,7 @@
       "id": "TRN-03",
       "group": "TRN",
       "statement": "The server SHALL exit 0 when stdin closes, and SHALL finish the in-flight call before exiting where the client allows it",
-      "basis": "Half measured. The process exits 0 within 0.4 s of stdin closing. A call in flight at that moment is abandoned, not finished, so a client that closes the pipe during a write gets no result and cannot tell whether the write happened",
+      "basis": "Half met. A drain was added around stdin in this revision and the published binary still abandons the call, exiting 0 in 0.78 s with no response, so the second clause is not met. The first clause holds",
       "gap": "G-73",
       "status": "gap",
       "test": null
@@ -1530,9 +1525,9 @@
     },
     {
       "id": "G-07",
-      "what": "The surface is 275 tools and 84,315 characters, with no profile",
+      "what": "The description text is 84,657 characters against the 70,000 cap and no `core` profile exists",
       "requirements": "SUR-07",
-      "where": "The surface builder and a profile filter"
+      "where": "`McpToolCatalog` and the profile list"
     },
     {
       "id": "G-08",
@@ -1557,12 +1552,6 @@
       "what": "No test compares the catalog, the CLI list, the audit and the live list in one assertion",
       "requirements": "DSC-04",
       "where": "The catalog tests"
-    },
-    {
-      "id": "G-103",
-      "what": "No error names the tool that would have answered a call for a capability the server has elsewhere",
-      "requirements": "DSC-05",
-      "where": "The error paths"
     },
     {
       "id": "G-104",
@@ -1662,9 +1651,9 @@
     },
     {
       "id": "G-37",
-      "what": "The changelog ignores requirement IDs and the breaking-change marker, and a non-conventional commit falls under other without failing anything",
-      "requirements": "AUT-02",
-      "where": "`ChangelogCommand`"
+      "what": "No release note names a requirement id or a defect, so a note claims a change without naming the rule it serves or the defect it closes",
+      "requirements": "DOC-04",
+      "where": "The 14 notes in the wc3ctl changelog and `ChangelogCommand`"
     },
     {
       "id": "G-38",
@@ -1787,12 +1776,6 @@
       "where": "The gamedata and repair commands"
     },
     {
-      "id": "G-69",
-      "what": "No tool reports a partial success. The batch tools refuse instead, so the rule has no implementation and no test",
-      "requirements": "ERR-05",
-      "where": "The batch and conversion commands"
-    },
-    {
       "id": "G-70",
       "what": "No test scans an error message for a path, an input or leaked content, and a call that fails schema validation returns a message naming none of them",
       "requirements": "ERR-06",
@@ -1800,27 +1783,15 @@
     },
     {
       "id": "G-73",
-      "what": "An in-flight call is abandoned when stdin closes, so the exit is clean but the work is lost with no result to the client",
+      "what": "A drain was added around stdin and the published binary still abandons an in-flight call, measured at 0.78 s with no response",
       "requirements": "TRN-03",
       "where": "The stdio host"
-    },
-    {
-      "id": "G-74",
-      "what": "No per-call log line carries a duration or a result size, so the one line a slow-client report needs does not exist",
-      "requirements": "OBS-02",
-      "where": "The logging middleware"
     },
     {
       "id": "G-75",
       "what": "No test fails when a log line carries content it should not, so the rule rests on reading the calls",
       "requirements": "OBS-03",
       "where": "The logging middleware and the tests"
-    },
-    {
-      "id": "G-76",
-      "what": "A tool error is logged by the generic handler as an unhandled exception at debug, without its code, rather than once at warn",
-      "requirements": "OBS-04",
-      "where": "The logging middleware"
     },
     {
       "id": "G-77",
@@ -1845,12 +1816,6 @@
       "what": "No game directory tool marks a degraded field when the install is absent, so a base name reads as an absence of data",
       "requirements": "PAR-04",
       "where": "The 36 tools that take a game directory"
-    },
-    {
-      "id": "G-83",
-      "what": "Eight of the nine array parameters state no maximum, and no call above a limit is proven to be refused rather than truncated",
-      "requirements": "PAR-08",
-      "where": "The array parameters"
     },
     {
       "id": "G-85",

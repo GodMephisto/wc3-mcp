@@ -6,14 +6,18 @@ read. The specification names six of them, the published exe, the value
 and the release tag. This reads all six, plus the nested versions `server.json`
 carries for its packages, and prints one row per value.
 
-The exe is read from its PE version resource, the same bytes Explorer shows.
-`version_info` is the `Version` constant the build bakes into that resource, so
-it is read from `Directory.Build.props`, which is where the assembly attribute
+The exe is the published `Wc3.Mcp.exe`, the file the specification measures, read
+from `dist-mcp/Wc3.Mcp.exe` in this checkout or in `../Wc3_CLI`, or from `--exe`.
+An older `wc3-mcp.exe` build in the same folder is a different binary and is never
+read. Its version comes from the PE version resource, the same bytes Explorer
+shows. `version_info` is the `Version` constant the build bakes into that resource,
+so it is read from `Directory.Build.props`, which is where the assembly attribute
 comes from. The tag is the newest `vX.Y.Z` tag the repository holds.
 
     python tools/check_versions.py
     python tools/check_versions.py --json
     python tools/check_versions.py --repo C:\\path\\to\\wc3-mcp
+    python tools/check_versions.py --exe C:\\path\\to\\Wc3.Mcp.exe
     python tools/check_versions.py --git "C:\\Program Files\\Git\\bin\\git.exe"
     python tools/check_versions.py --selftest
 
@@ -187,21 +191,51 @@ def first_existing(candidates: list[Path]) -> Path | None:
     return None
 
 
+# The published server is Wc3.Mcp.exe, the name the specification measures. The
+# wc3-mcp folder also holds an older wc3-mcp.exe build, which is not that file,
+# so it is never read. measure_surface.py resolves the same two candidates.
+EXE_NAME = "Wc3.Mcp.exe" if os.name == "nt" else "Wc3.Mcp"
+
+
+def find_exe(repo: Path, explicit: str | None = None) -> Path | None:
+    """The published Wc3.Mcp executable, from the flag or the two usual folders."""
+    if explicit:
+        path = Path(explicit)
+        if not path.is_file():
+            raise VersionError(f"no server at {path}")
+        return path
+    from_env = os.environ.get("WC3_MCP_EXE")
+    if from_env:
+        path = Path(from_env)
+        if not path.is_file():
+            raise VersionError(f"WC3_MCP_EXE points at {path}, which is not a file")
+        return path
+    return first_existing(
+        [repo / "dist-mcp" / EXE_NAME, repo.parent / "Wc3_CLI" / "dist-mcp" / EXE_NAME]
+    )
+
+
+def exe_label(repo: Path, exe: Path) -> str:
+    """The path relative to the checkout when it is inside it, else the whole path."""
+    try:
+        return exe.relative_to(repo).as_posix()
+    except ValueError:
+        return exe.as_posix()
+
+
 def label(prefix: str, where: str) -> str:
     """A file name and the JSON path inside it, joined by one dot."""
     return f"{prefix}.{where}" if where else prefix
 
 
-def collect(repo: Path, tags: list[str] | None = None, git: str | None = None) -> list[dict]:
+def collect(repo: Path, tags: list[str] | None = None, git: str | None = None, exe_path: str | None = None) -> list[dict]:
     """One row per place a version is stated, in the order the spec names them."""
     rows: list[dict] = []
 
     def row(source: str, where: str, value: str | None, note: str = "") -> None:
         rows.append({"source": source, "where": where, "value": value, "note": note})
 
-    exe = first_existing(
-        [repo / "dist-mcp" / "Wc3.Mcp.exe", repo / "dist-mcp" / "wc3-mcp.exe"]
-    )
+    exe = find_exe(repo, exe_path)
     if exe is None:
         row("exe", "dist-mcp/Wc3.Mcp.exe", None, "absent")
     else:
@@ -209,11 +243,12 @@ def collect(repo: Path, tags: list[str] | None = None, git: str | None = None) -
             file_version, product_version = read_exe_version(exe)
         except VersionError as exc:
             raise VersionError(str(exc)) from exc
-        row("exe", exe.relative_to(repo).as_posix(), normalise(file_version), file_version)
+        where = exe_label(repo, exe)
+        row("exe", where, normalise(file_version), file_version)
         if product_version:
             row(
                 "exe product",
-                exe.relative_to(repo).as_posix() + " ProductVersion",
+                where + " ProductVersion",
                 normalise(product_version),
                 product_version,
             )
@@ -351,8 +386,8 @@ def summarise(rows: list[dict]) -> str:
     )
 
 
-def check(repo: Path, git: str | None = None) -> tuple[list[dict], str | None, str]:
-    rows = build_rows(collect(repo, git=git))
+def check(repo: Path, git: str | None = None, exe_path: str | None = None) -> tuple[list[dict], str | None, str]:
+    rows = build_rows(collect(repo, git=git, exe_path=exe_path))
     reference, why = reference_of(rows)
     return rows, reference, why
 
@@ -416,6 +451,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Report every place the product version is stated.")
     parser.add_argument("--repo", default=str(REPO), help="the wc3-mcp checkout to read")
     parser.add_argument("--git", default=None, help="the git executable, the full path when PATH is broken")
+    parser.add_argument("--exe", default=None, help="path to the published Wc3.Mcp executable")
     parser.add_argument("--json", action="store_true", help="print the rows as JSON")
     parser.add_argument("--selftest", action="store_true", help="run the built in selftest")
     args = parser.parse_args(argv)
@@ -429,7 +465,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     try:
-        rows, reference, why = check(repo, args.git)
+        rows, reference, why = check(repo, args.git, args.exe)
     except VersionError as exc:
         print(str(exc), file=sys.stderr)
         return 1
