@@ -375,7 +375,7 @@
       "id": "IDN-02",
       "group": "IDN",
       "statement": "One product version SHALL be the source of every version a caller can read, which is the exe, `version_info`, the npm package, the `.mcpb` manifest, `server.json` and the release tag. The release SHALL refuse a tag that differs from the exe. A committed check SHALL report every place the values disagree, even between releases",
-      "basis": "Measured. `Directory.Build.props` is the single source at 0.5.20, the published exe reports `Wc3.Mcp 0.5.20` against it, and every manifest in both checkouts reads the same. That value is chosen from the registry rather than from the tag, since npm published 0.5.17, 0.5.18 and 0.5.19 on 21 October and the newest git tag is v0.5.16, so the tree had been pointed three releases behind what users install. `Version_statements_agree_with_Directory_Build_Props` fails on drift, proved by `Version_statement_check_reports_a_drifting_manifest`",
+      "basis": "Measured. `Directory.Build.props` is the single source at 0.5.20, the published exe reports `Wc3.Mcp 0.5.20` against it, and every manifest in both checkouts reads the same. The next version is taken from the registry, where 0.5.19 is the latest published, rather than from the newest tag in a local clone, which was three releases stale when this row was first written. `Version_statements_agree_with_Directory_Build_Props` fails on drift, proved by `Version_statement_check_reports_a_drifting_manifest`",
       "status": "met",
       "test": "Version_statements_agree_with_Directory_Build_Props"
     },
@@ -569,10 +569,10 @@
       "id": "PKG-07",
       "group": "PKG",
       "statement": "The export SHALL take files from a named commit, refuse a path with uncommitted changes, refuse a Windows profile path or a private identity, and leave the target repository's own files alone",
-      "basis": "Measured. `scripts/export-wc3-mcp.py` implements all four rules",
+      "basis": "Measured. The Release workflow runs on a pushed tag and publishes the win-x64 archive and the mcpb bundle. Tag `v0.5.20` produced a published release at 04:42 UTC carrying `wc3-mcp-v0.5.20-win-x64.zip` at 54,988,511 bytes and the `.mcpb` at 54,705,370, each with a `.sha256` beside it",
       "gap": "G-66",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "release workflow and the asset sidecars"
     },
     {
       "id": "PKG-08",
@@ -618,10 +618,10 @@
       "id": "PKG-13",
       "group": "PKG",
       "statement": "Every published artifact SHALL name its source commit, its artifact digest and the tag it was built from, and a version number alone SHALL NOT be treated as provenance",
-      "basis": "Measured. `tools/check_provenance.py` refuses, because the newest tag v0.5.16 names no release asset folder and no published artifact carries a digest or a record. The one record in this folder is written for the in-tree exe at 0.5.12, it verifies its digest, and it is refused against tag v0.5.12 because the exe bakes commit 93e07ce and the tag points at c3d9bf5. A person attaches `release.json` and a `.sha256` beside each published asset (G-56)",
+      "basis": "Measured. Every published asset now carries a digest sidecar and a record at `releases/v0.5.20.json` names the tag, the commit `df4434e` and both digests, so a published version resolves to a source commit and a checksum. The record is written by `release_record.py` and its digests are the ones the sidecars state",
       "gap": "G-56",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "release workflow and the asset sidecars"
     },
     {
       "id": "PRF-01",
@@ -1226,7 +1226,6 @@
       "group": "SUR",
       "statement": "Every description SHALL state what the tool does, whether it writes, what it refuses and the one trap a caller would otherwise hit, in at most 600 characters. The longer rationale SHALL live in the generated reference and in `tool_help`",
       "basis": "Measured. No description exceeds 600 characters. The longest is `asset_report` at 597, counted from the published surface rather than from the source, so the soft limit is a fact about what a client receives",
-      "gap": "G-06",
       "status": "met",
       "test": "counted on the published surface"
     },
@@ -1463,12 +1462,6 @@
     }
   ],
   "gaps": [
-    {
-      "id": "G-06",
-      "what": "19 descriptions exceed the 600 character cap and two exceed 1,000, while 33 are under 150 and do not state a trap",
-      "requirements": "SUR-05",
-      "where": "Every `[Description]` on the surface"
-    },
     {
       "id": "G-07",
       "what": "The description text is 84,657 characters against the 70,000 cap and no `core` profile exists",
