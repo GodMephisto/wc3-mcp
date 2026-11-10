@@ -49,7 +49,9 @@ jobs:
           # Any test that names the Wc3Ctl namespace needs the CLI project, which this checkout
           # does not carry, so it cannot compile here. Dropping them by name was a list that went
           # stale; dropping them by what they reference cannot.
-          grep -rl "Wc3Ctl" tests/Wc3.Tests --include=*.cs | xargs -r rm -f
+          # The changelog tests require a note for the current version, and this checkout bumps its
+          # version on every sync and carries no changelog directory, so they cannot hold here.
+          grep -rlE "Wc3Ctl|changelog/|CHANGELOG[.]md" tests/Wc3.Tests --include=*.cs | xargs -r rm -f
 
       - name: Bump the patch version
         id: v
