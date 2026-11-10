@@ -73,6 +73,39 @@ jobs:
       - name: Build the mirror
         run: dotnet build wc3-mcp.sln -c Release
 
+      - name: Write the changelog note for this version
+        run: |
+          set -euo pipefail
+          v=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -1)
+          day=$(date -u +%Y-%m-%d)
+          prev=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          mkdir -p changelog
+          {
+            echo "# $v - $day"
+            echo
+            if [ -n "$prev" ]; then
+              git log --no-merges --pretty='- %s' "$prev"..HEAD -- src | head -60
+            else
+              echo "- First mirrored release."
+            fi
+          } > "changelog/$v.md"
+          if [ -f CHANGELOG.md ]; then
+            tail -n +2 CHANGELOG.md > CHANGELOG.rest
+          else
+            : > CHANGELOG.rest
+          fi
+          {
+            echo "# Changelog"
+            echo
+            echo "## $v - $day"
+            echo
+            echo "See changelog/$v.md."
+            echo
+            cat CHANGELOG.rest
+          } > CHANGELOG.md
+          rm -f CHANGELOG.rest
+          echo "wrote changelog/$v.md"
+
       - name: Keep the manifests on the same version
         run: |
           set -euo pipefail
@@ -87,7 +120,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src tests data Directory.Build.props npm mcpb server.json
+          git add src tests data changelog CHANGELOG.md Directory.Build.props npm mcpb server.json
           if git diff --cached --quiet; then
             echo "Nothing to mirror, the source already matches"
             exit 0
