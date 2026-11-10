@@ -8,8 +8,14 @@
     {
       "name": "wc3-mcp-v0.5.20-win-x64.zip",
       "path": "https://github.com/GodMephisto/wc3-mcp/releases/download/v0.5.20/wc3-mcp-v0.5.20-win-x64.zip",
-      "bytes": 132976640,
-      "sha256": "c522c5c2dba44bab8ead712a467aaab151ea788b3b1c67947e1390d3dbb05f3f"
+      "bytes": 54988511,
+      "sha256": "f5c5d5a4654acddc2e51ccee98d624fcbd7409951eeb1a827f2af3115057f1a7"
+    },
+    {
+      "name": "wc3-mcp-v0.5.20-win-x64.mcpb",
+      "path": "https://github.com/GodMephisto/wc3-mcp/releases/download/v0.5.20/wc3-mcp-v0.5.20-win-x64.mcpb",
+      "bytes": 54705370,
+      "sha256": "38a36fa01e31120807bdce6404a41a8c2da647a885481f35833b89c3b0494b99"
     }
   ]
 }
