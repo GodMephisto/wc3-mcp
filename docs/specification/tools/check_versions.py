@@ -26,9 +26,10 @@ source and its value, 1 when a source exists but cannot be read. A source that
 is not in the tree, the exe before a publish, is reported absent and does not
 count as a disagreement.
 
-The reference row is the exe when the tree holds one, because IDN-02 makes the
-release refuse a tag that differs from the exe. With no exe the newest tag is
-the reference. Every other row is marked against it.
+The reference row is the Version element in Directory.Build.props, which IDN-02 makes the one
+source of the product version. Every other row is marked against it, so a manifest that drifted
+is named against the value a person edits rather than against whichever binary happens to be
+newest.
 """
 
 from __future__ import annotations
@@ -315,7 +316,7 @@ def collect(repo: Path, tags: list[str] | None = None, git: str | None = None, e
 
 def reference_of(rows: list[dict]) -> tuple[str | None, str]:
     """The row every other row is marked against, and why."""
-    for source in ("exe", "release tag"):
+    for source in ("version_info", "exe", "release tag"):
         for row in rows:
             if row["source"] == source and row["value"]:
                 return row["value"], row["source"]
@@ -379,10 +380,16 @@ def summarise(rows: list[dict]) -> str:
     for value in distinct:
         names = [r["source"] for r in stated if r["value"] == value]
         groups.append(f"{value} in {len(names)}")
+    source = next((r["value"] for r in stated if r["source"] == "version_info"), None)
+    tail = (
+        f". Directory.Build.props is the source and states {source}"
+        if source
+        else ". No source states a version that can be called authoritative"
+    )
     return (
         f"{len(stated)} sources carry {len(distinct)} values, "
         + ", ".join(groups)
-        + "; no source can be called authoritative"
+        + tail
     )
 
 
@@ -492,7 +499,7 @@ def main(argv: list[str] | None = None) -> int:
         print(render_table(rows, reference, why))
         print()
         if reference:
-            print(f"reference is {reference}, from the {why}")
+            print(f"reference is {reference}, declared by {why}")
         print(summary)
 
     ok = all(row["verdict"] in ("ok", "absent") for row in rows)

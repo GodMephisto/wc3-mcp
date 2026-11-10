@@ -354,7 +354,6 @@
       "group": "ERR",
       "statement": "An error message SHALL name the path, the input and the rule that refused, and SHALL NOT include file contents, a configuration value or a token",
       "basis": "Measured. A schema failure names the tool and the missing argument, `the call to \"map_info\" is missing the required argument \"map\"`, with the argument also carried in the structured `value` field. A parameter whose schema admits null is left to the binder so a documented optional call is not refused",
-      "gap": "G-70",
       "status": "met",
       "test": "named in the basis"
     },
@@ -378,10 +377,10 @@
       "id": "IDN-02",
       "group": "IDN",
       "statement": "One product version SHALL be the source of every version a caller can read, which is the exe, `version_info`, the npm package, the `.mcpb` manifest, `server.json` and the release tag. The release SHALL refuse a tag that differs from the exe. A committed check SHALL report every place the values disagree, even between releases",
-      "basis": "Measured. `tools/check_versions.py` reads eight version statements and they carry four values, 0.3.0 in the `.mcpb` manifest and `server.json`, 0.4.13 in the CLI exe, 0.5.8 in npm and `server.json`, and 0.5.16 in `Directory.Build.props` and the newest tag, and it never reads the in-tree `dist-mcp/wc3-mcp.exe`, which states 0.5.12 while baking commit 93e07ce where tag v0.5.12 names c3d9bf5. A person aligns the statements on one version and rebuilds the exe, which needs dotnet (G-25)",
+      "basis": "Measured. `Directory.Build.props` is the single source, the published exe reports `Wc3.Mcp 0.5.16` against it, and the npm package, the mcpb manifest, the server manifest and its download URL all read 0.5.16. `Version_statements_agree_with_Directory_Build_Props` fails on drift, proved by `Version_statement_check_reports_a_drifting_manifest`",
       "gap": "G-25",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "Version_statements_agree_with_Directory_Build_Props"
     },
     {
       "id": "IDN-03",
@@ -631,7 +630,7 @@
       "id": "PRF-01",
       "group": "PRF",
       "statement": "A cold start to the first initialize reply SHALL be under 1 second on a warm disk, and the surface SHALL NOT be recomputed per session",
-      "basis": "Measured. The lazy holds, and the cold start is 1.2 seconds on a warm disk on the development machine, four runs between 1.15 and 1.27 after the first. The start line reaches stderr at 0.31 seconds and costs 0.03 seconds, measured with the line suppressed",
+      "basis": "Measured, still over. The internal clock to the initialize reply is a 703 ms median across five runs on the published 0.5.16 exe, and wall clock from spawn is 1,138 ms, where the budget is 1,000 ms for the wall reading the row was written against. The host and the surface now start together and the descriptors are built on first use, so the surface phase fell from 865 ms to a 405 ms median, and the rest is process spawn",
       "gap": "G-64",
       "status": "gap",
       "test": null
@@ -656,7 +655,7 @@
       "id": "PRF-04",
       "group": "PRF",
       "statement": "A tool expected to exceed 2 seconds SHALL report progress and SHALL observe cancellation. The families are map optimisation, folder audits, model import and export, atlas and texture work, and the doctor repair",
-      "basis": "Measured. No tool reports progress or accepts a cancellation token today, and several of these run for minutes",
+      "basis": "Partly met. A cancel stops the wait in under two seconds and eleven tools take a token, and two of them read it inside the work, so `library_scan` stops at the next map and says how far it got and `model_import` removes what it wrote before it throws. Progress is not forwarded, so a client that asks for it receives nothing and that test is skipped with the reason. Nine tools still stop only at the next step",
       "gap": "G-04",
       "status": "gap",
       "test": null
@@ -757,7 +756,6 @@
       "group": "RES",
       "statement": "Every tool SHALL publish an `outputSchema`, and SHALL return the same object as `structuredContent`. The text content SHALL stay for a client that does not read structured content",
       "basis": "Measured. SDK 1.4.1 publishes an output schema when a tool sets `UseStructuredContent`, and the schema is derived from the method return type rather than written by hand. Twelve wrapper record tools carry one, and `ProtocolRevisionTests` pins exactly those twelve",
-      "gap": "G-02",
       "status": "met",
       "test": "named in the basis"
     },
@@ -1089,7 +1087,7 @@
       "id": "SEC-06",
       "group": "SEC",
       "statement": "A parser bug on a hostile map SHALL NOT execute code, write outside the output path or crash the process without a tool error",
-      "basis": "Measured, and partly contradicted. 36 fuzz cases ran against the published exe with no crash and no write outside the gate, which holds the first and second clause. The third does not hold for every parser. A malformed `war3map.w3u` returns a value with a diagnostic through `map_overview` and a silent empty list through `object_list`, a malformed `war3map.wtg` returns empty structures, and a script of every byte value passes `script_check` with `ok` true, so a malformed input can return a value rather than an error. The row stays gap on that clause with the cases recorded in the fuzz corpus",
+      "basis": "Measured, and partly contradicted. 36 fuzz cases ran with no crash and no write outside the gate, and the third clause does not hold for every parser, since a malformed `war3map.w3u` returns a value through `map_overview` and a silent empty list through `object_list`, a malformed `war3map.wtg` returns empty structures, and a file of every byte value passes `script_check` with ok true. A refusal was written for all three and reverted because it made nine validate tests and five CI gate tests fail on maps that exist to be described rather than refused",
       "gap": "G-85",
       "status": "gap",
       "test": null
@@ -1106,7 +1104,7 @@
       "id": "SEC-08",
       "group": "SEC",
       "statement": "The parsers SHALL have a named fuzz corpus and a stated residual risk, and a malformed input SHALL return a tool error rather than terminate the process",
-      "basis": "Gap. The corpus is named in `fuzz/wc3-spec-parsers-v1.json` and the residual risk in `fuzz/wc3-spec-parsers-v1.md`. `tools/fuzz_corpus.py` ran 36 cases, 23 against nine readers of the tools and 13 through the published exe against the map, object, trigger and script parsers, with 23 tool errors, 13 values and 0 crashes. A malformed object table and a malformed trigger tree return a value rather than a tool error through `object_list` and `triggers_read`, and a script holding every byte value passes `script_check`, so the statement is not met. A person still runs the corpus through the hermetic suite (G-59)",
+      "basis": "Measured on a corpus of 36 cases across thirteen readers. The three parser defects above are recorded per case, and a truncated `war3map.wts`, the input that once hung the reader, now returns a named diagnostic with no hang",
       "gap": "G-59",
       "status": "gap",
       "test": null
@@ -1213,7 +1211,6 @@
       "group": "SUR",
       "statement": "A tool name SHALL follow `<domain>_<verb>[_<noun>]`, lower case, one canonical name per operation, and the verb SHALL be the operation rather than a synonym. `map_info` and `map_info_get` SHALL NOT both exist. `list_files` and `file_list` SHALL NOT both exist",
       "basis": "Measured. The alias table resolves before dispatch, so an old name reaches the tool it was renamed to with its arguments unchanged and the reply names both. The deferred descriptor collection now answers a name lookup on demand, which is what the rewrite needed, and the four alias tests pass without a skip",
-      "gap": "G-08",
       "status": "met",
       "test": "named in the basis"
     },
@@ -1222,7 +1219,6 @@
       "group": "SUR",
       "statement": "A renamed tool SHALL keep an alias for at least one minor release, the alias SHALL say it is deprecated and name the replacement, and `wc3://tools` SHALL list the replacement. The alias may be removed in the first major release after the rename, never in a minor release",
       "basis": "Measured. `tools/list` lists each tool once under its current name and an old name never appears there, tested. An entry past its removal version is refused with a code naming that version",
-      "gap": "G-08",
       "status": "met",
       "test": "named in the basis"
     },
@@ -1266,7 +1262,6 @@
       "group": "SUR",
       "statement": "No tool SHALL require more than eight parameters, and a requirement for more SHALL become a parameter object with its own schema",
       "basis": "Measured. `place_unit` and `place_doodad` take one `placement` object with every field named, described and defaulted, so required top level arguments drop from five to two. The flattened arguments still work for one version and a call that mixes the two forms is refused with `INVALID_ARGUMENT`",
-      "gap": "G-99",
       "status": "met",
       "test": "named in the basis"
     },
@@ -1480,12 +1475,6 @@
   ],
   "gaps": [
     {
-      "id": "G-02",
-      "what": "No tool publishes an output schema, and no result carries structured content",
-      "requirements": "RES-02",
-      "where": "Tool creation options and the result POCOs"
-    },
-    {
       "id": "G-04",
       "what": "No progress notification and no cancellation token, on a surface that includes folder audits and model import",
       "requirements": "PRF-04",
@@ -1508,12 +1497,6 @@
       "what": "The description text is 84,657 characters against the 70,000 cap and no `core` profile exists",
       "requirements": "SUR-07",
       "where": "`McpToolCatalog` and the profile list"
-    },
-    {
-      "id": "G-08",
-      "what": "Nine names need a canonical rename, including one true duplicate pair, `list_files` and `file_list`",
-      "requirements": "SUR-02, SUR-03",
-      "where": "`Wc3Tools`, the alias table, the parity map"
     },
     {
       "id": "G-100",
@@ -1696,12 +1679,6 @@
       "where": "The gamedata and repair commands"
     },
     {
-      "id": "G-70",
-      "what": "No test scans an error message for a path, an input or leaked content, and a call that fails schema validation returns a message naming none of them",
-      "requirements": "ERR-06",
-      "where": "The error paths and the contract tests"
-    },
-    {
       "id": "G-75",
       "what": "No test fails when a log line carries content it should not, so the rule rests on reading the calls",
       "requirements": "OBS-03",
@@ -1718,12 +1695,6 @@
       "what": "A release note never named a requirement id or a defect, so a reader could not tell which rule a change serves. Section 15.1.1 states the convention",
       "requirements": "Closed",
       "where": "DOC-04, section 15.1.1"
-    },
-    {
-      "id": "G-79",
-      "what": "No convention marked a breaking change in a release note, a tool description or this document, and no tool was marked deprecated. Section 15.1.2 names the three places",
-      "requirements": "Closed",
-      "where": "DOC-05, section 15.1.2"
     },
     {
       "id": "G-81",
@@ -1750,28 +1721,10 @@
       "where": "The result records"
     },
     {
-      "id": "G-96",
-      "what": "The tree read more variables than the document named, and several changed behaviour with no stated effect. Section 3.14 now holds one table for all of them",
-      "requirements": "Closed",
-      "where": "ENV-01, section 3.14"
-    },
-    {
-      "id": "G-97",
-      "what": "Undocumented variables changed behaviour, the seven `WC3CTL_*` switches among them, which is what the rule forbade. Section 3.14 lists them and states the rule",
-      "requirements": "Closed",
-      "where": "ENV-03, section 3.14"
-    },
-    {
       "id": "G-98",
       "what": "A paged result reports a field the section does not name, so a caller reads `total` and `count` in different places",
       "requirements": "RES-10",
       "where": "The paged tools"
-    },
-    {
-      "id": "G-99",
-      "what": "The largest tool takes 11 parameters where the rule allows 8",
-      "requirements": "SUR-08",
-      "where": "`place_unit` and `place_doodad`"
     }
   ]
 }
