@@ -29,7 +29,7 @@ public sealed record DecimateResult(float[] Vertices, int[] Indices, int[] Remap
 /// </summary>
 public static class QemDecimator
 {
-    public static DecimateResult Decimate(float[] vertices, int[] indices, float ratio)
+    public static DecimateResult Decimate(float[] vertices, int[] indices, float ratio, float[]? uvs = null)
     {
         ArgumentNullException.ThrowIfNull(vertices);
         ArgumentNullException.ThrowIfNull(indices);
@@ -39,18 +39,36 @@ public static class QemDecimator
         int faceCount = indices.Length / 3;
         int targetFaces = Math.Max(1, (int)MathF.Round(faceCount * Math.Clamp(ratio, 0.01f, 1f)));
 
-        // 1. Weld by exact position so shared corners share a quadric.
-        var weld = new Dictionary<(float, float, float), int>();
+        // 1. Weld by exact position, and by UV when the caller supplies it. A texture seam is
+        // two coincident vertices with different UVs, so welding on position alone would tear
+        // the seam open. Quantising the UV to a 4096 grid keeps equal UVs together and distinct
+        // ones apart, which is the seam the collapse must not cross.
         var canonical = new int[vertices.Length / 3];
+        bool hasUvs = uvs is not null && uvs.Length >= canonical.Length * 2;
+        var weld = new Dictionary<(float, float, float, int, int), int>();
         var positions = new List<Vector3>();
+        var byPosition = new Dictionary<(float, float, float), List<int>>();
         for (int i = 0; i < canonical.Length; i++)
         {
-            var key = (vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
+            int u = 0, v = 0;
+            if (hasUvs)
+            {
+                u = QuantizeUv(uvs![i * 2]);
+                v = QuantizeUv(uvs[i * 2 + 1]);
+            }
+            var key = (vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2], u, v);
             if (!weld.TryGetValue(key, out int c))
             {
                 c = positions.Count;
                 weld[key] = c;
                 positions.Add(new Vector3(key.Item1, key.Item2, key.Item3));
+                var pos = (key.Item1, key.Item2, key.Item3);
+                if (!byPosition.TryGetValue(pos, out var list))
+                {
+                    list = new List<int>();
+                    byPosition[pos] = list;
+                }
+                list.Add(c);
             }
             canonical[i] = c;
         }
@@ -63,7 +81,20 @@ public static class QemDecimator
             if (a != b && b != c && a != c) tris.Add((a, b, c));
         }
 
-        // 3. One quadric per welded vertex, accumulated from incident face planes.
+        // 3. Freeze every vertex that shares its position with another welded vertex. With UVs
+        // that only happens at a texture seam, and moving one half of a seam pair tears it, so a
+        // collapse touching a frozen vertex is refused. Without UVs nothing is frozen.
+        var frozen = new bool[positions.Count];
+        if (hasUvs)
+        {
+            foreach (var list in byPosition.Values)
+            {
+                if (list.Count <= 1) continue;
+                foreach (int c in list) frozen[c] = true;
+            }
+        }
+
+        // 4. One quadric per welded vertex, accumulated from incident face planes.
         int vn = positions.Count;
         var quad = new float[vn][];
         for (int i = 0; i < vn; i++) quad[i] = new float[10];
@@ -95,6 +126,7 @@ public static class QemDecimator
             if (remaining <= targetFaces) break;
             int ra = Find(a), rb = Find(b);
             if (ra == rb) continue;
+            if (frozen[ra] || frozen[rb]) continue;
             int keep = Math.Min(ra, rb), drop = Math.Max(ra, rb);
             parent[drop] = keep;
             positions[keep] = (positions[keep] + positions[drop]) * 0.5f;
@@ -133,6 +165,9 @@ public static class QemDecimator
 
         return new DecimateResult(outPositions.ToArray(), outIndices.ToArray(), remap);
     }
+
+    private static int QuantizeUv(float value) =>
+        float.IsFinite(value) ? (int)MathF.Round(value * 4096f) : 0;
 
     private static DecimateResult Identity(float[] vertices, int[] indices)
     {
