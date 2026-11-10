@@ -3,21 +3,23 @@ namespace Wc3.Commands;
 
 /// <summary>
 /// One guided workflow. <see cref="Id"/> is a short stable key, <see cref="Title"/> is the human
-/// name, <see cref="WhenToUse"/> says in one line when to reach for it, and the two lists name the
-/// MCP tools and the wc3ctl commands that carry the workflow out. The lists are pointers rather
-/// than logic, so a caller resolves each name through the surface it already has.
+/// name, <see cref="WhenToUse"/> says in one line when to reach for it, <see cref="Prompt"/> is the
+/// MCP prompt that carries the same plan, and the two lists name the MCP tools and the wc3ctl
+/// commands that do the work. The lists are pointers rather than logic, so a caller resolves each
+/// name through the surface it already has.
 /// </summary>
 public sealed record QuickstartWorkflow(
     string Id,
     string Title,
     string WhenToUse,
+    string Prompt,
     IReadOnlyList<string> McpTools,
     IReadOnlyList<string> CliCommands);
 
 /// <summary>
 /// The workflow router behind the <c>quickstart</c> MCP tool and the <c>wc3ctl quickstart</c>
 /// command. With more than two hundred tools on the surface, an assistant asked to do something
-/// broad benefits from a short list of the ten routes that cover most real work, rather than from
+/// broad benefits from a short list of the twelve routes that cover most real work, rather than from
 /// guessing which tool to call first.
 ///
 /// Nothing here touches a map. It returns the same fixed catalog on every machine, so it is a
@@ -26,13 +28,14 @@ public sealed record QuickstartWorkflow(
 /// </summary>
 public static class QuickstartCommand
 {
-    /// <summary>The ten core workflows, in the order a newcomer meets them.</summary>
+    /// <summary>The twelve core workflows, in the order a newcomer meets them.</summary>
     public static IReadOnlyList<QuickstartWorkflow> All { get; } = new[]
     {
         new QuickstartWorkflow(
             "inspect",
             "Inspect a map",
             "Learn what a map is before changing anything, its metadata, files and custom objects.",
+            "inspect_map",
             new[] { "map_overview", "map_info", "list_files", "object_list", "audit_map" },
             new[] { "overview", "info", "ls", "object list", "audit" }),
 
@@ -40,6 +43,7 @@ public static class QuickstartCommand
             "port-hero",
             "Port a hero or unit between maps",
             "Move a unit or hero and everything it depends on into another map.",
+            "port_hero",
             new[]
             {
                 "port_deps", "port_preview", "port_unit", "port_into_version",
@@ -55,6 +59,7 @@ public static class QuickstartCommand
             "reforged-3-fix",
             "Repair a map broken by a Reforged patch",
             "A map that loaded before a patch and no longer does, or whose generated blocks went stale.",
+            "repair_reforged_map",
             new[] { "repair_generated", "map_optimize", "map_compat", "compat_explain" },
             new[] { "repair-generated", "map optimize", "compat", "compat explain" }),
 
@@ -62,6 +67,7 @@ public static class QuickstartCommand
             "black-portraits",
             "Find and fix black portraits",
             "Hero or unit portraits render as a black square because a model or its texture is missing.",
+            "fix_black_portraits",
             new[]
             {
                 "asset_model_lint", "asset_audit", "model_audit",
@@ -77,6 +83,7 @@ public static class QuickstartCommand
             "shrink-map",
             "Shrink a map's file size",
             "A map is too large to host, usually from duplicated or unused imported assets.",
+            "optimize_map_size",
             new[]
             {
                 "map_optimize", "asset_size_report", "asset_duplicates",
@@ -92,6 +99,7 @@ public static class QuickstartCommand
             "hunt-leaks",
             "Hunt script leaks",
             "Find handles, timers and triggers created and never destroyed, the classic WC3 leak.",
+            "hunt_leaks",
             new[]
             {
                 "script_leaks", "script_lua_leaks", "leak_list",
@@ -107,6 +115,7 @@ public static class QuickstartCommand
             "edit-objects",
             "Edit object data",
             "Change a unit, ability, item or other object's fields, or create a custom one.",
+            "edit_objects",
             new[]
             {
                 "object_list", "object_get", "object_set", "object_new",
@@ -122,6 +131,7 @@ public static class QuickstartCommand
             "terrain-and-placement",
             "Edit terrain and place units or doodads",
             "Sculpt terrain, paint tiles, and place or move units, doodads and regions.",
+            "edit_terrain_and_placement",
             new[]
             {
                 "terrain_info", "terrain_paint", "terrain_fill", "terrain_export_heightmap",
@@ -137,6 +147,7 @@ public static class QuickstartCommand
             "lua-conversion",
             "Convert a JASS map to Lua",
             "Move a map's script from JASS to Lua, or check one that has already moved.",
+            "convert_to_lua",
             new[]
             {
                 "script_to_lua", "script_lua_check", "script_lua_to_jass", "script_conversion_notes",
@@ -150,13 +161,44 @@ public static class QuickstartCommand
             "patch-compat",
             "Check a map against a target patch",
             "See what breaks if a map runs on a different game build, before shipping it.",
+            "check_patch_compat",
             new[] { "map_compat", "compat_matrix", "compat_explain", "bench_compat", "gamedata_changelog" },
             new[] { "compat", "compat matrix", "compat explain", "bench compat", "gamedata changelog" }),
+
+        new QuickstartWorkflow(
+            "trigger-wiring",
+            "Read and fix a trigger tree",
+            "A spell or a hero does nothing in game because the trigger that should fire is dead, "
+            + "disabled, or wired to an event that never reaches the player.",
+            "fix_trigger_wiring",
+            new[]
+            {
+                "triggers_read", "trigger_lint", "trigger_dead", "trigger_diff",
+                "trigger_export", "trigger_to_script",
+            },
+            new[]
+            {
+                "triggers read", "trigger lint", "trigger dead", "trigger diff",
+                "trigger export", "trigger to-script",
+            }),
+
+        new QuickstartWorkflow(
+            "learn-the-surface",
+            "Learn what this server can do",
+            "Start with nothing, find the tool for a job, and read the reference before calling "
+            + "anything that writes, so a first session does not damage a map.",
+            "learn_the_surface",
+            new[]
+            {
+                "quickstart", "docs_search", "version_info", "changelog",
+                "mcp_audit_annotations",
+            },
+            new[] { "quickstart", "version", "changelog" }),
     };
 
     /// <summary>
     /// The workflows, optionally narrowed by a goal substring. A null or blank goal returns all
-    /// ten. A goal matches when it appears (case-insensitively) in the id, the title, the when-to-use
+    /// twelve. A goal matches when it appears (case-insensitively) in the id, the title, the when-to-use
     /// line, or any tool or command name. When nothing matches the goal the full list is returned,
     /// so a caller always gets a usable answer rather than an empty one.
     /// </summary>

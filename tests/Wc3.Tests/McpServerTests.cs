@@ -3,6 +3,7 @@
 // exactly what the stdio exe serves) driven by the SDK's own client over in-memory
 // pipes, no processes, no network, no WC3 install.
 using System.IO.Pipelines;
+using System.Text.Json;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
@@ -18,20 +19,20 @@ public class McpServerTests
     {
         "asset_audit", "asset_convert_batch", "asset_duplicates", "asset_import_wire", "asset_list",
         "asset_model_lint", "asset_replace", "asset_report", "asset_size_report", "asset_thumbnails", "asset_unused",
-        "audit_ability", "audit_fidelity", "audit_hero", "audit_map",
+        "audit_ability", "audit_ability_orders", "audit_fidelity", "audit_hero", "audit_map",
         "audit_readiness", "audit_trend", "bench_compat", "bench_leaks", "bench_open",
         "bench_perf_gate", "bench_schema_coverage", "bundle_diff", "bundle_merge", "bundle_unit",
         "camera_add", "camera_list", "camera_remove", "camera_set", "camera_tour", "changelog",
         "ci_all", "ci_compat", "ci_lint", "ci_schema", "ci_validate",
         "compat_explain",
-        "compat_matrix", "deprotect_map", "diff", "docs_search", "doctor_check", "doctor_compare", "doctor_fix",
-        "doctor_inspect", "editor_catalog_get", "editor_catalog_list",
-        "file_get_text", "file_list", "file_set", "force_list", "force_rename",
+        "compat_matrix", "content_scaffold", "deprotect_map", "diff", "docs_search", "doctor_check", "doctor_compare", "doctor_fix",
+        "doctor_inspect", "editor_catalog_get", "editor_catalog_list", "error_codes",
+        "file_extract", "file_get_text", "file_list", "file_set", "force_list", "force_rename",
         "force_set_flags", "force_set_players",
         "gamedata_bounds", "gamedata_changelog", "gamedata_coverage", "gamedata_enum", "gamedata_export_schemas",
         "gamedata_field_lookup", "gamedata_history", "gamedata_schema_diff", "gamedata_sources",
         "graph_hubs", "graph_neighbors", "graph_path",
-        "hero_install", "hero_lint", "hero_roster",
+        "hero_generate", "hero_install", "hero_lint", "hero_roster",
         "imports_list", "leak_ab", "leak_benchmark", "leak_harness", "leak_join", "leak_list",
         "leak_model",
         "library_audit", "library_compare", "library_report", "library_scan", "library_validate",
@@ -45,11 +46,11 @@ public class McpServerTests
         "model_import",
         "model_lint",
         "model_lod",
-        "model_optimize",
+        "model_optimize", "model_primitive",
         "model_squish",
         "mpq_add", "mpq_bytes_diff", "mpq_extract_all", "mpq_listfile", "mpq_merge",
         "mpq_name_recover", "mpq_rebuild", "mpq_remove", "mpq_remove_many",
-        "mpq_strip_bookkeeping", "mpq_verify", "new_map", "object_bulk_set", "object_clone", "object_deprecated",
+        "mpq_strip_bookkeeping", "mpq_verify", "new_map", "object_batch_set", "object_bulk_set", "object_clone", "object_deprecated",
         "object_export", "object_field_options", "object_fix_model_ext", "object_form", "object_get", "object_import", "object_list",
         "object_migrate", "object_new", "object_noop_fields", "object_rawcode_suggest", "object_rename",
         "object_search", "object_set",
@@ -75,7 +76,7 @@ public class McpServerTests
         "script_leaks", "script_lua_api", "script_lua_check", "script_lua_globals",
         "script_lua_leaks", "script_lua_to_jass", "script_modernize", "script_null_locals",
         "script_reachable", "script_references", "script_semantic_diff", "script_to_lua",
-        "script_unused_functions", "script_unused_globals", "script_verify", "search", "sound_add", "sound_list",
+        "script_unused_functions", "script_unused_globals", "script_verify", "search", "sound_add", "sound_import_events", "sound_list",
         "sound_optimize", "sound_remove", "sound_set", "strings_diff", "strings_find", "strings_list",
         "strings_missing", "strings_set", "strings_unused",
         "target_get", "target_list", "target_set",
@@ -180,6 +181,36 @@ public class McpServerTests
     }
 
     [Fact]
+    public async Task The_catalog_lists_every_prompt_with_its_title_and_arguments()
+    {
+        var expected = Wc3McpServer.CreatePrompts()
+            .Select(p => p.ProtocolPrompt.Name)
+            .OrderBy(n => n, StringComparer.Ordinal)
+            .ToArray();
+
+        await WithClient(async (client, ct) =>
+        {
+            var contents = await client.ReadResourceAsync("wc3://tools", cancellationToken: ct);
+            var text = Assert.IsType<TextResourceContents>(Assert.Single(contents.Contents)).Text;
+            using var doc = JsonDocument.Parse(text);
+            var prompts = doc.RootElement.GetProperty("prompts").EnumerateArray().ToList();
+
+            Assert.Equal(expected, prompts.Select(p => p.GetProperty("name").GetString())
+                .OrderBy(n => n, StringComparer.Ordinal).ToArray());
+            Assert.All(prompts, p =>
+            {
+                Assert.False(string.IsNullOrWhiteSpace(p.GetProperty("title").GetString()),
+                    "a prompt was listed without a title");
+                Assert.False(string.IsNullOrWhiteSpace(p.GetProperty("description").GetString()),
+                    "a prompt was listed without a description");
+                var arguments = p.GetProperty("arguments").EnumerateArray().Select(a => a.GetString()).ToList();
+                Assert.NotEmpty(arguments);
+                Assert.All(arguments, a => Assert.False(string.IsNullOrWhiteSpace(a)));
+            });
+        });
+    }
+
+    [Fact]
     public async Task Missing_map_surfaces_as_clean_tool_error_not_a_stack_trace()
     {
         await WithClient(async (client, ct) =>
@@ -200,13 +231,14 @@ public class McpServerTests
         {
             var prompts = await client.ListPromptsAsync(cancellationToken: ct);
             var names = prompts.Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToArray();
-            Assert.Equal(
-                new[]
-                {
-                    "audit_hero_spells", "inspect_map", "optimize_map_size",
-                    "port_hero", "repair_reforged_map",
-                },
-                names);
+            // The original five must stay served. The set may grow, and a prompt that
+            // disappears breaks a caller's saved workflow, so assert inclusion.
+            var required = new[]
+            {
+                "audit_hero_spells", "inspect_map", "optimize_map_size",
+                "port_hero", "repair_reforged_map",
+            };
+            Assert.All(required, name => Assert.Contains(name, names));
 
             var result = await client.GetPromptAsync("inspect_map",
                 new Dictionary<string, object?> { ["map"] = "sample.w3x" }, cancellationToken: ct);
@@ -238,4 +270,146 @@ public class McpServerTests
             Assert.Contains("Aerial Shackles", body);
         });
     }
+
+    [Fact]
+    public async Task Every_resource_reports_a_byte_size_and_the_sha256_of_the_file_it_serves()
+    {
+        // RSC-01, RSC-05 and RSC-08. The listing must name the size and the digest of what a read
+        // returns, computed at start from the installed file. A section serves a slice of a
+        // document, so its reference is the slice itself rather than the file.
+        await WithClient(async (client, ct) =>
+        {
+            var resources = await client.ListResourcesAsync(cancellationToken: ct);
+            Assert.NotEmpty(resources);
+
+            foreach (var resource in resources)
+            {
+                var protocol = resource.ProtocolResource;
+                Assert.NotNull(protocol);
+                Assert.True(protocol!.Size > 0, resource.Uri + " reports no byte size");
+                Assert.NotNull(protocol.Meta);
+                string sha = protocol.Meta!["sha256"]!.GetValue<string>();
+                Assert.Matches("^[0-9a-f]{64}$", sha);
+
+                if (resource.Uri == "wc3://tools")
+                {
+                    string json = await ReadResourceText(client, resource.Uri, ct);
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+                    Assert.Equal(Sha256Hex(bytes), sha);
+                    Assert.Equal((long)bytes.Length, protocol!.Size!.Value);
+                    continue;
+                }
+
+                if (resource.Uri.StartsWith("wc3://skills/", StringComparison.Ordinal))
+                {
+                    string id = resource.Uri["wc3://skills/".Length..];
+                    string path = Wc3Skills.Locate(id);
+                    byte[] bytes = File.ReadAllBytes(path);
+                    Assert.Equal(Sha256Hex(bytes), sha);
+                    Assert.Equal((long)bytes.Length, protocol!.Size!.Value);
+                    Assert.Equal(File.ReadAllText(path), await ReadResourceText(client, resource.Uri, ct));
+                    continue;
+                }
+
+                string[] parts = resource.Uri.Split('/');
+                Assert.True(parts.Length is 4 or 5, resource.Uri + " is not a document or section uri");
+                Assert.Equal("context", parts[2]);
+                string doc = parts[3];
+                if (parts.Length == 4)
+                {
+                    string file = Assert.Single(Directory.GetFiles(
+                        Path.Combine(AppContext.BaseDirectory, "context", doc), "*.md"));
+                    byte[] bytes = File.ReadAllBytes(file);
+                    Assert.Equal(Sha256Hex(bytes), sha);
+                    Assert.Equal((long)bytes.Length, protocol!.Size!.Value);
+                }
+                else
+                {
+                    string section = await ReadResourceText(client, resource.Uri, ct);
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(section);
+                    Assert.Equal(Sha256Hex(bytes), sha);
+                    Assert.Equal((long)bytes.Length, protocol!.Size!.Value);
+                }
+            }
+        });
+    }
+
+    [Fact]
+    public async Task A_section_resource_returns_that_section_only()
+    {
+        // RSC-02. A client that wants one ability or one introductory section reads the section
+        // uri, not the whole 300KB document.
+        await WithClient(async (client, ct) =>
+        {
+            var resources = await client.ListResourcesAsync(cancellationToken: ct);
+            Assert.Contains(resources, r => r.Uri == "wc3://context/abilities/aerial-shackles");
+
+            string section = await ReadResourceText(client, "wc3://context/abilities/aerial-shackles", ct);
+            Assert.Contains("Aerial Shackles", section);
+            Assert.DoesNotContain("Barrage", section);
+            Assert.DoesNotContain("Warcraft 3 Editor Ability Insight", section);
+
+            string whole = await ReadResourceText(client, "wc3://context/abilities", ct);
+            Assert.Contains("Barrage", whole);
+            Assert.Contains("Warcraft 3 Editor Ability Insight", whole);
+            Assert.True(whole.Length > section.Length * 10);
+
+            Assert.Contains(resources, r => r.Uri == "wc3://context/ui-frames/introduction");
+            string intro = await ReadResourceText(client, "wc3://context/ui-frames/introduction", ct);
+            Assert.Contains("Frames can display Text", intro);
+            Assert.DoesNotContain("The Big UI-Frame Tutorial", intro);
+            Assert.DoesNotContain("The nativ GUI-TriggerData", intro);
+        });
+    }
+
+    [Fact]
+    public async Task The_catalog_carries_an_aliases_array_and_an_input_schema_for_every_tool()
+    {
+        // RSC-03. A client that reads only wc3://tools can see each tool's arguments, so it need
+        // not call tools/list to learn the shape of a call.
+        await WithClient(async (client, ct) =>
+        {
+            var tools = await client.ListToolsAsync(cancellationToken: ct);
+            string text = await ReadResourceText(client, "wc3://tools", ct);
+
+            using var doc = JsonDocument.Parse(text);
+            var catalog = doc.RootElement.GetProperty("tools").EnumerateArray().ToList();
+            Assert.Equal(tools.Count, catalog.Count);
+            Assert.NotEmpty(catalog);
+
+            Assert.All(catalog, tool =>
+            {
+                var aliases = tool.GetProperty("aliases");
+                Assert.Equal(JsonValueKind.Array, aliases.ValueKind);
+
+                // SUR-03. A tool lists the old names that still answer to it, and only those. The
+                // shipped table is empty, so every entry is empty today and a rename adds its old
+                // name here rather than a row of its own.
+                string name = tool.GetProperty("name").GetString() ?? "";
+                var expected = McpToolCatalog.Renames.Values
+                    .Where(a => a.CurrentName == name)
+                    .Select(a => a.OldName)
+                    .OrderBy(n => n, StringComparer.Ordinal)
+                    .ToArray();
+                Assert.Equal(expected, aliases.EnumerateArray()
+                    .Select(a => a.GetString() ?? "")
+                    .OrderBy(n => n, StringComparer.Ordinal)
+                    .ToArray());
+
+                var schema = tool.GetProperty("inputSchema");
+                Assert.Equal(JsonValueKind.Object, schema.ValueKind);
+                Assert.True(schema.TryGetProperty("type", out var type));
+                Assert.Equal("object", type.GetString());
+            });
+        });
+    }
+
+    private static async Task<string> ReadResourceText(McpClient client, string uri, CancellationToken ct)
+    {
+        var contents = await client.ReadResourceAsync(uri, cancellationToken: ct);
+        return Assert.IsType<TextResourceContents>(Assert.Single(contents.Contents)).Text;
+    }
+
+    private static string Sha256Hex(byte[] bytes) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
 }

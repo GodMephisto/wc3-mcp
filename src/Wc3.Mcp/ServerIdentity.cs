@@ -28,4 +28,40 @@ public static class ServerIdentity
 
     /// <summary>The build's version, three parts.</summary>
     public static string Version { get; } = Self.GetName().Version?.ToString(3) ?? "0.0.0";
+
+    /// <summary>
+    /// The ModelContextProtocol package version this build was compiled against, read from the
+    /// SDK assembly's own version. The package reference in the csproj is the intent, this is
+    /// what actually shipped, so a bug report can name the SDK without a source checkout.
+    /// </summary>
+    public static string SdkVersion { get; } = ReadSdkVersion();
+
+    private static string ReadSdkVersion()
+    {
+        var assembly = typeof(ModelContextProtocol.Server.McpServer).Assembly;
+        string? informational = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(informational))
+        {
+            int plus = informational.IndexOf('+');
+            if (plus > 0) informational = informational[..plus];
+            if (!string.IsNullOrWhiteSpace(informational)) return informational;
+        }
+        return assembly.GetName().Version?.ToString(3) ?? "unknown";
+    }
 }
+
+/// <summary>
+/// What the version_info tool reports. The first five fields are the shared release block the CLI
+/// also prints, unchanged. The last three name the product, the newest MCP protocol revision the
+/// build speaks and the SDK assembly version it carries.
+/// </summary>
+public sealed record VersionInfoReport(
+    string ProductVersion,
+    string GitHash,
+    string BuildTimeUtc,
+    string McpServerName,
+    string McpVersion,
+    string ProductId,
+    string ProtocolVersion,
+    string SdkVersion);

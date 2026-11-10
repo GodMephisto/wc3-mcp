@@ -55,6 +55,7 @@ public static class DefaultParsers
         // wts is a text format; War3Net parses it via StreamReaderExtensions.
         MapFormatRegistry.Register("war3map.wts", raw =>
         {
+            ValidateWts(raw);
             using var ms = new MemoryStream(raw);
             using var sr = new StreamReader(ms);
             return sr.ReadTriggerStrings();
@@ -68,6 +69,32 @@ public static class DefaultParsers
         // Latin-1 maps every byte 0..255 to the same code point and back, which is lossless.
         MapFormatRegistry.Register("war3map.j", raw => ScriptText.GetString(raw));
         MapFormatRegistry.Register("war3map.lua", raw => ScriptText.GetString(raw));
+    }
+
+    /// <summary>
+    /// Refuses a war3map.wts that ends inside an entry body. The War3Net reader scans forward for
+    /// the closing brace and never stops at end of stream, so a truncated table spins forever
+    /// instead of throwing. Measured on 2026-11-08, a 23 byte truncated table hung `wc3ctl ls`
+    /// with flat memory. This is a line scan, so a brace inside a value is still content.
+    /// </summary>
+    private static void ValidateWts(byte[] raw)
+    {
+        bool inBody = false;
+        int lineStart = 0;
+        for (int i = 0; i <= raw.Length; i++)
+        {
+            if (i < raw.Length && raw[i] != (byte)10 && raw[i] != (byte)10) continue;
+            int len = i - lineStart;
+            if (len > 0)
+            {
+                string line = System.Text.Encoding.Latin1.GetString(raw, lineStart, len).Trim();
+                if (inBody) { if (line == "}") inBody = false; }
+                else if (line == "{") inBody = true;
+            }
+            lineStart = i + 1;
+        }
+        if (inBody)
+            throw new InvalidDataException("war3map.wts ends inside an entry body, so the table is truncated");
     }
 
     /// <summary>

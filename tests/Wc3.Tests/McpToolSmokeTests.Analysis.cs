@@ -122,6 +122,15 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
         Assert.True(Prop(r, "objectsChecked").GetInt32() >= 1);
     }
 
+    [Fact, Covers("audit_ability_orders")]
+    public async Task Audit_ability_orders_is_clean_on_a_map_with_no_channel_abilities()
+    {
+        var r = await Call("audit_ability_orders", Args(("map", Fixture)));
+
+        Assert.Equal(0, Prop(r, "channelAbilities").GetInt32());
+        Assert.Empty(Prop(r, "collisions").EnumerateArray());
+    }
+
     [Fact, Covers("uabi_profile")]
     public async Task Uabi_profile_counts_the_unit_with_an_ability_list()
     {
@@ -385,5 +394,29 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
         Assert.NotNull(audit);
         var portraits = await Call("repair_portraits", Args(("map", Fixture), ("out_path", NewOut("portrait-fix"))));
         Assert.NotNull(portraits);
+    }
+
+    [Fact, Covers("sound_import_events")]
+    public async Task Sound_import_events_refuses_a_missing_clip_and_writes_nothing()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "wc3snd-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        string events = Path.Combine(dir, "events.json");
+        File.WriteAllText(events, "{\"sword.hit.light\":{\"clips\":[\"gone.wav\"],\"cooldown\":0.05,\"maxVoices\":2}}");
+        string outPath = NewOut("sound_import_events");
+        try
+        {
+            await McpTestClient.WithClient(async (client, ct) =>
+            {
+                var r = await client.CallToolAsync("sound_import_events", new Dictionary<string, object?>
+                {
+                    ["map"] = Fixture, ["out_path"] = outPath,
+                    ["events_json"] = File.ReadAllText(events), ["clips_dir"] = dir,
+                }, cancellationToken: ct);
+                Assert.True(r.IsError == true, "a missing clip should refuse the import");
+            });
+            Assert.False(File.Exists(outPath), "a refused import must not write a map");
+        }
+        finally { Directory.Delete(dir, recursive: true); }
     }
 }

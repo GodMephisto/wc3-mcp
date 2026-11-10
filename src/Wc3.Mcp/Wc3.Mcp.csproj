@@ -39,6 +39,12 @@
     <Content Include="context\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <!-- The three skills the server serves as wc3://skills/* resources (see Wc3Skills.cs).
+         Copied beside the exe under docs/skills, with the same files also kept in
+         context/skills so the reference corpus and the skills stay one folder tree. -->
+    <Content Include="docs\skills\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

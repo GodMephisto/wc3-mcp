@@ -22,11 +22,18 @@ public sealed record DocCommand(
     IReadOnlyList<DocOption> Options,
     IReadOnlyList<DocCommand> Subcommands);
 
-/// <summary>One MCP tool with its description and the four annotation hints. A null hint means the
-/// tool left that annotation at its default.</summary>
+/// <summary>One parameter of an MCP tool, as its input schema declares it. Type is the schema's own
+/// word for it, with a union written as the parts joined by a pipe. Default is the schema's default
+/// rendered as JSON, or null when the schema declares none.</summary>
+public sealed record DocParameter(string Name, string Type, bool Required, string? Default);
+
+/// <summary>One MCP tool with its description, its family, its parameters, the shape of its result,
+/// the error codes its own text names and the four annotation hints. A null hint means the tool left
+/// that annotation at its default, and a null family means the inventory does not group it.</summary>
 public sealed record DocTool(
-    string Name, string? Description,
-    bool? ReadOnly, bool? Destructive, bool? Idempotent, bool? OpenWorld);
+    string Name, string? Description, string? Family,
+    bool? ReadOnly, bool? Destructive, bool? Idempotent, bool? OpenWorld,
+    IReadOnlyList<DocParameter> Parameters, string Result, IReadOnlyList<string> Errors);
 
 /// <summary>The line based difference between a committed document and a fresh render. Identical is
 /// true when the two agree once line endings are normalised. Added and Removed count the lines that
@@ -65,18 +72,63 @@ public static class DocsReference
         return sb.ToString();
     }
 
-    /// <summary>Render the MCP reference, one section per tool in the order it is given.</summary>
+    /// <summary>Render the MCP reference, one section per tool in the order it is given. The order of
+    /// the lines inside a section is load bearing. The guard in the specification tree judges a
+    /// parameter from the first line of the block that names it, so the parameter lines come before the
+    /// family line and the description, because a description that happens to name its own map
+    /// parameter would otherwise be read as that parameter's line.</summary>
     public static string RenderMcp(IReadOnlyList<DocTool> tools)
     {
         var sb = new StringBuilder();
         sb.Append("# wc3ctl MCP tool reference\n\n");
         sb.Append("Generated from the live tool surface by `wc3ctl docs mcp`. Do not edit by hand. ");
         sb.Append("Regenerate with `wc3ctl docs mcp --force`, and the CI guard fails when this file is stale.\n\n");
-        sb.Append($"The server exposes {tools.Count} tool(s).\n\n");
+        int families = tools.Select(t => t.Family ?? string.Empty).Distinct(StringComparer.Ordinal)
+            .Count(f => f.Length > 0);
+        sb.Append($"The server exposes {tools.Count} tool(s) in {families} families.\n\n");
+        sb.Append("Each entry carries the tool's family, its parameters with their type and default, ");
+        sb.Append("the shape of its result and the error codes it can return, then the four annotation hints. ");
+        sb.Append("A parameter line reads `name` and its type, then `required` or `optional`, then `default value` ");
+        sb.Append("where the schema declares one. The Errors line lists the codes the tool's own description or ");
+        sb.Append("a parameter description names, and the two codes every call passes through, `POLICY_DENIED` ");
+        sb.Append("from the permission file's deny list and `COMMAND_REJECTED` when a shared command refuses ");
+        sb.Append("and states its own reason. A tool whose method is typed `object` reports any JSON value, ");
+        sb.Append("because no tool publishes an output schema and the shape is chosen by the arguments.\n\n");
+
         foreach (var t in tools)
         {
             sb.Append("## ").Append(t.Name).Append("\n\n");
+
+            if (t.Parameters.Count == 0)
+            {
+                sb.Append("Parameters. none.\n\n");
+            }
+            else
+            {
+                sb.Append("Parameters.\n\n");
+                foreach (var p in t.Parameters)
+                {
+                    sb.Append("- `").Append(p.Name).Append("` ").Append(p.Type)
+                        .Append(p.Required ? ", required" : ", optional");
+                    if (p.Default is not null) sb.Append(", default ").Append(p.Default);
+                    sb.Append(".\n");
+                }
+                sb.Append('\n');
+            }
+
+            sb.Append("Family. ").Append(t.Family ?? "none").Append("\n\n");
             sb.Append(string.IsNullOrWhiteSpace(t.Description) ? "_No description._" : t.Description).Append("\n\n");
+            sb.Append("Result. ").Append(t.Result).Append("\n\n");
+            if (t.Errors.Count == 0)
+            {
+                sb.Append("Errors. Every call can return POLICY_DENIED and COMMAND_REJECTED, ");
+                sb.Append("and this tool's own text names no other code.\n\n");
+            }
+            else
+            {
+                sb.Append("Errors. ").Append(string.Join(", ", t.Errors));
+                sb.Append(". Every call can also return POLICY_DENIED and COMMAND_REJECTED.\n\n");
+            }
             sb.Append("Annotations. read-only ").Append(Hint(t.ReadOnly))
                 .Append(", destructive ").Append(Hint(t.Destructive))
                 .Append(", idempotent ").Append(Hint(t.Idempotent))

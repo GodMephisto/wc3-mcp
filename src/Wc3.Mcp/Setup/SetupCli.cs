@@ -17,7 +17,8 @@ public static class SetupCli
     };
 
     /// <summary>Runs a setup command. Exit 0 succeeded, 1 something was refused or failed, 2 bad usage.</summary>
-    public static int Run(string[] args, SetupEnvironment env, TextWriter output, SetupProduct product, ServerEntry? entryOverride = null)
+    public static int Run(string[] args, SetupEnvironment env, TextWriter output, SetupProduct product,
+        ServerEntry? entryOverride = null, DoctorProbe? doctor = null)
     {
         if (args.Length == 0) args = new[] { "help" };
         var verb = args[0].ToLowerInvariant();
@@ -42,7 +43,7 @@ public static class SetupCli
             case "clients":
                 return Clients(env, output, name);
             case "doctor":
-                return Doctor(env, output, name, product);
+                return Doctor(env, output, name, product, doctor);
             case "update":
                 return Update(rest, output, product);
         }
@@ -239,17 +240,22 @@ public static class SetupCli
         return 0;
     }
 
-    private static int Doctor(SetupEnvironment env, TextWriter output, string name, SetupProduct product)
+    private static int Doctor(SetupEnvironment env, TextWriter output, string name, SetupProduct product, DoctorProbe? probe)
     {
+        probe ??= DoctorProbe.Current;
         int problems = 0;
         var exe = Environment.ProcessPath ?? "(unknown)";
         output.WriteLine($"{product.Command} {product.Version}");
         output.WriteLine($"  program      {exe}");
 
-        var casc = Path.Combine(AppContext.BaseDirectory, "CascLib.dll");
+        // Resolved against the exe's own folder, never the caller's working directory, so the
+        // answer does not change with where the command was typed.
+        var casc = Path.Combine(probe.BaseFolder, "CascLib.dll");
         bool hasCasc = File.Exists(casc);
         output.WriteLine($"  CascLib.dll  {(hasCasc ? "present" : "MISSING, keep it beside the exe or game data cannot be read")}");
         if (!hasCasc) problems++;
+
+        problems += Context(probe.BaseFolder, output);
 
         var envDir = Environment.GetEnvironmentVariable(Wc3Tools.GameDirVariable);
         var game = GameInstall.Locate(Wc3Tools.ResolveGameDir(null));
@@ -259,8 +265,82 @@ public static class SetupCli
 
         output.WriteLine();
         Clients(env, output, name);
+        output.WriteLine();
+        Release(output, product, probe.LatestRelease);
         return problems == 0 ? 0 : 1;
     }
+
+    /// <summary>
+    /// The files the installed product must carry beside the exe: the two reference documents
+    /// served as <c>wc3://context/*</c> and the three skills served as <c>wc3://skills/*</c>.
+    /// Named here rather than discovered by a folder scan, because a folder that lost a file
+    /// still looks well formed to a scan.
+    /// </summary>
+    private static readonly IReadOnlyList<string> ContextFiles =
+        new[] { "ui-frames/ui-frames.md", "abilities/ability-insight.md" }
+            .Concat(Wc3Skills.All.Select(s => "skills/" + s.Id + ".md"))
+            .ToArray();
+
+    /// <summary>
+    /// Checks the reference corpus the server serves from <c>context/</c> beside the exe, the same
+    /// folder <see cref="Wc3Context"/> reads. Returns the number of missing files.
+    /// </summary>
+    private static int Context(string baseFolder, TextWriter output)
+    {
+        var root = Path.Combine(baseFolder, "context");
+        if (!Directory.Exists(root))
+        {
+            output.WriteLine("  context      MISSING, no context folder beside the exe. Reinstall so the reference documents and skills come with it.");
+            return 1;
+        }
+
+        output.WriteLine($"  context      {root}");
+        int missing = 0;
+        foreach (var relative in ContextFiles)
+        {
+            string path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(path))
+            {
+                output.WriteLine($"    {relative,-32} present");
+                continue;
+            }
+            output.WriteLine($"    {relative,-32} MISSING, expected in {Path.GetDirectoryName(path)}");
+            missing++;
+        }
+        return missing;
+    }
+
+    /// <summary>
+    /// Reports whether a newer release exists. Best effort by design: a lookup that fails,
+    /// times out or answers nonsense is reported as skipped and never counts as a problem, so an
+    /// offline machine still gets a healthy verdict. A newer release is a warning, not a failure,
+    /// because the installed build works and updating is the user's choice.
+    /// </summary>
+    private static void Release(TextWriter output, SetupProduct product, Func<SetupProduct, UpdateCheckResult> latest)
+    {
+        try
+        {
+            var r = latest(product);
+            output.WriteLine(r.UpToDate
+                ? $"  release      up to date ({r.LatestVersion})"
+                : $"  release      {r.LatestVersion} is available, you are on {product.Version}. Run {product.Command} update. (a warning, not a problem)");
+        }
+        catch (Exception ex)
+        {
+            output.WriteLine($"  release      skipped, could not read the latest release ({ex.Message})");
+        }
+    }
+
+    /// <summary>
+    /// The GitHub repository the running product ships from: the standalone server reads the
+    /// wc3-mcp repository, and the same command reached through 'wc3ctl mcp' reads the wc3ctl one.
+    /// </summary>
+    internal static string ReleaseRepo(SetupProduct product) =>
+        product.ServeArgs.Count == 0 ? "GodMephisto/wc3-mcp" : SelfUpdateCommand.DefaultRepo;
+
+    /// <summary>The prefix every asset of that product's release carries.</summary>
+    internal static string ReleasePrefix(SetupProduct product) =>
+        product.ServeArgs.Count == 0 ? "wc3-mcp" : "wc3ctl-v";
 
     /// <summary>
     /// Replaces the running program from its GitHub release. The standalone server reads the
@@ -270,10 +350,8 @@ public static class SetupCli
     private static int Update(List<string> rest, TextWriter output, SetupProduct product)
     {
         bool check = rest.Remove("--check");
-        // An empty ServeArgs means the standalone server, which ships from the wc3-mcp repository.
-        bool standalone = product.ServeArgs.Count == 0;
-        string repo = standalone ? "GodMephisto/wc3-mcp" : SelfUpdateCommand.DefaultRepo;
-        string prefix = standalone ? "wc3-mcp" : "wc3ctl-v";
+        string repo = ReleaseRepo(product);
+        string prefix = ReleasePrefix(product);
         try
         {
             if (check)
@@ -344,7 +422,7 @@ public static class SetupCli
           {p.Command} uninstall --all          remove it from every app and from PATH
           {p.Command} config <app>             print the settings to paste by hand
           {p.Command} clients                  list supported apps and whether each is set up
-          {p.Command} doctor                   check the install, the game folder and the apps
+          {p.Command} doctor                   check the install, the game folder, the apps and the latest release
           {p.Command} update                   update to the latest release, add --check to only report
 
         Options

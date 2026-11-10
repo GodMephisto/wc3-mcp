@@ -1,6 +1,8 @@
 // src/Wc3.Commands/MapDoctorCommand.cs
 using System.Diagnostics;
+using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace Wc3.Commands;
@@ -180,8 +182,7 @@ public static class MapDoctorCommand
         }
         if (!File.Exists(exe)) throw new FileNotFoundException($"WC3_DOCTOR names {exe}, which does not exist.");
 
-        string sha;
-        using (var s = File.OpenRead(exe)) sha = Convert.ToHexString(SHA256.HashData(s)).ToLowerInvariant();
+        var sha = FileSha(exe);
         if (PinnedBuilds.TryGetValue(sha, out var version)) return (exe, version, sha);
         if (env("WC3_DOCTOR_UNPINNED") == "1") return (exe, "unpinned", sha);
         throw new InvalidOperationException(
@@ -189,43 +190,168 @@ public static class MapDoctorCommand
             + $"({string.Join(", ", PinnedBuilds.Values)}). Set WC3_DOCTOR_UNPINNED=1 to run it anyway.");
     }
 
-    private static readonly Dictionary<string, MapDoctorResult> ResultCache = new(StringComparer.Ordinal);
-    private static readonly object ResultCacheLock = new();
+    /// <summary>The exact bytes of a file, as one lowercase SHA-256 hex string, or null if unreadable.</summary>
+    internal static string? FileDigest(string path)
+    {
+        // A folder is never hashed as if it were a file. Directory.Exists comes first because
+        // File.Exists answers false for a folder, which would otherwise leave it keyed by name alone.
+        if (Directory.Exists(path)) return null;
+        if (!File.Exists(path)) return null;
+        try
+        {
+            // Streamed with a whole-megabyte buffer, so a 500 MB map costs one sequential pass and
+            // never sits in memory. ReadWrite sharing keeps a map another program has open readable.
+            using var s = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite,
+                1 << 20, FileOptions.SequentialScan);
+            return Convert.ToHexString(SHA256.HashData(s)).ToLowerInvariant();
+        }
+        catch (IOException) { return null; }
+        catch (UnauthorizedAccessException) { return null; }
+    }
 
     /// <summary>
-    /// The doctor is a separate process and takes about five seconds to start, which measured as
-    /// the largest remaining cost in the MCP tool sweep, 16 seconds across four tools. A repeat
-    /// question about the same map should not pay it again, so a read-only answer is remembered
-    /// for the life of the process.
+    /// The sha256 of the doctor exe, remembered for one exact path, length and timestamp, so a cache
+    /// hit pays a stat of the binary instead of hashing it again. A replaced binary changes its
+    /// length or timestamp and is hashed afresh, which is cheap next to the five second run.
+    /// </summary>
+    private static string FileSha(string path)
+    {
+        var info = new FileInfo(path);
+        var stamp = string.Join('\n', info.FullName, info.Length, info.LastWriteTimeUtc.Ticks);
+        lock (ShaMemoLock)
+            if (ShaMemo.TryGetValue(stamp, out var known)) return known;
+
+        string sha;
+        using (var s = File.OpenRead(path)) sha = Convert.ToHexString(SHA256.HashData(s)).ToLowerInvariant();
+
+        lock (ShaMemoLock)
+        {
+            if (ShaMemo.Count >= 8) ShaMemo.Clear();
+            ShaMemo[stamp] = sha;
+        }
+        return sha;
+    }
+
+    private static readonly Dictionary<string, string> ShaMemo = new(StringComparer.Ordinal);
+    private static readonly object ShaMemoLock = new();
+
+    /// <summary>
+    /// This build's identity, its version plus the git hash it was stamped with, so an answer from
+    /// another build is never served. The hash matters as well as the version because two builds can
+    /// share a version while the wrapper's reading of the doctor changes.
+    /// </summary>
+    internal static string ToolIdentity(Assembly? assembly = null)
+    {
+        assembly ??= typeof(MapDoctorCommand).Assembly;
+        var git = assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => string.Equals(a.Key, ReleaseVersionCommand.GitHashKey, StringComparison.Ordinal))
+            ?.Value;
+        var version = ReleaseVersionCommand.VersionOf(assembly);
+        return string.IsNullOrEmpty(git) ? version : version + "+" + git;
+    }
+
+    /// <summary>
+    /// The key for one read-only answer, or null when the answer must not be cached at all.
     /// </summary>
     /// <remarks>
-    /// Keyed by the command, its arguments and the timestamp and size of any argument that names
-    /// an existing file, so a map edited between two calls is not served the earlier answer.
-    /// Commands that write, which is fix, are never cached.
+    /// What the key is made of. The doctor command, every argument in order, which carries any
+    /// option that changes the verdict such as <c>--game=1.27</c> for a target build, the wrapper's
+    /// own identity from <see cref="ToolIdentity"/>, the answering doctor build as version and
+    /// sha256, and the SHA-256 of the bytes of every argument that names a file. Content rather
+    /// than timestamp and length is the point, because a map rewritten in place, or copied over
+    /// with its timestamps preserved, keeps the same path, size and time and used to be served the
+    /// earlier verdict on its old bytes.
+    /// <para>
+    /// Why a hit stays cheap. Each distinct file is hashed once per key build, so a path named twice
+    /// in one call is read once, and nothing is retained but the fixed-size digest. A hit therefore
+    /// costs one streaming sequential read of the map, the only way to know its bytes, and no
+    /// second read of it.
+    /// </para>
+    /// <para>
+    /// A folder argument is handled explicitly rather than hashed. Anything inside it can change the
+    /// answer and reading a tree to key one verdict is not worth it, so the answer is not cached.
+    /// An unreadable file is treated the same way, a recompute rather than a wrong hit.
+    /// </para>
     /// </remarks>
-    private static string? CacheKey(string command, List<string> args)
+    internal static string? CacheKey(string command, IReadOnlyList<string> args, string tool,
+        string doctor, Func<string, string?> digest)
     {
         if (!ReadOnlyCommands.Contains(command)) return null;
 
-        var sb = new System.Text.StringBuilder(command);
+        var sb = new StringBuilder("doctor-cache-v2");
+        sb.Append('|').Append(tool).Append('|').Append(doctor).Append('|').Append(command);
+        var digested = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         foreach (var a in args)
         {
             sb.Append('|').Append(a);
+            if (Directory.Exists(a)) return null;
             if (!File.Exists(a)) continue;
-            var info = new FileInfo(a);
-            sb.Append('@').Append(info.LastWriteTimeUtc.Ticks).Append(':').Append(info.Length);
+            if (!digested.TryGetValue(a, out var sha)) digested[a] = sha = digest(a);
+            if (sha is null) return null;
+            sb.Append('@').Append(sha);
         }
         return sb.ToString();
     }
 
+    /// <summary>
+    /// The in-process answers, bounded so a long session over many maps cannot grow without end.
+    /// The values are the results themselves, which are already the small JSON the caller receives,
+    /// so nothing extra is held.
+    /// </summary>
+    internal sealed class DoctorResultCache
+    {
+        private readonly Dictionary<string, MapDoctorResult> _items = new(StringComparer.Ordinal);
+        private readonly Queue<string> _order = new();
+        private readonly int _limit;
+
+        public DoctorResultCache(int limit = 32) => _limit = Math.Max(1, limit);
+
+        public int Count { get { lock (_items) return _items.Count; } }
+
+        public MapDoctorResult? Get(string key)
+        {
+            lock (_items) return _items.TryGetValue(key, out var hit) ? hit : null;
+        }
+
+        public void Put(string key, MapDoctorResult value)
+        {
+            lock (_items)
+            {
+                if (_items.ContainsKey(key)) return;
+                while (_items.Count >= _limit && _order.Count > 0)
+                    _items.Remove(_order.Dequeue());
+                _items[key] = value;
+                _order.Enqueue(key);
+            }
+        }
+    }
+
+    internal static readonly DoctorResultCache ResultCache = new();
+
+    /// <summary>
+    /// The doctor is a separate process and takes about five seconds to start, which measured as
+    /// the largest remaining cost in the MCP tool sweep, 16 seconds across four tools. A repeat
+    /// question about the same bytes should not pay it again, so a read-only answer is remembered
+    /// for the life of the process. Commands that write, which is fix, are never cached.
+    /// </summary>
     private static MapDoctorResult Run(string command, List<string> args, string? workDir)
     {
-        string? cacheKey = CacheKey(command, args);
-        if (cacheKey is not null)
-            lock (ResultCacheLock)
-                if (ResultCache.TryGetValue(cacheKey, out var hit)) return hit;
+        // Which build answers is part of the cache key, so the doctor is resolved before the
+        // lookup. That is a stat away once its digest is remembered, and it also means a missing
+        // or unpinned doctor reports that instead of being covered by an earlier answer.
+        var build = Locate();
+        string? cacheKey = null;
+        if (ReadOnlyCommands.Contains(command))
+        {
+            cacheKey = CacheKey(command, args, ToolIdentity(), build.Version + ":" + build.Sha256, FileDigest);
+            if (cacheKey is not null)
+            {
+                var hit = ResultCache.Get(cacheKey);
+                if (hit is not null) return hit;
+            }
+        }
+        var (exe, version, sha) = build;
 
-        var (exe, version, sha) = Locate();
         var psi = new ProcessStartInfo(exe)
         {
             UseShellExecute = false,
@@ -263,8 +389,7 @@ public static class MapDoctorCommand
         var result = new MapDoctorResult(command, p.ExitCode, json, null, $"{version} sha256:{sha[..12]}",
             tail.Length == 0 ? null : tail);
 
-        if (cacheKey is not null)
-            lock (ResultCacheLock) ResultCache[cacheKey] = result;
+        if (cacheKey is not null) ResultCache.Put(cacheKey, result);
         return result;
     }
 }

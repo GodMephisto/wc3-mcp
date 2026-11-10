@@ -1,6 +1,8 @@
-// src/Wc3.Mcp/Wc3Context.cs
+﻿// src/Wc3.Mcp/Wc3Context.cs
 using System.ComponentModel;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using ModelContextProtocol;
 using ModelContextProtocol.Server;
@@ -8,6 +10,91 @@ using ModelContextProtocol.Protocol;
 using Wc3.Commands.Rag;
 
 namespace Wc3.Mcp;
+
+/// <summary>
+/// A resource backed by one string read at server start. The byte size and the SHA256 of the bytes
+/// are fixed once, so resources/list reports them without touching the disk again. The SDK options
+/// object carries Meta but no Size, so this subclass overrides ProtocolResource to set the protocol
+/// Size field and to put the digest in _meta under the key sha256.
+/// </summary>
+internal sealed class ServedTextResource : McpServerResource
+{
+    private readonly string _uri;
+    private readonly string _name;
+    private readonly string? _title;
+    private readonly string? _description;
+    private readonly string _mimeType;
+    private readonly string _text;
+    private readonly long _size;
+    private readonly string _sha256;
+
+    internal ServedTextResource(
+        string uri,
+        string name,
+        string? title,
+        string? description,
+        string mimeType,
+        string text,
+        byte[]? bytes = null)
+    {
+        _uri = uri;
+        _name = name;
+        _title = title;
+        _description = description;
+        _mimeType = mimeType;
+        _text = text;
+        byte[] content = bytes ?? Encoding.UTF8.GetBytes(text);
+        _size = content.LongLength;
+        _sha256 = Digest(content);
+    }
+
+    internal string Sha256 => _sha256;
+
+    internal static string Digest(byte[] bytes) =>
+        Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+
+    private JsonObject Meta() => new() { ["sha256"] = _sha256 };
+
+    public override ResourceTemplate ProtocolResourceTemplate => new()
+    {
+        UriTemplate = _uri,
+        Name = _name,
+        Title = _title,
+        Description = _description,
+        MimeType = _mimeType,
+        Meta = Meta(),
+    };
+
+    public override Resource? ProtocolResource => new Resource
+    {
+        Uri = _uri,
+        Name = _name,
+        Title = _title,
+        Description = _description,
+        MimeType = _mimeType,
+        Size = _size,
+        Meta = Meta(),
+    };
+
+    public override IReadOnlyList<object> Metadata => Array.Empty<object>();
+
+    public override bool IsMatch(string uri) =>
+        string.Equals(uri, _uri, StringComparison.OrdinalIgnoreCase);
+
+    public override ValueTask<ReadResourceResult> ReadAsync(
+        RequestContext<ReadResourceRequestParams> request,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return ValueTask.FromResult(new ReadResourceResult
+        {
+            Contents = new List<ResourceContents>
+            {
+                new TextResourceContents { Uri = _uri, MimeType = _mimeType, Text = _text },
+            },
+        });
+    }
+}
 
 /// <summary>
 /// Serves the Warcraft III reference documents under `context/` as MCP resources, and a
@@ -33,7 +120,11 @@ public static class Wc3Context
         catch { return null; }
     });
 
-    /// <summary>One resource per document folder under `context/`, the markdown read whole.</summary>
+    /// <summary>
+    /// One resource per document folder under `context/`, the markdown read whole, and one resource
+    /// per top level section of that markdown. Every resource carries the byte size and the digest
+    /// of what it serves, fixed at start so resources/list needs no disk read.
+    /// </summary>
     public static IReadOnlyList<McpServerResource> CreateResources()
     {
         var list = new List<McpServerResource>();
@@ -41,21 +132,110 @@ public static class Wc3Context
         foreach (var dir in Directory.GetDirectories(Root).OrderBy(d => d, StringComparer.Ordinal))
         {
             string id = Path.GetFileName(dir);
+            if (IsSkillFolder(id)) continue;
             string? md = Directory.GetFiles(dir, "*.md").FirstOrDefault();
             if (md is null) continue;
-            string path = md;
-            list.Add(McpServerResource.Create(
-                () => File.ReadAllText(path),
-                new McpServerResourceCreateOptions
-                {
-                    UriTemplate = "wc3://context/" + id,
-                    Name = id.Replace('-', '_'),
-                    Description = Describe(id),
-                    MimeType = "text/markdown",
-                }));
+
+            // Read the exact bytes once. The size and the digest describe the file on disk, and the
+            // served text is decoded from those same bytes, so the three can never disagree.
+            byte[] bytes = File.ReadAllBytes(md);
+            string text = Encoding.UTF8.GetString(bytes);
+            list.Add(new ServedTextResource(
+                "wc3://context/" + id,
+                id.Replace('-', '_'),
+                null,
+                Describe(id),
+                "text/markdown",
+                text,
+                bytes));
+
+            var seen = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var (heading, body) in Sections(text))
+            {
+                string slug = Slug(heading);
+                int count = seen.TryGetValue(slug, out int prior) ? prior : 0;
+                seen[slug] = count + 1;
+                string unique = count == 0 ? slug : slug + "-" + (count + 1);
+                list.Add(new ServedTextResource(
+                    "wc3://context/" + id + "/" + unique,
+                    id.Replace('-', '_') + "_" + unique.Replace('-', '_'),
+                    heading,
+                    DescribeSection(heading, id),
+                    "text/markdown",
+                    body));
+            }
         }
         return list;
     }
+
+    /// <summary>
+    /// The top level sections of one document. Two shapes exist in the corpus. The UI-Frame
+    /// tutorial marks a section with a line of two hashes and puts the heading on the next line,
+    /// and the Ability Insight reference marks each entry with a dash before a capital letter.
+    /// A document is split by one shape only, so Lua comment lines that begin with two dashes in
+    /// the tutorial never become sections. Where it applies, the dash rule is
+    /// <see cref="RagText.Heading"/>, so a section means the same thing here as it does in the
+    /// index, the graph and docs_search.
+    /// </summary>
+    private static IEnumerable<(string Heading, string Text)> Sections(string text)
+    {
+        string[] lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++) lines[i] = lines[i].TrimEnd((char)13);
+
+        // The tutorial uses a hash line as its section marker. The ability reference has no hash
+        // lines at all, so its entries are the dash headings.
+        bool marked = lines.Any(line => line.Trim() == "##");
+
+        var marks = new List<(int Start, string Heading)>();
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (marked)
+            {
+                if (lines[i].Trim() != "##") continue;
+                int j = i + 1;
+                while (j < lines.Length && lines[j].Trim().Length == 0) j++;
+                if (j < lines.Length && lines[j].Trim().Length > 0)
+                    marks.Add((i, lines[j].Trim()));
+                continue;
+            }
+
+            // Skip the document title and any hashed subheading. Only the dash entries are sections.
+            if (lines[i].TrimStart().StartsWith('#')) continue;
+            Match m = RagText.Heading.Match(lines[i]);
+            if (m.Success && m.Groups["h"].Success && m.Groups["h"].Value.Trim().Length > 0)
+                marks.Add((i, m.Groups["h"].Value.Trim()));
+        }
+
+        for (int k = 0; k < marks.Count; k++)
+        {
+            int end = k + 1 < marks.Count ? marks[k + 1].Start : lines.Length;
+            yield return (marks[k].Heading, string.Join("\n", lines, marks[k].Start, end - marks[k].Start));
+        }
+    }
+
+    /// <summary>A URI path segment for a heading, lowercase words joined by single hyphens.</summary>
+    private static string Slug(string heading)
+    {
+        var sb = new StringBuilder(heading.Length);
+        foreach (char c in heading.Trim().ToLowerInvariant())
+        {
+            if (c is >= 'a' and <= 'z' or >= '0' and <= '9') sb.Append(c);
+            else if (sb.Length > 0 && sb[^1] != '-') sb.Append('-');
+        }
+        string slug = sb.ToString().Trim('-');
+        return slug.Length == 0 ? "section" : slug;
+    }
+
+    private static string DescribeSection(string heading, string id) =>
+        heading + ". One top level section of " + LongTitle(id)
+            + ", served on its own so a client reads one part instead of the whole document.";
+
+    private static string LongTitle(string id) => id switch
+    {
+        "ui-frames" => "the Big UI-Frame Tutorial",
+        "abilities" => "the Warcraft 3 Editor Ability Insight reference",
+        _ => "the " + id + " reference document",
+    };
 
     private static string Describe(string id) => id switch
     {
@@ -64,7 +244,7 @@ public static class Wc3Context
         _ => "A Warcraft III reference document, read whole.",
     };
 
-    [McpServerTool(Name = "docs_search", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [McpServerTool(Name = "docs_search", Title = "Search the reference documents", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Search the bundled Warcraft III reference documents and return the matching passages with their document and nearest heading. Use this to find the exact rule, field or warning in the UI-Frame tutorial or the Ability Insight reference without loading the whole file. Terms are matched on word boundaries and ranked by how many the passage carries, with a bonus when the section heading names a term, so an ability name finds that ability's section.")]
     public static object DocsSearch(
         [Description("Words to search for.")] string query,
@@ -142,10 +322,20 @@ public static class Wc3Context
         if (!Directory.Exists(Root)) yield break;
         foreach (var dir in Directory.GetDirectories(Root).OrderBy(d => d, StringComparer.Ordinal))
         {
+            string id = Path.GetFileName(dir);
+            if (IsSkillFolder(id)) continue;
             string? md = Directory.GetFiles(dir, "*.md").FirstOrDefault();
-            if (md is not null) yield return (Path.GetFileName(dir), md);
+            if (md is not null) yield return (id, md);
         }
     }
+
+    /// <summary>
+    /// The skills live under `context/skills` only so the reference folder and the skills stay one
+    /// corpus on disk. They are served as `wc3://skills/*`, not as a context document, and the
+    /// search must not index three files as one more document, so the folder is skipped here.
+    /// </summary>
+    private static bool IsSkillFolder(string id) =>
+        id.Equals("skills", StringComparison.OrdinalIgnoreCase);
 
     private static string Truncate(string s, int n) =>
         s.Length <= n ? s : s[..n] + "\n... (truncated, read the whole document with the resource wc3://context/)";
@@ -173,21 +363,72 @@ public static class Wc3Context
         }
     }
 
-    [McpServerTool(Name = "rag_status", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [McpServerTool(Name = "rag_status", Title = "Report the retrieval index state", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Report whether the local semantic retrieval index is installed, with its chunk count, corpus and the embedding model. docs_search uses the index automatically once it is installed.")]
     public static object RagStatus() => Rag(() => (object)RagCommand.Status());
 
-    [McpServerTool(Name = "rag_install", ReadOnly = false, Idempotent = true, OpenWorld = true)]
-    [Description("Install the local semantic index and graph over the Warcraft III corpus. Fetches the embedding model and the corpus dataset, verifies each, and builds the index and the graph, after which docs_search is semantic and the graph tools work. Needs network on the first run. The corpus is fixed to the bundled dataset, never a folder named by the caller, so this cannot read arbitrary local files.")]
+    [McpServerTool(Name = "rag_install", Title = "Install the retrieval index", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = true)]
+    [Description("Install the local semantic index and graph over the Warcraft III corpus. Fetches the embedding model and the corpus dataset, verifies each, and builds the index and the graph, after which docs_search is semantic and the graph tools work. Needs network on the first run. It writes many files under the user's local app data, in the rag root the answer names, and never into a map folder, so it is not gated like a single artifact and reports the root and how many files it wrote instead. The corpus is the bundled dataset, never a caller named folder, so this cannot read arbitrary local files.")]
     public static object RagInstall(
         [Description("CPU threads for embedding. Default min(cores/2, 4), the low CPU setting. Raise it to build faster.")] int? threads = null,
         [Description("Chunks per inference, default 16. Larger batches finish sooner and use more memory.")] int? batch = null)
     {
+        // An install writes a corpus, a model, an index and a graph, so it cannot be gated as one
+        // artifact. It declares what it wrote instead, and the count is measured from the folder
+        // before and after rather than taken from the install's own success message.
+        var before = RagFileState(RagPaths.Root);
         var r = Rag(() => RagCommand.Install(null, threads, batch));
-        return new { r.Root, r.Corpus, r.Chunks, r.IndexFile, r.ModelRepo, note = "docs_search is now semantic" };
+        int? filesWritten = RagFilesWritten(RagPaths.Root, before);
+        return new { r.Root, r.Corpus, r.Chunks, r.IndexFile, r.ModelRepo, FilesWritten = filesWritten, note = "docs_search is now semantic" };
     }
 
-    [McpServerTool(Name = "graph_neighbors", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    /// <summary>
+    /// Every file under the rag root, keyed by its relative path, with the length and the last
+    /// write time that identify one version of it. Null means the folder could not be read, which
+    /// is different from an empty folder, so the count can say unknown rather than zero.
+    /// </summary>
+    private static Dictionary<string, (long Length, DateTime WrittenAt)>? RagFileState(string root)
+    {
+        var state = new Dictionary<string, (long Length, DateTime WrittenAt)>(StringComparer.OrdinalIgnoreCase);
+        if (!Directory.Exists(root)) return state;
+        try
+        {
+            foreach (string file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            {
+                var info = new FileInfo(file);
+                state[Path.GetRelativePath(root, file)] = (info.Length, info.LastWriteTimeUtc);
+            }
+            return state;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// How many files the install created or updated, or null when either picture of the folder
+    /// could not be read. A counting failure must not turn a finished install into an error, and
+    /// it must not be reported as zero either.
+    /// </summary>
+    private static int? RagFilesWritten(
+        string root, IReadOnlyDictionary<string, (long Length, DateTime WrittenAt)>? before)
+    {
+        if (before is null) return null;
+        var after = RagFileState(root);
+        if (after is null) return null;
+        int written = 0;
+        foreach (var (path, now) in after)
+        {
+            if (!before.TryGetValue(path, out var then)
+                || then.Length != now.Length
+                || then.WrittenAt != now.WrittenAt)
+                written++;
+        }
+        return written;
+    }
+
+    [McpServerTool(Name = "graph_neighbors", Title = "List graph neighbours of a node", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("List the nodes within a depth of a start node in the corpus graph, over link edges and embedding-similarity edges. Use it to find the documents related to one you already have. The graph is built by rag install, beside the index.")]
     public static object GraphNeighbors(
         [Description("A node id or name, for example a document title or a path without the .md.")] string node,
@@ -196,14 +437,14 @@ public static class Wc3Context
         [Description("Maximum nodes to return. Default 25.")] int limit = 25)
         => Rag(() => RagCommand.GraphNeighbors(node, depth, edge, limit));
 
-    [McpServerTool(Name = "graph_hubs", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [McpServerTool(Name = "graph_hubs", Title = "Show the most connected nodes", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("The most connected nodes in the corpus graph, the documents and sections the corpus centres on. Use it to see what the corpus is really about.")]
     public static object GraphHubs(
         [Description("Maximum nodes to return. Default 20.")] int top = 20,
         [Description("Restrict to one node type, Document or Section. Omit for all.")] string? type = null)
         => Rag(() => RagCommand.GraphHubs(top, type));
 
-    [McpServerTool(Name = "graph_path", ReadOnly = true, Idempotent = true, OpenWorld = false)]
+    [McpServerTool(Name = "graph_path", Title = "Find the shortest graph path", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("The shortest chain of edges between two nodes in the corpus graph, so you can see how two documents or subjects connect.")]
     public static object GraphPath(
         [Description("The start node id or name.")] string from,

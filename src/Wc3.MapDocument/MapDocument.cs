@@ -781,12 +781,75 @@ public sealed class MapDocument
 
     /// <summary>
     /// Saves to <paramref name="path"/> in the form the map was loaded in, a folder for a folder
-    /// map and an archive otherwise.
+    /// map and an archive otherwise. An archive is staged in a temporary file beside the
+    /// destination and renamed over it, so a crash or a full disk cannot truncate the map that is
+    /// already there; a folder map is already staged by <see cref="FolderMap.Unpack"/>.
     /// </summary>
     public void Save(string path)
     {
-        if (SourceFolder is not null) FolderMap.Unpack(SaveToBytes(), path);
-        else File.WriteAllBytes(path, SaveToBytes());
+        var bytes = SaveToBytes();
+        if (SourceFolder is not null) FolderMap.Unpack(bytes, path);
+        else WriteAtomically(path, bytes);
+    }
+
+    /// <summary>
+    /// Test seam, internal and not part of the public surface: invoked with the staged temporary
+    /// path once its bytes are flushed and before the rename. A test throws from it to exercise
+    /// the window a real crash or full disk would hit, which cannot be produced hermetically.
+    /// Thread-static so a test that sets it cannot reach a save running on another thread.
+    /// </summary>
+    [ThreadStatic]
+    internal static Action<string>? BeforeRenameForTests;
+
+    /// <summary>
+    /// Writes <paramref name="bytes"/> to <paramref name="path"/> through a unique temporary file
+    /// in the destination's own folder, flushed to disk, then renamed over the destination. The
+    /// rename is the only step that touches the existing file, so a failure before it leaves the
+    /// previous bytes intact; any failure deletes the temporary file and rethrows.
+    /// </summary>
+    private static void WriteAtomically(string path, byte[] bytes)
+    {
+        var destination = Path.GetFullPath(path);
+        var folder = Path.GetDirectoryName(destination)!;
+        var (stream, temp) = CreateStagingFile(folder, Path.GetFileName(destination));
+        try
+        {
+            using (stream)
+            {
+                stream.Write(bytes, 0, bytes.Length);
+                stream.Flush(flushToDisk: true);
+            }
+
+            BeforeRenameForTests?.Invoke(temp);
+            File.Move(temp, destination, overwrite: true);
+        }
+        catch
+        {
+            // Delete only the exact name this call created, never a pattern or the destination.
+            try { if (File.Exists(temp)) File.Delete(temp); } catch { }
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// A new, empty temporary file named <c>.&lt;destination&gt;.&lt;8 hex&gt;.tmp</c> in
+    /// <paramref name="folder"/>. CreateNew refuses an existing name, so retrying on a collision
+    /// is a real check rather than a race between a probe and the create.
+    /// </summary>
+    private static (FileStream Stream, string Path) CreateStagingFile(string folder, string name)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            var candidate = Path.Combine(folder, $".{name}.{Guid.NewGuid().ToString("N")[..8]}.tmp");
+            try
+            {
+                return (new FileStream(candidate, FileMode.CreateNew, FileAccess.Write, FileShare.None), candidate);
+            }
+            catch (IOException) when (attempt < 8 && File.Exists(candidate))
+            {
+                // Collided with a live staging file; draw another name.
+            }
+        }
     }
 
     public byte[] SaveToBytes()

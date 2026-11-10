@@ -37,13 +37,22 @@ public static class GamedataEnumCommand
             : new[] { GamedataSupport.Find(schemasDir, target) };
 
         var entries = new List<GamedataEnumEntry>();
+        var legal = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var one in schemas)
         {
             if (one.Schema.Enums is null) continue;
+            foreach (var key in one.Schema.Enums.Keys) legal.Add(key);
             if (!one.Schema.Enums.TryGetValue(type, out var values)) continue;
             entries.Add(new GamedataEnumEntry(one.Build,
                 values.Select(v => new GamedataEnumValue(v.Value, v.DisplayName)).ToList()));
         }
+
+        // An unknown type used to answer with an empty entry list, which reads like a build that
+        // defines the type with no values. Name the legal set instead, the shape object_list
+        // uses for a bad kind. A type that exists with zero values is legal and still answers.
+        if (entries.Count == 0 && !legal.Contains(type))
+            throw new ArgumentException(
+                "unknown enum type '" + type + "', expected one of: " + string.Join("|", legal));
 
         return new GamedataEnumResult(type, target, entries);
     }

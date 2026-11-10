@@ -60,10 +60,28 @@ public static class ModelImportCommand
     /// Imports the model at <paramref name="modelPath"/> and writes the MDX to
     /// <paramref name="outPath"/>, plus any .blp textures it referenced beside it. The format is
     /// detected from the file, not the extension alone.
+    /// <para>
+    /// PRF-04. The token is read before the input is opened, again before the first write and
+    /// before each texture after that, so a cancel stops the import at the next file rather than
+    /// at the end of it. The parse and the MDX build run in memory and cannot be split, so the
+    /// honest unit here is one model and one texture. A cancel after anything has been written
+    /// removes the files this call wrote and then throws, so a cancelled import leaves no partial
+    /// model and no orphaned texture beside it.
+    /// </para>
+    /// <para>
+    /// PRF-04. <paramref name="progress"/> is called after each file is written, with how many are
+    /// written and how many the call will write, so the tool in front of this command can report
+    /// where the import is. Null reports nothing, which is what the CLI passes.
+    /// </para>
     /// </summary>
-    public static ModelImportResult ExecutePath(string modelPath, string outPath, string? texturePath = null, double fps = 30)
+    public static ModelImportResult ExecutePath(string modelPath, string outPath, string? texturePath = null, double fps = 30,
+        CancellationToken cancellationToken = default, Action<int, int>? progress = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(modelPath);
+        // PRF-04. Before the input is opened, so a cancel that arrived before the call writes
+        // nothing at all and says so rather than reporting a count it does not have yet.
+        if (cancellationToken.IsCancellationRequested)
+            throw new OperationCanceledException("model import cancelled before the input was read");
         if (!File.Exists(modelPath)) throw new FileNotFoundException($"Model not found: {modelPath}", modelPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(outPath);
 
@@ -73,11 +91,47 @@ public static class ModelImportCommand
 
         var dir = Path.GetDirectoryName(Path.GetFullPath(outPath));
         if (dir is { Length: > 0 }) Directory.CreateDirectory(dir);
-        File.WriteAllBytes(outPath, output);
-        foreach (var texture in textures)
-            File.WriteAllBytes(Path.Combine(dir is { Length: > 0 } ? dir : ".", texture.FileName), texture.Bytes);
+        string target = dir is { Length: > 0 } ? dir : ".";
+
+        // PRF-04. The first file. The check sits after the build because the build is the one step
+        // that cannot be stopped, and before the write because a cancel at this point should cost
+        // nothing rather than a model that is then deleted again.
+        if (cancellationToken.IsCancellationRequested)
+            throw Cancelled(0, textures.Count + 1);
+
+        var written = new List<string>(textures.Count + 1);
+        try
+        {
+            File.WriteAllBytes(outPath, output);
+            written.Add(outPath);
+            progress?.Invoke(written.Count, textures.Count + 1);
+            foreach (var texture in textures)
+            {
+                // PRF-04. The next file. A cancel between two textures stops here rather than
+                // after the last one.
+                if (cancellationToken.IsCancellationRequested)
+                    throw Cancelled(written.Count, textures.Count + 1);
+
+                string path = Path.Combine(target, texture.FileName);
+                File.WriteAllBytes(path, texture.Bytes);
+                written.Add(path);
+                progress?.Invoke(written.Count, textures.Count + 1);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            foreach (string path in written)
+            {
+                try { File.Delete(path); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
+            throw;
+        }
         return result with { Path = outPath };
     }
+
+    /// <summary>PRF-04. The cancel a caller can act on, naming how many of the files were written.</summary>
+    private static OperationCanceledException Cancelled(int written, int total) =>
+        new("model import cancelled after " + written + " of " + total + " files");
 
     /// <summary>
     /// Imports model text already in memory, kept for the OBJ text path. <paramref name="name"/> is
