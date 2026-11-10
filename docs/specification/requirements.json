@@ -123,10 +123,10 @@
       "id": "CMP-04",
       "group": "CMP",
       "statement": "A result field SHALL change only additively within a major version, and a removed field SHALL be announced one minor release before",
-      "basis": "Not implemented. Nothing keeps field names additive and no removal carries a notice, which the two spellings of one record already show",
+      "basis": "Measured. `ResultFieldStabilityTests.A_result_field_changes_only_additively` reads every result field into `tests/Wc3.Tests/Fixtures/result-fields.json`, 277 tools and 1,506 field names, and fails when one disappears without a renames entry",
       "gap": "G-94",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "CMP-05",
@@ -378,7 +378,6 @@
       "group": "IDN",
       "statement": "One product version SHALL be the source of every version a caller can read, which is the exe, `version_info`, the npm package, the `.mcpb` manifest, `server.json` and the release tag. The release SHALL refuse a tag that differs from the exe. A committed check SHALL report every place the values disagree, even between releases",
       "basis": "Measured. `Directory.Build.props` is the single source, the published exe reports `Wc3.Mcp 0.5.16` against it, and the npm package, the mcpb manifest, the server manifest and its download URL all read 0.5.16. `Version_statements_agree_with_Directory_Build_Props` fails on drift, proved by `Version_statement_check_reports_a_drifting_manifest`",
-      "gap": "G-25",
       "status": "met",
       "test": "Version_statements_agree_with_Directory_Build_Props"
     },
@@ -655,10 +654,10 @@
       "id": "PRF-04",
       "group": "PRF",
       "statement": "A tool expected to exceed 2 seconds SHALL report progress and SHALL observe cancellation. The families are map optimisation, folder audits, model import and export, atlas and texture work, and the doctor repair",
-      "basis": "Partly met. A cancel stops the wait in under two seconds and eleven tools take a token, and two of them read it inside the work, so `library_scan` stops at the next map and says how far it got and `model_import` removes what it wrote before it throws. Progress is not forwarded, so a client that asks for it receives nothing and that test is skipped with the reason. Nine tools still stop only at the next step",
+      "basis": "Measured. A cancel stops the wait in under two seconds and eleven tools take a token, two of them read it inside the work, so `library_scan` stops at the next map naming how far it got and `model_import` removes what it wrote before it throws. Progress reaches the client now, since the SDK binds a parameter typed `IProgress<ProgressNotificationValue>` per call and both of those tools report per item. Ten cancellation tests pass with none skipped",
       "gap": "G-04",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "PRF-05",
@@ -820,10 +819,10 @@
       "id": "RES-10",
       "group": "RES",
       "statement": "A paged result SHALL use `returnedCount` for the page size, `totalCount` for the total, `hasMore` for whether another page exists and `nextOffset` for the next page. It SHALL NOT use a bare `count`, which a caller reads as the total",
-      "basis": "Design decision. A caller reading `count` as the total is the common mistake with a paged result",
+      "basis": "Measured. Paged results name `returnedCount`, `totalCount`, `hasMore` and `nextOffset` everywhere, with `total` and `truncated` kept as aliases on `list_files` and the twelve capped list tools for this version. `quickstart` loses `count` and the rename is recorded in the field inventory",
       "gap": "G-98",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RES-11",
@@ -1326,7 +1325,7 @@
       "id": "TRN-05",
       "group": "TRN",
       "statement": "The server SHALL declare only the capabilities it has, and SHALL NOT advertise `listChanged` for a collection that cannot change during a session",
-      "basis": "Measured. All three collections advertise `listChanged` true while the surface is fixed at start. Setting `Capabilities` to false in `CreateOptions` does not change the reply, because the pinned SDK 1.4.1 derives the capabilities from the registered collections and ignores the options, proven by a handshake test that fails on the configured value. The change lands in the SDK pin (CMP-02) or a wrapper, not in this repository",
+      "basis": "Not met, and a bump does not fix it. Every released version above 1.4.1 up to 2.4.0 reads `Capabilities` and then overwrites `listChanged` with true whenever a primitive collection is registered, verified by decompiling `McpServerImpl.ConfigureTools` in each. The notification wiring is decided by the transport, not the flag, so acceptance has to check both halves. The only route today is to leave the collections null and supply the handlers, which costs the matched tool dispatch the filters rely on",
       "gap": "G-24",
       "status": "gap",
       "test": null
@@ -1539,12 +1538,6 @@
       "what": "Every collection advertises `listChanged` true while nothing changes at run time. `McpServerOptions.Capabilities` is set to false and the pinned SDK 1.4.1 ignores it, so this is blocked on the SDK pin rather than on this repository",
       "requirements": "TRN-05",
       "where": "The `ModelContextProtocol` pin, or a wrapper that rewrites the reply"
-    },
-    {
-      "id": "G-25",
-      "what": "Eight version statements carry four values, 0.3.0, 0.4.13, 0.5.8 and 0.5.16, the in-tree exe states 0.5.12 while baking a commit that tag v0.5.12 does not name, and npm 0.5.19 has no tag, so the tree and the tags cannot reproduce what a user installs",
-      "requirements": "IDN-02",
-      "where": "Both `Directory.Build.props`, npm, mcpb, `server.json`, the tag, CI"
     },
     {
       "id": "G-27",
