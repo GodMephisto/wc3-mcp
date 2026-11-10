@@ -21,7 +21,7 @@
   <ItemGroup>
     <!-- Official MCP C# SDK (stable). Its Microsoft.Extensions.* transitives stay
          isolated to this exe — never add them to the version-pinned projects. -->
-    <PackageReference Include="ModelContextProtocol" Version="1.4.1" />
+    <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
   </ItemGroup>
 
