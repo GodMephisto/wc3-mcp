@@ -9,6 +9,13 @@ namespace Wc3.Commands;
 public static class RepoLayout
 {
     public const string SolutionFileName = "Wc3.sln";
+
+    /// <summary>
+    /// The names a checkout may give its solution. The source repository uses Wc3.sln and the
+    /// distribution checkout that carries only the server uses wc3-mcp.sln, and a test that walks
+    /// up looking for the root has to find either.
+    /// </summary>
+    public static readonly string[] SolutionFileNames = { "Wc3.sln", "wc3-mcp.sln" };
     public const string BuildPropsFileName = "Directory.Build.props";
 
     /// <summary>The repository root, found by walking up for the solution file, or null when none.</summary>
@@ -19,7 +26,8 @@ public static class RepoLayout
             var dir = seed;
             while (dir is { Length: > 0 })
             {
-                if (File.Exists(Path.Combine(dir, SolutionFileName))) return dir;
+                foreach (string name in SolutionFileNames)
+                    if (File.Exists(Path.Combine(dir, name))) return dir;
                 dir = Directory.GetParent(dir)?.FullName;
             }
         }
