@@ -2,11 +2,18 @@
   <!-- The source under src/ is exported from wc3ctl (scripts/export-wc3-mcp.py there) and is never
        edited here. This file is what makes that same source this product: the exe is wc3-mcp, it
        registers in AI apps as "wc3" and backs up their configs as NAME.wc3-mcp.bak. The version
-       is the one the release tag must match. -->
+       is the one the release tag must match.
+
+       This Version element is the version of the product this checkout builds. The exe and the
+       'version_info' tool read it back through the assembly version. The npm package, the .mcpb
+       manifest and server.json do not read it, so they carry the same number by hand. The wc3ctl
+       checkout states the same number in its own Directory.Build.props, which is the source of
+       record, and VersionStatementTests fails while any of these four disagrees. A bump made here
+       has to reach that file as well. -->
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Wc3.Mcp'">
     <AssemblyName>wc3-mcp</AssemblyName>
     <RootNamespace>Wc3.Mcp</RootNamespace>
-    <Version>0.5.16</Version>
+    <Version>0.5.20</Version>
     <McpProductId>wc3-mcp</McpProductId>
     <McpServerName>wc3</McpServerName>
   </PropertyGroup>
