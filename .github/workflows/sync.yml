@@ -86,13 +86,14 @@ jobs:
             # The previous tag sits on the commit the sync is about to make, so the range is taken
             # from its parent, and a range that is still empty falls back to the recent history
             # rather than shipping a heading with nothing under it.
+            # Mirror commits are bookkeeping, not changes, so they are filtered out of the note.
             if [ -n "$prev" ]; then
-              lines=$(git log --no-merges --pretty='- %s' "$prev~1"..HEAD -- src | head -60)
+              lines=$(git log --no-merges --pretty='- %s' "$prev~1"..HEAD -- src | grep -v 'chore(sync)' | head -60 || true)
             else
               lines=""
             fi
             if [ -z "$lines" ]; then
-              lines=$(git log -20 --no-merges --pretty='- %s' -- src)
+              lines="- Source tree at $(git rev-parse --short HEAD)"
             fi
             printf '%s\n' "$lines"
           } > "changelog/$v.md"
