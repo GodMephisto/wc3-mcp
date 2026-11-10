@@ -14,8 +14,20 @@ published version, and refuses a version no record names.
     python tools/release_record.py write --version 0.5.16 --artifact dist-mcp/wc3-mcp.exe
     python tools/release_record.py verify releases/v0.5.16.json
     python tools/release_record.py resolve --version 0.5.16
+    python tools/release_record.py resolve --version 0.5.21 --repo ../..
     python tools/release_record.py resolve --version 0.5.19
     python tools/release_record.py --selftest
+
+An artifact path that is an http or https URL is a published artifact, and the
+record for a tag is the record of what the release served. For one of those the
+digest is read from the `.sha256` published beside the asset, which is 93 bytes,
+so a version resolves without downloading a 55 MB bundle. When the read fails,
+the row says the claim was not checked, and the exit is 2, because a digest that
+could not be read is not a digest that agreed.
+
+With `--repo` the record's commit is also compared with the commit the tag points
+at, so resolve answers whether the published bytes came from the tagged commit
+rather than from a later build of the same version.
 
 Exit 0 when the record is written or agrees, 2 when a digest, a tag or a version
 does not, 1 when a file or the commit cannot be read. The record is written only
@@ -34,12 +46,15 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_OUT = HERE.parent / "releases"
 SCHEMA = "wc3-release-record/1"
 NO_WINDOW = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 VERSION = re.compile(r"^\d+\.\d+\.\d+(?:\.\d+)?$")
+PUBLISHED = re.compile(r"^https?://", re.IGNORECASE)
+SHA256 = re.compile(r"\b([0-9a-fA-F]{64})\b")
 
 
 class RecordError(RuntimeError):
@@ -54,8 +69,8 @@ def sha256_of(path: Path) -> str:
     return digest.hexdigest()
 
 
-def head_commit(root: Path) -> str:
-    """The commit the release is cut from, read from git, never guessed."""
+def git_binary() -> str:
+    """The git to run, from the environment, the PATH, or the usual Windows install."""
     git = os.environ.get("GIT") or shutil.which("git")
     if not git and os.name == "nt":
         fallback = Path("C:/Program Files/Git/bin/git.exe")
@@ -63,6 +78,12 @@ def head_commit(root: Path) -> str:
             git = str(fallback)
     if not git:
         raise RecordError("no git found, pass --commit with the commit the artifacts were built from")
+    return git
+
+
+def head_commit(root: Path) -> str:
+    """The commit the release is cut from, read from git, never guessed."""
+    git = git_binary()
     try:
         done = subprocess.run(
             [git, "-C", str(root), "rev-parse", "HEAD"],
@@ -80,6 +101,52 @@ def head_commit(root: Path) -> str:
             f"git could not name a commit in {root}, it said {first[0] if first else 'nothing'}"
         )
     return commit
+
+
+def commit_for_tag(repo: Path, tag: str) -> str:
+    """The commit a tag points at, so a record can be compared with the tag it names."""
+    git = git_binary()
+    try:
+        done = subprocess.run(
+            [git, "-C", str(repo), "rev-list", "-n", "1", tag],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            creationflags=NO_WINDOW,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RecordError(f"git could not be run in {repo}, {exc}") from exc
+    commit = (done.stdout or "").strip()
+    if done.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        first = (done.stderr or done.stdout or "").strip().splitlines()
+        raise RecordError(
+            f"{tag} names no commit in {repo}, git said {first[0] if first else 'nothing'}"
+        )
+    return commit
+
+
+def http_fetch(url: str, timeout: float = 30.0) -> str:
+    """Read one published file as text, for the digest sidecar beside an artifact."""
+    try:
+        request = Request(url, headers={"User-Agent": "wc3-release-record/1"})
+        with urlopen(request, timeout=timeout) as reply:
+            return reply.read(65536).decode("utf-8", "replace")
+    except (OSError, ValueError) as exc:
+        raise RecordError(f"{url} could not be read, {exc}") from exc
+
+
+def published_digest(url: str, fetch=None) -> str:
+    """The sha256 the release published beside an artifact, from its .sha256 sidecar."""
+    sidecar = url.rstrip("/") + ".sha256"
+    text = (fetch or http_fetch)(sidecar)
+    match = SHA256.search(text)
+    if not match:
+        raise RecordError(f"{sidecar} holds no sha256 digest")
+    return match.group(1).lower()
+
+
+def is_published(path: str) -> bool:
+    return bool(isinstance(path, str) and PUBLISHED.match(path))
 
 
 def as_relative(path: Path, root: Path) -> str:
@@ -138,11 +205,27 @@ def write(args) -> int:
 
     out.mkdir(parents=True, exist_ok=True)
     destination = record_path(out, tag)
-    if destination.exists() and not args.force:
-        raise RecordError(f"{destination} already exists, pass --force to replace it")
-    destination.write_text(
-        json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n"
-    )
+    payload = json.dumps(record, indent=2, ensure_ascii=False) + "\n"
+    if args.force:
+        temporary = destination.with_name(destination.name + ".tmp-" + str(os.getpid()))
+        temporary.write_text(payload, encoding="utf-8", newline="\n")
+        os.replace(temporary, destination)
+    else:
+        # One tag is one record, so the file is created, not checked and then written. Two
+        # writers racing on the same tag cannot both create it, and a write that fails removes
+        # its own partial file so the tag is not left burned by a half record.
+        try:
+            handle = os.open(destination, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except FileExistsError as exc:
+            raise RecordError(f"{destination} already exists, pass --force to replace it") from exc
+        try:
+            with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+        except OSError:
+            destination.unlink(missing_ok=True)
+            raise
 
     if args.json:
         print(json.dumps(record, indent=2, ensure_ascii=False))
@@ -169,8 +252,8 @@ def load(path: Path) -> dict:
     return data
 
 
-def judge(record: dict, root: Path) -> list[dict]:
-    """One row per claim the record makes, checked against the files on disk."""
+def judge(record: dict, root: Path, fetch=None, tag_commit: str | None = None) -> list[dict]:
+    """One row per claim the record makes, checked against the files or the release."""
     rows = []
 
     version = record.get("version")
@@ -196,21 +279,67 @@ def judge(record: dict, root: Path) -> list[dict]:
         }
     )
 
+    if tag_commit is not None:
+        named = commit if isinstance(commit, str) else ""
+        holds = bool(named) and (tag_commit.startswith(named) or named.startswith(tag_commit))
+        rows.append(
+            {
+                "claim": "Source commit is the tag's commit",
+                "expected": tag_commit[:12],
+                "found": named[:12] or "none",
+                "ok": holds,
+                "detail": ""
+                if holds
+                else f"the record names {named or 'no commit'} while {tag} points at {tag_commit}",
+            }
+        )
+
     for entry in record.get("artifacts") or []:
-        path = root / entry["path"] if not Path(entry["path"]).is_absolute() else Path(entry["path"])
-        if not path.is_file():
+        path = entry.get("path") or ""
+        if is_published(path):
+            try:
+                published = published_digest(path, fetch)
+            except RecordError as exc:
+                rows.append(
+                    {
+                        "claim": f"Published digest of {entry['name']}",
+                        "expected": entry["sha256"][:16],
+                        "found": "not read",
+                        "ok": False,
+                        "detail": f"the digest published beside the asset was not read, so this "
+                        f"claim is not checked, {exc}",
+                    }
+                )
+                continue
+            ok = published == entry["sha256"]
+            rows.append(
+                {
+                    "claim": f"Published digest of {entry['name']}",
+                    "expected": entry["sha256"][:16],
+                    "found": published[:16],
+                    "ok": ok,
+                    "detail": ""
+                    if ok
+                    else f"the release publishes {published} for {entry['name']}, the record says "
+                    f"{entry['sha256']}",
+                }
+            )
+            continue
+
+        local = root / path if not Path(path).is_absolute() else Path(path)
+        if not local.is_file():
             rows.append(
                 {
                     "claim": f"Digest of {entry['name']}",
                     "expected": entry["sha256"][:16],
                     "found": "no file",
                     "ok": False,
-                    "detail": f"{path} is not there, so the record cannot be checked",
+                    "detail": f"{local} is not there, so the record cannot be checked",
                 }
             )
             continue
-        found = sha256_of(path)
-        size = path.stat().st_size
+        found = sha256_of(local)
+        size = local.stat().st_size
         ok = found == entry["sha256"] and size == entry.get("bytes", size)
         rows.append(
             {
@@ -250,19 +379,25 @@ def render(rows: list[dict], where: str) -> str:
     drifted = [r for r in rows if not r["ok"]]
     lines.append("")
     if drifted:
-        lines.append(f"{len(drifted)} of {len(rows)} claims do not hold against the files on disk")
+        lines.append(f"{len(drifted)} of {len(rows)} claims do not hold against the bytes checked")
         for r in drifted:
             if r["detail"]:
                 lines.append("  " + r["detail"])
     else:
-        lines.append(f"All {len(rows)} claims hold, the artifacts on disk are the ones recorded")
+        lines.append(
+            f"All {len(rows)} claims hold, every artifact the record names agrees with the "
+            "bytes it was checked against"
+        )
     return "\n".join(lines)
 
 
 def verify(args) -> int:
     path = Path(args.record)
     record = load(path)
-    rows = judge(record, Path(args.root).resolve())
+    tag_commit = None
+    if getattr(args, "repo", None):
+        tag_commit = commit_for_tag(Path(args.repo).resolve(), str(record.get("tag") or ""))
+    rows = judge(record, Path(args.root).resolve(), tag_commit=tag_commit)
     code = 0 if all(r["ok"] for r in rows) else 2
     if args.json:
         print(json.dumps({"ok": code == 0, "exit": code, "record": str(path), "checks": rows}, indent=2))
@@ -287,7 +422,10 @@ def resolve(args) -> int:
             "has no source commit, no digest and no tag behind it"
         )
     record = load(path)
-    rows = judge(record, Path(args.root).resolve())
+    tag_commit = None
+    if getattr(args, "repo", None):
+        tag_commit = commit_for_tag(Path(args.repo).resolve(), str(record.get("tag") or wanted))
+    rows = judge(record, Path(args.root).resolve(), tag_commit=tag_commit)
     if args.json:
         print(json.dumps({"ok": all(r["ok"] for r in rows), "record": record, "checks": rows}, indent=2))
     else:
@@ -394,13 +532,135 @@ def selftest() -> int:
             if code != 2:
                 failures.append("a second record for one tag was written over the first")
 
+            # A record whose artifacts are the URLs the release served resolves through the
+            # digest published beside each one, so a version needs no 55 MB download.
+            tag_commit = "42a9e23c36b9bd1fbacbdd550511e399c542264c"
+            published = {
+                "record": SCHEMA,
+                "version": "0.5.21",
+                "tag": "v0.5.21",
+                "commit": "42a9e23",
+                "artifacts": [
+                    {
+                        "name": "wc3-mcp-v0.5.21-win-x64.zip",
+                        "path": "https://example.invalid/v0.5.21/wc3-mcp-v0.5.21-win-x64.zip",
+                        "bytes": 55191028,
+                        "sha256": "e3" + "0" * 62,
+                    }
+                ],
+            }
+            served = published["artifacts"][0]["sha256"]
+
+            def sidecar(digest: str):
+                def read(url: str) -> str:
+                    if not url.endswith(".sha256"):
+                        raise RecordError(f"{url} is not a digest sidecar")
+                    return f"{digest}  wc3-mcp-v0.5.21-win-x64.zip\n"
+
+                return read
+
+            def unreachable(url: str) -> str:
+                raise RecordError(f"{url} could not be read, no answer")
+
+            rows = judge(published, root, fetch=sidecar(served), tag_commit=tag_commit)
+            if not all(row["ok"] for row in rows):
+                failures.append(
+                    "a published record did not resolve, "
+                    + "; ".join(row["detail"] for row in rows if not row["ok"])
+                )
+
+            rows = judge(published, root, fetch=sidecar("f" * 64), tag_commit=tag_commit)
+            if all(row["ok"] for row in rows) or not any(
+                "the release publishes" in row["detail"] for row in rows
+            ):
+                failures.append("a published digest that differs from the record was not named")
+
+            rows = judge(published, root, fetch=unreachable, tag_commit=tag_commit)
+            if not any(
+                row["found"] == "not read" and "not checked" in row["detail"] for row in rows
+            ):
+                failures.append("a digest that could not be read was not reported as unchecked")
+
+            rows = judge(published, root, fetch=sidecar(served), tag_commit="f" * 40)
+            if not any(
+                row["claim"] == "Source commit is the tag's commit" and not row["ok"]
+                for row in rows
+            ):
+                failures.append("a record that names no commit of the tag was accepted")
+
+            # Two writers race on one tag. The create is exclusive, so exactly one record is
+            # made, the other writer is told it is there, and the record on disk is whole.
+            race = root / "race"
+            race.mkdir()
+            racer = race / "artifact.bin"
+            racer.write_bytes(b"the artifact the race writes about\n")
+            writer = [
+                sys.executable,
+                str(Path(__file__).resolve()),
+                "write",
+                "--version",
+                "0.5.23",
+                "--commit",
+                "0123456789abcdef0123456789abcdef01234567",
+                "--artifact",
+                str(racer),
+                "--root",
+                str(race),
+                "--out",
+                str(race),
+            ]
+            writers = [
+                subprocess.Popen(writer, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                for _ in range(2)
+            ]
+            codes = sorted(process.wait(timeout=120) for process in writers)
+            for process in writers:
+                if process.stdout:
+                    process.stdout.close()
+                if process.stderr:
+                    process.stderr.close()
+            if codes != [0, 2]:
+                failures.append(f"two writers on one tag exited {codes}, expected one 0 and one 2")
+            contested = race / "v0.5.23.json"
+            if not contested.is_file():
+                failures.append("two writers on one tag left no record")
+            else:
+                try:
+                    json.loads(contested.read_text(encoding="utf-8"))
+                except ValueError as exc:
+                    failures.append(f"two writers on one tag left a half written record, {exc}")
+
+            code, text = run(
+                [
+                    "write",
+                    "--version",
+                    "0.5.23",
+                    "--commit",
+                    "0123456789abcdef0123456789abcdef01234567",
+                    "--artifact",
+                    str(racer),
+                    "--root",
+                    str(race),
+                    "--out",
+                    str(race),
+                    "--force",
+                ]
+            )
+            if code != 0:
+                failures.append(
+                    f"a record refused by a race was not replaceable with --force, exit {code}"
+                )
+
     if failures:
         for failure in failures:
             print("selftest failed, " + failure, file=sys.stderr)
         return 1
     print(
         "selftest ok, a record carries the commit and one digest per artifact, a changed "
-        "artifact fails verify and resolve, and a wrong tag or a second record is refused"
+        "artifact fails verify and resolve, a wrong tag or a second record is refused, "
+        "a published record resolves through the digest beside the asset, an unread digest "
+        "is called unchecked, a commit that is not the tag's is refused, and two writers on "
+        "one tag make one record while the other is refused and can be replaced with --force"
     )
     return 0
 
@@ -426,6 +686,7 @@ def main(argv: list[str] | None = None) -> int:
     checker = commands.add_parser("verify", help="recompute the digests of one record")
     checker.add_argument("record", help="the record to check")
     checker.add_argument("--root", default=".", help="the tree the artifact paths are relative to")
+    checker.add_argument("--repo", help="the checkout whose tag the record's commit is compared with")
     checker.add_argument("--json", action="store_true", help="print the result as JSON")
 
     resolver = commands.add_parser("resolve", help="answer which record explains a version")
@@ -433,6 +694,7 @@ def main(argv: list[str] | None = None) -> int:
     resolver.add_argument("--tag", help="the tag to explain, when the version is not at hand")
     resolver.add_argument("--out", default=str(DEFAULT_OUT), help="the folder the records live in")
     resolver.add_argument("--root", default=".", help="the tree the artifact paths are relative to")
+    resolver.add_argument("--repo", help="the checkout whose tag the record's commit is compared with")
     resolver.add_argument("--json", action="store_true", help="print the result as JSON")
 
     args = parser.parse_args(argv)

@@ -28,7 +28,7 @@
       "id": "AUT-04",
       "group": "AUT",
       "statement": "One command SHALL build, publish and verify every front end into a fresh folder, swap it in, and print the timestamp of every published exe",
-      "basis": "Gap. Nothing in this folder builds a front end. `dotnet publish` makes the server and the CLI exe and `npm pack` makes the wrapper, so no command here fills a fresh folder, swaps it in or reads a timestamp for each exe. A person runs `scripts/publish-all.ps1` in the Wc3_CLI tree and reads the timestamp it prints (G-41)",
+      "basis": "Gap. Nothing in this folder builds a front end, since `dotnet publish` and `npm pack` are the only steps that make one, so a person runs `scripts/publish-all.ps1` in the Wc3_CLI tree into a fresh folder, swaps it in and reads the timestamp of each exe (G-41)",
       "gap": "G-41",
       "status": "gap",
       "test": null
@@ -37,7 +37,7 @@
       "id": "AUT-05",
       "group": "AUT",
       "statement": "A watch command SHALL rebuild, run the hermetic suite, regenerate the docs and publish when a source file changes, and SHALL refuse to publish when a gate fails",
-      "basis": "Gap. A watch loop has to run `dotnet build`, `dotnet test`, `wc3ctl docs all --force` and a publish, and three of those four need dotnet or npm, so a program here can watch a file but cannot run the loop or refuse a publish on a failed gate. A person runs the four by hand after a change (G-39)",
+      "basis": "Gap. The loop runs `dotnet build`, `dotnet test`, `wc3ctl docs all --force` and a publish, and three of the four need dotnet or npm, so a person runs the four after a change and refuses the publish when a gate fails (G-39)",
       "gap": "G-39",
       "status": "gap",
       "test": null
@@ -46,7 +46,7 @@
       "id": "AUT-06",
       "group": "AUT",
       "statement": "A release-readiness command SHALL run the build, the hermetic suite, the docs guard, the surface audit, the parity check and the publish verification, and SHALL print one verdict with one exit code",
-      "basis": "Gap. `tools/check_automation.py` folds five guards into one verdict and one exit code, and it runs neither `dotnet build`, `dotnet test`, a parity check nor `tools/verify_publish.py`, and no parity tool exists in this tree, so no command here answers for the six steps the statement names. A person runs the build, the suite and the publish verification beside the guard verdict (G-40)",
+      "basis": "Gap. `tools/check_automation.py` folds seven guards into one verdict and runs neither the build, the hermetic suite nor `tools/verify_publish.py`, so the release workflow runs `dotnet build` and `dotnet test` before that verdict and the readiness answer is two steps (G-40)",
       "gap": "G-40",
       "status": "gap",
       "test": null
@@ -55,7 +55,7 @@
       "id": "AUT-07",
       "group": "AUT",
       "statement": "Every automation command SHALL answer `--json` with a stable object, so an agent can drive the same loop a person drives",
-      "basis": "Gap. Eleven of the twelve scripts in this folder answer `--json` with one object carrying the keys they promise, which `tools/check_json_contract.py` runs and reports, and it exits 2 for `build_pdf.py`, which takes no flag, while `wc3ctl docs` and `publish-all.ps1` sit outside this folder and answer no JSON at all. A person adds the flag to those three (G-43)",
+      "basis": "Gap. `tools/check_json_contract.py` runs every script here and exits 2 for `build_pdf.py`, which takes no flag, and `scripts/publish-all.ps1` in the Wc3_CLI tree answers no JSON, so a person adds the flag to those two (G-43)",
       "gap": "G-43",
       "status": "gap",
       "test": null
@@ -72,7 +72,7 @@
       "id": "AUT-09",
       "group": "AUT",
       "statement": "A release SHALL be one tag, one version, one changelog entry and one handoff to the mirror, and the changelog entry SHALL be committed before the tag",
-      "basis": "Gap. `sync.yml` pushes the tag and `release.yml` cuts the release, and neither writes a changelog entry, so no tag in this tree has one and the release notes are the mirroring commit message. A person writes the entry, commits it, then lets the sync push the tag, and nothing checks that order (G-38)",
+      "basis": "Measured. The release notes for v0.5.21 and v0.5.22 are the mirroring commit subject, the changelog folder holds no note for either version, and nothing checks that an entry is committed before the tag, so the release workflow writes the entry and commits it before the tag (G-38)",
       "gap": "G-38",
       "status": "gap",
       "test": null
@@ -89,7 +89,7 @@
       "id": "AUT-11",
       "group": "AUT",
       "statement": "The release SHALL write a machine-readable record of the source commit, the artifact digests and the tag, and a published version SHALL resolve to that record",
-      "basis": "Gap. `tools/release_record.py` writes, verifies and resolves a record and its selftest passes, and `releases/v0.5.12.json` now verifies and resolves for the in-tree exe, but that record names commit 93e07ce where tag v0.5.12 names c3d9bf5, so it explains the bytes on disk and no published release, and npm 0.5.19 is published with no record at all. A person runs the write from the release workflow and attaches the record to the release (G-56)",
+      "basis": "Measured. `tools/release_record.py resolve --version 0.5.21 --repo ../..` exits 0 against the two published digests and the commit tag v0.5.21 points at, and 0.5.22, the version npm and the release serve, resolves to no record, so the release writes a record for each tag before it publishes (G-56)",
       "gap": "G-56",
       "status": "gap",
       "test": null
@@ -114,10 +114,10 @@
       "id": "CMP-03",
       "group": "CMP",
       "statement": "A tool rename SHALL follow the alias window in SUR-03, and the removed name SHALL be listed in the release note that removes it",
-      "basis": "Not implemented. There is no alias window. A name exists or it does not, so a rename would break a saved client prompt with no overlap",
+      "basis": "Measured. `A_removed_name_is_listed_in_the_release_note_that_removes_it` requires a changelog file for every removal version naming the old name, and proves the checker bites on a window whose version has no note",
       "gap": "G-93",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "CMP-04",
@@ -179,7 +179,7 @@
       "id": "DOC-04",
       "group": "DOC",
       "statement": "Every claim in a release note SHALL name the requirement it satisfies or the defect it closes",
-      "basis": "Measured. Section 15.1.1 makes the convention, and `tools/check_changelog_ids.py` reads the changelog and finds 0 of the 14 notes naming a requirement id, so every claim stands without naming the rule it serves",
+      "basis": "Measured. `tools/check_changelog_ids.py` reads 15 notes and finds 0 naming a requirement id, and the release notes for v0.5.21 and v0.5.22 carry the mirroring subject alone, so a person writes the requirement line in each note and release body (G-37)",
       "gap": "G-37",
       "status": "gap",
       "test": null
@@ -196,7 +196,7 @@
       "id": "DOC-06",
       "group": "DOC",
       "statement": "A requirement whose basis claims a protocol rule, a client behaviour or an external measurement SHALL cite the source in Appendix D, and a requirement with no such source SHALL be labelled a design decision",
-      "basis": "Design decision. A claim about the protocol that names no page cannot be checked by its reader",
+      "basis": "Measured. Appendix D names 12 requirements as the ones its sources settle and 0 of the 179 bases cite it, so a person rewrites those bases to name the source row and labels the rest a design decision (G-46)",
       "gap": "G-46",
       "status": "gap",
       "test": null
@@ -229,7 +229,7 @@
       "id": "DSC-03",
       "group": "DSC",
       "statement": "A `tool_help` tool SHALL return the full description, every parameter with its default and legal values, the result shape, the error codes and an example call for one named tool",
-      "basis": "Design decision. With descriptions capped at 600 characters, the long form needs one place a caller can ask for",
+      "basis": "Measured. The published exe lists 277 tools and none of them is `tool_help`, so a person adds the tool to `McpToolCatalog` and the generated reference (G-23)",
       "gap": "G-23",
       "status": "gap",
       "test": null
@@ -334,7 +334,7 @@
       "id": "ERR-04",
       "group": "ERR",
       "statement": "A missing Warcraft III install SHALL NOT fail a tool that does not need it, and a tool that needs it SHALL say so before it reads the map",
-      "basis": "Half met. A map tool works with `WC3_GAME_DIR` pointed at nothing. The tools that lose a base-data check report that in their result, after reading, and none states it before",
+      "basis": "Half met. A map tool works with `WC3_GAME_DIR` pointed at nothing, the tools that lose a base-data check report it in the result after the read, and none states it before, so a person adds the check ahead of the read in the gamedata and repair commands (G-68)",
       "gap": "G-68",
       "status": "gap",
       "test": null
@@ -431,10 +431,10 @@
       "id": "OBS-03",
       "group": "OBS",
       "statement": "A log line SHALL NOT contain map contents, script text, a string-table value or a file body. It MAY contain a path, a size, a digest and a duration",
-      "basis": "Not tested. The records observed carried tool names and an `isError` flag, and no test fails when a log line carries content it should not",
+      "basis": "Measured. `A_failed_call_names_the_tool_and_carries_no_map_content` captures every line of a real server session over in-memory pipes while a call fails against a map carrying script and string table markers, and asserts no line carries either",
       "gap": "G-75",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "OBS-04",
@@ -570,7 +570,6 @@
       "group": "PKG",
       "statement": "The export SHALL take files from a named commit, refuse a path with uncommitted changes, refuse a Windows profile path or a private identity, and leave the target repository's own files alone",
       "basis": "Measured. The Release workflow runs on a pushed tag and publishes the win-x64 archive and the mcpb bundle. Tag `v0.5.20` produced a published release at 04:42 UTC carrying `wc3-mcp-v0.5.20-win-x64.zip` at 54,988,511 bytes and the `.mcpb` at 54,705,370, each with a `.sha256` beside it",
-      "gap": "G-66",
       "status": "met",
       "test": "release workflow and the asset sidecars"
     },
@@ -619,7 +618,6 @@
       "group": "PKG",
       "statement": "Every published artifact SHALL name its source commit, its artifact digest and the tag it was built from, and a version number alone SHALL NOT be treated as provenance",
       "basis": "Measured. Every published asset now carries a digest sidecar and a record at `releases/v0.5.20.json` names the tag, the commit `df4434e` and both digests, so a published version resolves to a source commit and a checksum. The record is written by `release_record.py` and its digests are the ones the sidecars state",
-      "gap": "G-56",
       "status": "met",
       "test": "release workflow and the asset sidecars"
     },
@@ -1159,7 +1157,7 @@
       "id": "SET-08",
       "group": "SET",
       "statement": "Setup SHALL NOT require administrator rights and SHALL NOT write outside the user profile, the user PATH and the exe folder",
-      "basis": "Half measured. The fixtures write only into a temp profile and the PATH writer targets the user PATH, which needs no elevation. No test proves that nothing was written outside those places, so the boundary rests on the paths the code chooses",
+      "basis": "Half measured. `install.ps1` asks for no elevation and writes to `%LOCALAPPDATA%`, the user PATH, its install folder and a temp work folder, and the server's `install --all` writes have no test, so a person runs setup against a temp profile with a filesystem monitor (G-77)",
       "gap": "G-77",
       "status": "gap",
       "test": null
@@ -1347,10 +1345,10 @@
       "id": "TST-02",
       "group": "TST",
       "statement": "Every read-only tool SHALL be called against synthetic maps built in the test, with no real map and no game install required, and the result SHALL be JSON that parses and carries its documented fields",
-      "basis": "Measured. The current sweep is corpus-gated and selects by name prefix, so a write tool with a read-like name escapes it",
+      "basis": "Measured. `Every_read_only_tool_answers_json_on_a_synthetic_map` calls all 158 read-only tools on a synthetic map and asserts each answers JSON, carries no field its output schema does not describe, and throws nothing. The refusals the sweep collects without a bracketed code are reported as a finding rather than a failure of this row",
       "gap": "G-27",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "TST-03",
@@ -1447,10 +1445,10 @@
       "id": "TST-14",
       "group": "TST",
       "statement": "Each write family SHALL have a semantic test that asserts the intended change and the preservation of unrelated data, not only that the output loads",
-      "basis": "Design decision. A model with missing UVs and a map with a wrong trigger subtree both load",
+      "basis": "Measured. `Every_write_family_names_the_semantic_test_that_proves_it` holds a ledger over the eleven families with writing tools, each mapped to the test that proves the change and the test that proves the untouched data, and fails on a family with no row or a row naming a test the assembly lacks",
       "gap": "G-57",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "TST-15",
@@ -1572,9 +1570,9 @@
     },
     {
       "id": "G-56",
-      "what": "No published artifact records its commit, digest and tag. One local record explains the in-tree 0.5.12 exe, and npm 0.5.19 has no tag that explains it",
-      "requirements": "PKG-13, AUT-11",
-      "where": "The release workflow and the mirror"
+      "what": "Nothing calls the release record from the release, so the record for 0.5.20 was written by hand after the assets existed, and no gate checks that it matches",
+      "requirements": "AUT-11",
+      "where": "The release workflow"
     },
     {
       "id": "G-57",
@@ -1593,12 +1591,6 @@
       "what": "A cold start to the initialize reply is 1.2 seconds against the 1 second requirement. The start line costs 0.03 seconds of it, so the cost is the host building the surface and the SDK handshake",
       "requirements": "PRF-01",
       "where": "`Program.RunServerAsync` and the tool collection"
-    },
-    {
-      "id": "G-66",
-      "what": "The mirror checkout builds 267 tools and 3 resources against the 275 and 6 the specification documents. Eight tools are absent, `audit_ability_orders`, `content_scaffold`, `hero_generate`, `model_primitive`, `model_squish`, `object_batch_set`, `object_fix_model_ext` and `sound_import_events`, so the export has not been run since they landed",
-      "requirements": "PKG-07",
-      "where": "The export and the mirror's `src/`"
     },
     {
       "id": "G-68",

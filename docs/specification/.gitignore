@@ -1,0 +1,5 @@
+# The lock sync_requirements.py takes while it writes, and the temporary names it
+# writes under, are runtime state and never part of the document.
+requirements.json.lock
+requirements.json.tmp-*
+wc3-mcp-specification-v1.md.tmp-*

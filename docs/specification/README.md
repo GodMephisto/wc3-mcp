@@ -23,7 +23,7 @@ This folder holds the specification for the wc3-mcp server, the PDF printed from
 | `fuzz/wc3-spec-parsers-v1.md` | The corpus scope and the residual risk it does not cover |
 | `requirements.json` | Every requirement, its gap link, its status and its test |
 
-The document describes wc3ctl 0.4.13 and wc3-mcp 0.5.16, with the tool surface measured on 8 November 2026 and re-measured after each slice. It states 179 requirements in 20 groups, 41 acceptance checks, the 277-tool inventory, 30 gap rows, the hardening designs in section 20, the anime-map workstreams in section 21, the content pipeline and its pjass gate in section 22, the permission model in section 23, and the sources and verification log in Appendices D and E.
+The document describes wc3ctl 0.4.13 and wc3-mcp 0.5.16, with the tool surface measured on 8 November 2026 and re-measured after each slice. It states 179 requirements in 20 groups, 41 acceptance checks, the 277-tool inventory, 29 gap rows, the hardening designs in section 20, the anime-map workstreams in section 21, the content pipeline and its pjass gate in section 22, the permission model in section 23, and the sources and verification log in Appendices D and E.
 
 ## Rebuild the PDF
 
