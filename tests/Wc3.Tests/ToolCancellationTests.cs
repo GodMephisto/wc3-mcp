@@ -343,10 +343,14 @@ public class ToolCancellationTests : IDisposable
         whole.Stop();
 
         using var cancel = new CancellationTokenSource();
-        cancel.CancelAfter(1);
         var clock = Stopwatch.StartNew();
+        // The cancel fires from the import's own report at the first file, so it lands inside the
+        // run on any machine. A timer cancelled after the work had finished on a fast runner, and
+        // the missing exception read as a refusal that never happened.
         var error = Assert.Throws<OperationCanceledException>(() =>
-            ModelImportCommand.ExecutePath(input, Path.Combine(outDir, "many.mdx"), cancellationToken: cancel.Token));
+            ModelImportCommand.ExecutePath(input, Path.Combine(outDir, "many.mdx"),
+                cancellationToken: cancel.Token,
+                progress: (done, of) => { if (done >= 1) cancel.Cancel(); }));
         clock.Stop();
 
         Match m = Regex.Match(error.Message, @"cancelled after (\d+) of (\d+) files");
