@@ -124,7 +124,6 @@
       "group": "CMP",
       "statement": "A result field SHALL change only additively within a major version, and a removed field SHALL be announced one minor release before",
       "basis": "Measured. `ResultFieldStabilityTests.A_result_field_changes_only_additively` reads every result field into `tests/Wc3.Tests/Fixtures/result-fields.json`, 277 tools and 1,506 field names, and fails when one disappears without a renames entry",
-      "gap": "G-94",
       "status": "met",
       "test": "named in the basis"
     },
@@ -156,10 +155,10 @@
       "id": "DOC-01",
       "group": "DOC",
       "statement": "The generated MCP reference SHALL include each tool's family, description, every parameter with type and default, the result shape, the error codes and the hints, and CI SHALL fail when the committed file is stale",
-      "basis": "Measured. `tools/check_reference.py` reads the published exe and the mirror export and finds a description and the four hints on all 277 tools, and no family, no parameter list, no result shape and no error codes on any of them, so G-29 stays open",
+      "basis": "Measured. `tools/check_reference.py` reads the published exe and the generated reference and reports all six clauses at 277 of 277, family, description, parameters with type and default, result shape, error codes and hints, with 1,078 parameter lines",
       "gap": "G-29",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "DOC-02",
@@ -655,7 +654,6 @@
       "group": "PRF",
       "statement": "A tool expected to exceed 2 seconds SHALL report progress and SHALL observe cancellation. The families are map optimisation, folder audits, model import and export, atlas and texture work, and the doctor repair",
       "basis": "Measured. A cancel stops the wait in under two seconds and eleven tools take a token, two of them read it inside the work, so `library_scan` stops at the next map naming how far it got and `model_import` removes what it wrote before it throws. Progress reaches the client now, since the SDK binds a parameter typed `IProgress<ProgressNotificationValue>` per call and both of those tools report per item. Ten cancellation tests pass with none skipped",
-      "gap": "G-04",
       "status": "met",
       "test": "named in the basis"
     },
@@ -663,10 +661,10 @@
       "id": "PRF-05",
       "group": "PRF",
       "statement": "Memory SHALL stay bounded by the largest single input plus its output, and a folder tool SHALL process one map at a time",
-      "basis": "Not measured. The folder tools loop one map at a time and nothing measures the peak, so the bound is a design claim",
+      "basis": "Measured. `ServerRuntime.MaxFolderMaps` states 256 and a folder over it is refused before any map opens with `PRF05_FOLDER_ENTRIES` naming the count and the ceiling. `FolderCeilingTests` proves 257 refused, 3 loaded, and both folders checked by `library_compare`",
       "gap": "G-104",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "PRF-06",
@@ -680,10 +678,10 @@
       "id": "PRF-07",
       "group": "PRF",
       "statement": "A performance gate SHALL fail CI when a read-only call on the reference map regresses past a stated multiple of its baseline",
-      "basis": "Not implemented for the adapter. `bench_perf_gate` covers the CLI paths and the MCP layer is not in it",
+      "basis": "Measured. `AdapterPerfGateTests` times one `map_info` over the real wiring against a recorded 84 ms baseline and fails past three times it, so an adapter regression fails the suite",
       "gap": "G-105",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "PRF-08",
@@ -697,10 +695,10 @@
       "id": "PRF-09",
       "group": "PRF",
       "statement": "The server SHALL state a memory budget on a named reference machine for the largest supported map, and a call that would exceed it SHALL be refused rather than attempted",
-      "basis": "Design decision. PRF-05 counts the input and output and ignores parsed sections, assets, schemas and concurrent calls",
+      "basis": "Measured. The budget is 1 GiB, 320 MiB fixed plus 8 bytes per input byte, so the largest supported input is 88 MiB and a bigger one is refused with `PRF09_MEMORY_BUDGET` naming the projection before it is read. Peak working set was 201 MB for a 38 MB map",
       "gap": "G-54",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "PRM-01",
@@ -770,10 +768,10 @@
       "id": "RES-04",
       "group": "RES",
       "statement": "`file_get_text` SHALL decode with an explicit encoding, report that encoding and whether it was chosen or assumed, count the bytes the decoder had to replace, and report a `lossy` flag, SHALL refuse a lossy decode unless `allow_lossy` is true, and a separate `file_extract` tool SHALL write the raw bytes to disk. Text that is valid under the selected encoding, including non-ASCII text, SHALL NOT be reported as lossy",
-      "basis": "Measured. `FileEditCommand.ReadText` decodes UTF-8 without throwing on invalid bytes, so a Cyrillic script comes back with replacement characters. The project record shows the resulting corruption when such text is written back",
+      "basis": "Measured. `file_get_text` returns the encoding it used, whether the encoding was declared, the count of replaced bytes and a lossy flag, refusing a lossy decode with `LOSSY_DECODE` unless `allow_lossy` is true. `file_extract` writes one entry to `out_path` as raw bytes through the file gate, proved by the smoke test reading the written file",
       "gap": "G-05",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RES-05",
@@ -820,7 +818,6 @@
       "group": "RES",
       "statement": "A paged result SHALL use `returnedCount` for the page size, `totalCount` for the total, `hasMore` for whether another page exists and `nextOffset` for the next page. It SHALL NOT use a bare `count`, which a caller reads as the total",
       "basis": "Measured. Paged results name `returnedCount`, `totalCount`, `hasMore` and `nextOffset` everywhere, with `total` and `truncated` kept as aliases on `list_files` and the twelve capped list tools for this version. `quickstart` loses `count` and the rename is recorded in the field inventory",
-      "gap": "G-98",
       "status": "met",
       "test": "named in the basis"
     },
@@ -828,10 +825,10 @@
       "id": "RES-11",
       "group": "RES",
       "statement": "A result with more than one input or output SHALL report each with a role, a path and a digest, and SHALL keep `savedTo` as the primary output for the existing clients",
-      "basis": "Design decision. A port reads two maps and a model export writes three files",
+      "basis": "Measured. `port_unit`, `port_into_version`, the two model exporters and `bundle_merge` report a `files` array of role, path and sha256 per file, keeping `savedTo` as the primary, and the bundle smoke test reads those fields",
       "gap": "G-52",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "RSC-01",
@@ -1284,10 +1281,10 @@
       "id": "SUR-11",
       "group": "SUR",
       "statement": "Every command in `Wc3.Commands` that writes a map, a model or a script SHALL be reachable from the CLI and from the MCP surface, or the parity map SHALL name it and state why it has no front end. A command with tests and no front end SHALL NOT be counted as shipped",
-      "basis": "Measured. `SoundScriptSpliceCommand` inserts a generated dispatcher into `war3map.j` and has eight tests, three of them pjass facts, and it has no CLI verb and no tool, so the only caller is the test suite",
+      "basis": "Measured. The permission file exists as `PermissionPolicy`, with a deny list and a require_approval list read from `WC3_MCP_PERMISSIONS` or the local app data, refusal before the body runs, and a file beside the executable ignored with a line saying why",
       "gap": "G-61",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "named in the basis"
     },
     {
       "id": "TRN-01",
@@ -1473,12 +1470,6 @@
     }
   ],
   "gaps": [
-    {
-      "id": "G-04",
-      "what": "No progress notification and no cancellation token, on a surface that includes folder audits and model import",
-      "requirements": "PRF-04",
-      "where": "Tool signatures and the long commands"
-    },
     {
       "id": "G-05",
       "what": "`file_get_text` decodes UTF-8 with replacement characters, silently, and no tool extracts raw bytes",
@@ -1706,18 +1697,6 @@
       "what": "No alias window exists, so a renamed tool breaks a saved client prompt with no overlap",
       "requirements": "CMP-03",
       "where": "The tool names"
-    },
-    {
-      "id": "G-94",
-      "what": "Nothing keeps result field names additive and no field removal carries a notice",
-      "requirements": "CMP-04",
-      "where": "The result records"
-    },
-    {
-      "id": "G-98",
-      "what": "A paged result reports a field the section does not name, so a caller reads `total` and `count` in different places",
-      "requirements": "RES-10",
-      "where": "The paged tools"
     }
   ]
 }
