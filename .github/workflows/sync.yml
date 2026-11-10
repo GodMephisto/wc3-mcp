@@ -44,7 +44,12 @@ jobs:
           # The whole suite, not a list of names. A hand kept list froze every test it did not
           # mention, so the mirror's CI ran August expectations against this month's surface and
           # reported tools as uncovered that had smoke tests all along.
+          # Three files reference the wc3ctl project, which this checkout does not carry, so they
+          # cannot compile here and are excluded rather than left stale. Everything else travels.
           rsync -a --delete --exclude 'bin/' --exclude 'obj/' \
+            --exclude 'CliMcpParityTests.cs' \
+            --exclude 'DocsReferenceTests.cs' \
+            --exclude 'GameSchemaTests.cs' \
             "wc3ctl/tests/Wc3.Tests/" "tests/Wc3.Tests/"
 
       - name: Bump the patch version
