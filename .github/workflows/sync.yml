@@ -53,15 +53,6 @@ jobs:
           # version on every sync and carries no changelog directory, so they cannot hold here.
           grep -rlE "Wc3Ctl|changelog/|CHANGELOG[.]md|ResultFieldStabilityTests" tests/Wc3.Tests --include=*.cs | xargs -r rm -f
 
-      - name: Keep the manifests on the same version
-        run: |
-          set -euo pipefail
-          v=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -1)
-          echo "mirroring $v into the manifests"
-          for f in npm/package.json mcpb/manifest.json server.json; do
-            [ -f "$f" ] && sed -i -E "s/\"version\": *\"[0-9.]+\"/\"version\": \"$v\"/" "$f" || true
-          done
-
       - name: Bump the patch version
         id: v
         run: |
@@ -77,6 +68,15 @@ jobs:
       # held-file cleanup test that is Windows shaped.
       - name: Build the mirror
         run: dotnet build wc3-mcp.sln -c Release
+
+      - name: Keep the manifests on the same version
+        run: |
+          set -euo pipefail
+          v=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -1)
+          echo "mirroring $v into the manifests"
+          for f in npm/package.json mcpb/manifest.json server.json; do
+            [ -f "$f" ] && sed -i -E "s/\"version\": *\"[0-9.]+\"/\"version\": \"$v\"/" "$f" || true
+          done
 
       - name: Commit, push and tag
         run: |
