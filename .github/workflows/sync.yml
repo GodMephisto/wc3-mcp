@@ -83,7 +83,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add src tests Directory.Build.props
+          git add src tests Directory.Build.props npm mcpb server.json
           if git diff --cached --quiet; then
             echo "Nothing to mirror, the source already matches"
             exit 0
