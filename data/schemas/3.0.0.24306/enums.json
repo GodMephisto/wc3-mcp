@@ -1,0 +1,1072 @@
+{
+  "abilityModifierStats": [
+    {
+      "value": "AS01"
+    },
+    {
+      "value": "AS02"
+    },
+    {
+      "value": "AS03"
+    },
+    {
+      "value": "AS04"
+    },
+    {
+      "value": "AS05"
+    },
+    {
+      "value": "AS10"
+    },
+    {
+      "value": "AS11"
+    },
+    {
+      "value": "AS06"
+    },
+    {
+      "value": "AS07"
+    },
+    {
+      "value": "AS08"
+    },
+    {
+      "value": "AS09"
+    },
+    {
+      "value": "AS0A"
+    },
+    {
+      "value": "AS0B"
+    },
+    {
+      "value": "AS0C"
+    },
+    {
+      "value": "AS0D"
+    },
+    {
+      "value": "AS0E"
+    },
+    {
+      "value": "AS0F"
+    }
+  ],
+  "aiBuffer": [
+    {
+      "value": "_"
+    },
+    {
+      "value": "townhall"
+    },
+    {
+      "value": "resource"
+    },
+    {
+      "value": "factory"
+    },
+    {
+      "value": "buffer"
+    }
+  ],
+  "armorType": [
+    {
+      "value": "Flesh"
+    },
+    {
+      "value": "Metal"
+    },
+    {
+      "value": "Wood"
+    },
+    {
+      "value": "Ethereal"
+    },
+    {
+      "value": "Stone"
+    }
+  ],
+  "attackBits": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    }
+  ],
+  "attackType": [
+    {
+      "value": "unknown"
+    },
+    {
+      "value": "normal"
+    },
+    {
+      "value": "pierce"
+    },
+    {
+      "value": "siege"
+    },
+    {
+      "value": "spells"
+    },
+    {
+      "value": "chaos"
+    },
+    {
+      "value": "magic"
+    },
+    {
+      "value": "hero"
+    }
+  ],
+  "attributeType": [
+    {
+      "value": "AGI"
+    },
+    {
+      "value": "INT"
+    },
+    {
+      "value": "STR"
+    }
+  ],
+  "channelFlags": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    },
+    {
+      "value": "4"
+    }
+  ],
+  "channelType": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    }
+  ],
+  "combatSound": [
+    {
+      "value": "AxeMediumChop"
+    },
+    {
+      "value": "MetalHeavyBash"
+    },
+    {
+      "value": "MetalHeavyChop"
+    },
+    {
+      "value": "MetalHeavySlice"
+    },
+    {
+      "value": "MetalLightChop"
+    },
+    {
+      "value": "MetalLightSlice"
+    },
+    {
+      "value": "MetalMediumBash"
+    },
+    {
+      "value": "MetalMediumChop"
+    },
+    {
+      "value": "MetalMediumSlice"
+    },
+    {
+      "value": "RockHeavyBash"
+    },
+    {
+      "value": "WoodHeavyBash"
+    },
+    {
+      "value": "WoodLightBash"
+    },
+    {
+      "value": "WoodMediumBash"
+    }
+  ],
+  "damageType": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    }
+  ],
+  "deathType": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    }
+  ],
+  "defenseType": [
+    {
+      "value": "normal"
+    },
+    {
+      "value": "small"
+    },
+    {
+      "value": "medium"
+    },
+    {
+      "value": "large"
+    },
+    {
+      "value": "fort"
+    },
+    {
+      "value": "hero"
+    },
+    {
+      "value": "divine"
+    },
+    {
+      "value": "none"
+    }
+  ],
+  "defenseTypeInt": [
+    {
+      "value": "4"
+    },
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    },
+    {
+      "value": "5"
+    },
+    {
+      "value": "6"
+    },
+    {
+      "value": "7"
+    }
+  ],
+  "detectionType": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    }
+  ],
+  "equipmentType": [
+    {
+      "value": "None"
+    },
+    {
+      "value": "Head"
+    },
+    {
+      "value": "Chest"
+    },
+    {
+      "value": "Gloves"
+    },
+    {
+      "value": "Boots"
+    },
+    {
+      "value": "Ring"
+    },
+    {
+      "value": "Primary"
+    },
+    {
+      "value": "Offhand"
+    },
+    {
+      "value": "Trinket"
+    }
+  ],
+  "fullFlags": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    }
+  ],
+  "interactionFlags": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    }
+  ],
+  "itemClass": [
+    {
+      "value": "Permanent"
+    },
+    {
+      "value": "Charged"
+    },
+    {
+      "value": "PowerUp"
+    },
+    {
+      "value": "Artifact"
+    },
+    {
+      "value": "Purchasable"
+    },
+    {
+      "value": "Campaign"
+    },
+    {
+      "value": "Miscellaneous"
+    },
+    {
+      "value": "Equipment"
+    }
+  ],
+  "itemTag": [
+    {
+      "value": "Undefined"
+    },
+    {
+      "value": "Droppable"
+    },
+    {
+      "value": "Quest Reward"
+    },
+    {
+      "value": "Boss Drop"
+    },
+    {
+      "value": "Secret"
+    },
+    {
+      "value": "Puzzle"
+    },
+    {
+      "value": "World"
+    },
+    {
+      "value": "Shop"
+    }
+  ],
+  "lightningEffect": [
+    {
+      "value": "CLPB"
+    },
+    {
+      "value": "CLSB"
+    },
+    {
+      "value": "MBUR"
+    },
+    {
+      "value": "CHIM"
+    },
+    {
+      "value": "AFOD"
+    },
+    {
+      "value": "HWPB"
+    },
+    {
+      "value": "HWSB"
+    },
+    {
+      "value": "MFPB"
+    },
+    {
+      "value": "DRAB"
+    },
+    {
+      "value": "DRAL"
+    },
+    {
+      "value": "DRAM"
+    },
+    {
+      "value": "FORK"
+    },
+    {
+      "value": "SPLK"
+    },
+    {
+      "value": "LEAS"
+    },
+    {
+      "value": "POSS"
+    }
+  ],
+  "morphFlags": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    },
+    {
+      "value": "4"
+    }
+  ],
+  "moveType": [
+    {
+      "value": "foot"
+    },
+    {
+      "value": "horse"
+    },
+    {
+      "value": "fly"
+    },
+    {
+      "value": "hover"
+    },
+    {
+      "value": "float"
+    },
+    {
+      "value": "amph"
+    }
+  ],
+  "occlusionType": [
+    {
+      "value": "Auto"
+    },
+    {
+      "value": "Occluder"
+    },
+    {
+      "value": "Occludee"
+    },
+    {
+      "value": "No occlusion"
+    }
+  ],
+  "occlusionType2": [
+    {
+      "value": "Auto"
+    },
+    {
+      "value": "Occluder"
+    },
+    {
+      "value": "No occlusion"
+    }
+  ],
+  "pathingListPrevent": [
+    {
+      "value": "blighted"
+    },
+    {
+      "value": "unbuildable"
+    },
+    {
+      "value": "unflyable"
+    },
+    {
+      "value": "unwalkable"
+    },
+    {
+      "value": "unamph"
+    },
+    {
+      "value": "unfloat"
+    }
+  ],
+  "pathingListRequire": [
+    {
+      "value": "blighted"
+    },
+    {
+      "value": "unbuildable"
+    },
+    {
+      "value": "unflyable"
+    },
+    {
+      "value": "unwalkable"
+    },
+    {
+      "value": "unamph"
+    },
+    {
+      "value": "unfloat"
+    }
+  ],
+  "pickFlags": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    }
+  ],
+  "proctargetType": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    }
+  ],
+  "regenType": [
+    {
+      "value": "none"
+    },
+    {
+      "value": "always"
+    },
+    {
+      "value": "blight"
+    },
+    {
+      "value": "day"
+    },
+    {
+      "value": "night"
+    }
+  ],
+  "shadowImage": [
+    {
+      "value": "Shadow"
+    },
+    {
+      "value": "ShadowFlyer"
+    }
+  ],
+  "silenceFlags": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    }
+  ],
+  "spellDetail": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    }
+  ],
+  "stackFlags": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    }
+  ],
+  "targetList": [
+    {
+      "value": "air"
+    },
+    {
+      "value": "alive"
+    },
+    {
+      "value": "allies"
+    },
+    {
+      "value": "dead"
+    },
+    {
+      "value": "debris"
+    },
+    {
+      "value": "enemies"
+    },
+    {
+      "value": "ground"
+    },
+    {
+      "value": "hero"
+    },
+    {
+      "value": "invulnerable"
+    },
+    {
+      "value": "item"
+    },
+    {
+      "value": "mechanical"
+    },
+    {
+      "value": "neutral"
+    },
+    {
+      "value": "none"
+    },
+    {
+      "value": "nonhero"
+    },
+    {
+      "value": "nonsapper"
+    },
+    {
+      "value": "notself"
+    },
+    {
+      "value": "organic"
+    },
+    {
+      "value": "player"
+    },
+    {
+      "value": "sapper"
+    },
+    {
+      "value": "self"
+    },
+    {
+      "value": "structure"
+    },
+    {
+      "value": "terrain"
+    },
+    {
+      "value": "tree"
+    },
+    {
+      "value": "vulnerable"
+    },
+    {
+      "value": "wall"
+    },
+    {
+      "value": "ward"
+    },
+    {
+      "value": "ancient"
+    },
+    {
+      "value": "nonancient"
+    },
+    {
+      "value": "friend"
+    },
+    {
+      "value": "bridge"
+    },
+    {
+      "value": "decoration"
+    }
+  ],
+  "targetType": [
+    {
+      "value": "ground"
+    },
+    {
+      "value": "air"
+    },
+    {
+      "value": "structure"
+    },
+    {
+      "value": "ward"
+    }
+  ],
+  "teamColor": [
+    {
+      "value": "-1"
+    },
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    },
+    {
+      "value": "4"
+    },
+    {
+      "value": "5"
+    },
+    {
+      "value": "6"
+    },
+    {
+      "value": "7"
+    },
+    {
+      "value": "8"
+    },
+    {
+      "value": "9"
+    },
+    {
+      "value": "10"
+    },
+    {
+      "value": "11"
+    },
+    {
+      "value": "12"
+    },
+    {
+      "value": "13"
+    },
+    {
+      "value": "14"
+    },
+    {
+      "value": "15"
+    },
+    {
+      "value": "16"
+    },
+    {
+      "value": "17"
+    },
+    {
+      "value": "18"
+    },
+    {
+      "value": "19"
+    },
+    {
+      "value": "20"
+    },
+    {
+      "value": "21"
+    },
+    {
+      "value": "22"
+    },
+    {
+      "value": "23"
+    },
+    {
+      "value": "24"
+    }
+  ],
+  "techAvail": [
+    {
+      "value": "-1"
+    },
+    {
+      "value": "1"
+    }
+  ],
+  "unitClass": [
+    {
+      "value": "giant"
+    },
+    {
+      "value": "undead"
+    },
+    {
+      "value": "summoned"
+    },
+    {
+      "value": "mechanical"
+    },
+    {
+      "value": "peon"
+    },
+    {
+      "value": "sapper"
+    },
+    {
+      "value": "townhall"
+    },
+    {
+      "value": "tree"
+    },
+    {
+      "value": "ward"
+    },
+    {
+      "value": "ancient"
+    },
+    {
+      "value": "standon"
+    },
+    {
+      "value": "neutral"
+    },
+    {
+      "value": "tauren"
+    }
+  ],
+  "unitRace": [
+    {
+      "value": "human"
+    },
+    {
+      "value": "orc"
+    },
+    {
+      "value": "undead"
+    },
+    {
+      "value": "nightelf"
+    },
+    {
+      "value": "demon"
+    },
+    {
+      "value": "creeps"
+    },
+    {
+      "value": "critters"
+    },
+    {
+      "value": "other"
+    },
+    {
+      "value": "commoner"
+    },
+    {
+      "value": "naga"
+    },
+    {
+      "value": "unknown"
+    }
+  ],
+  "upgradeClass": [
+    {
+      "value": "armor"
+    },
+    {
+      "value": "artillery"
+    },
+    {
+      "value": "melee"
+    },
+    {
+      "value": "ranged"
+    },
+    {
+      "value": "caster"
+    }
+  ],
+  "upgradeEffect": [
+    {
+      "value": "rarm"
+    },
+    {
+      "value": "ratt"
+    },
+    {
+      "value": "ratx"
+    },
+    {
+      "value": "radl"
+    },
+    {
+      "value": "ratd"
+    },
+    {
+      "value": "ratr"
+    },
+    {
+      "value": "rats"
+    },
+    {
+      "value": "rasd"
+    },
+    {
+      "value": "rasr"
+    },
+    {
+      "value": "ratc"
+    },
+    {
+      "value": "raud"
+    },
+    {
+      "value": "renw"
+    },
+    {
+      "value": "rent"
+    },
+    {
+      "value": "rhpo"
+    },
+    {
+      "value": "rhpx"
+    },
+    {
+      "value": "rhpr"
+    },
+    {
+      "value": "rlum"
+    },
+    {
+      "value": "rmim"
+    },
+    {
+      "value": "rman"
+    },
+    {
+      "value": "rmnx"
+    },
+    {
+      "value": "rmnr"
+    },
+    {
+      "value": "rmin"
+    },
+    {
+      "value": "rmov"
+    },
+    {
+      "value": "rmvx"
+    },
+    {
+      "value": "rrai"
+    },
+    {
+      "value": "rroo"
+    },
+    {
+      "value": "rsig"
+    },
+    {
+      "value": "rlev"
+    },
+    {
+      "value": "rspi"
+    },
+    {
+      "value": "ruro"
+    },
+    {
+      "value": "rtma"
+    },
+    {
+      "value": "rart"
+    },
+    {
+      "value": "rauv"
+    },
+    {
+      "value": "rspp"
+    }
+  ],
+  "versionFlags": [
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    }
+  ],
+  "weaponType": [
+    {
+      "value": "normal"
+    },
+    {
+      "value": "instant"
+    },
+    {
+      "value": "artillery"
+    },
+    {
+      "value": "aline"
+    },
+    {
+      "value": "missile"
+    },
+    {
+      "value": "msplash"
+    },
+    {
+      "value": "mbounce"
+    },
+    {
+      "value": "mline"
+    }
+  ]
+}

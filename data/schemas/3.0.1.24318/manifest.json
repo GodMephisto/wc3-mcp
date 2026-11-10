@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "build": "3.0.1.24318",
+  "source": "Blizzard CDN (ngdp) build 3.0.1.24318",
+  "inputs": [
+    {
+      "name": "doodads/doodadmetadata.slk",
+      "bytes": 9610,
+      "sha256": "6b90d07dca8524c3b668c0694396d13377c0b829d9124a41ce78fdbd2bc01965"
+    },
+    {
+      "name": "scripts/blizzard.j",
+      "bytes": 508967,
+      "sha256": "5b0e4878c18e67270b78c4313e99f71d0b7b2bb252df66dd3b048128e9aa1446"
+    },
+    {
+      "name": "scripts/common.ai",
+      "bytes": 98600,
+      "sha256": "91a041cdc8f7376a53f163bb34f9ece82b89819cfaec4e269edf384010bfa57f"
+    },
+    {
+      "name": "scripts/common.j",
+      "bytes": 387978,
+      "sha256": "50074e4775e0ffd0fda6f20e6a8c706d92c6bee77703218d517a23f30f9f79cf"
+    },
+    {
+      "name": "ui/skinmetadata.slk",
+      "bytes": 172037,
+      "sha256": "b1cc3bc501c02cca01d124d02c7a14a9982cd7b0e3d1463521cb2f8c650de4dc"
+    },
+    {
+      "name": "ui/triggerdata.txt",
+      "bytes": 757979,
+      "sha256": "7a1c30425ba321a27b6f5c8d08a98b2c2c79a4d8364dfde35148ef4956d21f08"
+    },
+    {
+      "name": "ui/uniteditordata.txt",
+      "bytes": 15528,
+      "sha256": "604d278747ed06358699c51884c46d56c3ba766cebb778d78b1dfef3e2a41297"
+    },
+    {
+      "name": "ui/worldeditgamestrings.txt",
+      "bytes": 36462,
+      "sha256": "469954dbe272c316e62dd183a9e1363de040c9e1dffd5d4e7fb6b31aafa614fc"
+    },
+    {
+      "name": "ui/worldeditstrings.txt",
+      "bytes": 527875,
+      "sha256": "082036c7228a92fc4a8184db38367f573c6f862003b6d65e842b6ffef81fbae3"
+    },
+    {
+      "name": "units/abilitybuffmetadata.slk",
+      "bytes": 5926,
+      "sha256": "ed6616cb83214b3bd044b170dfd3061045aeca9591889d64d348e356613dc4da"
+    },
+    {
+      "name": "units/abilitymetadata.slk",
+      "bytes": 287072,
+      "sha256": "f5ec983f2d885e52ba2b783362dc59574553685b943328cac9c2b1fd67b308a9"
+    },
+    {
+      "name": "units/destructablemetadata.slk",
+      "bytes": 12864,
+      "sha256": "3e98e60592eb369ad67a3ad9f07cf58410f30dd6fbc7fd7af9c3210a3c232ff8"
+    },
+    {
+      "name": "units/miscmetadata.slk",
+      "bytes": 50574,
+      "sha256": "478e3456089bf73c0f4b3f61717e5554406e70a4959b9e35f2530036bfd21e55"
+    },
+    {
+      "name": "units/unitmetadata.slk",
+      "bytes": 73808,
+      "sha256": "eaea4b8314bcdcba38b5330b2bdea500d02cd448df22a789558325df81be09a4"
+    },
+    {
+      "name": "units/upgradeeffectmetadata.slk",
+      "bytes": 9938,
+      "sha256": "77c5c00c1becbb83a83e54e29632a23a94f7971f8ec7b1e18f48ca47eb1b4951"
+    },
+    {
+      "name": "units/upgrademetadata.slk",
+      "bytes": 9796,
+      "sha256": "f1ea94517975da1b93cf53f21ff0bb2c4c07f8cd803963b36575370f96108e84"
+    }
+  ],
+  "missing": []
+}

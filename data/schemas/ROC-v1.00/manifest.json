@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "build": "ROC-v1.00",
+  "source": "Hive Installer_1.00_ROC.iso (ROC 1.00 enUS CD)",
+  "inputs": [
+    {
+      "name": "scripts/blizzard.j",
+      "bytes": 296643,
+      "sha256": "72d5b109657ef36fbea393d99a45f1726ffd2a8c185eee4a6e1618cd942e470d"
+    },
+    {
+      "name": "scripts/common.ai",
+      "bytes": 75975,
+      "sha256": "2b5cd6bb5f0b98386e0d076e307f000cf0e6973b366504eb56320cb98fb77840"
+    },
+    {
+      "name": "scripts/common.j",
+      "bytes": 113082,
+      "sha256": "e767bed7b4b22776dba6aa7d7f0aac5058fa8b124a62b7289686f5f90da744a9"
+    },
+    {
+      "name": "ui/triggerdata.txt",
+      "bytes": 173453,
+      "sha256": "9845f3a721c4069b4bc595ccffcd37d24ed220e55226327008dfc2ff9bda6484"
+    },
+    {
+      "name": "ui/uniteditordata.txt",
+      "bytes": 9726,
+      "sha256": "6414f24fd619372642d8b9fafc5869281c549be5b9a7dbab8efc0063eec90dae"
+    },
+    {
+      "name": "ui/worldeditgamestrings.txt",
+      "bytes": 4547,
+      "sha256": "4290de20afd6b4c3823d931b75fb698225d592601835fa1055f5d740a3e00b98"
+    },
+    {
+      "name": "ui/worldeditstrings.txt",
+      "bytes": 142917,
+      "sha256": "9df0fa40f7d2e235e377624a80fc433db73b52545fc7629a0971aa008de9bd1a"
+    },
+    {
+      "name": "units/unitmetadata.slk",
+      "bytes": 27141,
+      "sha256": "b672483f4806f13c3b911009f859034b6b7c6812994189fbbe49ce780064bddd"
+    }
+  ],
+  "missing": [
+    "doodads/doodadmetadata.slk",
+    "ui/skinmetadata.slk",
+    "units/abilitybuffmetadata.slk",
+    "units/abilitymetadata.slk",
+    "units/destructablemetadata.slk",
+    "units/miscmetadata.slk",
+    "units/upgradeeffectmetadata.slk",
+    "units/upgrademetadata.slk"
+  ]
+}

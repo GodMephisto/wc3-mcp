@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "build": "Reforged-v1.32.0.14411",
+  "source": "folder Reforged-v1.32.0.14411",
+  "inputs": [
+    {
+      "name": "scripts/blizzard.j",
+      "bytes": 481625,
+      "sha256": "02cf2a1ad614e6f9efe13ad66a901bfcb5cdfd2ba82fc0dad6c03f5d38de886d"
+    },
+    {
+      "name": "scripts/common.ai",
+      "bytes": 98459,
+      "sha256": "54d9b2cd0b3fa9c2dfbf9075d9201944c45dd09cecde924fe53ee541c3e8083d"
+    },
+    {
+      "name": "scripts/common.j",
+      "bytes": 357590,
+      "sha256": "4b4ed33b0af372638f70992f54bca057d9ed47435d1589ff87ad0ba43b3e2dde"
+    }
+  ],
+  "missing": [
+    "doodads/doodadmetadata.slk",
+    "ui/skinmetadata.slk",
+    "ui/triggerdata.txt",
+    "ui/worldeditgamestrings.txt",
+    "ui/worldeditstrings.txt",
+    "units/abilitybuffmetadata.slk",
+    "units/abilitymetadata.slk",
+    "units/destructablemetadata.slk",
+    "units/miscmetadata.slk",
+    "units/unitmetadata.slk",
+    "units/upgradeeffectmetadata.slk",
+    "units/upgrademetadata.slk"
+  ]
+}

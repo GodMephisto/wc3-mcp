@@ -1,0 +1,1366 @@
+{
+  "abilityModifierStats": [
+    {
+      "value": "AS01",
+      "displayName": "Health Regeneration"
+    },
+    {
+      "value": "AS02",
+      "displayName": "Mana Regeneration"
+    },
+    {
+      "value": "AS03",
+      "displayName": "Attack Speed"
+    },
+    {
+      "value": "AS04",
+      "displayName": "Critical Chance"
+    },
+    {
+      "value": "AS05",
+      "displayName": "Critical Damage"
+    },
+    {
+      "value": "AS10",
+      "displayName": "Spell Crit Chance"
+    },
+    {
+      "value": "AS11",
+      "displayName": "Spell Crit Damage"
+    },
+    {
+      "value": "AS06",
+      "displayName": "Ability Speed"
+    },
+    {
+      "value": "AS07",
+      "displayName": "Ability Speed Percentage"
+    },
+    {
+      "value": "AS08",
+      "displayName": "Ability Amp"
+    },
+    {
+      "value": "AS09",
+      "displayName": "Ability Amp Percentage"
+    },
+    {
+      "value": "AS0A",
+      "displayName": "Lifesteal"
+    },
+    {
+      "value": "AS0B",
+      "displayName": "Ability Vamp"
+    },
+    {
+      "value": "AS0C",
+      "displayName": "Ability Vamp Percentage"
+    },
+    {
+      "value": "AS0D",
+      "displayName": "Resolve"
+    },
+    {
+      "value": "AS0E",
+      "displayName": "Resolve Percentage"
+    },
+    {
+      "value": "AS0F",
+      "displayName": "Magic Resistance"
+    }
+  ],
+  "aiBuffer": [
+    {
+      "value": "_"
+    },
+    {
+      "value": "townhall",
+      "displayName": "Hall"
+    },
+    {
+      "value": "resource",
+      "displayName": "Resource"
+    },
+    {
+      "value": "factory",
+      "displayName": "Factory"
+    },
+    {
+      "value": "buffer",
+      "displayName": "General"
+    }
+  ],
+  "armorType": [
+    {
+      "value": "Flesh",
+      "displayName": "Flesh"
+    },
+    {
+      "value": "Metal",
+      "displayName": "Metal"
+    },
+    {
+      "value": "Wood",
+      "displayName": "Wood"
+    },
+    {
+      "value": "Ethereal",
+      "displayName": "Ethereal"
+    },
+    {
+      "value": "Stone",
+      "displayName": "Stone"
+    }
+  ],
+  "attackBits": [
+    {
+      "value": "0",
+      "displayName": "None"
+    },
+    {
+      "value": "1",
+      "displayName": "Attack 1 Only"
+    },
+    {
+      "value": "2",
+      "displayName": "Attack 2 Only"
+    },
+    {
+      "value": "3",
+      "displayName": "Both"
+    }
+  ],
+  "attackType": [
+    {
+      "value": "unknown",
+      "displayName": "None"
+    },
+    {
+      "value": "normal",
+      "displayName": "Normal"
+    },
+    {
+      "value": "pierce",
+      "displayName": "Pierce"
+    },
+    {
+      "value": "siege",
+      "displayName": "Siege"
+    },
+    {
+      "value": "spells",
+      "displayName": "Spells"
+    },
+    {
+      "value": "chaos",
+      "displayName": "Chaos"
+    },
+    {
+      "value": "magic",
+      "displayName": "Magic"
+    },
+    {
+      "value": "hero",
+      "displayName": "Hero"
+    }
+  ],
+  "attributeType": [
+    {
+      "value": "AGI",
+      "displayName": "Agility"
+    },
+    {
+      "value": "INT",
+      "displayName": "Intelligence"
+    },
+    {
+      "value": "STR",
+      "displayName": "Strength"
+    }
+  ],
+  "channelFlags": [
+    {
+      "value": "0",
+      "displayName": "Visible"
+    },
+    {
+      "value": "1",
+      "displayName": "Targeting Image"
+    },
+    {
+      "value": "2",
+      "displayName": "Physical Spell"
+    },
+    {
+      "value": "3",
+      "displayName": "Universal Spell"
+    },
+    {
+      "value": "4",
+      "displayName": "Unique Cast"
+    }
+  ],
+  "channelType": [
+    {
+      "value": "0",
+      "displayName": "Instant (No Target)"
+    },
+    {
+      "value": "1",
+      "displayName": "Unit Target"
+    },
+    {
+      "value": "2",
+      "displayName": "Point Target"
+    },
+    {
+      "value": "3",
+      "displayName": "Unit or Point Target"
+    }
+  ],
+  "combatSound": [
+    {
+      "value": "AxeMediumChop",
+      "displayName": "Axe Medium Chop"
+    },
+    {
+      "value": "MetalHeavyBash",
+      "displayName": "Metal Heavy Bash"
+    },
+    {
+      "value": "MetalHeavyChop",
+      "displayName": "Metal Heavy Chop"
+    },
+    {
+      "value": "MetalHeavySlice",
+      "displayName": "Metal Heavy Slice"
+    },
+    {
+      "value": "MetalLightChop",
+      "displayName": "Metal Light Chop"
+    },
+    {
+      "value": "MetalLightSlice",
+      "displayName": "Metal Light Slice"
+    },
+    {
+      "value": "MetalMediumBash",
+      "displayName": "Metal Medium Bash"
+    },
+    {
+      "value": "MetalMediumChop",
+      "displayName": "Metal Medium Chop"
+    },
+    {
+      "value": "MetalMediumSlice",
+      "displayName": "Metal Medium Slice"
+    },
+    {
+      "value": "RockHeavyBash",
+      "displayName": "Rock Heavy Bash"
+    },
+    {
+      "value": "WoodHeavyBash",
+      "displayName": "Wood Heavy Bash"
+    },
+    {
+      "value": "WoodLightBash",
+      "displayName": "Wood Light Bash"
+    },
+    {
+      "value": "WoodMediumBash",
+      "displayName": "Wood Medium Bash"
+    }
+  ],
+  "damageType": [
+    {
+      "value": "0",
+      "displayName": "Melee"
+    },
+    {
+      "value": "1",
+      "displayName": "Ranged"
+    },
+    {
+      "value": "2",
+      "displayName": "All"
+    }
+  ],
+  "deathType": [
+    {
+      "value": "0",
+      "displayName": "Can\u0027t raise, Does not decay"
+    },
+    {
+      "value": "1",
+      "displayName": "Can raise, Does not decay"
+    },
+    {
+      "value": "2",
+      "displayName": "Can\u0027t raise, Does decay"
+    },
+    {
+      "value": "3",
+      "displayName": "Can raise, Does decay"
+    }
+  ],
+  "defenseType": [
+    {
+      "value": "normal",
+      "displayName": "Normal"
+    },
+    {
+      "value": "small",
+      "displayName": "Small"
+    },
+    {
+      "value": "medium",
+      "displayName": "Medium"
+    },
+    {
+      "value": "large",
+      "displayName": "Large"
+    },
+    {
+      "value": "fort",
+      "displayName": "Fortified"
+    },
+    {
+      "value": "hero",
+      "displayName": "Hero"
+    },
+    {
+      "value": "divine",
+      "displayName": "Divine"
+    },
+    {
+      "value": "none",
+      "displayName": "Unarmored"
+    }
+  ],
+  "defenseTypeInt": [
+    {
+      "value": "4",
+      "displayName": "Normal"
+    },
+    {
+      "value": "0",
+      "displayName": "Small"
+    },
+    {
+      "value": "1",
+      "displayName": "Medium"
+    },
+    {
+      "value": "2",
+      "displayName": "Large"
+    },
+    {
+      "value": "3",
+      "displayName": "Fortified"
+    },
+    {
+      "value": "5",
+      "displayName": "Hero"
+    },
+    {
+      "value": "6",
+      "displayName": "Divine"
+    },
+    {
+      "value": "7",
+      "displayName": "Unarmored"
+    }
+  ],
+  "detectionType": [
+    {
+      "value": "0",
+      "displayName": "None"
+    },
+    {
+      "value": "1",
+      "displayName": "Invisible"
+    },
+    {
+      "value": "2",
+      "displayName": "Burrowed"
+    },
+    {
+      "value": "3",
+      "displayName": "Both"
+    }
+  ],
+  "equipmentType": [
+    {
+      "value": "None",
+      "displayName": "None"
+    },
+    {
+      "value": "Head",
+      "displayName": "Head"
+    },
+    {
+      "value": "Chest",
+      "displayName": "Chest"
+    },
+    {
+      "value": "Gloves",
+      "displayName": "Gloves"
+    },
+    {
+      "value": "Boots",
+      "displayName": "Boots"
+    },
+    {
+      "value": "Ring",
+      "displayName": "Ring"
+    },
+    {
+      "value": "Primary",
+      "displayName": "Primary"
+    },
+    {
+      "value": "Offhand",
+      "displayName": "Offhand"
+    },
+    {
+      "value": "Trinket",
+      "displayName": "Trinket"
+    }
+  ],
+  "fullFlags": [
+    {
+      "value": "0",
+      "displayName": "Never"
+    },
+    {
+      "value": "1",
+      "displayName": "Life Only"
+    },
+    {
+      "value": "2",
+      "displayName": "Mana Only"
+    },
+    {
+      "value": "3",
+      "displayName": "Always"
+    }
+  ],
+  "interactionFlags": [
+    {
+      "value": "0",
+      "displayName": "Any Unit w/Inventory"
+    },
+    {
+      "value": "1",
+      "displayName": "Any Non-Building"
+    },
+    {
+      "value": "2",
+      "displayName": "Any"
+    }
+  ],
+  "itemClass": [
+    {
+      "value": "Permanent",
+      "displayName": "Permanent"
+    },
+    {
+      "value": "Charged",
+      "displayName": "Charged"
+    },
+    {
+      "value": "PowerUp",
+      "displayName": "Power Up"
+    },
+    {
+      "value": "Artifact",
+      "displayName": "Artifact"
+    },
+    {
+      "value": "Purchasable",
+      "displayName": "Purchasable"
+    },
+    {
+      "value": "Campaign",
+      "displayName": "Campaign"
+    },
+    {
+      "value": "Miscellaneous",
+      "displayName": "Miscellaneous"
+    },
+    {
+      "value": "Equipment",
+      "displayName": "Equipment"
+    }
+  ],
+  "itemTag": [
+    {
+      "value": "Undefined",
+      "displayName": "Undefined"
+    },
+    {
+      "value": "Droppable",
+      "displayName": "Droppable"
+    },
+    {
+      "value": "Quest Reward",
+      "displayName": "Quest Reward"
+    },
+    {
+      "value": "Boss Drop",
+      "displayName": "Boss Drop"
+    },
+    {
+      "value": "Secret",
+      "displayName": "Secret"
+    },
+    {
+      "value": "Puzzle",
+      "displayName": "Puzzle"
+    },
+    {
+      "value": "World",
+      "displayName": "World"
+    },
+    {
+      "value": "Shop",
+      "displayName": "Shop"
+    }
+  ],
+  "lightningEffect": [
+    {
+      "value": "CLPB",
+      "displayName": "Chain Lightning - Primary"
+    },
+    {
+      "value": "CLSB",
+      "displayName": "Chain Lightning - Secondary"
+    },
+    {
+      "value": "MBUR",
+      "displayName": "Mana Burn"
+    },
+    {
+      "value": "CHIM",
+      "displayName": "Lightning Attack"
+    },
+    {
+      "value": "AFOD",
+      "displayName": "Finger of Death"
+    },
+    {
+      "value": "HWPB",
+      "displayName": "Healing Wave - Primary"
+    },
+    {
+      "value": "HWSB",
+      "displayName": "Healing Wave - Secondary"
+    },
+    {
+      "value": "MFPB",
+      "displayName": "Mana Flare"
+    },
+    {
+      "value": "DRAB",
+      "displayName": "Drain Life and Mana"
+    },
+    {
+      "value": "DRAL",
+      "displayName": "Drain Life"
+    },
+    {
+      "value": "DRAM",
+      "displayName": "Drain Mana"
+    },
+    {
+      "value": "FORK",
+      "displayName": "Forked Lighting"
+    },
+    {
+      "value": "SPLK",
+      "displayName": "Spirit Link"
+    },
+    {
+      "value": "LEAS",
+      "displayName": "Aerial Shackles"
+    },
+    {
+      "value": "POSS",
+      "displayName": "Possession"
+    }
+  ],
+  "morphFlags": [
+    {
+      "value": "0",
+      "displayName": "Uninterruptable"
+    },
+    {
+      "value": "1",
+      "displayName": "Immediate Landing"
+    },
+    {
+      "value": "2",
+      "displayName": "Immediate Take Off"
+    },
+    {
+      "value": "3",
+      "displayName": "Permanent"
+    },
+    {
+      "value": "4",
+      "displayName": "Requires Payment"
+    }
+  ],
+  "moveType": [
+    {
+      "value": "foot",
+      "displayName": "Foot"
+    },
+    {
+      "value": "horse",
+      "displayName": "Horse"
+    },
+    {
+      "value": "fly",
+      "displayName": "Fly"
+    },
+    {
+      "value": "hover",
+      "displayName": "Hover"
+    },
+    {
+      "value": "float"
+    },
+    {
+      "value": "amph"
+    }
+  ],
+  "occlusionType": [
+    {
+      "value": "Auto",
+      "displayName": "Auto"
+    },
+    {
+      "value": "Occluder",
+      "displayName": "Occluder"
+    },
+    {
+      "value": "Occludee",
+      "displayName": "Occludee"
+    },
+    {
+      "value": "No occlusion",
+      "displayName": "No occlusion"
+    }
+  ],
+  "occlusionType2": [
+    {
+      "value": "Auto",
+      "displayName": "Auto"
+    },
+    {
+      "value": "Occluder",
+      "displayName": "Occluder"
+    },
+    {
+      "value": "No occlusion",
+      "displayName": "No occlusion"
+    }
+  ],
+  "pathingListPrevent": [
+    {
+      "value": "blighted",
+      "displayName": "Unblighted"
+    },
+    {
+      "value": "unbuildable",
+      "displayName": "Buildable"
+    },
+    {
+      "value": "unflyable",
+      "displayName": "Air-pathable"
+    },
+    {
+      "value": "unwalkable",
+      "displayName": "Ground-pathable"
+    },
+    {
+      "value": "unamph",
+      "displayName": "Amphibious-pathable"
+    },
+    {
+      "value": "unfloat",
+      "displayName": "Sea-pathable"
+    }
+  ],
+  "pathingListRequire": [
+    {
+      "value": "blighted",
+      "displayName": "Unblighted"
+    },
+    {
+      "value": "unbuildable",
+      "displayName": "Buildable"
+    },
+    {
+      "value": "unflyable",
+      "displayName": "Air-pathable"
+    },
+    {
+      "value": "unwalkable",
+      "displayName": "Ground-pathable"
+    },
+    {
+      "value": "unamph",
+      "displayName": "Amphibious-pathable"
+    },
+    {
+      "value": "unfloat",
+      "displayName": "Sea-pathable"
+    }
+  ],
+  "pickFlags": [
+    {
+      "value": "0",
+      "displayName": "Hall"
+    },
+    {
+      "value": "1",
+      "displayName": "Resource"
+    },
+    {
+      "value": "2",
+      "displayName": "Factory"
+    },
+    {
+      "value": "3",
+      "displayName": "General"
+    }
+  ],
+  "proctargetType": [
+    {
+      "value": "0",
+      "displayName": "Shelf"
+    },
+    {
+      "value": "1",
+      "displayName": "Enemies"
+    }
+  ],
+  "regenType": [
+    {
+      "value": "none",
+      "displayName": "None"
+    },
+    {
+      "value": "always",
+      "displayName": "Always"
+    },
+    {
+      "value": "blight",
+      "displayName": "Only while on Blight"
+    },
+    {
+      "value": "day",
+      "displayName": "Only during the day"
+    },
+    {
+      "value": "night",
+      "displayName": "Only during the night"
+    }
+  ],
+  "shadowImage": [
+    {
+      "value": "Shadow",
+      "displayName": "Normal"
+    },
+    {
+      "value": "ShadowFlyer",
+      "displayName": "Flyer"
+    }
+  ],
+  "silenceFlags": [
+    {
+      "value": "0",
+      "displayName": "Melee"
+    },
+    {
+      "value": "1",
+      "displayName": "Ranged"
+    },
+    {
+      "value": "2",
+      "displayName": "Special"
+    },
+    {
+      "value": "3",
+      "displayName": "Spells"
+    }
+  ],
+  "spellDetail": [
+    {
+      "value": "0",
+      "displayName": "Low"
+    },
+    {
+      "value": "1",
+      "displayName": "Medium"
+    },
+    {
+      "value": "2",
+      "displayName": "High"
+    }
+  ],
+  "stackFlags": [
+    {
+      "value": "0",
+      "displayName": "Damage"
+    },
+    {
+      "value": "1",
+      "displayName": "Movement"
+    },
+    {
+      "value": "2",
+      "displayName": "Attack Rate"
+    },
+    {
+      "value": "3",
+      "displayName": "Kill unit"
+    }
+  ],
+  "targetList": [
+    {
+      "value": "air",
+      "displayName": "Air, \u0026Air"
+    },
+    {
+      "value": "alive",
+      "displayName": "Alive"
+    },
+    {
+      "value": "allies",
+      "displayName": "A\u0026llied"
+    },
+    {
+      "value": "dead",
+      "displayName": "\u0026Dead"
+    },
+    {
+      "value": "debris",
+      "displayName": "De\u0026bris"
+    },
+    {
+      "value": "enemies",
+      "displayName": "Enem\u0026y"
+    },
+    {
+      "value": "ground",
+      "displayName": "Ground, \u0026Ground"
+    },
+    {
+      "value": "hero",
+      "displayName": "\u0026Hero"
+    },
+    {
+      "value": "invulnerable",
+      "displayName": "Inv\u0026ulnerable"
+    },
+    {
+      "value": "item",
+      "displayName": "\u0026Item"
+    },
+    {
+      "value": "mechanical",
+      "displayName": "\u0026Mechanical"
+    },
+    {
+      "value": "neutral",
+      "displayName": "\u0026Neutral"
+    },
+    {
+      "value": "none",
+      "displayName": "Non\u0026e"
+    },
+    {
+      "value": "nonhero",
+      "displayName": "Non-He\u0026ro"
+    },
+    {
+      "value": "nonsapper",
+      "displayName": "Non-suicidal"
+    },
+    {
+      "value": "notself",
+      "displayName": "Not self"
+    },
+    {
+      "value": "organic",
+      "displayName": "Organi\u0026c"
+    },
+    {
+      "value": "player",
+      "displayName": "\u0026Player Units"
+    },
+    {
+      "value": "sapper",
+      "displayName": "Suicidal"
+    },
+    {
+      "value": "self",
+      "displayName": "Shelf"
+    },
+    {
+      "value": "structure",
+      "displayName": "Structure, \u0026Structure"
+    },
+    {
+      "value": "terrain",
+      "displayName": "Terrain"
+    },
+    {
+      "value": "tree",
+      "displayName": "\u0026Tree"
+    },
+    {
+      "value": "vulnerable",
+      "displayName": "\u0026Vulnerable"
+    },
+    {
+      "value": "wall",
+      "displayName": "Wall"
+    },
+    {
+      "value": "ward",
+      "displayName": "Ward, \u0026Ward"
+    },
+    {
+      "value": "ancient",
+      "displayName": "Ancient"
+    },
+    {
+      "value": "nonancient",
+      "displayName": "Non-Ancient"
+    },
+    {
+      "value": "friend",
+      "displayName": "\u0026Friend"
+    },
+    {
+      "value": "bridge",
+      "displayName": "\u0026Bridge"
+    },
+    {
+      "value": "decoration",
+      "displayName": "Decoration"
+    }
+  ],
+  "targetType": [
+    {
+      "value": "ground",
+      "displayName": "Ground, \u0026Ground"
+    },
+    {
+      "value": "air",
+      "displayName": "Air, \u0026Air"
+    },
+    {
+      "value": "structure",
+      "displayName": "Structure, \u0026Structure"
+    },
+    {
+      "value": "ward",
+      "displayName": "Ward, \u0026Ward"
+    }
+  ],
+  "teamColor": [
+    {
+      "value": "-1",
+      "displayName": "Match Owning Player"
+    },
+    {
+      "value": "0"
+    },
+    {
+      "value": "1"
+    },
+    {
+      "value": "2"
+    },
+    {
+      "value": "3"
+    },
+    {
+      "value": "4"
+    },
+    {
+      "value": "5"
+    },
+    {
+      "value": "6"
+    },
+    {
+      "value": "7"
+    },
+    {
+      "value": "8"
+    },
+    {
+      "value": "9"
+    },
+    {
+      "value": "10"
+    },
+    {
+      "value": "11"
+    },
+    {
+      "value": "12"
+    },
+    {
+      "value": "13"
+    },
+    {
+      "value": "14"
+    },
+    {
+      "value": "15"
+    },
+    {
+      "value": "16"
+    },
+    {
+      "value": "17"
+    },
+    {
+      "value": "18"
+    },
+    {
+      "value": "19"
+    },
+    {
+      "value": "20"
+    },
+    {
+      "value": "21"
+    },
+    {
+      "value": "22"
+    },
+    {
+      "value": "23"
+    },
+    {
+      "value": "24"
+    }
+  ],
+  "techAvail": [
+    {
+      "value": "-1",
+      "displayName": "Available"
+    },
+    {
+      "value": "1",
+      "displayName": "Unavailable"
+    }
+  ],
+  "unitClass": [
+    {
+      "value": "giant",
+      "displayName": "\u0026Giant"
+    },
+    {
+      "value": "undead",
+      "displayName": "\u0026Undead"
+    },
+    {
+      "value": "summoned",
+      "displayName": "\u0026Summoned"
+    },
+    {
+      "value": "mechanical",
+      "displayName": "\u0026Mechanical"
+    },
+    {
+      "value": "peon",
+      "displayName": "Wor\u0026ker"
+    },
+    {
+      "value": "sapper",
+      "displayName": "Sui\u0026cidal"
+    },
+    {
+      "value": "townhall",
+      "displayName": "Town \u0026Hall"
+    },
+    {
+      "value": "tree",
+      "displayName": "\u0026Tree"
+    },
+    {
+      "value": "ward",
+      "displayName": "War\u0026d"
+    },
+    {
+      "value": "ancient",
+      "displayName": "\u0026Ancient"
+    },
+    {
+      "value": "standon",
+      "displayName": "\u0026Walkable"
+    },
+    {
+      "value": "neutral",
+      "displayName": "\u0026Neutral"
+    },
+    {
+      "value": "tauren",
+      "displayName": "Tau\u0026ren"
+    }
+  ],
+  "unitRace": [
+    {
+      "value": "human"
+    },
+    {
+      "value": "orc"
+    },
+    {
+      "value": "undead"
+    },
+    {
+      "value": "nightelf"
+    },
+    {
+      "value": "demon",
+      "displayName": "Demon"
+    },
+    {
+      "value": "creeps",
+      "displayName": "Creep"
+    },
+    {
+      "value": "critters",
+      "displayName": "Critter"
+    },
+    {
+      "value": "other",
+      "displayName": "Other"
+    },
+    {
+      "value": "commoner",
+      "displayName": "Commoner"
+    },
+    {
+      "value": "naga"
+    },
+    {
+      "value": "unknown"
+    }
+  ],
+  "upgradeClass": [
+    {
+      "value": "armor",
+      "displayName": "Armor"
+    },
+    {
+      "value": "artillery",
+      "displayName": "Artillery"
+    },
+    {
+      "value": "melee",
+      "displayName": "Melee"
+    },
+    {
+      "value": "ranged",
+      "displayName": "Ranged"
+    },
+    {
+      "value": "caster",
+      "displayName": "Caster"
+    }
+  ],
+  "upgradeEffect": [
+    {
+      "value": "rarm",
+      "displayName": "Apply Defense Upgrade Bonus"
+    },
+    {
+      "value": "ratt",
+      "displayName": "Apply Attack Upgrade Bonus"
+    },
+    {
+      "value": "ratx",
+      "displayName": "Attack Damage Bonus"
+    },
+    {
+      "value": "radl",
+      "displayName": "Attack Damage Loss Bonus"
+    },
+    {
+      "value": "ratd",
+      "displayName": "Attack Dice Bonus"
+    },
+    {
+      "value": "ratr",
+      "displayName": "Attack Range Bonus"
+    },
+    {
+      "value": "rats",
+      "displayName": "Attack Speed Bonus (%)"
+    },
+    {
+      "value": "rasd",
+      "displayName": "Attack Spill Distance Bonus"
+    },
+    {
+      "value": "rasr",
+      "displayName": "Attack Spill Radius Bonus"
+    },
+    {
+      "value": "ratc",
+      "displayName": "Attack Target Count Bonus"
+    },
+    {
+      "value": "raud",
+      "displayName": "Aura Data Bonus"
+    },
+    {
+      "value": "renw",
+      "displayName": "Enable Attacks"
+    },
+    {
+      "value": "rent",
+      "displayName": "Gold Harvest Bonus (Entangle)"
+    },
+    {
+      "value": "rhpo",
+      "displayName": "Hit Point Bonus (%)"
+    },
+    {
+      "value": "rhpx",
+      "displayName": "Hit Point Bonus"
+    },
+    {
+      "value": "rhpr",
+      "displayName": "Hit Point Regeneration"
+    },
+    {
+      "value": "rlum",
+      "displayName": "Lumber Harvest Bonus"
+    },
+    {
+      "value": "rmim",
+      "displayName": "Magic Immunity"
+    },
+    {
+      "value": "rman",
+      "displayName": "Mana Point Bonus (%)"
+    },
+    {
+      "value": "rmnx",
+      "displayName": "Mana Point Bonus"
+    },
+    {
+      "value": "rmnr",
+      "displayName": "Mana Regeneration"
+    },
+    {
+      "value": "rmin",
+      "displayName": "Gold Harvest Bonus"
+    },
+    {
+      "value": "rmov",
+      "displayName": "Movement Speed Bonus (%)"
+    },
+    {
+      "value": "rmvx",
+      "displayName": "Movement Speed Bonus"
+    },
+    {
+      "value": "rrai",
+      "displayName": "Raise Dead Duration Bonus"
+    },
+    {
+      "value": "rroo",
+      "displayName": "Enable Attacks (Rooted)"
+    },
+    {
+      "value": "rsig",
+      "displayName": "Sight Range Bonus"
+    },
+    {
+      "value": "rlev",
+      "displayName": "Ability Level Bonus"
+    },
+    {
+      "value": "rspi",
+      "displayName": "Spiked Barricades"
+    },
+    {
+      "value": "ruro",
+      "displayName": "Enable Attacks (Uprooted)"
+    },
+    {
+      "value": "rtma",
+      "displayName": "Unit Availability Change"
+    },
+    {
+      "value": "rart",
+      "displayName": "Defense Type Change"
+    },
+    {
+      "value": "rauv",
+      "displayName": "Add Ultravision"
+    },
+    {
+      "value": "rspp",
+      "displayName": "Spiked Barricades (%)"
+    }
+  ],
+  "versionFlags": [
+    {
+      "value": "0",
+      "displayName": "Reign of Chaos"
+    },
+    {
+      "value": "1",
+      "displayName": "The Frozen Throne"
+    }
+  ],
+  "weaponType": [
+    {
+      "value": "normal",
+      "displayName": "Normal"
+    },
+    {
+      "value": "instant",
+      "displayName": "Instant"
+    },
+    {
+      "value": "artillery",
+      "displayName": "Artillery"
+    },
+    {
+      "value": "aline",
+      "displayName": "Artillery (Line)"
+    },
+    {
+      "value": "missile",
+      "displayName": "Missile"
+    },
+    {
+      "value": "msplash",
+      "displayName": "Missile (Splash)"
+    },
+    {
+      "value": "mbounce",
+      "displayName": "Missile (Bounce)"
+    },
+    {
+      "value": "mline",
+      "displayName": "Missile (Line)"
+    }
+  ]
+}

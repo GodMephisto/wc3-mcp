@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "build": "TFT-v1.07",
+  "source": "Hive Installer_1.07_TFT.iso (TFT 1.07 enUS CD)",
+  "inputs": [
+    {
+      "name": "doodads/doodadmetadata.slk",
+      "bytes": 13457,
+      "sha256": "8096abdf68a08a425c181da3f70583111031e304bba9e01476d41d9759e2f4f8"
+    },
+    {
+      "name": "scripts/blizzard.j",
+      "bytes": 401162,
+      "sha256": "c7be17a10e6b2aa579b891af036e94ded7dbf437394e49dedaf6e6aa4e742249"
+    },
+    {
+      "name": "scripts/common.ai",
+      "bytes": 98325,
+      "sha256": "8babda6689a9b00a2fdde645a3a4efd08f453b67c110037f4699f26f9063028f"
+    },
+    {
+      "name": "scripts/common.j",
+      "bytes": 136697,
+      "sha256": "9e1e542d1aab346df50f697f6278d565064b9f1ce484aba9d77f5c50deab53f9"
+    },
+    {
+      "name": "ui/skinmetadata.slk",
+      "bytes": 102183,
+      "sha256": "d2b47415a36ebdbf9228965cef234f92132e21125deecefeefa5a6e42917f301"
+    },
+    {
+      "name": "ui/triggerdata.txt",
+      "bytes": 235759,
+      "sha256": "a94407934ae0024916eee75c4e9e9727f92efe5f5235df26d0eed86de00bc651"
+    },
+    {
+      "name": "ui/uniteditordata.txt",
+      "bytes": 11553,
+      "sha256": "99b7888b6039f53f97721c512548cd8a4ee08f3192ba5f0719c28c3331ede709"
+    },
+    {
+      "name": "ui/worldeditgamestrings.txt",
+      "bytes": 17901,
+      "sha256": "a8390d51ef913600c945906c443e4a03333a6a796c5945d1c2a3ccb3fdc125a8"
+    },
+    {
+      "name": "ui/worldeditstrings.txt",
+      "bytes": 335260,
+      "sha256": "bd05612ca253604b3f146281250ef374bfdd218edc79cefcb77a9f2ea07409e1"
+    },
+    {
+      "name": "units/abilitymetadata.slk",
+      "bytes": 181658,
+      "sha256": "f7b07fd16bbd3f94019085ea5b898a2cc1555e631b1b044ec70a7204c8aaca44"
+    },
+    {
+      "name": "units/destructablemetadata.slk",
+      "bytes": 11573,
+      "sha256": "000e0a8f3ba34c81dfa33954f2de399de75236199f62d23f62a315184a4e87cd"
+    },
+    {
+      "name": "units/miscmetadata.slk",
+      "bytes": 26138,
+      "sha256": "b0a4e2e337ccfd13fb5f1a850c1649fe2dea6256acd280394f47df11f2c05a35"
+    },
+    {
+      "name": "units/unitmetadata.slk",
+      "bytes": 61878,
+      "sha256": "159e259178496914e020a65446451fa11a37bfc4d5477aa8b36ec28e293dd5ca"
+    },
+    {
+      "name": "units/upgradeeffectmetadata.slk",
+      "bytes": 8596,
+      "sha256": "ca4e8a2b940b26c55bc92102cd3d9df292e8a27462b4e3b1843c1b4500bb9e7a"
+    },
+    {
+      "name": "units/upgrademetadata.slk",
+      "bytes": 9396,
+      "sha256": "90407a076dc5b4664a62961b2dcb111c5cc023c8d23cd5485af92c557b7e7a0b"
+    }
+  ],
+  "missing": [
+    "units/abilitybuffmetadata.slk"
+  ]
+}

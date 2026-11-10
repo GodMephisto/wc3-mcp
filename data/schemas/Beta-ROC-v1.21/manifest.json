@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "build": "Beta-ROC-v1.21",
+  "source": "folder Beta-ROC-v1.21",
+  "inputs": [
+    {
+      "name": "scripts/blizzard.j",
+      "bytes": 236436,
+      "sha256": "933bcc0d88d4e2877c264d52be9803520d773063395ad97768936584889808ef"
+    },
+    {
+      "name": "scripts/common.ai",
+      "bytes": 44239,
+      "sha256": "d8c144eee94563667176b62202da6711b9f78415ba3b2b549158f6f20f101576"
+    },
+    {
+      "name": "scripts/common.j",
+      "bytes": 110203,
+      "sha256": "b31bfcebd920abba125378c39b31684f00ec2467caa0225fa75d50a60ab2443b"
+    }
+  ],
+  "missing": [
+    "doodads/doodadmetadata.slk",
+    "ui/skinmetadata.slk",
+    "ui/triggerdata.txt",
+    "ui/worldeditgamestrings.txt",
+    "ui/worldeditstrings.txt",
+    "units/abilitybuffmetadata.slk",
+    "units/abilitymetadata.slk",
+    "units/destructablemetadata.slk",
+    "units/miscmetadata.slk",
+    "units/unitmetadata.slk",
+    "units/upgradeeffectmetadata.slk",
+    "units/upgrademetadata.slk"
+  ]
+}

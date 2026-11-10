@@ -1,0 +1,5035 @@
+[
+  {
+    "build": "Beta-ROC-v1.00",
+    "source": "folder Beta-ROC-v1.00",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 315,
+      "scripts/common.ai": 260,
+      "scripts/common.j": 743
+    },
+    "functions": {
+      "scripts/blizzard.j": 245,
+      "scripts/common.ai": 46
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.03",
+    "source": "folder Beta-ROC-v1.03",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 318,
+      "scripts/common.ai": 262,
+      "scripts/common.j": 741
+    },
+    "functions": {
+      "scripts/blizzard.j": 247,
+      "scripts/common.ai": 47
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.10",
+    "source": "folder Beta-ROC-v1.10",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 401,
+      "scripts/common.ai": 356,
+      "scripts/common.j": 902
+    },
+    "functions": {
+      "scripts/blizzard.j": 309,
+      "scripts/common.ai": 51
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.11",
+    "source": "folder Beta-ROC-v1.11",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 401,
+      "scripts/common.ai": 356,
+      "scripts/common.j": 902
+    },
+    "functions": {
+      "scripts/blizzard.j": 309,
+      "scripts/common.ai": 51
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.12",
+    "source": "folder Beta-ROC-v1.12",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 401,
+      "scripts/common.ai": 356,
+      "scripts/common.j": 902
+    },
+    "functions": {
+      "scripts/blizzard.j": 309,
+      "scripts/common.ai": 51
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.13",
+    "source": "folder Beta-ROC-v1.13",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 401,
+      "scripts/common.ai": 356,
+      "scripts/common.j": 902
+    },
+    "functions": {
+      "scripts/blizzard.j": 309,
+      "scripts/common.ai": 51
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.20",
+    "source": "folder Beta-ROC-v1.20",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 737,
+      "scripts/common.ai": 391,
+      "scripts/common.j": 1027
+    },
+    "functions": {
+      "scripts/blizzard.j": 522,
+      "scripts/common.ai": 55
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.21",
+    "source": "folder Beta-ROC-v1.21",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 737,
+      "scripts/common.ai": 391,
+      "scripts/common.j": 1027
+    },
+    "functions": {
+      "scripts/blizzard.j": 522,
+      "scripts/common.ai": 55
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.30",
+    "source": "folder Beta-ROC-v1.30",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 844,
+      "scripts/common.ai": 391,
+      "scripts/common.j": 1041
+    },
+    "functions": {
+      "scripts/blizzard.j": 574,
+      "scripts/common.ai": 55
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.31",
+    "source": "folder Beta-ROC-v1.31",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 844,
+      "scripts/common.ai": 391,
+      "scripts/common.j": 1041
+    },
+    "functions": {
+      "scripts/blizzard.j": 574,
+      "scripts/common.ai": 55
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.32",
+    "source": "folder Beta-ROC-v1.32",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 844,
+      "scripts/common.ai": 391,
+      "scripts/common.j": 1041
+    },
+    "functions": {
+      "scripts/blizzard.j": 574,
+      "scripts/common.ai": 55
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.33",
+    "source": "folder Beta-ROC-v1.33",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 844,
+      "scripts/common.ai": 391,
+      "scripts/common.j": 1041
+    },
+    "functions": {
+      "scripts/blizzard.j": 574,
+      "scripts/common.ai": 55
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-ROC-v1.34",
+    "source": "folder Beta-ROC-v1.34",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 844,
+      "scripts/common.ai": 391,
+      "scripts/common.j": 1041
+    },
+    "functions": {
+      "scripts/blizzard.j": 574,
+      "scripts/common.ai": 55
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.00-ru",
+    "source": "folder ROC-v1.00-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 558,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.00",
+    "source": "Hive Installer_1.00_ROC.iso (ROC 1.00 enUS CD)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 1,
+    "fields": 117,
+    "triggerFunctions": 676,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 558,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 12,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.01-ru",
+    "source": "folder ROC-v1.01-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 558,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.01b-ru",
+    "source": "folder ROC-v1.01b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 558,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.02-ru",
+    "source": "folder ROC-v1.02-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 558,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.02a-ru",
+    "source": "folder ROC-v1.02a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 558,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.03-ru",
+    "source": "folder ROC-v1.03-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 562,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.04-ru",
+    "source": "folder ROC-v1.04-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 562,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.05-ru",
+    "source": "folder ROC-v1.05-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 562,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.06-ru",
+    "source": "folder ROC-v1.06-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 562,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.10-ru",
+    "source": "folder ROC-v1.10-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "ROC-v1.11-ru",
+    "source": "folder ROC-v1.11-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1221,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1291
+    },
+    "functions": {
+      "scripts/blizzard.j": 760,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v300",
+    "source": "folder Beta-TFT-v300",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 558,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v301",
+    "source": "folder Beta-TFT-v301",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 912,
+      "scripts/common.ai": 558,
+      "scripts/common.j": 1070
+    },
+    "functions": {
+      "scripts/blizzard.j": 611,
+      "scripts/common.ai": 92
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v302",
+    "source": "folder Beta-TFT-v302",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1082,
+      "scripts/common.ai": 629,
+      "scripts/common.j": 1202
+    },
+    "functions": {
+      "scripts/blizzard.j": 700,
+      "scripts/common.ai": 99
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v303",
+    "source": "folder Beta-TFT-v303",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1082,
+      "scripts/common.ai": 629,
+      "scripts/common.j": 1202
+    },
+    "functions": {
+      "scripts/blizzard.j": 700,
+      "scripts/common.ai": 99
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v304",
+    "source": "folder Beta-TFT-v304",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1118,
+      "scripts/common.ai": 639,
+      "scripts/common.j": 1208
+    },
+    "functions": {
+      "scripts/blizzard.j": 709,
+      "scripts/common.ai": 99
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v304a",
+    "source": "folder Beta-TFT-v304a",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1118,
+      "scripts/common.ai": 639,
+      "scripts/common.j": 1208
+    },
+    "functions": {
+      "scripts/blizzard.j": 709,
+      "scripts/common.ai": 99
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v305",
+    "source": "folder Beta-TFT-v305",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1136,
+      "scripts/common.ai": 655,
+      "scripts/common.j": 1220
+    },
+    "functions": {
+      "scripts/blizzard.j": 715,
+      "scripts/common.ai": 103
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v305a",
+    "source": "folder Beta-TFT-v305a",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1136,
+      "scripts/common.ai": 655,
+      "scripts/common.j": 1220
+    },
+    "functions": {
+      "scripts/blizzard.j": 715,
+      "scripts/common.ai": 103
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v306",
+    "source": "folder Beta-TFT-v306",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1184,
+      "scripts/common.ai": 682,
+      "scripts/common.j": 1272
+    },
+    "functions": {
+      "scripts/blizzard.j": 739,
+      "scripts/common.ai": 105
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v307",
+    "source": "folder Beta-TFT-v307",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1184,
+      "scripts/common.ai": 682,
+      "scripts/common.j": 1272
+    },
+    "functions": {
+      "scripts/blizzard.j": 739,
+      "scripts/common.ai": 105
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v308",
+    "source": "folder Beta-TFT-v308",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v309",
+    "source": "folder Beta-TFT-v309",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v310",
+    "source": "folder Beta-TFT-v310",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v311",
+    "source": "folder Beta-TFT-v311",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v312",
+    "source": "folder Beta-TFT-v312",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v313",
+    "source": "folder Beta-TFT-v313",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v314",
+    "source": "folder Beta-TFT-v314",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v314a",
+    "source": "folder Beta-TFT-v314a",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Beta-TFT-v315",
+    "source": "folder Beta-TFT-v315",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1202,
+      "scripts/common.ai": 699,
+      "scripts/common.j": 1281
+    },
+    "functions": {
+      "scripts/blizzard.j": 751,
+      "scripts/common.ai": 114
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.07-ru",
+    "source": "folder TFT-v1.07-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1221,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1291
+    },
+    "functions": {
+      "scripts/blizzard.j": 760,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.07",
+    "source": "Hive Installer_1.07_TFT.iso (TFT 1.07 enUS CD)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 8,
+    "fields": 1659,
+    "triggerFunctions": 833,
+    "natives": {
+      "scripts/blizzard.j": 1221,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1291
+    },
+    "functions": {
+      "scripts/blizzard.j": 760,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 31,
+    "missing": [
+      "units/abilitybuffmetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.10-ru",
+    "source": "folder TFT-v1.10-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1221,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1291
+    },
+    "functions": {
+      "scripts/blizzard.j": 760,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.11-ru",
+    "source": "folder TFT-v1.11-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1221,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1291
+    },
+    "functions": {
+      "scripts/blizzard.j": 760,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.12-ru",
+    "source": "folder TFT-v1.12-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1221,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1291
+    },
+    "functions": {
+      "scripts/blizzard.j": 760,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.13-ru",
+    "source": "folder TFT-v1.13-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1244,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1345
+    },
+    "functions": {
+      "scripts/blizzard.j": 782,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.13b-ru",
+    "source": "folder TFT-v1.13b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1244,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1345
+    },
+    "functions": {
+      "scripts/blizzard.j": 782,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.14-ru",
+    "source": "folder TFT-v1.14-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1244,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1345
+    },
+    "functions": {
+      "scripts/blizzard.j": 782,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.14b-ru",
+    "source": "folder TFT-v1.14b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1244,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1345
+    },
+    "functions": {
+      "scripts/blizzard.j": 782,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.15-ru",
+    "source": "folder TFT-v1.15-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1250,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1349
+    },
+    "functions": {
+      "scripts/blizzard.j": 788,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.16a-ru",
+    "source": "folder TFT-v1.16a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1250,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1349
+    },
+    "functions": {
+      "scripts/blizzard.j": 788,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.17a-ru",
+    "source": "folder TFT-v1.17a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1272,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1434
+    },
+    "functions": {
+      "scripts/blizzard.j": 809,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.18a-ru",
+    "source": "folder TFT-v1.18a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.19a-ru",
+    "source": "folder TFT-v1.19a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.19b-ru",
+    "source": "folder TFT-v1.19b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.20a-ru",
+    "source": "folder TFT-v1.20a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.20b-ru",
+    "source": "folder TFT-v1.20b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.20c-ru",
+    "source": "folder TFT-v1.20c-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.20d-ru",
+    "source": "folder TFT-v1.20d-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.20e-ru",
+    "source": "folder TFT-v1.20e-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.21a-ru",
+    "source": "folder TFT-v1.21a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.21b-ru",
+    "source": "folder TFT-v1.21b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.21a",
+    "source": "Hive Files_1.21a.zip (full enUS client)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2243,
+    "triggerFunctions": 955,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.22a-ru",
+    "source": "folder TFT-v1.22a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.23a-ru",
+    "source": "folder TFT-v1.23a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1295,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1483
+    },
+    "functions": {
+      "scripts/blizzard.j": 830,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.24a-ru",
+    "source": "folder TFT-v1.24a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.24b-ru",
+    "source": "folder TFT-v1.24b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.24c-ru",
+    "source": "folder TFT-v1.24c-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.24d-ru",
+    "source": "folder TFT-v1.24d-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.24e-ru",
+    "source": "folder TFT-v1.24e-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.24.4",
+    "source": "w3x2lni zhCN-1.24.4 bundle plus frozen-era SkinMetaData.slk and common.ai the bundle lacked",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 8,
+    "fields": 2243,
+    "triggerFunctions": 1045,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": [
+      "units/upgradeeffectmetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.25b-ru",
+    "source": "folder TFT-v1.25b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.26a-ru",
+    "source": "folder TFT-v1.26a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.26a",
+    "source": "archive.org multi.versions Warcraft III v1.26.rar \u002B War3Patch.mpq (1.26a enUS)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2243,
+    "triggerFunctions": 1045,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.27a-ru",
+    "source": "folder TFT-v1.27a-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.27b-ru",
+    "source": "folder TFT-v1.27b-ru",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.27a",
+    "source": "Hive Installer_1.27a_TFT_enUS (Installer Tome.mpq)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2243,
+    "triggerFunctions": 1045,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.27b",
+    "source": "archive.org multi.versions Warcraft III v1.27.1.rar \u002B War3Patch.mpq (1.27b)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2243,
+    "triggerFunctions": 1045,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.28.0.7205-zhtw",
+    "source": "folder TFT-v1.28.0.7205-zhtw",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.28.2.7395",
+    "source": "folder TFT-v1.28.2.7395",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.28.5.7680",
+    "source": "Hive Files_1.28.5.zip (full enUS client)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2243,
+    "triggerFunctions": 1045,
+    "natives": {
+      "scripts/blizzard.j": 1394,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1586
+    },
+    "functions": {
+      "scripts/blizzard.j": 923,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.29.0.8803",
+    "source": "folder TFT-v1.29.0.8803",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1398,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1694
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.29.1.9160",
+    "source": "Hive Files_1.29.1.zip (full enUS client)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2245,
+    "triggerFunctions": 1135,
+    "natives": {
+      "scripts/blizzard.j": 1398,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1703
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.29.2.9231",
+    "source": "Hive Files_1.29.2.zip (full enUS client)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2245,
+    "triggerFunctions": 1136,
+    "natives": {
+      "scripts/blizzard.j": 1398,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1704
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.30.0.9655-w3t",
+    "source": "folder TFT-v1.30.0.9655-w3t",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.30.0.9900",
+    "source": "folder TFT-v1.30.0.9900",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.30.1.10085-w3t",
+    "source": "folder TFT-v1.30.1.10085-w3t",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.30.1.10211",
+    "source": "folder TFT-v1.30.1.10211",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "1.30.1.10211",
+    "source": "Hive Files_1.30.1.zip (CASC install, war3.mpq layer)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2248,
+    "triggerFunctions": 1140,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.30.2.10369-w3t",
+    "source": "folder TFT-v1.30.2.10369-w3t",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.30.2.11113",
+    "source": "folder TFT-v1.30.2.11113",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.30.3.11145-w3t",
+    "source": "folder TFT-v1.30.3.11145-w3t",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.30.3.11235",
+    "source": "folder TFT-v1.30.3.11235",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.30.4.11274",
+    "source": "folder TFT-v1.30.4.11274",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "1.30.4.11274",
+    "source": "Hive Files_1.30.4.zip (CASC install, war3.mpq layer)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2248,
+    "triggerFunctions": 1140,
+    "natives": {
+      "scripts/blizzard.j": 1401,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 1782
+    },
+    "functions": {
+      "scripts/blizzard.j": 924,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.31.0.11889-w3t",
+    "source": "folder TFT-v1.31.0.11889-w3t",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1437,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 3139
+    },
+    "functions": {
+      "scripts/blizzard.j": 959,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "TFT-v1.31.1.12164",
+    "source": "Hive Files_1.31.1.zip (CASC install, 1.31.1.12164 enUS)",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2263,
+    "triggerFunctions": 1248,
+    "natives": {
+      "scripts/blizzard.j": 1437,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 3142
+    },
+    "functions": {
+      "scripts/blizzard.j": 959,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "TFT-v1.31.1.12173",
+    "source": "folder TFT-v1.31.1.12173",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1437,
+      "scripts/common.ai": 711,
+      "scripts/common.j": 3142
+    },
+    "functions": {
+      "scripts/blizzard.j": 959,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.0.13369-w3b-ab0c8ee",
+    "source": "folder Reforged-v1.32.0.13369-w3b-ab0c8ee",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1477,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3193
+    },
+    "functions": {
+      "scripts/blizzard.j": 984,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.0.14411",
+    "source": "folder Reforged-v1.32.0.14411",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1481,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3195
+    },
+    "functions": {
+      "scripts/blizzard.j": 984,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "1.32.0.14411",
+    "source": "Blizzard CDN (ngdp) build 1.32.0.14411",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2271,
+    "triggerFunctions": 1300,
+    "natives": {
+      "scripts/blizzard.j": 1481,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3195
+    },
+    "functions": {
+      "scripts/blizzard.j": 984,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "Reforged-v1.32.0.14481-w3-11be6c1",
+    "source": "folder Reforged-v1.32.0.14481-w3-11be6c1",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1481,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3203
+    },
+    "functions": {
+      "scripts/blizzard.j": 984,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.1.14604-w3-82335ba",
+    "source": "folder Reforged-v1.32.1.14604-w3-82335ba",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3204
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.2.14722-w3-fd283a3",
+    "source": "folder Reforged-v1.32.2.14722-w3-fd283a3",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3204
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.3.14857-w3-f98d8b1",
+    "source": "folder Reforged-v1.32.3.14857-w3-f98d8b1",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3211
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.3.14883-w3-c69064e",
+    "source": "folder Reforged-v1.32.3.14883-w3-c69064e",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3211
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.4.15098-w3-8112751",
+    "source": "folder Reforged-v1.32.4.15098-w3-8112751",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3211
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.5.15129-w3-e25c22c",
+    "source": "folder Reforged-v1.32.5.15129-w3-e25c22c",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3211
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.5.15216-w3-2aa3f7d",
+    "source": "folder Reforged-v1.32.5.15216-w3-2aa3f7d",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3211
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.6.15269-w3t-5c6bb94",
+    "source": "folder Reforged-v1.32.6.15269-w3t-5c6bb94",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3211
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.7.15539-w3t-b5789e1",
+    "source": "folder Reforged-v1.32.7.15539-w3t-b5789e1",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3213
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.7.15572",
+    "source": "folder Reforged-v1.32.7.15572",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3213
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.8.15731-w3t-0349a4d",
+    "source": "folder Reforged-v1.32.8.15731-w3t-0349a4d",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3213
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.8.15801",
+    "source": "folder Reforged-v1.32.8.15801",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3213
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.9.15935-w3t-7d69888",
+    "source": "folder Reforged-v1.32.9.15935-w3t-7d69888",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3213
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.9.16589",
+    "source": "folder Reforged-v1.32.9.16589",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3213
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.10.18820-w3-aa2b20f",
+    "source": "folder Reforged-v1.32.10.18820-w3-aa2b20f",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 712,
+      "scripts/common.j": 3213
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.32.10.19202",
+    "source": "folder Reforged-v1.32.10.19202",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.33.0.18857-w3t-3e93420",
+    "source": "folder Reforged-v1.33.0.18857-w3t-3e93420",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.33.0.19203",
+    "source": "folder Reforged-v1.33.0.19203",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.33.0.19378-w3-e94d62c",
+    "source": "folder Reforged-v1.33.0.19378-w3-e94d62c",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.34.0.19572-w3t-354e7e5",
+    "source": "folder Reforged-v1.34.0.19572-w3t-354e7e5",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.34.0.19632-w3-31590bf",
+    "source": "folder Reforged-v1.34.0.19632-w3-31590bf",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.35.0.19721-w3t-2db6e67",
+    "source": "folder Reforged-v1.35.0.19721-w3t-2db6e67",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.35.0.20093-w3-5ec1b77",
+    "source": "folder Reforged-v1.35.0.20093-w3-5ec1b77",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.36.0.20144-w3t-b8db0de",
+    "source": "folder Reforged-v1.36.0.20144-w3t-b8db0de",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.36.0.20257",
+    "source": "folder Reforged-v1.36.0.20257",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.36.1.20613",
+    "source": "folder Reforged-v1.36.1.20613",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v1.36.1.20719-w3-51d40ee",
+    "source": "folder Reforged-v1.36.1.20719-w3-51d40ee",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3234
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v2.0.2.22692-w3t",
+    "source": "folder Reforged-v2.0.2.22692-w3t",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3230
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v2.0.3.22904-w3t",
+    "source": "folder Reforged-v2.0.3.22904-w3t",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3231
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "Reforged-v2.0.3.23175-w3-8ddf8a2",
+    "source": "folder Reforged-v2.0.3.23175-w3-8ddf8a2",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3231
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "2.0.4.23452",
+    "source": "Blizzard CDN (ngdp) build 2.0.4.23452",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2286,
+    "triggerFunctions": 1318,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3231
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "2.0.4.23556",
+    "source": "Blizzard CDN (ngdp) build 2.0.4.23556",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2286,
+    "triggerFunctions": 1318,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3231
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "2.0.4.23727",
+    "source": "Blizzard CDN (ngdp) build 2.0.4.23727",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2286,
+    "triggerFunctions": 1318,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3231
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "Reforged-v2.0.4.23727-w3t-bfa6462",
+    "source": "folder Reforged-v2.0.4.23727-w3t-bfa6462",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3231
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "2.0.4.23745",
+    "source": "Blizzard CDN (ngdp) build 2.0.4.23745",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2286,
+    "triggerFunctions": 1318,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3231
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 36,
+    "missing": []
+  },
+  {
+    "build": "Reforged-v2.0.4.23745-w3-9a94ff7",
+    "source": "folder Reforged-v2.0.4.23745-w3-9a94ff7",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1482,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3231
+    },
+    "functions": {
+      "scripts/blizzard.j": 985,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "3.0.0.24268",
+    "source": "Blizzard CDN (ngdp) build 3.0.0.24268",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2513,
+    "triggerFunctions": 1431,
+    "natives": {
+      "scripts/blizzard.j": 1578,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3419
+    },
+    "functions": {
+      "scripts/blizzard.j": 1056,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "Reforged-v3.0.0.24268-w3-3a9d8f2",
+    "source": "folder Reforged-v3.0.0.24268-w3-3a9d8f2",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1578,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3419
+    },
+    "functions": {
+      "scripts/blizzard.j": 1056,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "3.0.0.24273",
+    "source": "Blizzard CDN (ngdp) build 3.0.0.24273",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2513,
+    "triggerFunctions": 1431,
+    "natives": {
+      "scripts/blizzard.j": 1578,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3419
+    },
+    "functions": {
+      "scripts/blizzard.j": 1056,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.0.24277",
+    "source": "Blizzard CDN (ngdp) build 3.0.0.24277",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2513,
+    "triggerFunctions": 1431,
+    "natives": {
+      "scripts/blizzard.j": 1578,
+      "scripts/common.ai": 715
+    },
+    "functions": {
+      "scripts/blizzard.j": 1056,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "Reforged-v3.0.0.24277-w3t-e38e03b",
+    "source": "folder Reforged-v3.0.0.24277-w3t-e38e03b",
+    "sections": [
+      "script"
+    ],
+    "objectFiles": 0,
+    "fields": 0,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/blizzard.j": 1578,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3420
+    },
+    "functions": {
+      "scripts/blizzard.j": 1056,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 0,
+    "missing": [
+      "doodads/doodadmetadata.slk",
+      "ui/skinmetadata.slk",
+      "ui/triggerdata.txt",
+      "ui/worldeditgamestrings.txt",
+      "ui/worldeditstrings.txt",
+      "units/abilitybuffmetadata.slk",
+      "units/abilitymetadata.slk",
+      "units/destructablemetadata.slk",
+      "units/miscmetadata.slk",
+      "units/unitmetadata.slk",
+      "units/upgradeeffectmetadata.slk",
+      "units/upgrademetadata.slk"
+    ]
+  },
+  {
+    "build": "3.0.0.24281",
+    "source": "Blizzard CDN (ngdp) build 3.0.0.24281",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2513,
+    "triggerFunctions": 1431,
+    "natives": {
+      "scripts/blizzard.j": 1578,
+      "scripts/common.ai": 715
+    },
+    "functions": {
+      "scripts/blizzard.j": 1056,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.0.24288",
+    "source": "Blizzard CDN (ngdp) build 3.0.0.24288",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2513,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/common.ai": 715
+    },
+    "functions": {
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.0.24295",
+    "source": "Blizzard CDN (ngdp) build 3.0.0.24295",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2513,
+    "triggerFunctions": 1433,
+    "natives": {
+      "scripts/blizzard.j": 1578,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3422
+    },
+    "functions": {
+      "scripts/blizzard.j": 1056,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.0.24297",
+    "source": "Blizzard CDN (ngdp) build 3.0.0.24297",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2513,
+    "triggerFunctions": 1433,
+    "natives": {
+      "scripts/blizzard.j": 1578,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3422
+    },
+    "functions": {
+      "scripts/blizzard.j": 1056,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.0.24306",
+    "source": "Blizzard CDN (ngdp) build 3.0.0.24306",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2514,
+    "triggerFunctions": 0,
+    "natives": {
+      "scripts/common.ai": 715
+    },
+    "functions": {
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.1.24309",
+    "source": "Blizzard CDN (ngdp) build 3.0.1.24309",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2516,
+    "triggerFunctions": 1439,
+    "natives": {
+      "scripts/blizzard.j": 1584,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3468
+    },
+    "functions": {
+      "scripts/blizzard.j": 1062,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.1.24318",
+    "source": "Blizzard CDN (ngdp) build 3.0.1.24318",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2516,
+    "triggerFunctions": 1439,
+    "natives": {
+      "scripts/blizzard.j": 1584,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3468
+    },
+    "functions": {
+      "scripts/blizzard.j": 1062,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.1.24323",
+    "source": "Blizzard CDN (ngdp) build 3.0.1.24323",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2516,
+    "triggerFunctions": 1439,
+    "natives": {
+      "scripts/blizzard.j": 1584,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3468
+    },
+    "functions": {
+      "scripts/blizzard.j": 1062,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.1.24332",
+    "source": "Blizzard CDN (ngdp) build 3.0.1.24332",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2516,
+    "triggerFunctions": 1439,
+    "natives": {
+      "scripts/blizzard.j": 1584,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3468
+    },
+    "functions": {
+      "scripts/blizzard.j": 1062,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  },
+  {
+    "build": "3.0.1.24342",
+    "source": "Blizzard CDN (ngdp) build 3.0.1.24342",
+    "sections": [
+      "objects",
+      "triggers",
+      "script",
+      "enums"
+    ],
+    "objectFiles": 9,
+    "fields": 2518,
+    "triggerFunctions": 1440,
+    "natives": {
+      "scripts/blizzard.j": 1584,
+      "scripts/common.ai": 715,
+      "scripts/common.j": 3469
+    },
+    "functions": {
+      "scripts/blizzard.j": 1062,
+      "scripts/common.ai": 120
+    },
+    "enumTypes": 43,
+    "missing": []
+  }
+]

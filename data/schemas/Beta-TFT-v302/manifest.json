@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "build": "Beta-TFT-v302",
+  "source": "folder Beta-TFT-v302",
+  "inputs": [
+    {
+      "name": "scripts/blizzard.j",
+      "bytes": 354349,
+      "sha256": "d894dff27690be0019e4f2cba5e62b1c73915d574c7b2d718bb4dd2f318af13a"
+    },
+    {
+      "name": "scripts/common.ai",
+      "bytes": 86247,
+      "sha256": "7e94d728cba2c5d53fde5d0cc011e4d64ff2065d03cf60fc7304a6ac4db76301"
+    },
+    {
+      "name": "scripts/common.j",
+      "bytes": 127167,
+      "sha256": "dc9b05f96383975404deb2be3ab7325fb28049a176c48fca881bf9084e2b2b5a"
+    }
+  ],
+  "missing": [
+    "doodads/doodadmetadata.slk",
+    "ui/skinmetadata.slk",
+    "ui/triggerdata.txt",
+    "ui/worldeditgamestrings.txt",
+    "ui/worldeditstrings.txt",
+    "units/abilitybuffmetadata.slk",
+    "units/abilitymetadata.slk",
+    "units/destructablemetadata.slk",
+    "units/miscmetadata.slk",
+    "units/unitmetadata.slk",
+    "units/upgradeeffectmetadata.slk",
+    "units/upgrademetadata.slk"
+  ]
+}

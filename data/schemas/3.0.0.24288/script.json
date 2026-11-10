@@ -1,0 +1,6232 @@
+{
+  "scripts/blizzard.j": {
+    "types": [],
+    "natives": [],
+    "globals": [],
+    "functions": []
+  },
+  "scripts/common.ai": {
+    "types": [],
+    "natives": [
+      {
+        "name": "DebugS",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "str"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "DebugFI",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "str"
+          },
+          {
+            "type": "integer",
+            "name": "val"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "DebugUnitID",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "str"
+          },
+          {
+            "type": "integer",
+            "name": "val"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "DisplayText",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "p"
+          },
+          {
+            "type": "string",
+            "name": "str"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "DisplayTextI",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "p"
+          },
+          {
+            "type": "string",
+            "name": "str"
+          },
+          {
+            "type": "integer",
+            "name": "val"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "DisplayTextII",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "p"
+          },
+          {
+            "type": "string",
+            "name": "str"
+          },
+          {
+            "type": "integer",
+            "name": "v1"
+          },
+          {
+            "type": "integer",
+            "name": "v2"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "DisplayTextIII",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "p"
+          },
+          {
+            "type": "string",
+            "name": "str"
+          },
+          {
+            "type": "integer",
+            "name": "v1"
+          },
+          {
+            "type": "integer",
+            "name": "v2"
+          },
+          {
+            "type": "integer",
+            "name": "v3"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "DoAiScriptDebug",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "GetAiPlayer",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetHeroId",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetHeroLevelAI",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetUnitCount",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetPlayerUnitTypeCount",
+        "parameters": [
+          {
+            "type": "player",
+            "name": "p"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetUnitCountDone",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetTownUnitCount",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id"
+          },
+          {
+            "type": "integer",
+            "name": "tn"
+          },
+          {
+            "type": "boolean",
+            "name": "dn"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetUnitGoldCost",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetUnitWoodCost",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetUnitBuildTime",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetMinesOwned",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetGoldOwned",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "TownWithMine",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "TownHasMine",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "townid"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "TownHasHall",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "townid"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "GetUpgradeLevel",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetUpgradeGoldCost",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetUpgradeWoodCost",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetNextExpansion",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetMegaTarget",
+        "parameters": [],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "GetBuilding",
+        "parameters": [
+          {
+            "type": "player",
+            "name": "p"
+          }
+        ],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "GetEnemyPower",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "SetAllianceTarget",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "id"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "GetAllianceTarget",
+        "parameters": [],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "SetProduce",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "id"
+          },
+          {
+            "type": "integer",
+            "name": "town"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "Unsummon",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetExpansion",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "peon"
+          },
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "SetUpgrade",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "SetHeroLevels",
+        "parameters": [
+          {
+            "type": "code",
+            "name": "func"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetNewHeroes",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "PurchaseZeppelin",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "MergeUnits",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "a"
+          },
+          {
+            "type": "integer",
+            "name": "b"
+          },
+          {
+            "type": "integer",
+            "name": "make"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "ConvertUnits",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "SetCampaignAI",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetMeleeAI",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetTargetHeroes",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetPeonsRepair",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetRandomPaths",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetDefendPlayer",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetHeroesFlee",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetHeroesBuyItems",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetWatchMegaTargets",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetIgnoreInjured",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetHeroesTakeItems",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetUnitsFlee",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetGroupsFlee",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetSlowChopping",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetCaptainChanges",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "allow"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetSmartArtillery",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetReplacementCount",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "GroupTimedLife",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "allow"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "RemoveInjuries",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "RemoveSiege",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "InitAssault",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AddAssault",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "AddDefenders",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "GetCreepCamp",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "min"
+          },
+          {
+            "type": "integer",
+            "name": "max"
+          },
+          {
+            "type": "boolean",
+            "name": "flyers_ok"
+          }
+        ],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "StartGetEnemyBase",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "WaitGetEnemyBase",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "GetEnemyBase",
+        "parameters": [],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "GetExpansionFoe",
+        "parameters": [],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "GetEnemyExpansion",
+        "parameters": [],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "GetExpansionX",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetExpansionY",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "SetStagePoint",
+        "parameters": [
+          {
+            "type": "real",
+            "name": "x"
+          },
+          {
+            "type": "real",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AttackMoveKill",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "target"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AttackMoveXY",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "x"
+          },
+          {
+            "type": "integer",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "LoadZepWave",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "x"
+          },
+          {
+            "type": "integer",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicidePlayer",
+        "parameters": [
+          {
+            "type": "player",
+            "name": "id"
+          },
+          {
+            "type": "boolean",
+            "name": "check_full"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "SuicidePlayerUnits",
+        "parameters": [
+          {
+            "type": "player",
+            "name": "id"
+          },
+          {
+            "type": "boolean",
+            "name": "check_full"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainInCombat",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "attack_captain"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "IsTowered",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "target"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "ClearHarvestAI",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "HarvestGold",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "town"
+          },
+          {
+            "type": "integer",
+            "name": "peons"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "HarvestWood",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "town"
+          },
+          {
+            "type": "integer",
+            "name": "peons"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "GetExpansionPeon",
+        "parameters": [],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "StopGathering",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AddGuardPost",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id"
+          },
+          {
+            "type": "real",
+            "name": "x"
+          },
+          {
+            "type": "real",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "FillGuardPosts",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "ReturnGuardPosts",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CreateCaptains",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetCaptainHome",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "which"
+          },
+          {
+            "type": "real",
+            "name": "x"
+          },
+          {
+            "type": "real",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "ResetCaptainLocs",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "ShiftTownSpot",
+        "parameters": [
+          {
+            "type": "real",
+            "name": "x"
+          },
+          {
+            "type": "real",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "TeleportCaptain",
+        "parameters": [
+          {
+            "type": "real",
+            "name": "x"
+          },
+          {
+            "type": "real",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "ClearCaptainTargets",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainAttack",
+        "parameters": [
+          {
+            "type": "real",
+            "name": "x"
+          },
+          {
+            "type": "real",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainVsUnits",
+        "parameters": [
+          {
+            "type": "player",
+            "name": "id"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainVsPlayer",
+        "parameters": [
+          {
+            "type": "player",
+            "name": "id"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainGoHome",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainIsHome",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainIsFull",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainIsEmpty",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainGroupSize",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainReadiness",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainRetreating",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainReadinessHP",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainReadinessMa",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "CaptainAtGoal",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "CreepsOnMap",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideUnit",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "count"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideUnitEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "ct"
+          },
+          {
+            "type": "integer",
+            "name": "uid"
+          },
+          {
+            "type": "integer",
+            "name": "pid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "StartThread",
+        "parameters": [
+          {
+            "type": "code",
+            "name": "func"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "Sleep",
+        "parameters": [
+          {
+            "type": "real",
+            "name": "seconds"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "UnitAlive",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "id"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "UnitInvis",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "id"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "IgnoredUnits",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "TownThreatened",
+        "parameters": [],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "DisablePathing",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetAmphibious",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CommandsWaiting",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetLastCommand",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetLastData",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "PopLastCommand",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "MeleeDifficulty",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      }
+    ],
+    "globals": [
+      {
+        "type": "integer",
+        "name": "ARCHMAGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hamg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "PALADIN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hpal\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MTN_KING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hmkg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLOOD_MAGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hblm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "AVATAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHav\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BASH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHbh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "THUNDER_BOLT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHtb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "THUNDER_CLAP",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHtc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEVOTION_AURA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHad\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DIVINE_SHIELD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHds\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HOLY_BOLT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHhb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "RESURRECTION",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHre\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLIZZARD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHbz\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BRILLIANCE_AURA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHab\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MASS_TELEPORT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHmt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "WATER_ELEMENTAL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHwe\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BANISH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHbn\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FLAME_STRIKE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHfs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SUMMON_PHOENIX",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHpx\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SIPHON_MANA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHdr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "JAINA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hjai\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MURADIN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hmbr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GARITHOS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hlgr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "KAEL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hkal\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "COPTER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hgyr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GYRO",
+        "isConstant": true,
+        "isArray": false,
+        "value": "COPTER"
+      },
+      {
+        "type": "integer",
+        "name": "ELEMENTAL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hwat\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FOOTMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hfoo\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FOOTMEN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "FOOTMAN"
+      },
+      {
+        "type": "integer",
+        "name": "GRYPHON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hgry\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "KNIGHT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hkni\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MORTAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hmtm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "PEASANT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hpea\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "PRIEST",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hmpr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "RIFLEMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hrif\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "RIFLEMEN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "RIFLEMAN"
+      },
+      {
+        "type": "integer",
+        "name": "SORCERESS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hsor\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TANK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hmtt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "STEAM_TANK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "TANK"
+      },
+      {
+        "type": "integer",
+        "name": "ROCKET_TANK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hrtt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MILITIA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hmil\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SPELL_BREAKER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hspt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HUMAN_DRAGON_HAWK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hdhw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLOOD_PRIEST",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hbep\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLOOD_SORCERESS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hbes\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLOOD_PEASANT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nhew\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "AVIARY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hgra\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BARRACKS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hbar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLACKSMITH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hbla\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CANNON_TOWER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hctw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CASTLE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hcas\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHURCH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027htws\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MAGE_TOWER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "CHURCH"
+      },
+      {
+        "type": "integer",
+        "name": "GUARD_TOWER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hgtw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HOUSE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hhou\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HUMAN_ALTAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027halt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "KEEP",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hkee\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "LUMBER_MILL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hlum\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SANCTUM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hars\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ARCANE_SANCTUM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "SANCTUM"
+      },
+      {
+        "type": "integer",
+        "name": "TOWN_HALL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027htow\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "WATCH_TOWER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hwtw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "WORKSHOP",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027harm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ARCANE_VAULT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hvlt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ARCANE_TOWER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hatw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_MELEE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhme\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_RANGED",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhra\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ARTILLERY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhaa\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ARMOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_GOLD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhmi\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_MASONRY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhac\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SIGHT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhss\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_DEFEND",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhde\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_BREEDING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhan\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_PRAYING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhpt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SORCERY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhst\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_LEATHER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhla\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_GUN_RANGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhri\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_WOOD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhlh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SENTINEL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhse\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SCATTER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhsr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_BOMBS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhgb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_HAMMERS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhhb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_CONT_MAGIC",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhss\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_FRAGS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhfs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_TANK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhrt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_FLAK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhfc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_CLOUD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rhcd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLADE_MASTER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Obla\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FAR_SEER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ofar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TAUREN_CHIEF",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Otch\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SHADOW_HUNTER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Oshd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GROM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ogrh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "THRALL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Othr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CRITICAL_STRIKE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOcr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MIRROR_IMAGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOmi\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLADE_STORM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOww\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "WIND_WALK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOwk\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAIN_LIGHTNING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOcl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "EARTHQUAKE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOeq\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FAR_SIGHT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOfs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SPIRIT_WOLF",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOsf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ENDURANE_AURA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOae\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "REINCARNATION",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOre\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SHOCKWAVE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOsh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "WAR_STOMP",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOws\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HEALING_WAVE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOhw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HEX",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOhx\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SERPENT_WARD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOsw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "VOODOO",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AOvd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GUARDIAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027oang\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CATAPULT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ocat\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "WITCH_DOCTOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027odoc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GRUNT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ogru\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HEAD_HUNTER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ohun\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BERSERKER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027otbk\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "KODO_BEAST",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027okod\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "PEON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027opeo\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "RAIDER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027orai\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SHAMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027oshm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TAUREN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027otau\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "WYVERN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027owyv\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BATRIDER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027otbr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SPIRIT_WALKER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ospw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SPIRIT_WALKER_M",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ospm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ORC_ALTAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027oalt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ORC_BARRACKS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027obar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BESTIARY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027obea\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FORGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ofor\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FORTRESS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ofrt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GREAT_HALL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ogre\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "LODGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027osld\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "STRONGHOLD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ostr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BURROW",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027otrb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TOTEM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027otto\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ORC_WATCH_TOWER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027owtw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "VOODOO_LOUNGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ovln\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_MELEE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rome\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_RANGED",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rora\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_ARTILLERY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Roaa\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_ARMOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Roar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_WAR_DRUMS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rwdm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_PILLAGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ropg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_BERSERK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Robs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_PULVERIZE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rows\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_ENSNARE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Roen\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_VENOM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rovs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_DOCS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rowd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_SHAMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rost\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_SPIKES",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rosp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_BURROWS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rorb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_REGEN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rotr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_FIRE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rolf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_SWALKER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rowt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_BERSERKER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Robk\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_NAPTHA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Robf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ORC_CHAOS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Roch\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "OGRE_MAGI",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nomg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ORC_DRAGON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nrwm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SAPPER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ngsp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ZEPPLIN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nzep\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ZEPPELIN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "ZEPPLIN"
+      },
+      {
+        "type": "integer",
+        "name": "W2_WARLOCK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nw2w\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "PIG_FARM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027npgf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FOREST_TROLL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nftr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DRAGON_ROOST",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ndrb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAOS_GRUNT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nchg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAOS_WARLOCK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nchw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAOS_RAIDER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nchr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAOS_PEON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ncpn\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAOS_KODO",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nckb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAOS_GROM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Opgh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAOS_BLADEMASTER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Nbbc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHAOS_BURROW",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ocbw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEATH_KNIGHT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Udea\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DREAD_LORD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Udre\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "LICH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ulic\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CRYPT_LORD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ucrl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MALGANIS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Umal\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TICHONDRIUS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Utic\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "PIT_LORD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Npld\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DETHEROC",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Udth\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SLEEP",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUsl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "VAMP_AURA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUav\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CARRION_SWARM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUcs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "INFERNO",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUin\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DARK_RITUAL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUdr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEATH_DECAY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUdd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FROST_ARMOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUfu\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FROST_NOVA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUfn\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ANIM_DEAD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUan\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEATH_COIL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUdc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEATH_PACT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUdp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UNHOLY_AURA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUau\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CARRION_SCARAB",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUcb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "IMPALE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUim\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "LOCUST_SWARM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUls\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "THORNY_SHIELD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AUts\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ABOMINATION",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uabo\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ACOLYTE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uaco\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BANSHEE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uban\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "PIT_FIEND",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ucry\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CRYPT_FIEND",
+        "isConstant": true,
+        "isArray": false,
+        "value": "PIT_FIEND"
+      },
+      {
+        "type": "integer",
+        "name": "FROST_WYRM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ufro\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GARGOYLE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ugar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GARGOYLE_MORPH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ugrm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GHOUL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ugho\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MEAT_WAGON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027umtw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NECRO",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027unec\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SKEL_WARRIOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uske\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SHADE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ushd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UNDEAD_BARGE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uarb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "OBSIDIAN_STATUE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uobs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "OBS_STATUE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "OBSIDIAN_STATUE"
+      },
+      {
+        "type": "integer",
+        "name": "BLK_SPHINX",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ubsp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UNDEAD_MINE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ugol\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UNDEAD_ALTAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uaod\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BONEYARD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ubon\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GARG_SPIRE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ugsp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NECROPOLIS_1",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027unpl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NECROPOLIS_2",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027unp1\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NECROPOLIS_3",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027unp2\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SAC_PIT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027usap\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CRYPT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027usep\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SLAUGHTERHOUSE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uslh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DAMNED_TEMPLE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027utod\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ZIGGURAT_1",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uzig\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ZIGGURAT_2",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uzg1\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ZIGGURAT_FROST",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027uzg2\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "GRAVEYARD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ugrv\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TOMB_OF_RELICS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027utom\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_UNHOLY_STR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rume\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_CR_ATTACK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rura\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_UNHOLY_ARMOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ruar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_CANNIBALIZE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ruac\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_GHOUL_FRENZY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rugf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_FIEND_WEB",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ruwb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ABOM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ruab\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_STONE_FORM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rusf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_NECROS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rune\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_BANSHEE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ruba\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_MEAT_WAGON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rump\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_WYRM_BREATH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rufb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SKEL_LIFE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rusl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SKEL_MASTERY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rusm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_EXHUME",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ruex\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SACRIFICE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rurs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ABOM_EXPL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ruax\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_CR_ARMOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rucr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_PLAGUE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rupc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_BLK_SPHINX",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rusp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_BURROWING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rubu\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEMON_HUNTER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Edem\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEMON_HUNTER_M",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Edmm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "KEEPER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ekee\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MOON_CHICK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Emoo\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MOON_BABE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "MOON_CHICK"
+      },
+      {
+        "type": "integer",
+        "name": "MOON_HONEY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "MOON_CHICK"
+      },
+      {
+        "type": "integer",
+        "name": "WARDEN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ewar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SYLVANUS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hvwd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CENARIUS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ecen\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ILLIDAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Eevi\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ILLIDAN_DEMON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Eevm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MAIEV",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Ewrd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FORCE_NATURE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEfn\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ENT_ROOTS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEer\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "THORNS_AURA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEah\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TRANQUILITY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEtq\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "EVASION",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEev\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "IMMOLATION",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEim\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MANA_BURN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEmb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "METAMORPHOSIS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEme\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SEARING_ARROWS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AHfa\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SCOUT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEst\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "STARFALL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEsf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TRUESHOT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEar\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BLINK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEbl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FAN_KNIVES",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEfk\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SHADOW_TOUCH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEsh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "VENGEANCE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027AEsv\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "WISP",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ewsp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ARCHER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027earc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DRUID_TALON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027edot\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DRUID_TALON_M",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027edtm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BALLISTA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ebal\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DRUID_CLAW",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027edoc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DRUID_CLAW_M",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027edcm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DRYAD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027edry\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HIPPO",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ehip\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HIPPO_RIDER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ehpr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HUNTRESS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027esen\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHIMAERA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027echm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ENT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027efon\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MOUNTAIN_GIANT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027emtg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FAERIE_DRAGON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027efdr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HIGH_ARCHER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nhea\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HIGH_FOOTMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hcth\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HIGH_FOOTMEN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "HIGH_FOOTMAN"
+      },
+      {
+        "type": "integer",
+        "name": "HIGH_SWORDMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027hhes\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DRAGON_HAWK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nws1\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CORRUPT_TREANT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nenc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "POISON_TREANT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nenp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "PLAGUE_TREANT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nepl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SHANDRIS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027eshd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ANCIENT_LORE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027eaoe\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ANCIENT_WAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027eaom\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ANCIENT_WIND",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027eaow\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TREE_AGES",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027etoa\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TREE_ETERNITY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027etoe\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TREE_LIFE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027etol\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ANCIENT_PROTECT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027etrp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ELF_ALTAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027eate\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "BEAR_DEN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027edol\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CHIMAERA_ROOST",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027edos\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HUNTERS_HALL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027edob\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "MOON_WELL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027emow\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ELF_MINE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027egol\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEN_OF_WONDERS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027eden\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ELF_FARM",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nefm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ELF_GUARD_TOWER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027negt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HIGH_SKY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027negm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HIGH_EARTH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027negf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HIGH_TOWER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027negt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "ELF_HIGH_BARRACKS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nheb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CORRUPT_LIFE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nctl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CORRUPT_AGES",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ncta\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CORRUPT_ETERNITY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ncte\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CORRUPT_WELL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ncmw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CORRUPT_PROTECTOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ncap\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "CORRUPT_WAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ncaw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_STR_MOON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Resm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_STR_WILD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Resw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_MOON_ARMOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rema\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_HIDES",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rerh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ULTRAVISION",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Reuv\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_BLESSING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Renb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SCOUT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Resc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_GLAIVE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Remg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_BOWS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Reib\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_MARKSMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Remk\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_DRUID_TALON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Redt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_DRUID_CLAW",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Redc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_ABOLISH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Resi\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_CHIM_ACID",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Recb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_HIPPO_TAME",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Reht\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_BOLT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Repd\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_MARK_CLAW",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Reeb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_MARK_TALON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Reec\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_HARD_SKIN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rehs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_RESIST_SKIN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rers\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_WELL_SPRING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rews\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DEMON_GATE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ndmg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FELLHOUND",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nfel\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "INFERNAL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027ninf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "DOOMGUARD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nbal\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SATYR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nsty\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "TRICKSTER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nsat\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SHADOWDANCER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nsts\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SOULSTEALER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nstl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "HELLCALLER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nsth\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SKEL_ARCHER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nska\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SKEL_MARKSMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nskm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SKEL_BURNING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nskf\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "SKEL_GIANT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nskg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FURBOLG",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nfrl\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FURBOLG_TRACKER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nfrb\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FURBOLG_SHAMAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nfrs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FURBOLG_CHAMP",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nfrg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "FURBOLG_ELDER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nfre\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_SORCERESS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Nngs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_VASHJ",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Hvsh\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_DRAGON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nsnp\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_WITCH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nnsw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_SERPENT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nwgs\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_HYDRA",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nhyc\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_SLAVE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nmpe\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_SNAP_DRAGON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "NAGA_DRAGON"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_COUATL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "NAGA_SERPENT"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_SIREN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "NAGA_WITCH"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_MYRMIDON",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nmyr\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_REAVER",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nnmg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_TURTLE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "NAGA_HYDRA"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_ROYAL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nnrg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_TEMPLE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nntt\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_CORAL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nnfm\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_SHRINE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nnsa\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_SPAWNING",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nnsg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_GUARDIAN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nntg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "NAGA_ALTAR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027nnad\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_NAGA_ARMOR",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rnam\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_NAGA_ATTACK",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rnat\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_NAGA_ABOLISH",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rnsi\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_SIREN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rnsw\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "UPG_NAGA_ENSNARE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "\u0027Rnen\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "M1",
+        "isConstant": true,
+        "isArray": false,
+        "value": "60"
+      },
+      {
+        "type": "integer",
+        "name": "M2",
+        "isConstant": true,
+        "isArray": false,
+        "value": "2*60"
+      },
+      {
+        "type": "integer",
+        "name": "M3",
+        "isConstant": true,
+        "isArray": false,
+        "value": "3*60"
+      },
+      {
+        "type": "integer",
+        "name": "M4",
+        "isConstant": true,
+        "isArray": false,
+        "value": "4*60"
+      },
+      {
+        "type": "integer",
+        "name": "M5",
+        "isConstant": true,
+        "isArray": false,
+        "value": "5*60"
+      },
+      {
+        "type": "integer",
+        "name": "M6",
+        "isConstant": true,
+        "isArray": false,
+        "value": "6*60"
+      },
+      {
+        "type": "integer",
+        "name": "M7",
+        "isConstant": true,
+        "isArray": false,
+        "value": "7*60"
+      },
+      {
+        "type": "integer",
+        "name": "M8",
+        "isConstant": true,
+        "isArray": false,
+        "value": "8*60"
+      },
+      {
+        "type": "integer",
+        "name": "M9",
+        "isConstant": true,
+        "isArray": false,
+        "value": "9*60"
+      },
+      {
+        "type": "integer",
+        "name": "M10",
+        "isConstant": true,
+        "isArray": false,
+        "value": "10*60"
+      },
+      {
+        "type": "integer",
+        "name": "M11",
+        "isConstant": true,
+        "isArray": false,
+        "value": "11*60"
+      },
+      {
+        "type": "integer",
+        "name": "M12",
+        "isConstant": true,
+        "isArray": false,
+        "value": "12*60"
+      },
+      {
+        "type": "integer",
+        "name": "M13",
+        "isConstant": true,
+        "isArray": false,
+        "value": "13*60"
+      },
+      {
+        "type": "integer",
+        "name": "M14",
+        "isConstant": true,
+        "isArray": false,
+        "value": "14*60"
+      },
+      {
+        "type": "integer",
+        "name": "M15",
+        "isConstant": true,
+        "isArray": false,
+        "value": "15*60"
+      },
+      {
+        "type": "integer",
+        "name": "EASY",
+        "isConstant": true,
+        "isArray": false,
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "name": "NORMAL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "name": "HARD",
+        "isConstant": true,
+        "isArray": false,
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "name": "INSANE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "4"
+      },
+      {
+        "type": "integer",
+        "name": "MELEE_NEWBIE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "name": "MELEE_NORMAL",
+        "isConstant": true,
+        "isArray": false,
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "name": "MELEE_INSANE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "name": "ATTACK_CAPTAIN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "name": "DEFENSE_CAPTAIN",
+        "isConstant": true,
+        "isArray": false,
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "name": "BOTH_CAPTAINS",
+        "isConstant": true,
+        "isArray": false,
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "name": "BUILD_UNIT",
+        "isConstant": true,
+        "isArray": false,
+        "value": "1"
+      },
+      {
+        "type": "integer",
+        "name": "BUILD_UPGRADE",
+        "isConstant": true,
+        "isArray": false,
+        "value": "2"
+      },
+      {
+        "type": "integer",
+        "name": "BUILD_EXPAND",
+        "isConstant": true,
+        "isArray": false,
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "name": "UPKEEP_TIER1",
+        "isConstant": true,
+        "isArray": false,
+        "value": "50"
+      },
+      {
+        "type": "integer",
+        "name": "UPKEEP_TIER2",
+        "isConstant": true,
+        "isArray": false,
+        "value": "80"
+      },
+      {
+        "type": "player",
+        "name": "ai_player",
+        "isConstant": false,
+        "isArray": false
+      },
+      {
+        "type": "integer",
+        "name": "sleep_seconds",
+        "isConstant": false,
+        "isArray": false
+      },
+      {
+        "type": "integer",
+        "name": "total_gold",
+        "isConstant": false,
+        "isArray": false,
+        "value": "0"
+      },
+      {
+        "type": "integer",
+        "name": "total_wood",
+        "isConstant": false,
+        "isArray": false,
+        "value": "0"
+      },
+      {
+        "type": "integer",
+        "name": "gold_buffer",
+        "isConstant": false,
+        "isArray": false,
+        "value": "0"
+      },
+      {
+        "type": "integer",
+        "name": "difficulty",
+        "isConstant": false,
+        "isArray": false,
+        "value": "NORMAL"
+      },
+      {
+        "type": "integer",
+        "name": "exp_seen",
+        "isConstant": false,
+        "isArray": false,
+        "value": "0"
+      },
+      {
+        "type": "integer",
+        "name": "racial_farm",
+        "isConstant": false,
+        "isArray": false,
+        "value": "\u0027hhou\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "hero_id",
+        "isConstant": false,
+        "isArray": false,
+        "value": "\u0027Hamg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "hero_id2",
+        "isConstant": false,
+        "isArray": false,
+        "value": "\u0027Hmkg\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "hero_id3",
+        "isConstant": false,
+        "isArray": false,
+        "value": "\u0027Hpal\u0027"
+      },
+      {
+        "type": "integer",
+        "name": "skill",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "skills1",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "skills2",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "skills3",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "max_hero_level",
+        "isConstant": false,
+        "isArray": false,
+        "value": "0"
+      },
+      {
+        "type": "integer",
+        "name": "harass_qty",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "harass_max",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "harass_units",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "harass_length",
+        "isConstant": false,
+        "isArray": false,
+        "value": "0"
+      },
+      {
+        "type": "integer",
+        "name": "defense_qty",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "defense_units",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "defense_length",
+        "isConstant": false,
+        "isArray": false,
+        "value": "0"
+      },
+      {
+        "type": "integer",
+        "name": "build_qty",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "build_type",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "build_item",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "build_town",
+        "isConstant": false,
+        "isArray": true
+      },
+      {
+        "type": "integer",
+        "name": "build_length",
+        "isConstant": false,
+        "isArray": false,
+        "value": "0"
+      },
+      {
+        "type": "integer",
+        "name": "campaign_gold_peons",
+        "isConstant": false,
+        "isArray": false,
+        "value": "5"
+      },
+      {
+        "type": "integer",
+        "name": "campaign_wood_peons",
+        "isConstant": false,
+        "isArray": false,
+        "value": "3"
+      },
+      {
+        "type": "integer",
+        "name": "campaign_basics_speed",
+        "isConstant": false,
+        "isArray": false,
+        "value": "5"
+      },
+      {
+        "type": "integer",
+        "name": "min_creeps",
+        "isConstant": false,
+        "isArray": false,
+        "value": "-1"
+      },
+      {
+        "type": "integer",
+        "name": "max_creeps",
+        "isConstant": false,
+        "isArray": false,
+        "value": "-1"
+      },
+      {
+        "type": "boolean",
+        "name": "harvest_town1",
+        "isConstant": false,
+        "isArray": false,
+        "value": "true"
+      },
+      {
+        "type": "boolean",
+        "name": "harvest_town2",
+        "isConstant": false,
+        "isArray": false,
+        "value": "true"
+      },
+      {
+        "type": "boolean",
+        "name": "harvest_town3",
+        "isConstant": false,
+        "isArray": false,
+        "value": "true"
+      },
+      {
+        "type": "boolean",
+        "name": "do_campaign_farms",
+        "isConstant": false,
+        "isArray": false,
+        "value": "true"
+      },
+      {
+        "type": "boolean",
+        "name": "two_heroes",
+        "isConstant": false,
+        "isArray": false,
+        "value": "false"
+      },
+      {
+        "type": "boolean",
+        "name": "allow_air_creeps",
+        "isConstant": false,
+        "isArray": false,
+        "value": "false"
+      },
+      {
+        "type": "boolean",
+        "name": "take_exp",
+        "isConstant": false,
+        "isArray": false,
+        "value": "false"
+      },
+      {
+        "type": "boolean",
+        "name": "allow_signal_abort",
+        "isConstant": false,
+        "isArray": false,
+        "value": "false"
+      },
+      {
+        "type": "boolean",
+        "name": "ready_for_zeppelin",
+        "isConstant": false,
+        "isArray": false,
+        "value": "true"
+      },
+      {
+        "type": "boolean",
+        "name": "get_zeppelin",
+        "isConstant": false,
+        "isArray": false,
+        "value": "false"
+      },
+      {
+        "type": "boolean",
+        "name": "build_campaign_attackers",
+        "isConstant": false,
+        "isArray": false,
+        "value": "true"
+      },
+      {
+        "type": "boolean",
+        "name": "do_debug_cheats",
+        "isConstant": false,
+        "isArray": false,
+        "value": "false"
+      },
+      {
+        "type": "boolean",
+        "name": "trace_on",
+        "isConstant": false,
+        "isArray": false,
+        "value": "true"
+      },
+      {
+        "type": "boolean",
+        "name": "zep_next_wave",
+        "isConstant": false,
+        "isArray": false,
+        "value": "false"
+      },
+      {
+        "type": "boolean",
+        "name": "form_group_timeouts",
+        "isConstant": false,
+        "isArray": false,
+        "value": "true"
+      }
+    ],
+    "functions": [
+      {
+        "name": "PlayerEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "slot"
+          }
+        ],
+        "returns": "player",
+        "isConstant": false
+      },
+      {
+        "name": "Trace",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "message"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "TraceI",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "message"
+          },
+          {
+            "type": "integer",
+            "name": "val"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "TraceII",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "message"
+          },
+          {
+            "type": "integer",
+            "name": "v1"
+          },
+          {
+            "type": "integer",
+            "name": "v2"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "TraceIII",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "message"
+          },
+          {
+            "type": "integer",
+            "name": "v1"
+          },
+          {
+            "type": "integer",
+            "name": "v2"
+          },
+          {
+            "type": "integer",
+            "name": "v3"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "InitAI",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "StandardAI",
+        "parameters": [
+          {
+            "type": "code",
+            "name": "heroes"
+          },
+          {
+            "type": "code",
+            "name": "peons"
+          },
+          {
+            "type": "code",
+            "name": "attacks"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "Min",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "A"
+          },
+          {
+            "type": "integer",
+            "name": "B"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "Max",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "A"
+          },
+          {
+            "type": "integer",
+            "name": "B"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "SetZepNextWave",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideSleep",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "WaitForSignal",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "SetWoodPeons",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "count"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetGoldPeons",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "count"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetHarvestLumber",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "harvest"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetFormGroupTimeouts",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "DoCampaignFarms",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "state"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "GetMinorCreep",
+        "parameters": [],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "GetMajorCreep",
+        "parameters": [],
+        "returns": "unit",
+        "isConstant": false
+      },
+      {
+        "name": "GetGold",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "GetWood",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "InitBuildArray",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "InitAssaultGroup",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "InitDefenseGroup",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "InitMeleeGroup",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "PrepFullSuicide",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetReplacements",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "StartTownBuilder",
+        "parameters": [
+          {
+            "type": "code",
+            "name": "func"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetBuildAll",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "t"
+          },
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          },
+          {
+            "type": "integer",
+            "name": "town"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetBuildUnit",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetBuildNext",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetBuildUnitEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SecondaryTown",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "town"
+          },
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SecTown",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "town"
+          },
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetBuildUpgr",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetBuildUpgrEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetBuildExpa",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "StartUpgrade",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "level"
+          },
+          {
+            "type": "integer",
+            "name": "upgid"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "BuildFactory",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "HallsCompleted",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "GuardSecondary",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "townid"
+          },
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "GetUnitCountEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          },
+          {
+            "type": "boolean",
+            "name": "only_done"
+          },
+          {
+            "type": "integer",
+            "name": "townid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "TownCountEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          },
+          {
+            "type": "boolean",
+            "name": "only_done"
+          },
+          {
+            "type": "integer",
+            "name": "townid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "TownCountDone",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "base"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "TownCount",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "base"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "BasicExpansion",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "build_it"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "UpgradeAll",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "baseid"
+          },
+          {
+            "type": "integer",
+            "name": "newid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "TownCountTown",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "base"
+          },
+          {
+            "type": "integer",
+            "name": "townid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "FoodPool",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "food"
+          },
+          {
+            "type": "boolean",
+            "name": "weak"
+          },
+          {
+            "type": "integer",
+            "name": "id1"
+          },
+          {
+            "type": "integer",
+            "name": "use1"
+          },
+          {
+            "type": "boolean",
+            "name": "strong"
+          },
+          {
+            "type": "integer",
+            "name": "id2"
+          },
+          {
+            "type": "integer",
+            "name": "use2"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "MeleeTownHall",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "townid"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "WaitForUnits",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          },
+          {
+            "type": "integer",
+            "name": "qty"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "StartUnit",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "ask_qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          },
+          {
+            "type": "integer",
+            "name": "town"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "WaitForTown",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "towns"
+          },
+          {
+            "type": "integer",
+            "name": "townid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "StartExpansion",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "hall"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "OneBuildLoop",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "StaggerSleep",
+        "parameters": [
+          {
+            "type": "real",
+            "name": "base"
+          },
+          {
+            "type": "real",
+            "name": "spread"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "BuildLoop",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "StartBuildLoop",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetInitialWave",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AddSleepSeconds",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SleepForever",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "PlayGame",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "ConvertNeeds",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "Conversions",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "desire"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetAssaultGroup",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "max"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "Interleave3",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "e1"
+          },
+          {
+            "type": "integer",
+            "name": "m1"
+          },
+          {
+            "type": "integer",
+            "name": "h1"
+          },
+          {
+            "type": "integer",
+            "name": "u1"
+          },
+          {
+            "type": "integer",
+            "name": "e2"
+          },
+          {
+            "type": "integer",
+            "name": "m2"
+          },
+          {
+            "type": "integer",
+            "name": "h2"
+          },
+          {
+            "type": "integer",
+            "name": "u2"
+          },
+          {
+            "type": "integer",
+            "name": "e3"
+          },
+          {
+            "type": "integer",
+            "name": "m3"
+          },
+          {
+            "type": "integer",
+            "name": "h3"
+          },
+          {
+            "type": "integer",
+            "name": "u3"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SetMeleeGroup",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CampaignDefender",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "level"
+          },
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CampaignDefenderEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CampaignAttacker",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "level"
+          },
+          {
+            "type": "integer",
+            "name": "qty"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CampaignAttackerEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "FormGroup",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          },
+          {
+            "type": "boolean",
+            "name": "testReady"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "WavePrepare",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "PrepTime",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "PrepSuicideOnPlayer",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          }
+        ],
+        "returns": "boolean",
+        "isConstant": false
+      },
+      {
+        "name": "SleepUntilAtGoal",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SleepInCombat",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AttackMoveXYA",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "x"
+          },
+          {
+            "type": "integer",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideOnPlayerWave",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CommonSuicideOnPlayer",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "standard"
+          },
+          {
+            "type": "boolean",
+            "name": "bldgs"
+          },
+          {
+            "type": "integer",
+            "name": "seconds"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          },
+          {
+            "type": "integer",
+            "name": "x"
+          },
+          {
+            "type": "integer",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideOnPlayer",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideOnUnits",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideOnPoint",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          },
+          {
+            "type": "integer",
+            "name": "x"
+          },
+          {
+            "type": "integer",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideUntilSignal",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideOnce",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          },
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideUnitA",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideUnitB",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "unitid"
+          },
+          {
+            "type": "integer",
+            "name": "playerid"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideUnits",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "u1"
+          },
+          {
+            "type": "integer",
+            "name": "u2"
+          },
+          {
+            "type": "integer",
+            "name": "u3"
+          },
+          {
+            "type": "integer",
+            "name": "u4"
+          },
+          {
+            "type": "integer",
+            "name": "u5"
+          },
+          {
+            "type": "integer",
+            "name": "u6"
+          },
+          {
+            "type": "integer",
+            "name": "u7"
+          },
+          {
+            "type": "integer",
+            "name": "u8"
+          },
+          {
+            "type": "integer",
+            "name": "u9"
+          },
+          {
+            "type": "integer",
+            "name": "uA"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideUnitsEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "playerid"
+          },
+          {
+            "type": "integer",
+            "name": "u1"
+          },
+          {
+            "type": "integer",
+            "name": "u2"
+          },
+          {
+            "type": "integer",
+            "name": "u3"
+          },
+          {
+            "type": "integer",
+            "name": "u4"
+          },
+          {
+            "type": "integer",
+            "name": "u5"
+          },
+          {
+            "type": "integer",
+            "name": "u6"
+          },
+          {
+            "type": "integer",
+            "name": "u7"
+          },
+          {
+            "type": "integer",
+            "name": "u8"
+          },
+          {
+            "type": "integer",
+            "name": "u9"
+          },
+          {
+            "type": "integer",
+            "name": "uA"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideOnPlayerEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideOnUnitsEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SuicideOnPointEx",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "easy"
+          },
+          {
+            "type": "integer",
+            "name": "med"
+          },
+          {
+            "type": "integer",
+            "name": "hard"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          },
+          {
+            "type": "integer",
+            "name": "x"
+          },
+          {
+            "type": "integer",
+            "name": "y"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "ForeverSuicideOnPlayer",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "seconds"
+          },
+          {
+            "type": "player",
+            "name": "p"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CommonSleepUntilTargetDead",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "target"
+          },
+          {
+            "type": "boolean",
+            "name": "reform"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SleepUntilTargetDead",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "target"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "ReformUntilTargetDead",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "target"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AttackMoveKillA",
+        "parameters": [
+          {
+            "type": "unit",
+            "name": "target"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "MinorCreepAttack",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "MajorCreepAttack",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CreepAttackEx",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AnyPlayerAttack",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "ExpansionAttack",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AddSiege",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "GetAllyCount",
+        "parameters": [
+          {
+            "type": "player",
+            "name": "whichPlayer"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "SingleMeleeAttack",
+        "parameters": [
+          {
+            "type": "boolean",
+            "name": "needs_exp"
+          },
+          {
+            "type": "boolean",
+            "name": "has_siege"
+          },
+          {
+            "type": "boolean",
+            "name": "major_ok"
+          },
+          {
+            "type": "boolean",
+            "name": "air_units"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "GetZeppelin",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "FoodUsed",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "FoodCap",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "FoodSpace",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "FoodAvail",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "base"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "BuildAttackers",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "BuildDefenders",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CampaignBasicsA",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CampaignBasics",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "CampaignAI",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "farms"
+          },
+          {
+            "type": "code",
+            "name": "heroes"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "UnsummonAll",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "SkillArrays",
+        "parameters": [],
+        "returns": "integer",
+        "isConstant": false
+      },
+      {
+        "name": "SetSkillArray",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "index"
+          },
+          {
+            "type": "integer",
+            "name": "id"
+          }
+        ],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "AwaitMeleeHeroes",
+        "parameters": [],
+        "returns": "nothing",
+        "isConstant": false
+      },
+      {
+        "name": "PickMeleeHero",
+        "parameters": [
+          {
+            "type": "race",
+            "name": "raceid"
+          }
+        ],
+        "returns": "integer",
+        "isConstant": false
+      }
+    ]
+  },
+  "scripts/common.j": {
+    "types": [],
+    "natives": [],
+    "globals": [],
+    "functions": []
+  }
+}

@@ -1,0 +1,602 @@
+{
+  "attackBits": [
+    {
+      "value": "0",
+      "displayName": "None"
+    },
+    {
+      "value": "1",
+      "displayName": "Attack 1 Only"
+    },
+    {
+      "value": "3",
+      "displayName": "Both"
+    }
+  ],
+  "attackType": [
+    {
+      "value": "unknown",
+      "displayName": "None"
+    },
+    {
+      "value": "normal",
+      "displayName": "Normal"
+    },
+    {
+      "value": "pierce",
+      "displayName": "Pierce"
+    },
+    {
+      "value": "siege",
+      "displayName": "Siege"
+    },
+    {
+      "value": "spells",
+      "displayName": "Spells"
+    },
+    {
+      "value": "chaos",
+      "displayName": "Chaos"
+    }
+  ],
+  "attributeType": [
+    {
+      "value": "AGI",
+      "displayName": "Agility"
+    },
+    {
+      "value": "INT",
+      "displayName": "Intelligence"
+    },
+    {
+      "value": "STR",
+      "displayName": "Strength"
+    }
+  ],
+  "defenseType": [
+    {
+      "value": "normal",
+      "displayName": "Normal"
+    },
+    {
+      "value": "small",
+      "displayName": "Small"
+    },
+    {
+      "value": "medium",
+      "displayName": "Medium"
+    },
+    {
+      "value": "large",
+      "displayName": "Large"
+    },
+    {
+      "value": "fort",
+      "displayName": "Fortified"
+    },
+    {
+      "value": "hero",
+      "displayName": "Hero"
+    },
+    {
+      "value": "divine",
+      "displayName": "Divine"
+    }
+  ],
+  "missileArt": [
+    {
+      "value": "Abilities\\Weapons\\AncestralGuardianMissile\\AncestralGuardianMissile.mdl",
+      "displayName": "Ancestral Guardian"
+    },
+    {
+      "value": "Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl",
+      "displayName": "Ancient Protector"
+    },
+    {
+      "value": "Abilities\\Weapons\\Arrow\\ArrowMissile.mdl",
+      "displayName": "Arrow"
+    },
+    {
+      "value": "Abilities\\Weapons\\Axe\\AxeMissile.mdl",
+      "displayName": "Axe"
+    },
+    {
+      "value": "Abilities\\Weapons\\BallistaMissile\\BallistaMissile.mdl",
+      "displayName": "Ballista"
+    },
+    {
+      "value": "Abilities\\Weapons\\BansheeMissile\\BansheeMissile.mdl",
+      "displayName": "Banshee"
+    },
+    {
+      "value": "Abilities\\Weapons\\BristleBackMissile\\BristleBackMissile.mdl",
+      "displayName": "Bristleback"
+    },
+    {
+      "value": "Abilities\\Weapons\\CannonTowerMissile\\CannonTowerMissile.mdl",
+      "displayName": "Cannon Tower"
+    },
+    {
+      "value": "Abilities\\Weapons\\Catapult\\CatapultMissile.mdl",
+      "displayName": "Catapult"
+    },
+    {
+      "value": "Abilities\\Weapons\\ChimaeraAcidMissile\\ChimaeraAcidMissile.mdl",
+      "displayName": "Chimaera Acid"
+    },
+    {
+      "value": "Abilities\\Weapons\\ChimaeraLightningMissile\\ChimaeraLightningMissile.mdl",
+      "displayName": "Chimaera Lightning"
+    },
+    {
+      "value": "Abilities\\Weapons\\ColdArrow\\ColdArrowMissile.mdl",
+      "displayName": "Cold Arrow"
+    },
+    {
+      "value": "Abilities\\Weapons\\CryptFiendMissile\\CryptFiendMissile.mdl",
+      "displayName": "Crypt Fiend"
+    },
+    {
+      "value": "Abilities\\Weapons\\DemonHunterMissile\\DemonHunterMissile.mdl",
+      "displayName": "Demon Hunter"
+    },
+    {
+      "value": "Abilities\\Weapons\\DragonHawkMissile\\DragonHawkMissile.mdl",
+      "displayName": "Dragon Hawk"
+    },
+    {
+      "value": "Abilities\\Weapons\\DruidoftheTalonMissile\\DruidoftheTalonMissile.mdl",
+      "displayName": "Druid of the Talon"
+    },
+    {
+      "value": "Abilities\\Weapons\\Dryadmissile\\Dryadmissile.mdl",
+      "displayName": "Dryad"
+    },
+    {
+      "value": "Abilities\\Weapons\\FarseerMissile\\FarseerMissile.mdl",
+      "displayName": "Far Seer"
+    },
+    {
+      "value": "Abilities\\Weapons\\FireBallMissile\\FireBallMissile.mdl",
+      "displayName": "Fireball"
+    },
+    {
+      "value": "Abilities\\Weapons\\FlamingArrow\\FlamingArrowMissile.mdl",
+      "displayName": "Flaming Arrow"
+    },
+    {
+      "value": "Abilities\\Weapons\\FrostWyrmMissile\\FrostWyrmMissile.mdl",
+      "displayName": "Frost Wyrm"
+    },
+    {
+      "value": "Abilities\\Weapons\\GargoyleMissile\\GargoyleMissile.mdl",
+      "displayName": "Gargoyle"
+    },
+    {
+      "value": "Abilities\\Weapons\\GryphonRiderMissile\\GryphonRiderMissile.mdl",
+      "displayName": "Gryphon Rider"
+    },
+    {
+      "value": "Abilities\\Weapons\\GuardTowerMissile\\GuardTowerMissile.mdl",
+      "displayName": "Guard Tower"
+    },
+    {
+      "value": "Abilities\\Weapons\\GyroCopter\\GyroCopterImpact.mdl",
+      "displayName": "Gyrocopter Impact"
+    },
+    {
+      "value": "Abilities\\Weapons\\HarpyMissile\\HarpyMissile.mdl",
+      "displayName": "Harpy"
+    },
+    {
+      "value": "Abilities\\Weapons\\huntermissile\\huntermissile.mdl",
+      "displayName": "Headhunter"
+    },
+    {
+      "value": "Abilities\\Weapons\\LichMissile\\LichMissile.mdl",
+      "displayName": "Lich"
+    },
+    {
+      "value": "Abilities\\Weapons\\MeatwagonMissile\\MeatwagonMissile.mdl",
+      "displayName": "Meat Wagon"
+    },
+    {
+      "value": "Abilities\\Weapons\\MoonPriestessMissile\\MoonPriestessMissile.mdl",
+      "displayName": "Priestess of the Moon"
+    },
+    {
+      "value": "Abilities\\Weapons\\Mortar\\MortarMissile.mdl",
+      "displayName": "Mortar"
+    },
+    {
+      "value": "Abilities\\Weapons\\NecromancerMissile\\NecromancerMissile.mdl",
+      "displayName": "Necromancer"
+    },
+    {
+      "value": "Abilities\\Weapons\\PoisonArrow\\PoisonArrowMissile.mdl",
+      "displayName": "Poison Arrow"
+    },
+    {
+      "value": "Abilities\\Weapons\\PoisonSting\\PoisonStingMissile.mdl",
+      "displayName": "Poison Sting"
+    },
+    {
+      "value": "Abilities\\Weapons\\PriestMissile\\PriestMissile.mdl",
+      "displayName": "Priest"
+    },
+    {
+      "value": "Abilities\\Weapons\\RangerMissile\\RangerMissile.mdl",
+      "displayName": "Ranger"
+    },
+    {
+      "value": "Abilities\\Weapons\\RedDragonBreath\\RedDragonMissile.mdl",
+      "displayName": "Red Dragon"
+    },
+    {
+      "value": "Abilities\\Weapons\\Rifle\\RifleImpact.mdl",
+      "displayName": "Rifle"
+    },
+    {
+      "value": "Abilities\\Weapons\\SearingArrow\\SearingArrowMissile.mdl",
+      "displayName": "Searing Arrow"
+    },
+    {
+      "value": "Abilities\\Weapons\\SentinelMissile\\SentinelMissile.mdl",
+      "displayName": "Huntress"
+    },
+    {
+      "value": "Abilities\\Weapons\\SorceressMissile\\SorceressMissile.mdl",
+      "displayName": "Sorceress"
+    },
+    {
+      "value": "Abilities\\Weapons\\TreantMissile\\TreantMissile.mdl",
+      "displayName": "Treant"
+    },
+    {
+      "value": "Abilities\\Weapons\\WaterElementalMissile\\WaterElementalMissile.mdl",
+      "displayName": "Water Elemental"
+    },
+    {
+      "value": "Abilities\\Weapons\\WitchDoctorMissile\\WitchDoctorMissile.mdl",
+      "displayName": "Witch Doctor"
+    },
+    {
+      "value": "Abilities\\Weapons\\WyvernSpear\\WyvernSpearMissile.mdl",
+      "displayName": "Wyvern Spear"
+    },
+    {
+      "value": "Abilities\\Weapons\\ZigguratMissile\\ZigguratMissile.mdl",
+      "displayName": "Spirit Tower"
+    },
+    {
+      "value": "Abilities\\Weapons\\SteamTank\\SteamTankImpact.mdl",
+      "displayName": "Steam Tank Impact"
+    },
+    {
+      "value": "Abilities\\Weapons\\KeeperGroveMissile\\KeeperGroveMissile.mdl",
+      "displayName": "Keeper of the Grove"
+    },
+    {
+      "value": "Abilities\\Weapons\\Banditmissile\\Banditmissile.mdl",
+      "displayName": "Bandit"
+    },
+    {
+      "value": "Abilities\\Weapons\\GreenDragonMissile\\GreenDragonMissile.mdl",
+      "displayName": "Green Dragon"
+    },
+    {
+      "value": "Abilities\\Weapons\\BlackKeeperMissile\\BlackKeeperMissile.mdl",
+      "displayName": "Black Keeper"
+    },
+    {
+      "value": "Abilities\\Weapons\\SludgeMissile\\SludgeMissile.mdl",
+      "displayName": "Sludge"
+    },
+    {
+      "value": "Abilities\\Weapons\\GyroCopter\\GyroCopterMissile.mdl",
+      "displayName": "Gyrocopter"
+    }
+  ],
+  "moveType": [
+    {
+      "value": "foot",
+      "displayName": "Foot"
+    },
+    {
+      "value": "horse",
+      "displayName": "Horse"
+    },
+    {
+      "value": "fly",
+      "displayName": "Fly"
+    },
+    {
+      "value": "hover",
+      "displayName": "Hover"
+    }
+  ],
+  "pathingTexture": [
+    {
+      "value": "PathTextures\\10x10Simple.blp",
+      "displayName": "Standard - 10 x 10"
+    },
+    {
+      "value": "PathTextures\\10x10Simple1cell.blp",
+      "displayName": "Bordered - 10 x 10"
+    },
+    {
+      "value": "PathTextures\\10x14SimpleSolid.blp",
+      "displayName": "Solid - 10 x 14"
+    },
+    {
+      "value": "PathTextures\\12x12Simple.blp",
+      "displayName": "Standard - 12 x 12"
+    },
+    {
+      "value": "PathTextures\\12x12SimpleSolid.blp",
+      "displayName": "Solid - 12 x 12"
+    },
+    {
+      "value": "PathTextures\\12x12TreeOfLife.blp",
+      "displayName": "Special (Tree of Life) - 12 x 12"
+    },
+    {
+      "value": "PathTextures\\14x14Simple.blp",
+      "displayName": "Standard - 14 x 14"
+    },
+    {
+      "value": "PathTextures\\16x16Goldmine.blp",
+      "displayName": "Special (Gold Mine) - 16 x 16"
+    },
+    {
+      "value": "PathTextures\\16x16Simple.blp",
+      "displayName": "Standard - 16 x 16"
+    },
+    {
+      "value": "PathTextures\\4x4SimpleSolid.blp",
+      "displayName": "Solid -  4 x  4"
+    },
+    {
+      "value": "PathTextures\\6x6Simple1cell.blp",
+      "displayName": "Bordered -  6 x  6"
+    },
+    {
+      "value": "PathTextures\\6x6SimpleSolid.blp",
+      "displayName": "Solid -  6 x  6"
+    },
+    {
+      "value": "PathTextures\\8x8Simple.blp",
+      "displayName": "Standard -  8 x  8"
+    },
+    {
+      "value": "PathTextures\\8x8Simple1cell.blp",
+      "displayName": "Bordered -  8 x  8"
+    },
+    {
+      "value": "PathTextures\\8x8SimpleSolid.blp",
+      "displayName": "Solid -  8 x  8"
+    }
+  ],
+  "regenType": [
+    {
+      "value": "none",
+      "displayName": "None"
+    },
+    {
+      "value": "always",
+      "displayName": "Always"
+    },
+    {
+      "value": "blight",
+      "displayName": "Only while on Blight"
+    },
+    {
+      "value": "day",
+      "displayName": "Only during the day"
+    },
+    {
+      "value": "night",
+      "displayName": "Only during the night"
+    }
+  ],
+  "targetList": [
+    {
+      "value": "air",
+      "displayName": "Air"
+    },
+    {
+      "value": "alive",
+      "displayName": "Alive"
+    },
+    {
+      "value": "allies",
+      "displayName": "Allied"
+    },
+    {
+      "value": "dead",
+      "displayName": "Dead"
+    },
+    {
+      "value": "debris",
+      "displayName": "Debris"
+    },
+    {
+      "value": "enemies",
+      "displayName": "Enemy"
+    },
+    {
+      "value": "ground",
+      "displayName": "Ground"
+    },
+    {
+      "value": "hero",
+      "displayName": "Hero"
+    },
+    {
+      "value": "invulnerable",
+      "displayName": "Invulnerable"
+    },
+    {
+      "value": "item",
+      "displayName": "Item"
+    },
+    {
+      "value": "mechanical",
+      "displayName": "Mechanical"
+    },
+    {
+      "value": "neutral",
+      "displayName": "Neutral"
+    },
+    {
+      "value": "none",
+      "displayName": "None"
+    },
+    {
+      "value": "nonhero",
+      "displayName": "Non-hero"
+    },
+    {
+      "value": "nonsapper",
+      "displayName": "Non-suicidal"
+    },
+    {
+      "value": "notself",
+      "displayName": "Not self"
+    },
+    {
+      "value": "organic",
+      "displayName": "Organic"
+    },
+    {
+      "value": "player",
+      "displayName": "Player Units"
+    },
+    {
+      "value": "sapper",
+      "displayName": "Suicidal"
+    },
+    {
+      "value": "self",
+      "displayName": "Self"
+    },
+    {
+      "value": "structure",
+      "displayName": "Structure"
+    },
+    {
+      "value": "terrain",
+      "displayName": "Terrain"
+    },
+    {
+      "value": "tree",
+      "displayName": "Tree"
+    },
+    {
+      "value": "vulnerable",
+      "displayName": "Vulnerable"
+    },
+    {
+      "value": "wall",
+      "displayName": "Wall"
+    },
+    {
+      "value": "ward",
+      "displayName": "Ward"
+    },
+    {
+      "value": "ancient",
+      "displayName": "Ancient"
+    },
+    {
+      "value": "nonancient",
+      "displayName": "Non-ancient"
+    }
+  ],
+  "targetType": [
+    {
+      "value": "ground",
+      "displayName": "Ground"
+    },
+    {
+      "value": "air",
+      "displayName": "Air"
+    },
+    {
+      "value": "structure",
+      "displayName": "Structure"
+    },
+    {
+      "value": "ward",
+      "displayName": "Ward"
+    }
+  ],
+  "unitClass": [
+    {
+      "value": "giant",
+      "displayName": "Giant"
+    },
+    {
+      "value": "undead",
+      "displayName": "Undead"
+    },
+    {
+      "value": "summoned",
+      "displayName": "Summoned"
+    },
+    {
+      "value": "mechanical",
+      "displayName": "Mechanical"
+    },
+    {
+      "value": "peon",
+      "displayName": "Worker"
+    },
+    {
+      "value": "sapper",
+      "displayName": "Suicidal"
+    },
+    {
+      "value": "townhall",
+      "displayName": "Town Hall"
+    },
+    {
+      "value": "tree",
+      "displayName": "Tree"
+    }
+  ],
+  "weaponType": [
+    {
+      "value": "normal",
+      "displayName": "Normal"
+    },
+    {
+      "value": "instant",
+      "displayName": "Instant"
+    },
+    {
+      "value": "artillery",
+      "displayName": "Artillery"
+    },
+    {
+      "value": "aline",
+      "displayName": "Artillery (Line)"
+    },
+    {
+      "value": "missile",
+      "displayName": "Missile"
+    },
+    {
+      "value": "msplash",
+      "displayName": "Missile (Splash)"
+    },
+    {
+      "value": "mbounce",
+      "displayName": "Missile (Bounce)"
+    },
+    {
+      "value": "mline",
+      "displayName": "Missile (Line)"
+    }
+  ]
+}
