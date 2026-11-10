@@ -367,6 +367,15 @@ internal static class Wc3Errors
                 // -32602 for it and converting that into a result would hide a caller's typo.
                 throw;
             }
+            catch (System.Text.Json.JsonException error)
+            {
+                // An argument of the wrong shape reaches the binder before any tool body, so it
+                // used to surface as a raw deserializer sentence with no code. It is a caller
+                // error and it names the tool and the value it could not read.
+                return Result(
+                    new ToolError("INVALID_ARGUMENT", "an argument could not be read as the type the tool declares, " + error.Message),
+                    request.Params?.Name);
+            }
             catch (Exception error)
             {
                 return Result(error, request.Params?.Name);
