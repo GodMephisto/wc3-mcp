@@ -1,0 +1,38 @@
+name: Deprecate npm version
+
+# Marks a published version as bad without deleting it. npm does not allow an unpublish after 72
+# hours, and a deprecation shows up in install output with the reason. The publish path is OIDC
+# trusted publishing, so the deprecation uses the same id-token permission rather than a stored
+# token, which the repository does not keep.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The published version to deprecate, for example 0.5.20
+        required: true
+      message:
+        description: The reason a person sees when installing it
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Deprecate
+        working-directory: npm
+        run: |
+          npm deprecate "wc3-mcp@${{ inputs.version }}" "${{ inputs.message }}"
+          npm view "wc3-mcp@${{ inputs.version }}" deprecated
