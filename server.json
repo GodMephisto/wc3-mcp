@@ -7,7 +7,7 @@
     "url": "https://github.com/GodMephisto/wc3-mcp",
     "source": "github"
   },
-  "version": "0.5.36",
+  "version": "0.5.37",
   "packages": [
     {
       "registryType": "mcpb",
@@ -20,7 +20,7 @@
     {
       "registryType": "npm",
       "identifier": "wc3-mcp",
-      "version": "0.5.36",
+      "version": "0.5.37",
       "transport": {
         "type": "stdio"
       }
