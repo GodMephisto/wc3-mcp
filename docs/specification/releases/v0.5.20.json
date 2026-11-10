@@ -1,0 +1,15 @@
+{
+  "record": "wc3-release-record/1",
+  "version": "0.5.20",
+  "tag": "v0.5.20",
+  "commit": "df4434eaf75e7fbfaa728949d3c1235e072563be",
+  "written": "2026-11-10T04:44:56Z",
+  "artifacts": [
+    {
+      "name": "wc3-mcp-v0.5.20-win-x64.zip",
+      "path": "https://github.com/GodMephisto/wc3-mcp/releases/download/v0.5.20/wc3-mcp-v0.5.20-win-x64.zip",
+      "bytes": 132976640,
+      "sha256": "c522c5c2dba44bab8ead712a467aaab151ea788b3b1c67947e1390d3dbb05f3f"
+    }
+  ]
+}
