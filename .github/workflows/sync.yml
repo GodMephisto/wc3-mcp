@@ -80,23 +80,30 @@ jobs:
           day=$(date -u +%Y-%m-%d)
           prev=$(git describe --tags --abbrev=0 2>/dev/null || true)
           mkdir -p changelog
-          {
-            echo "# $v - $day"
-            echo
-            # The previous tag sits on the commit the sync is about to make, so the range is taken
-            # from its parent, and a range that is still empty falls back to the recent history
-            # rather than shipping a heading with nothing under it.
-            # Mirror commits are bookkeeping, not changes, so they are filtered out of the note.
-            if [ -n "$prev" ]; then
-              lines=$(git log --no-merges --pretty='- %s' "$prev~1"..HEAD -- src | grep -v 'chore(sync)' | head -60 || true)
-            else
-              lines=""
-            fi
-            if [ -z "$lines" ]; then
-              lines="- Source tree at $(git rev-parse --short HEAD)"
-            fi
-            printf '%s\n' "$lines"
-          } > "changelog/$v.md"
+
+          # A person writes the note where the change happened. This checkout copies that one when
+          # it exists, and only writes its own when the source has none, because a note generated
+          # from mirror commits says nothing a reader wants.
+          if [ -f "wc3ctl/changelog/$v.md" ]; then
+            cp "wc3ctl/changelog/$v.md" "changelog/$v.md"
+            echo "copied the note from the source tree"
+          else
+            {
+              echo "# $v - $day"
+              echo
+              if [ -n "$prev" ]; then
+                lines=$(git log --no-merges --pretty='- %s' "$prev~1"..HEAD -- src | grep -v 'chore(sync)' | head -60 || true)
+              else
+                lines=""
+              fi
+              if [ -z "$lines" ]; then
+                lines="- Source tree at $(git rev-parse --short HEAD)"
+              fi
+              printf '%s\n' "$lines"
+            } > "changelog/$v.md"
+            echo "wrote a note from the mirror, since the source has none for $v"
+          fi
+
           if [ -f CHANGELOG.md ]; then
             tail -n +2 CHANGELOG.md > CHANGELOG.rest
           else
@@ -112,7 +119,6 @@ jobs:
             cat CHANGELOG.rest
           } > CHANGELOG.md
           rm -f CHANGELOG.rest
-          echo "wrote changelog/$v.md"
 
       - name: Keep the manifests on the same version
         run: |
