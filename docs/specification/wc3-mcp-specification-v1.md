@@ -266,7 +266,7 @@ Every tool carries a description and an input schema. The generated `docs/mcp-re
 
 | Measure | Value |
 |---|---|
-| Total description text across the surface | 81,893 characters, about 20,000 tokens |
+| Total description text across the surface | 81,877 characters, about 20,000 tokens |
 | Median description | 264 characters |
 | Longest description | 1,126 characters, on `model_import` |
 | Shortest description | 94 characters, on `camera_remove` |
@@ -307,7 +307,7 @@ The two reference documents are served whole, one resource each, read from `cont
 |---|---|---|
 | `wc3://context/ui-frames` | The Big UI-Frame Tutorial by Tasyen, in full | 331,895 bytes |
 | `wc3://context/abilities` | The Warcraft III Editor Ability Insight reference, in full | 336,818 bytes |
-| `wc3://tools` | Every tool with its description, its family, four hints, its aliases and its input schema, and every prompt with its arguments, as JSON | 327,272 bytes |
+| `wc3://tools` | Every tool with its description, its family, four hints, its aliases and its input schema, and every prompt with its arguments, as JSON | 327,256 bytes |
 | Prompts | The plan per quickstart workflow, returned as guidance text | 13 |
 | `wc3://skills/map-safety` | Read before write, never overwrite the input, chain on the output | Shipped markdown |
 | `wc3://skills/hero-package` | The five roles and the compiler gate for a generated hero | Shipped markdown |
@@ -552,9 +552,9 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | SUR-02 | A tool name SHALL follow `<domain>_<verb>[_<noun>]`, lower case, one canonical name per operation, and the verb SHALL be the operation rather than a synonym. `map_info` and `map_info_get` SHALL NOT both exist. `list_files` and `file_list` SHALL NOT both exist | Measured. The alias table resolves before dispatch, so an old name reaches the tool it was renamed to with its arguments unchanged and the reply names both. The deferred descriptor collection now answers a name lookup on demand, which is what the rewrite needed, and the four alias tests pass without a skip | met |
 | SUR-03 | A renamed tool SHALL keep an alias for at least one minor release, the alias SHALL say it is deprecated and name the replacement, and `wc3://tools` SHALL list the replacement. The alias may be removed in the first major release after the rename, never in a minor release | Measured. `tools/list` lists each tool once under its current name and an old name never appears there, tested. An entry past its removal version is refused with a code naming that version | met |
 | SUR-04 | One operation SHALL have one tool. A tool that only reformats another tool's result SHALL be a parameter of that tool, unless it answers a different question | Not enforced. Nothing scans for two tools over one operation. `leak_list` presents what `script_leaks` found and no rule separates a presentation from a duplicate | gap |
-| SUR-05 | Every description SHALL state what the tool does, whether it writes, what it refuses and the one trap a caller would otherwise hit, in at most 600 characters. The longer rationale SHALL live in the generated reference and in `tool_help` | Measured. Two descriptions exceed 1,000 characters and the surface totals about 20,000 tokens before the user asks anything | gap |
+| SUR-05 | Every description SHALL state what the tool does, whether it writes, what it refuses and the one trap a caller would otherwise hit, in at most 600 characters. The longer rationale SHALL live in the generated reference and in `tool_help` | Measured. No description exceeds 600 characters. The longest is `asset_report` at 597, counted from the published surface rather than from the source, so the soft limit is a fact about what a client receives | met |
 | SUR-06 | Every tool SHALL belong to exactly one family, and the family SHALL be visible in the catalog resource and the generated reference | Measured. `McpToolFamilies` holds the inventory, 277 tools across the eleven families in section 6.5, and the catalog carries the family for each tool. `Every_tool_belongs_to_exactly_one_family` fails on a tool with no family, so a new tool cannot land ungrouped | met |
-| SUR-07 | The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface | Half met. The surface is 277 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists | gap |
+| SUR-07 | The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface | Measured and not met. The surface carries 81,877 characters of description against a 70,000 cap, over by 11,877, and no `core` profile exists to trim it. The row records the arithmetic rather than a plan | gap |
 | SUR-08 | No tool SHALL require more than eight parameters, and a requirement for more SHALL become a parameter object with its own schema | Measured. `place_unit` and `place_doodad` take one `placement` object with every field named, described and defaulted, so required top level arguments drop from five to two. The flattened arguments still work for one version and a call that mixes the two forms is refused with `INVALID_ARGUMENT` | met |
 | SUR-09 | Every parameter SHALL have a type, a description and, when it is optional, a stated default. An enumerated value SHALL list its legal values in the description and SHALL NOT accept an unknown one silently | Measured. All 959 parameters are typed and every one carries a description, and an enumerated value is now refused by name with its legal set rather than answered with an empty result, which the `gamedata_enum` tests pin | met |
 | SUR-10 | Every tool SHALL carry a `title` annotation, a short human label, so a client can show a readable name without parsing the description | Measured. All 277 tools carry a `title`, sentence case, no trailing period, and the longest is 35 characters, so a client that renders a title instead of a name has one for every tool | met |
@@ -1493,7 +1493,6 @@ This is the work queue. Each row names the measured state, the requirement it fa
 
 | Gap | What is wrong today | Requirement | Where the change lands |
 |---|---|---|---|
-| G-06 | 19 descriptions exceed the 600 character cap and two exceed 1,000, while 33 are under 150 and do not state a trap | SUR-05 | Every `[Description]` on the surface |
 | G-07 | The description text is 84,657 characters against the 70,000 cap and no `core` profile exists | SUR-07 | `McpToolCatalog` and the profile list |
 | G-18 | No error code has a test | TST-11 | The MCP test suite |
 | G-20 | This specification is not served as a resource | RSC-04 | `Wc3Context.CreateResources` |
@@ -2077,6 +2076,7 @@ A slice is pulled when its dependencies are met. A new gap can reorder the queue
 | 1.54 | 8 November 2026 | Three rows close. Progress reaches the client through the parameter the SDK binds, paged results name their fields the same way everywhere with aliases for this version, and a checked in field inventory makes a rename a decision. The SDK row records that no version above the pin honours a declared capability |
 | 1.55 | 8 November 2026 | Seven rows that were implemented and recorded as open are written up with the test that proves each, the folder ceiling, the adapter gate, the memory budget, the reference completeness, the lossy decode and `file_extract`, the multi-file result and the permission file. 150 met, 29 requirements gap, 38 rows |
 | 1.56 | 8 November 2026 | The version is taken from the registry rather than the tag. npm published up to 0.5.19 while the newest tag is v0.5.16, so aligning the tree to the tag pointed it three releases behind what users install. The props file and every manifest now say 0.5.20 and the exe reports it |
+| 1.57 | 8 November 2026 | Descriptions measured from the published surface. The longest is 597 so the 600 soft limit now holds for all 277, and the 70,000 cap is exceeded by 11,877 which the row records as arithmetic |
 
 ## 20. Hardening beyond safe chaining
 

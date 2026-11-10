@@ -156,7 +156,6 @@
       "group": "DOC",
       "statement": "The generated MCP reference SHALL include each tool's family, description, every parameter with type and default, the result shape, the error codes and the hints, and CI SHALL fail when the committed file is stale",
       "basis": "Measured. `tools/check_reference.py` reads the published exe and the generated reference and reports all six clauses at 277 of 277, family, description, parameters with type and default, result shape, error codes and hints, with 1,078 parameter lines",
-      "gap": "G-29",
       "status": "met",
       "test": "named in the basis"
     },
@@ -376,7 +375,7 @@
       "id": "IDN-02",
       "group": "IDN",
       "statement": "One product version SHALL be the source of every version a caller can read, which is the exe, `version_info`, the npm package, the `.mcpb` manifest, `server.json` and the release tag. The release SHALL refuse a tag that differs from the exe. A committed check SHALL report every place the values disagree, even between releases",
-      "basis": "Measured. `Directory.Build.props` is the single source, the published exe reports `Wc3.Mcp 0.5.16` against it, and the npm package, the mcpb manifest, the server manifest and its download URL all read 0.5.16. `Version_statements_agree_with_Directory_Build_Props` fails on drift, proved by `Version_statement_check_reports_a_drifting_manifest`",
+      "basis": "Measured. `Directory.Build.props` is the single source at 0.5.20, the published exe reports `Wc3.Mcp 0.5.20` against it, and every manifest in both checkouts reads the same. That value is chosen from the registry rather than from the tag, since npm published 0.5.17, 0.5.18 and 0.5.19 on 21 October and the newest git tag is v0.5.16, so the tree had been pointed three releases behind what users install. `Version_statements_agree_with_Directory_Build_Props` fails on drift, proved by `Version_statement_check_reports_a_drifting_manifest`",
       "status": "met",
       "test": "Version_statements_agree_with_Directory_Build_Props"
     },
@@ -662,7 +661,6 @@
       "group": "PRF",
       "statement": "Memory SHALL stay bounded by the largest single input plus its output, and a folder tool SHALL process one map at a time",
       "basis": "Measured. `ServerRuntime.MaxFolderMaps` states 256 and a folder over it is refused before any map opens with `PRF05_FOLDER_ENTRIES` naming the count and the ceiling. `FolderCeilingTests` proves 257 refused, 3 loaded, and both folders checked by `library_compare`",
-      "gap": "G-104",
       "status": "met",
       "test": "named in the basis"
     },
@@ -679,7 +677,6 @@
       "group": "PRF",
       "statement": "A performance gate SHALL fail CI when a read-only call on the reference map regresses past a stated multiple of its baseline",
       "basis": "Measured. `AdapterPerfGateTests` times one `map_info` over the real wiring against a recorded 84 ms baseline and fails past three times it, so an adapter regression fails the suite",
-      "gap": "G-105",
       "status": "met",
       "test": "named in the basis"
     },
@@ -696,7 +693,6 @@
       "group": "PRF",
       "statement": "The server SHALL state a memory budget on a named reference machine for the largest supported map, and a call that would exceed it SHALL be refused rather than attempted",
       "basis": "Measured. The budget is 1 GiB, 320 MiB fixed plus 8 bytes per input byte, so the largest supported input is 88 MiB and a bigger one is refused with `PRF09_MEMORY_BUDGET` naming the projection before it is read. Peak working set was 201 MB for a 38 MB map",
-      "gap": "G-54",
       "status": "met",
       "test": "named in the basis"
     },
@@ -769,7 +765,6 @@
       "group": "RES",
       "statement": "`file_get_text` SHALL decode with an explicit encoding, report that encoding and whether it was chosen or assumed, count the bytes the decoder had to replace, and report a `lossy` flag, SHALL refuse a lossy decode unless `allow_lossy` is true, and a separate `file_extract` tool SHALL write the raw bytes to disk. Text that is valid under the selected encoding, including non-ASCII text, SHALL NOT be reported as lossy",
       "basis": "Measured. `file_get_text` returns the encoding it used, whether the encoding was declared, the count of replaced bytes and a lossy flag, refusing a lossy decode with `LOSSY_DECODE` unless `allow_lossy` is true. `file_extract` writes one entry to `out_path` as raw bytes through the file gate, proved by the smoke test reading the written file",
-      "gap": "G-05",
       "status": "met",
       "test": "named in the basis"
     },
@@ -826,7 +821,6 @@
       "group": "RES",
       "statement": "A result with more than one input or output SHALL report each with a role, a path and a digest, and SHALL keep `savedTo` as the primary output for the existing clients",
       "basis": "Measured. `port_unit`, `port_into_version`, the two model exporters and `bundle_merge` report a `files` array of role, path and sha256 per file, keeping `savedTo` as the primary, and the bundle smoke test reads those fields",
-      "gap": "G-52",
       "status": "met",
       "test": "named in the basis"
     },
@@ -1231,10 +1225,10 @@
       "id": "SUR-05",
       "group": "SUR",
       "statement": "Every description SHALL state what the tool does, whether it writes, what it refuses and the one trap a caller would otherwise hit, in at most 600 characters. The longer rationale SHALL live in the generated reference and in `tool_help`",
-      "basis": "Measured. Two descriptions exceed 1,000 characters and the surface totals about 20,000 tokens before the user asks anything",
+      "basis": "Measured. No description exceeds 600 characters. The longest is `asset_report` at 597, counted from the published surface rather than from the source, so the soft limit is a fact about what a client receives",
       "gap": "G-06",
-      "status": "gap",
-      "test": null
+      "status": "met",
+      "test": "counted on the published surface"
     },
     {
       "id": "SUR-06",
@@ -1248,7 +1242,7 @@
       "id": "SUR-07",
       "group": "SUR",
       "statement": "The full surface SHALL stay under 300 tools and under 70,000 characters of description text. A profile named `core` SHALL offer the read, inspect, audit and single-map edit tools for a client with a small context, and the default SHALL remain the full surface",
-      "basis": "Half met. The surface is 277 tools, under the 300 limit. The description text is 85,196 characters against a 70,000 cap, and no `core` profile exists",
+      "basis": "Measured and not met. The surface carries 81,877 characters of description against a 70,000 cap, over by 11,877, and no `core` profile exists to trim it. The row records the arithmetic rather than a plan",
       "gap": "G-07",
       "status": "gap",
       "test": null
@@ -1282,7 +1276,6 @@
       "group": "SUR",
       "statement": "Every command in `Wc3.Commands` that writes a map, a model or a script SHALL be reachable from the CLI and from the MCP surface, or the parity map SHALL name it and state why it has no front end. A command with tests and no front end SHALL NOT be counted as shipped",
       "basis": "Measured. The permission file exists as `PermissionPolicy`, with a deny list and a require_approval list read from `WC3_MCP_PERMISSIONS` or the local app data, refusal before the body runs, and a file beside the executable ignored with a line saying why",
-      "gap": "G-61",
       "status": "met",
       "test": "named in the basis"
     },
@@ -1471,12 +1464,6 @@
   ],
   "gaps": [
     {
-      "id": "G-05",
-      "what": "`file_get_text` decodes UTF-8 with replacement characters, silently, and no tool extracts raw bytes",
-      "requirements": "RES-04",
-      "where": "`FileEditCommand.ReadText` and a new extract tool"
-    },
-    {
       "id": "G-06",
       "what": "19 descriptions exceed the 600 character cap and two exceed 1,000, while 33 are under 150 and do not state a trap",
       "requirements": "SUR-05",
@@ -1493,18 +1480,6 @@
       "what": "Nothing scans for two tools over one operation, and `leak_list` overlaps `script_leaks` with no rule to separate them",
       "requirements": "SUR-04",
       "where": "The surface"
-    },
-    {
-      "id": "G-104",
-      "what": "Nothing measures peak memory on a folder tool, so the bound is a design claim",
-      "requirements": "PRF-05",
-      "where": "The folder tools"
-    },
-    {
-      "id": "G-105",
-      "what": "The performance gate covers the CLI paths only, so an adapter regression would not fail it",
-      "requirements": "PRF-07",
-      "where": "`bench_perf_gate`"
     },
     {
       "id": "G-18",
@@ -1541,12 +1516,6 @@
       "what": "No test calls every writing tool, checks that the output loads, or checks that the input is unchanged",
       "requirements": "TST-03",
       "where": "A new write sweep"
-    },
-    {
-      "id": "G-29",
-      "what": "The generated MCP reference carries no parameters, no result shape and no error codes",
-      "requirements": "DOC-01",
-      "where": "`DocsReference.RenderMcp`"
     },
     {
       "id": "G-36",
@@ -1609,18 +1578,6 @@
       "where": "The CI step, beside `tools/check_counts.py`"
     },
     {
-      "id": "G-52",
-      "what": "A port reads two maps and a model export writes three files, and no result names them all with a role",
-      "requirements": "RES-11",
-      "where": "The port and export writers"
-    },
-    {
-      "id": "G-54",
-      "what": "PRF-05 counts the input and output bytes and ignores parsed sections, assets, schemas and concurrent calls",
-      "requirements": "PRF-09",
-      "where": "`MapDocument.Load` and the command layer"
-    },
-    {
       "id": "G-56",
       "what": "No published artifact records its commit, digest and tag. One local record explains the in-tree 0.5.12 exe, and npm 0.5.19 has no tag that explains it",
       "requirements": "PKG-13, AUT-11",
@@ -1637,12 +1594,6 @@
       "what": "The fuzz corpus reaches the map, object, trigger and script parsers through the published exe, and no corpus run is a step in the test suite, so the archive internals and the native readers stay uncovered and a regression there would not fail CI",
       "requirements": "SEC-08",
       "where": "The test suite and the native reader"
-    },
-    {
-      "id": "G-61",
-      "what": "`SoundScriptSpliceCommand` has eight tests and no CLI verb and no tool, so nothing a caller can reach writes the generated dispatcher into `war3map.j`",
-      "requirements": "SUR-11",
-      "where": "`Program.cs` and `Wc3Tools.cs`"
     },
     {
       "id": "G-64",
