@@ -107,6 +107,41 @@ jobs:
           wc3-mcp-${{ github.ref_name }}-win-x64.mcpb.sha256
           --notes-file release-notes.md
 
+      # AUT-11. The record names the tag, the commit it was built from and the digest of each
+      # published artifact, so a published version resolves to something rather than to a date.
+      # It is committed after the assets exist, because the digests are what make it worth having.
+      - name: Record the release
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart('v')
+          $dir = "docs/specification/releases"
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $arts = @()
+          foreach ($name in @("wc3-mcp-v$v-win-x64.zip", "wc3-mcp-v$v-win-x64.mcpb")) {
+            $file = $name
+            $hash = (Get-FileHash $file -Algorithm SHA256).Hash.ToLower()
+            $size = (Get-Item $file).Length
+            $arts += [ordered]@{
+              name   = $name
+              path   = "https://github.com/GodMephisto/wc3-mcp/releases/download/v$v/$name"
+              bytes  = $size
+              sha256 = $hash
+            }
+          }
+          $record = [ordered]@{
+            record    = "wc3-release-record/1"
+            version   = $v
+            tag       = "v$v"
+            commit    = "${{ github.sha }}"
+            artifacts = $arts
+          }
+          $record | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 "$dir/v$v.json"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add "$dir/v$v.json"
+          git commit -m "chore(release): record v$v"
+          git push
+
       # Publishes the zero-dependency npm launcher through OIDC trusted publishing, so no
       # long-lived token is stored. The launcher downloads the matching release asset at run
       # time, so the package itself stays tiny. The id-token permission above proves the
