@@ -31,8 +31,18 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
 
+      # Trusted publishing covers publish only. Deprecating and unpublishing need a token with
+      # read-write on the package, so this step reads NPM_TOKEN when the repository has one and
+      # says so plainly when it does not, rather than failing with a bare 404.
       - name: Deprecate
         working-directory: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NPM_TOKEN is not set on this repository, so npm deprecate cannot authenticate."
+            echo "Trusted publishing issues a token for publish only. Add NPM_TOKEN to run this."
+            exit 1
+          fi
           npm deprecate "wc3-mcp@${{ inputs.version }}" "${{ inputs.message }}"
           npm view "wc3-mcp@${{ inputs.version }}" deprecated
