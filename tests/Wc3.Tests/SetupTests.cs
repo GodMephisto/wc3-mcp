@@ -422,4 +422,65 @@ public sealed class SetupTests : IDisposable
         Assert.StartsWith("wc3ctl mcp ", Cli(SetupProduct.Wc3ctl, "version").Output);
         Assert.Equal(Cli(SetupProduct.Wc3ctl, "help").Output, Cli(SetupProduct.Wc3ctl).Output);
     }
+
+    [Theory]
+    [InlineData("claude-desktop")]
+    [InlineData("cursor")]
+    [InlineData("vscode")]
+    [InlineData("windsurf")]
+    [InlineData("gemini")]
+    [InlineData("codex")]
+    [InlineData("cline")]
+    [InlineData("lmstudio")]
+    [InlineData("zed")]
+    public void Every_client_round_trips_from_a_temp_home(string id)
+    {
+        // SET-02. Install into a fake profile, read the entry back, uninstall, and prove the entry
+        // is gone. A client that writes a file install cannot read back is a client nobody can
+        // repair by hand.
+        var target = ClientTargets.Find(id)!;
+        var candidate = target.Candidates(Env)[0];
+        Directory.CreateDirectory(candidate.MarkerDir);
+
+        Assert.Equal(0, Cli("install", id).Code);
+        Assert.True(File.Exists(candidate.ConfigFile), id + " wrote no file");
+        Assert.Contains(N, File.ReadAllText(candidate.ConfigFile));
+
+        Assert.Equal(0, Cli("uninstall", id).Code);
+        var left = File.Exists(candidate.ConfigFile) && File.ReadAllText(candidate.ConfigFile).Contains(N);
+        Assert.False(left, id + " left its entry behind after uninstall");
+    }
+
+    [Fact]
+    public void A_broken_file_does_not_stop_the_other_clients_in_an_all_install()
+    {
+        // SET-11's other half. One malformed config is reported, and the clients that are fine are
+        // still set up, because a single bad file must not leave a user with no working client.
+        Write(Path.Combine(Home, ".cursor", "mcp.json"), "{ \"mcpServers\": ");
+
+        var vscode = ClientTargets.Find("vscode")!.Candidates(Env)[0];
+        Directory.CreateDirectory(vscode.MarkerDir);
+
+        var (code, output) = Cli("install", "--all");
+
+        Assert.Equal(1, code);
+        Assert.Contains("not valid JSON", output);
+        Assert.Contains(N, File.ReadAllText(vscode.ConfigFile));
+    }
+
+
+    [Fact]
+    public void Claude_code_uninstall_runs_its_own_remove()
+    {
+        // SET-02 for the one client that is set up through its own CLI rather than a file.
+        _onPath["claude"] = @"C:\bin\claude.exe";
+        Assert.Equal(0, Cli("install", "claude-code").Code);
+
+        _runs.Clear();
+        Assert.Equal(0, Cli("uninstall", "claude-code").Code);
+
+        var run = Assert.Single(_runs);
+        Assert.Equal(new[] { "mcp", "remove", N, "--scope", "user" }, run.Args);
+    }
+
 }

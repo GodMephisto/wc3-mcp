@@ -28,8 +28,9 @@ public sealed class McpSmokeBriefTests : McpSmokeBase
         Assert.True(full > 50, $"expected more than 50 files, got {full}");
 
         var brief = await Call("list_files", Args(("map", map), ("brief", true)));
-        Assert.Equal(full, Prop(brief, "total").GetInt32());
-        Assert.True(Prop(brief, "truncated").GetBoolean());
+        Assert.Equal(full, Prop(brief, "totalCount").GetInt32());
+        Assert.True(Prop(brief, "hasMore").GetBoolean());
+        Assert.Equal(50, Prop(brief, "returnedCount").GetInt32());
         Assert.Equal(50, Rows(brief).Count);
     }
 
@@ -40,8 +41,9 @@ public sealed class McpSmokeBriefTests : McpSmokeBase
         var full = Rows(await Call("list_files", Args(("map", map)))).Count;
 
         var brief = await Call("list_files", Args(("map", map), ("brief", true)));
-        Assert.Equal(full, Prop(brief, "total").GetInt32());
-        Assert.False(Prop(brief, "truncated").GetBoolean());
+        Assert.Equal(full, Prop(brief, "totalCount").GetInt32());
+        Assert.False(Prop(brief, "hasMore").GetBoolean());
+        Assert.Equal(full, Prop(brief, "returnedCount").GetInt32());
         Assert.Equal(full, Rows(brief).Count);
     }
 
@@ -72,8 +74,9 @@ public sealed class McpSmokeBriefTests : McpSmokeBase
 
         args["brief"] = true;
         var brief = await Call("object_list", args);
-        Assert.Equal(60, Prop(brief, "total").GetInt32());
-        Assert.True(Prop(brief, "truncated").GetBoolean());
+        Assert.Equal(60, Prop(brief, "totalCount").GetInt32());
+        Assert.True(Prop(brief, "hasMore").GetBoolean());
+        Assert.Equal(50, Prop(brief, "returnedCount").GetInt32());
         Assert.Equal(50, Rows(brief).Count);
     }
 
@@ -87,8 +90,9 @@ public sealed class McpSmokeBriefTests : McpSmokeBase
         Assert.Equal(55, full);
 
         var brief = await Call("placed_units_list", Args(("map", map), ("brief", true)));
-        Assert.Equal(55, Prop(brief, "total").GetInt32());
-        Assert.True(Prop(brief, "truncated").GetBoolean());
+        Assert.Equal(55, Prop(brief, "totalCount").GetInt32());
+        Assert.True(Prop(brief, "hasMore").GetBoolean());
+        Assert.Equal(50, Prop(brief, "returnedCount").GetInt32());
         Assert.Equal(50, Rows(brief).Count);
     }
 
@@ -97,7 +101,10 @@ public sealed class McpSmokeBriefTests : McpSmokeBase
     {
         var map = await Write("place_grid", Args(("type_rawcode", "hfoo"), ("rows", 2), ("cols", 3)));
         var full = await Call("placed_units_list", Args(("map", map)));
-        Assert.Equal(JsonValueKind.Array, full.ValueKind);
-        Assert.Equal(6, full.GetArrayLength());
+        Assert.Equal(JsonValueKind.Object, full.ValueKind);
+        Assert.Equal(6, Rows(full).Count);
+        Assert.Equal(6, Prop(full, "returnedCount").GetInt32());
+        Assert.Equal(6, Prop(full, "totalCount").GetInt32());
+        Assert.False(Prop(full, "hasMore").GetBoolean());
     }
 }

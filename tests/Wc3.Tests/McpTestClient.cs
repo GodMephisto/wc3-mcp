@@ -16,15 +16,26 @@ internal static class McpTestClient
     /// one slot per core, so on a 2 core CI runner two tests that block filled it, the server's
     /// continuations could never run, and the suite hung with no timeout able to fire.</remarks>
     public static Task WithClient(Func<McpClient, CancellationToken, Task> body, TimeSpan? limit = null) =>
-        Task.Run(() => Session(body, limit ?? TimeSpan.FromSeconds(120)));
+        Task.Run(() => Session(body, limit ?? TimeSpan.FromSeconds(120), aliases: null));
 
-    private static async Task Session(Func<McpClient, CancellationToken, Task> body, TimeSpan limit)
+    /// <summary>The same session with the alias window replaced by a table the test supplies, which
+    /// is how the SUR-03 filter is exercised over a rename this tree has not made yet. Everything
+    /// else is the wiring the stdio exe publishes.</summary>
+    public static Task WithClient(
+        Func<McpClient, CancellationToken, Task> body,
+        IReadOnlyDictionary<string, ToolAlias> aliases,
+        TimeSpan? limit = null) =>
+        Task.Run(() => Session(body, limit ?? TimeSpan.FromSeconds(120), aliases));
+
+    private static async Task Session(
+        Func<McpClient, CancellationToken, Task> body, TimeSpan limit,
+        IReadOnlyDictionary<string, ToolAlias>? aliases)
     {
         using var timeout = new CancellationTokenSource(limit);
         Pipe clientToServer = new(), serverToClient = new();
         await using var server = McpServer.Create(
             new StreamServerTransport(clientToServer.Reader.AsStream(), serverToClient.Writer.AsStream()),
-            ConfiguredOptions());
+            ConfiguredOptions(aliases));
         Task run = server.RunAsync(timeout.Token);
         try
         {
@@ -41,10 +52,10 @@ internal static class McpTestClient
     }
 
     /// <summary>The options the stdio entry point publishes, so the tests exercise that exact wiring.</summary>
-    private static McpServerOptions ConfiguredOptions()
+    private static McpServerOptions ConfiguredOptions(IReadOnlyDictionary<string, ToolAlias>? aliases)
     {
         var options = new McpServerOptions();
-        Wc3McpServer.ApplyTo(options);
+        Wc3McpServer.ApplyTo(options, Wc3McpServer.CreateOptions(aliases));
         return options;
     }
 }

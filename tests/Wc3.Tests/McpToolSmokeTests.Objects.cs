@@ -504,4 +504,56 @@ public sealed class McpSmokeObjectsTests : McpSmokeBase
     private static SchemaField SchemaFieldOf(string code) =>
         new(code, "UnitBalance", "HP", "int", "WESTRING", code, "data", 0, 0, 0,
             "", "", "", "", true, true, true, true, true);
+
+    [Fact, Covers("object_batch_set")]
+    public async Task Object_batch_set_applies_two_fields_in_one_write()
+    {
+        var created = await WriteGameDir("object_new", Args(("base_rawcode", "hfoo"), ("kind", "unit")));
+        var items = Rows(await Call("object_list", Args(("map", created), ("kind", "unit"))));
+        var rc = Prop(items[0], "rawcode").GetString();
+        var outPath = NewOut("object_batch_set");
+
+        var edits = new object[]
+        {
+            new Dictionary<string, object?> { ["rawcode"] = rc, ["field"] = "MovB", ["value"] = "400", ["kind"] = "unit" },
+            new Dictionary<string, object?> { ["rawcode"] = rc, ["field"] = "uhpm", ["value"] = "800", ["kind"] = "unit" },
+        };
+        string before = Sha(created);
+        var result = await Call("object_batch_set", Args(
+            ("map", created), ("out_path", outPath), ("game_dir", "C:\\Warcraft III"), ("edits", edits)));
+
+        Assert.Equal(before, Sha(created));
+        Assert.Equal(2, Prop(result, "applied").GetInt32());
+        Assert.False(string.IsNullOrWhiteSpace(Prop(result, "outputSha256").GetString()));
+
+        var obj = await Call("object_get", Args(("map", outPath), ("rawcode", rc), ("kind", "unit")));
+        var fields = Prop(obj, "fields").EnumerateArray().ToList();
+        Assert.Equal("400", Prop(fields.First(f => Prop(f, "code").GetString() == "MovB"), "value").GetString());
+        Assert.Equal("800", Prop(fields.First(f => Prop(f, "code").GetString() == "uhpm"), "value").GetString());
+    }
+
+    [Fact, Covers("object_batch_set")]
+    public async Task Object_batch_set_writes_nothing_when_one_edit_fails()
+    {
+        var created = await WriteGameDir("object_new", Args(("base_rawcode", "hfoo"), ("kind", "unit")));
+        var items = Rows(await Call("object_list", Args(("map", created), ("kind", "unit"))));
+        var rc = Prop(items[0], "rawcode").GetString();
+        var outPath = NewOut("object_batch_set");
+
+        var edits = new object[]
+        {
+            new Dictionary<string, object?> { ["rawcode"] = rc, ["field"] = "MovB", ["value"] = "400", ["kind"] = "unit" },
+            new Dictionary<string, object?> { ["rawcode"] = rc, ["field"] = "MovB", ["value"] = "not a number", ["kind"] = "unit" },
+        };
+        await McpTestClient.WithClient(async (client, ct) =>
+        {
+            var r = await client.CallToolAsync("object_batch_set", new Dictionary<string, object?>
+            {
+                ["map"] = created, ["out_path"] = outPath, ["game_dir"] = "C:\\Warcraft III", ["edits"] = edits,
+            }, cancellationToken: ct);
+            Assert.True(r.IsError == true, "a failing edit should refuse the whole batch");
+        });
+
+        Assert.False(File.Exists(outPath), "a refused batch must not leave an output file");
+    }
 }

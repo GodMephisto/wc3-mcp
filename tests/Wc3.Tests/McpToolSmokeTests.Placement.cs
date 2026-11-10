@@ -21,6 +21,8 @@ public sealed class McpSmokePlacementTests : McpSmokeBase
     [Fact, Covers("place_unit")]
     public async Task Place_unit_puts_the_unit_in_war3mapUnits_doo()
     {
+        // SUR-08. This is the flattened form, which is the shape the tool shipped with and which
+        // stays for one version. The fact below is the object form that replaces it.
         var outPath = NewOut("place_unit");
         var r = await Call("place_unit", Args(("map", Fixture), ("out_path", outPath),
             ("type_rawcode", "hfoo"), ("owner_id", 0), ("x", 64f), ("y", -128f)));
@@ -30,6 +32,59 @@ public sealed class McpSmokePlacementTests : McpSmokeBase
         Assert.Equal(0, u.OwnerId);
         Assert.Equal(64f, u.Position.X);
         Assert.Equal(-128f, u.Position.Y);
+    }
+
+    [Fact, Covers("place_unit")]
+    public async Task Place_unit_takes_the_placement_as_one_object()
+    {
+        // SUR-08. One object carries every placement field, and the fields it omits fall back to
+        // the defaults its own schema states.
+        var outPath = NewOut("place_unit_object");
+        var r = await Call("place_unit", Args(("map", Fixture), ("out_path", outPath),
+            ("placement", Args(("typeRawcode", "hfoo"), ("ownerId", 1), ("x", 48f), ("y", 32f)))));
+        var u = Assert.Single(Model<MapUnits>(outPath, PlacementCommand.UnitsFile).Units,
+            x => x.CreationNumber == CreationNumber(r));
+        Assert.Equal("hfoo", u.TypeId.ToRawcode());
+        Assert.Equal(1, u.OwnerId);
+        Assert.Equal(48f, u.Position.X);
+        Assert.Equal(32f, u.Position.Y);
+        Assert.Equal(0f, u.Position.Z);
+    }
+
+    [Fact, Covers("place_unit")]
+    public async Task Place_unit_refuses_the_object_and_the_flattened_arguments_together()
+    {
+        // Half applying one form over the other is the failure this refuses, because the caller
+        // cannot tell which field won.
+        var message = await CallError("place_unit", Args(("map", Fixture), ("out_path", NewOut("mixed")),
+            ("placement", Args(("typeRawcode", "hfoo"), ("ownerId", 0), ("x", 0f), ("y", 0f))),
+            ("type_rawcode", "hpea")));
+
+        Assert.Contains("INVALID_ARGUMENT", message);
+        Assert.Contains("not both", message);
+    }
+
+    [Fact, Covers("place_unit")]
+    public async Task Place_unit_names_the_flattened_field_a_call_left_out()
+    {
+        var message = await CallError("place_unit", Args(("map", Fixture),
+            ("out_path", NewOut("incomplete")), ("type_rawcode", "hfoo")));
+
+        Assert.Contains("owner_id is required", message);
+    }
+
+    [Fact, Covers("place_doodad")]
+    public async Task Place_doodad_takes_the_placement_as_one_object()
+    {
+        var outPath = NewOut("place_doodad_object");
+        var r = await Call("place_doodad", Args(("map", Fixture), ("out_path", outPath),
+            ("placement", Args(("typeRawcode", "LTlt"), ("x", -96f), ("y", 32f), ("variation", 3)))));
+        var d = Assert.Single(Model<MapDoodads>(outPath, PlacementCommand.DoodadsFile).Doodads,
+            x => x.CreationNumber == CreationNumber(r));
+        Assert.Equal("LTlt", d.TypeId.ToRawcode());
+        Assert.Equal(3, d.Variation);
+        Assert.Equal(-96f, d.Position.X);
+        Assert.Equal(32f, d.Position.Y);
     }
 
     [Fact, Covers("place_item")]

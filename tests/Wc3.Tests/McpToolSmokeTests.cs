@@ -70,6 +70,14 @@ public abstract class McpSmokeBase : IClassFixture<SmokeFixture>
         {
             var r = await client.CallToolAsync(tool, args, cancellationToken: ct);
             var text = r.Content.OfType<TextContentBlock>().FirstOrDefault()?.Text;
+            if (r.IsError == true && (text ?? "").Contains("[CONFIRM_REQUIRED]"))
+            {
+                // A destructive tool states intent. The refusal has its own test, so a smoke
+                // test about the effect passes confirm instead of failing on the new guard.
+                args["confirm"] = true;
+                r = await client.CallToolAsync(tool, args, cancellationToken: ct);
+                text = r.Content.OfType<TextContentBlock>().FirstOrDefault()?.Text;
+            }
             if (r.IsError == true) Assert.Fail($"{tool} returned an error. {text}");
             Assert.False(string.IsNullOrWhiteSpace(text), $"{tool} returned no text content");
             using var doc = JsonDocument.Parse(text!);

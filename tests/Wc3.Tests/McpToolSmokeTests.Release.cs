@@ -19,6 +19,9 @@ public sealed class McpSmokeReleaseTests : McpSmokeBase
         Assert.False(string.IsNullOrWhiteSpace(Prop(r, "buildTimeUtc").GetString()));
         Assert.False(string.IsNullOrWhiteSpace(Prop(r, "mcpServerName").GetString()));
         Assert.False(string.IsNullOrWhiteSpace(Prop(r, "mcpVersion").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(Prop(r, "productId").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(Prop(r, "protocolVersion").GetString()));
+        Assert.False(string.IsNullOrWhiteSpace(Prop(r, "sdkVersion").GetString()));
     }
 
     [Fact, Covers("changelog")]

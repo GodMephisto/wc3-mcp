@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Wc3.MapDocument\Wc3.MapDocument.csproj" />
     <ProjectReference Include="..\..\src\Wc3.Commands\Wc3.Commands.csproj" />
+    <ProjectReference Include="..\..\src\wc3ctl\wc3ctl.csproj" />
     <ProjectReference Include="..\..\src\Wc3.GameData\Wc3.GameData.csproj" />
     <ProjectReference Include="..\..\src\Wc3.Modeling\Wc3.Modeling.csproj" />
     <ProjectReference Include="..\..\src\Wc3.Mcp\Wc3.Mcp.csproj" />
@@ -39,6 +40,12 @@
          transitively from the referenced project, so the context folder is linked beside the tests. -->
     <Content Include="..\..\src\Wc3.Mcp\context\**\*"
              Link="context\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <!-- The skills resources live under docs/skills beside the exe (Wc3Skills), so they are
+         linked here with the same shape. -->
+    <Content Include="..\..\src\Wc3.Mcp\docs\skills\**\*"
+             Link="docs\skills\%(RecursiveDir)%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

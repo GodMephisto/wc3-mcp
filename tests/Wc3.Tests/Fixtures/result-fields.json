@@ -1,0 +1,2033 @@
+{
+  "note": "Every result field a tool serves, read from the published result shape. A name that disappears must appear in renames or ResultFieldStabilityTests fails. A name that is added is recorded here by the test.",
+  "renames": [
+    {
+      "tool": "quickstart",
+      "from": "count",
+      "to": "totalCount",
+      "release": "0.5.16"
+    }
+  ],
+  "tools": {
+    "asset_audit": [
+      "diagnostics",
+      "findings",
+      "maxBytes",
+      "scanned"
+    ],
+    "asset_convert_batch": [
+      "bytesWritten",
+      "converted",
+      "diagnostics",
+      "failed",
+      "files",
+      "filesRewritten",
+      "inputSha256",
+      "outDir",
+      "outputSha256",
+      "partial",
+      "to"
+    ],
+    "asset_duplicates": [
+      "groups",
+      "importedEntries",
+      "recoverableBytes"
+    ],
+    "asset_import_wire": [
+      "bytesWritten",
+      "diagnostics",
+      "fieldsSet",
+      "filesRewritten",
+      "imported",
+      "inputSha256",
+      "outputSha256",
+      "savedTo"
+    ],
+    "asset_list": [
+      "all",
+      "diagnostic",
+      "family",
+      "gamePaths",
+      "mapPaths"
+    ],
+    "asset_model_lint": [
+      "diagnostics",
+      "findingCount",
+      "findings",
+      "modelsScanned"
+    ],
+    "asset_replace": [],
+    "asset_report": [
+      "byType",
+      "engineFaults",
+      "entries",
+      "entryList",
+      "findings",
+      "importedEntries",
+      "map",
+      "summary",
+      "totalBytes"
+    ],
+    "asset_size_report": [
+      "folders",
+      "totalBytes",
+      "totalEntries"
+    ],
+    "asset_thumbnails": [
+      "bytesWritten",
+      "diagnostics",
+      "files",
+      "filesRewritten",
+      "inputSha256",
+      "outDir",
+      "outputSha256",
+      "rendered"
+    ],
+    "asset_unused": [
+      "importedEntries",
+      "unused"
+    ],
+    "audit_ability": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "audit_ability_orders": [
+      "channelAbilities",
+      "collisions",
+      "diagnostics",
+      "distinctOrders",
+      "problems"
+    ],
+    "audit_fidelity": [
+      "diagnostics",
+      "errors",
+      "faithful",
+      "findings",
+      "infos",
+      "name",
+      "objectsCompared",
+      "objectsWithLosses",
+      "root",
+      "rootKind"
+    ],
+    "audit_hero": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "audit_map": [
+      "diagnostics",
+      "issues",
+      "objectsChecked",
+      "ok"
+    ],
+    "audit_readiness": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "audit_trend": [
+      "added",
+      "diagnostics",
+      "mapA",
+      "mapB",
+      "removed",
+      "rows"
+    ],
+    "bench_compat": [
+      "aggregate",
+      "cells",
+      "maps",
+      "targets"
+    ],
+    "bench_leaks": [
+      "hot",
+      "kinds",
+      "maps",
+      "repeat",
+      "totalLeaks"
+    ],
+    "bench_open": [
+      "failures",
+      "maps",
+      "medianMs",
+      "slowest",
+      "totalBytes"
+    ],
+    "bench_perf_gate": [
+      "addedInRun",
+      "maxRegressionPct",
+      "metrics",
+      "metricsCompared",
+      "missingInRun",
+      "pass",
+      "regressed"
+    ],
+    "bench_schema_coverage": [
+      "rows",
+      "totals"
+    ],
+    "bundle_diff": [
+      "added",
+      "changed",
+      "removed",
+      "rootA",
+      "rootB",
+      "shared"
+    ],
+    "bundle_merge": [],
+    "bundle_unit": [
+      "diagnostics",
+      "edges",
+      "files",
+      "functions",
+      "objects",
+      "rootName",
+      "rootRawcode",
+      "strings"
+    ],
+    "camera_add": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "camera_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "camera_remove": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "camera_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "camera_tour": [
+      "bytesWritten",
+      "count",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "names",
+      "outputSha256",
+      "savedTo"
+    ],
+    "changelog": [
+      "from",
+      "groups",
+      "markdown",
+      "message",
+      "ok",
+      "to"
+    ],
+    "ci_all": [
+      "compat",
+      "exitCode",
+      "gates",
+      "lint",
+      "passed",
+      "validate"
+    ],
+    "ci_compat": [
+      "compat",
+      "exitCode",
+      "gates",
+      "passed"
+    ],
+    "ci_lint": [
+      "added",
+      "baseline",
+      "compat",
+      "exitCode",
+      "gates",
+      "lint",
+      "passed",
+      "resolved"
+    ],
+    "ci_schema": [
+      "builds",
+      "coverage",
+      "exitCode",
+      "gates",
+      "minReal",
+      "passed",
+      "schemasDir"
+    ],
+    "ci_validate": [
+      "exitCode",
+      "gates",
+      "passed",
+      "strict",
+      "validate"
+    ],
+    "compat_explain": [
+      "addedIn",
+      "builds",
+      "declaredInTarget",
+      "firstSeen",
+      "isIdentifier",
+      "kind",
+      "name",
+      "targetBuild"
+    ],
+    "compat_matrix": [
+      "cells",
+      "maps",
+      "targets"
+    ],
+    "content_scaffold": [],
+    "deprotect_map": [],
+    "diff": [
+      "entries"
+    ],
+    "docs_search": [],
+    "doctor_check": [
+      "command",
+      "doctor",
+      "exitCode",
+      "output",
+      "result",
+      "stderr"
+    ],
+    "doctor_compare": [
+      "command",
+      "doctor",
+      "exitCode",
+      "output",
+      "result",
+      "stderr"
+    ],
+    "doctor_fix": [
+      "command",
+      "doctor",
+      "exitCode",
+      "output",
+      "result",
+      "stderr"
+    ],
+    "doctor_inspect": [
+      "command",
+      "doctor",
+      "exitCode",
+      "output",
+      "result",
+      "stderr"
+    ],
+    "editor_catalog_get": [
+      "catalog",
+      "entries",
+      "total"
+    ],
+    "editor_catalog_list": [
+      "catalogs",
+      "total"
+    ],
+    "error_codes": [
+      "codes",
+      "count"
+    ],
+    "file_extract": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "name",
+      "savedTo",
+      "sha256",
+      "sizeBytes"
+    ],
+    "file_get_text": [
+      "bytesReplaced",
+      "encoding",
+      "encodingDeclared",
+      "lossy",
+      "name",
+      "text"
+    ],
+    "file_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "file_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "name",
+      "outputSha256",
+      "replaced",
+      "savedTo",
+      "sizeBytes"
+    ],
+    "force_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "force_rename": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "force_set_flags": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "force_set_players": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "gamedata_bounds": [
+      "code",
+      "entries",
+      "target"
+    ],
+    "gamedata_changelog": [
+      "added",
+      "boundsChanged",
+      "buildA",
+      "buildB",
+      "groups",
+      "notCompared",
+      "removed",
+      "retyped"
+    ],
+    "gamedata_coverage": [
+      "rows"
+    ],
+    "gamedata_enum": [
+      "entries",
+      "target",
+      "type"
+    ],
+    "gamedata_export_schemas": [],
+    "gamedata_field_lookup": [
+      "matches",
+      "query",
+      "target"
+    ],
+    "gamedata_history": [
+      "buildsSearched",
+      "firstBuild",
+      "found",
+      "kinds",
+      "lastBuild",
+      "name",
+      "objectFiles"
+    ],
+    "gamedata_schema_diff": [
+      "buildA",
+      "buildB",
+      "changes",
+      "notCompared"
+    ],
+    "gamedata_sources": [
+      "schemaVersion",
+      "sources"
+    ],
+    "graph_hubs": [],
+    "graph_neighbors": [],
+    "graph_path": [],
+    "hero_generate": [],
+    "hero_install": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "hero_lint": [
+      "checks",
+      "directory",
+      "errors",
+      "id",
+      "ok",
+      "warnings"
+    ],
+    "hero_roster": [
+      "heroes",
+      "message",
+      "ok",
+      "registryFunction"
+    ],
+    "imports_list": [
+      "entries",
+      "hasManifest"
+    ],
+    "leak_ab": [
+      "a",
+      "b",
+      "candidates",
+      "diagnostics",
+      "handleDropPerMin",
+      "handlesFell",
+      "likelyDisabled",
+      "memoryDropPerMin",
+      "memoryFell",
+      "message",
+      "ok"
+    ],
+    "leak_benchmark": [
+      "cases",
+      "diagnostics",
+      "falseNegatives",
+      "falsePositives",
+      "maps",
+      "message",
+      "ok",
+      "precision",
+      "recall",
+      "truePositives"
+    ],
+    "leak_harness": [],
+    "leak_join": [
+      "diagnostics",
+      "drivers",
+      "eventsJoined",
+      "gcProbe",
+      "handleCorrelation",
+      "handleSlopePerMin",
+      "memoryCorrelation",
+      "memorySlopePerMin",
+      "message",
+      "ok",
+      "sampleCount",
+      "session",
+      "span",
+      "windows"
+    ],
+    "leak_list": [
+      "diagnostics",
+      "findings",
+      "hot",
+      "leaks",
+      "message",
+      "ok",
+      "once",
+      "periodic",
+      "repeat",
+      "targets"
+    ],
+    "leak_model": [
+      "diagnostics",
+      "duplicateImports",
+      "findingCount",
+      "findings",
+      "leakedImports",
+      "missingTextures",
+      "modelsScanned",
+      "texturesScanned",
+      "unusedTextures"
+    ],
+    "library_audit": [
+      "checks",
+      "maps",
+      "mapsWithFindings",
+      "totalFindings"
+    ],
+    "library_compare": [
+      "ambiguousNames",
+      "changed",
+      "onlyInA",
+      "onlyInB",
+      "same"
+    ],
+    "library_report": [],
+    "library_scan": [
+      "failed",
+      "loaded",
+      "maps",
+      "totalBytes"
+    ],
+    "library_validate": [
+      "invalid",
+      "maps",
+      "valid"
+    ],
+    "lint": [
+      "checks",
+      "errors",
+      "ok",
+      "warnings"
+    ],
+    "lint_baseline": [],
+    "list_files": [
+      "files",
+      "hasMore",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "map_compat": [
+      "fieldsChecked",
+      "findings",
+      "identifiersChecked",
+      "map",
+      "notChecked",
+      "targetBuild"
+    ],
+    "map_info": [
+      "author",
+      "diagnostics",
+      "height",
+      "name",
+      "players",
+      "width"
+    ],
+    "map_info_get": [
+      "accurateProbabilities",
+      "author",
+      "cameraBounds",
+      "description",
+      "fixedPlayerSettings",
+      "fogColor",
+      "fogDensity",
+      "fogEndZ",
+      "fogStartZ",
+      "fogStyle",
+      "globalWeather",
+      "hasTerrainFog",
+      "hasWaterTint",
+      "hideMinimapInPreview",
+      "itemClassification",
+      "lightEnvironment",
+      "loadingScreenIndex",
+      "loadingScreenPath",
+      "loadingScreenSubtitle",
+      "loadingScreenText",
+      "loadingScreenTitle",
+      "mapName",
+      "maskedAreasPartiallyVisible",
+      "meleeMap",
+      "modifyAllyPriorities",
+      "playableHeight",
+      "playableWidth",
+      "players",
+      "prologueSubtitle",
+      "prologueText",
+      "prologueTitle",
+      "recommendedPlayers",
+      "soundEnvironment",
+      "tileset",
+      "useCustomAbilities",
+      "useCustomForces",
+      "useCustomTechtree",
+      "useCustomUpgrades",
+      "waterTintColor",
+      "waterWavesOnCliffShores",
+      "waterWavesOnRollingShores"
+    ],
+    "map_info_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "map_optimize": [],
+    "map_overview": [
+      "diagnostics",
+      "files",
+      "info",
+      "objectCounts"
+    ],
+    "mcp_audit_annotations": [
+      "count",
+      "problems"
+    ],
+    "mcp_export_verify": [
+      "checkedFiles",
+      "differences",
+      "inStep",
+      "message",
+      "sourceRoot",
+      "targetRoot"
+    ],
+    "model_audit": [
+      "bytes",
+      "corns",
+      "diagnostics",
+      "effects",
+      "faces",
+      "format",
+      "geosets",
+      "issueCount",
+      "issues",
+      "nodes",
+      "particleEmitters",
+      "particleEmitters2",
+      "path",
+      "ribbons",
+      "sequenceList",
+      "sequences",
+      "textures",
+      "vertices"
+    ],
+    "model_compare": [
+      "a",
+      "angles",
+      "b",
+      "diagnostics",
+      "height",
+      "meanSsim",
+      "minSilhouetteIou",
+      "width"
+    ],
+    "model_export_obj": [],
+    "model_import": [],
+    "model_lint": [
+      "findingCount",
+      "findings",
+      "geosets",
+      "path",
+      "textures",
+      "vertices"
+    ],
+    "model_lod": [],
+    "model_optimize": [],
+    "model_primitive": [],
+    "model_squish": [],
+    "mpq_add": [],
+    "mpq_bytes_diff": [
+      "differ",
+      "differences",
+      "identical",
+      "identicalCount",
+      "inBoth",
+      "onlyInA",
+      "onlyInB",
+      "pathA",
+      "pathB"
+    ],
+    "mpq_extract_all": [
+      "bytesWritten",
+      "files",
+      "filesRewritten",
+      "inputSha256",
+      "namedEntries",
+      "outDir",
+      "outputSha256",
+      "totalBytes",
+      "totalEntries",
+      "unnamedEntries"
+    ],
+    "mpq_listfile": [
+      "namedByListfile",
+      "path",
+      "recoveredByStandardProbe",
+      "totalEntries",
+      "withoutName",
+      "withoutNameSample"
+    ],
+    "mpq_merge": [],
+    "mpq_name_recover": [
+      "candidatesTried",
+      "dictionaryPath",
+      "names",
+      "recovered",
+      "unnamedBefore"
+    ],
+    "mpq_rebuild": [],
+    "mpq_remove": [],
+    "mpq_remove_many": [],
+    "mpq_strip_bookkeeping": [],
+    "mpq_verify": [
+      "path",
+      "readableEntries",
+      "totalEntries",
+      "unreadable",
+      "unreadableEntries"
+    ],
+    "new_map": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "object_batch_set": [
+      "applied",
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "warnings"
+    ],
+    "object_bulk_set": [
+      "bytesWritten",
+      "changed",
+      "failed",
+      "filesRewritten",
+      "inputSha256",
+      "kind",
+      "matched",
+      "message",
+      "outputSha256",
+      "partial",
+      "savedTo",
+      "skipped"
+    ],
+    "object_clone": [
+      "bytesWritten",
+      "fieldsCopied",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "newRawcode",
+      "outputSha256",
+      "savedTo"
+    ],
+    "object_deprecated": [
+      "diagnostics",
+      "fields",
+      "fieldsChecked",
+      "targetBuild"
+    ],
+    "object_export": [
+      "columns",
+      "csvPath",
+      "kind",
+      "message",
+      "objectCount"
+    ],
+    "object_field_options": [
+      "diagnostic",
+      "isList",
+      "options",
+      "type"
+    ],
+    "object_fix_model_ext": [],
+    "object_form": [
+      "baseRawcode",
+      "diagnostics",
+      "fieldCount",
+      "groups",
+      "hiddenFieldCount",
+      "kind",
+      "name",
+      "rawcode"
+    ],
+    "object_get": [
+      "baseRawcode",
+      "diagnostics",
+      "fields",
+      "found",
+      "name",
+      "rawcode"
+    ],
+    "object_import": [
+      "added",
+      "bytesWritten",
+      "fieldsSet",
+      "filesRewritten",
+      "inputSha256",
+      "kind",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "updated"
+    ],
+    "object_list": [
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "object_migrate": [
+      "bytesWritten",
+      "drops",
+      "fieldsDropped",
+      "fieldsKept",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "targetBuild"
+    ],
+    "object_new": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "newRawcode",
+      "outputSha256",
+      "savedTo"
+    ],
+    "object_noop_fields": [
+      "count",
+      "diagnostics",
+      "fields"
+    ],
+    "object_rawcode_suggest": [
+      "count",
+      "diagnostics",
+      "kind",
+      "rawcodes"
+    ],
+    "object_rename": [
+      "bytesWritten",
+      "fieldsRewritten",
+      "filesRewritten",
+      "inputSha256",
+      "kind",
+      "message",
+      "newRawcode",
+      "oldRawcode",
+      "outputSha256",
+      "savedTo",
+      "scriptLiteralsRewritten"
+    ],
+    "object_search": [
+      "count",
+      "diagnostics",
+      "hits",
+      "query"
+    ],
+    "object_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "warning"
+    ],
+    "palette_doodad": [
+      "diagnostics",
+      "entries",
+      "message",
+      "ok"
+    ],
+    "pathing_export_png": [
+      "bytesWritten",
+      "filesRewritten",
+      "height",
+      "inputSha256",
+      "legend",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "sizeBytes",
+      "width"
+    ],
+    "pathing_import_png": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "pathing_paint": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "pathing_validate": [
+      "height",
+      "issues",
+      "message",
+      "ok",
+      "width"
+    ],
+    "place_doodad": [
+      "bytesWritten",
+      "creationNumber",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "place_grid": [
+      "bytesWritten",
+      "creationNumbers",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "placed",
+      "savedTo"
+    ],
+    "place_item": [
+      "bytesWritten",
+      "creationNumber",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "place_region": [
+      "bytesWritten",
+      "creationNumber",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "place_scatter": [
+      "bytesWritten",
+      "creationNumbers",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "placed",
+      "savedTo"
+    ],
+    "place_start_location": [
+      "bytesWritten",
+      "creationNumber",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "place_unit": [
+      "bytesWritten",
+      "creationNumber",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "placed_doodad_get": [
+      "creationNumber",
+      "lifePercent",
+      "name",
+      "rotation",
+      "scale",
+      "typeRawcode",
+      "variation",
+      "x",
+      "y",
+      "z"
+    ],
+    "placed_doodad_remove": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "placed_doodad_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "placed_doodads_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "placed_fix_refs": [],
+    "placed_missing_refs": [
+      "count",
+      "message",
+      "missing",
+      "ok"
+    ],
+    "placed_stats": [
+      "doodadTotal",
+      "message",
+      "ok",
+      "types",
+      "unitTotal"
+    ],
+    "placed_unit_get": [
+      "creationNumber",
+      "goldAmount",
+      "heroAgility",
+      "heroIntelligence",
+      "heroLevel",
+      "heroStrength",
+      "hpPercent",
+      "manaPercent",
+      "name",
+      "ownerId",
+      "rotation",
+      "scale",
+      "targetAcquisition",
+      "typeRawcode",
+      "x",
+      "y"
+    ],
+    "placed_unit_remove": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "placed_unit_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "placed_units_list": [
+      "hasMore",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated",
+      "units"
+    ],
+    "player_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "player_set_color": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "player_set_force": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "player_set_name": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "player_set_race": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "port_deps": [
+      "assets",
+      "assetsInMap",
+      "assetsMissing",
+      "bytesInMap",
+      "diagnostics",
+      "functions",
+      "objectCount",
+      "objectGroups",
+      "rootKind",
+      "rootName",
+      "rootRawcode",
+      "strings"
+    ],
+    "port_into_version": [
+      "bytesWritten",
+      "files",
+      "filesRewritten",
+      "inputSha256",
+      "outputSha256",
+      "report",
+      "savedTo"
+    ],
+    "port_preview": [
+      "carriedFiles",
+      "copiedFiles",
+      "diagnostics",
+      "inlinedStrings",
+      "objects",
+      "remaps",
+      "rootName",
+      "rootPortedTo",
+      "rootRawcode",
+      "script",
+      "skippedFiles",
+      "warnings"
+    ],
+    "port_unit": [
+      "bytesWritten",
+      "files",
+      "filesRewritten",
+      "inputSha256",
+      "outputSha256",
+      "report",
+      "savedTo"
+    ],
+    "quickstart": [
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "totalCount"
+    ],
+    "rag_install": [],
+    "rag_status": [],
+    "region_create": [
+      "bytesWritten",
+      "creationNumber",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "region_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "region_remove": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "region_to_rect": [
+      "bottom",
+      "creationNumber",
+      "jass",
+      "left",
+      "message",
+      "name",
+      "ok",
+      "right",
+      "top"
+    ],
+    "region_validate": [
+      "issues",
+      "message",
+      "ok",
+      "regionCount"
+    ],
+    "render_model": [
+      "_meta",
+      "content",
+      "isError",
+      "structuredContent"
+    ],
+    "repair_audit_errors": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "repair_generated": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "repair_portraits": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "replay_diff": [
+      "fileA",
+      "fileB",
+      "leaveDeltas",
+      "lengthA",
+      "lengthB",
+      "lengthDelta",
+      "mapA",
+      "mapB",
+      "problemA",
+      "problemB",
+      "sameMap"
+    ],
+    "replay_find_map": [
+      "candidates",
+      "cleanMapPath",
+      "file",
+      "found",
+      "mapsFolder",
+      "problem",
+      "recordedMap",
+      "resolvedPath"
+    ],
+    "replay_players": [
+      "file",
+      "length",
+      "map",
+      "players",
+      "problem"
+    ],
+    "replay_stats": [
+      "actionsAvailable",
+      "disconnects",
+      "duration",
+      "file",
+      "playerCount",
+      "players",
+      "problem"
+    ],
+    "replay_summary": [
+      "diagnostics",
+      "games"
+    ],
+    "replay_timeline": [
+      "events",
+      "file",
+      "length",
+      "problem"
+    ],
+    "roundtrip": [
+      "excludedNotes",
+      "faithful",
+      "mismatches"
+    ],
+    "script_api_usage": [
+      "missing",
+      "scriptFile",
+      "targetBuild",
+      "usages",
+      "used"
+    ],
+    "script_bench": [
+      "file",
+      "functions",
+      "message",
+      "ok",
+      "periodic",
+      "rows"
+    ],
+    "script_callgraph": [
+      "calls",
+      "edges",
+      "functions",
+      "scriptFile"
+    ],
+    "script_check": [
+      "issues",
+      "language",
+      "ok",
+      "scriptFile"
+    ],
+    "script_complexity": [
+      "functionCount",
+      "functions",
+      "scriptFile",
+      "totalDecisions"
+    ],
+    "script_conversion_notes": [
+      "rules",
+      "summary"
+    ],
+    "script_decompile": [],
+    "script_duplicate_bodies": [
+      "duplicateFunctions",
+      "duplicateGroups",
+      "functions",
+      "groups",
+      "language",
+      "scriptFile"
+    ],
+    "script_format": [],
+    "script_functions": [
+      "functions",
+      "scriptFile",
+      "syntaxError"
+    ],
+    "script_leaks": [
+      "diagnostics",
+      "functions",
+      "hotFunctions",
+      "leaks",
+      "message",
+      "ok",
+      "periodic",
+      "repeatFunctions"
+    ],
+    "script_lua_api": [
+      "mapping",
+      "missing",
+      "scriptFile",
+      "targetBuild",
+      "usages",
+      "used"
+    ],
+    "script_lua_check": [
+      "checks",
+      "errors",
+      "files",
+      "ok"
+    ],
+    "script_lua_globals": [
+      "declared",
+      "globals",
+      "message",
+      "neverRead",
+      "ok"
+    ],
+    "script_lua_leaks": [
+      "diagnostics",
+      "functions",
+      "hotFunctions",
+      "leaks",
+      "message",
+      "ok",
+      "periodic",
+      "repeatFunctions"
+    ],
+    "script_lua_to_jass": [],
+    "script_modernize": [],
+    "script_null_locals": [
+      "checked",
+      "findings",
+      "locals",
+      "scriptFile"
+    ],
+    "script_reachable": [
+      "dead",
+      "deadFunctions",
+      "deadPercent",
+      "language",
+      "reachable",
+      "reachableFunctions",
+      "scriptFile"
+    ],
+    "script_references": [
+      "asCode",
+      "name",
+      "references",
+      "scriptFile"
+    ],
+    "script_semantic_diff": [
+      "changes",
+      "language",
+      "lines",
+      "scriptA",
+      "scriptB"
+    ],
+    "script_to_lua": [],
+    "script_unused_functions": [
+      "declared",
+      "functions",
+      "scriptFile",
+      "unused"
+    ],
+    "script_unused_globals": [
+      "declared",
+      "framework",
+      "globals",
+      "scriptFile",
+      "unused"
+    ],
+    "script_verify": [
+      "file",
+      "findings",
+      "functions",
+      "message",
+      "ok",
+      "periodFunctions"
+    ],
+    "search": [
+      "hits",
+      "truncated"
+    ],
+    "sound_add": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "sound_import_events": [
+      "catalogEntries",
+      "events",
+      "inputSha256",
+      "jass",
+      "message",
+      "missingClips",
+      "outputSha256",
+      "refused",
+      "savedTo"
+    ],
+    "sound_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "sound_optimize": [],
+    "sound_remove": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "sound_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "strings_diff": [
+      "added",
+      "changed",
+      "removed"
+    ],
+    "strings_find": [
+      "matchCount",
+      "matches",
+      "query"
+    ],
+    "strings_list": [
+      "entries",
+      "fileName"
+    ],
+    "strings_missing": [
+      "definedEntries",
+      "missingIds",
+      "referencedIds"
+    ],
+    "strings_set": [],
+    "strings_unused": [
+      "definedEntries",
+      "referencedIds",
+      "unused"
+    ],
+    "target_get": [
+      "build",
+      "installBuild",
+      "sections",
+      "source"
+    ],
+    "target_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "target_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "ok",
+      "outputSha256",
+      "savedTo"
+    ],
+    "terrain_audit": [
+      "blightCells",
+      "boundaryCells",
+      "checks",
+      "cliffCells",
+      "cliffTileTypes",
+      "diagnostics",
+      "distinctCliffTextures",
+      "distinctGroundTextures",
+      "edgeCells",
+      "gridHeight",
+      "gridWidth",
+      "groundTileTypes",
+      "issueCount",
+      "issues",
+      "maxCliff",
+      "maxHeight",
+      "meanHeight",
+      "minCliff",
+      "minHeight",
+      "path",
+      "rampCells",
+      "terrainFileBytes",
+      "tileCount",
+      "waterCells"
+    ],
+    "terrain_blight": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "tilesChanged"
+    ],
+    "terrain_cliff": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "tilesChanged"
+    ],
+    "terrain_corner_get": [
+      "blighted",
+      "boundary",
+      "cliffLevel",
+      "cliffTexture",
+      "cliffVariation",
+      "col",
+      "edgeTile",
+      "groundHeight",
+      "groundTexture",
+      "ramp",
+      "row",
+      "textureVariation",
+      "water",
+      "waterHeight"
+    ],
+    "terrain_corner_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "terrain_deform": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "tilesChanged"
+    ],
+    "terrain_export_heightmap": [
+      "bytesWritten",
+      "filesRewritten",
+      "height",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "sizeBytes",
+      "width"
+    ],
+    "terrain_fill": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "terrain_import_heightmap": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "tilesChanged"
+    ],
+    "terrain_info": [
+      "cliffTiles",
+      "groundTiles",
+      "height",
+      "width"
+    ],
+    "terrain_optimize": [],
+    "terrain_paint": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "tilesChanged"
+    ],
+    "terrain_ramp": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "tilesChanged"
+    ],
+    "terrain_smooth": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "tilesChanged"
+    ],
+    "terrain_stats": [
+      "maxCliff",
+      "maxHeight",
+      "meanHeight",
+      "message",
+      "minCliff",
+      "minHeight",
+      "ok",
+      "tileCount"
+    ],
+    "terrain_water": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo",
+      "tilesChanged"
+    ],
+    "texture_atlas": [],
+    "texture_optimize": [],
+    "trigger_add": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_add_category": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_add_eca": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_catalog_describe": [
+      "argumentTypes",
+      "category",
+      "defaults",
+      "displayName",
+      "gameVersion",
+      "kind",
+      "name",
+      "parametersLayout",
+      "returnType",
+      "usableInEvents"
+    ],
+    "trigger_catalog_list": [
+      "functions",
+      "source",
+      "total"
+    ],
+    "trigger_dead": [
+      "dead",
+      "scriptScanned",
+      "summary",
+      "triggersChecked"
+    ],
+    "trigger_diff": [
+      "added",
+      "changed",
+      "removed",
+      "renamed",
+      "triggersInA",
+      "triggersInB"
+    ],
+    "trigger_export": [
+      "categories",
+      "scriptLanguage",
+      "triggers",
+      "variables"
+    ],
+    "trigger_lint": [
+      "customTextSkipped",
+      "disabledSkipped",
+      "findings",
+      "summary",
+      "triggersChecked"
+    ],
+    "trigger_move": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_recover_from_script": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_remove": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_remove_eca": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_rename": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_set_code": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_set_eca_enabled": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_set_enabled": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_set_initially_on": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_set_run_on_map_init": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_sync_bodies": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_to_script": [
+      "catalogApplied",
+      "customTextTriggers",
+      "functions",
+      "notes",
+      "script",
+      "triggers"
+    ],
+    "trigger_var_add": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_var_list": [
+      "cap",
+      "hasMore",
+      "items",
+      "nextOffset",
+      "returnedCount",
+      "total",
+      "totalCount",
+      "truncated"
+    ],
+    "trigger_var_remove": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "trigger_var_set": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "triggers_read": [
+      "categories",
+      "scriptLanguage",
+      "triggers",
+      "variables"
+    ],
+    "uabi_profile": [
+      "diagnostics",
+      "maps"
+    ],
+    "unit_abilities": [
+      "abilities",
+      "diagnostics",
+      "found",
+      "name",
+      "placedCreationNumber",
+      "unit"
+    ],
+    "validate": [
+      "errors",
+      "issues",
+      "valid",
+      "warnings"
+    ],
+    "validate_strict": [
+      "base",
+      "diagnostics",
+      "errors",
+      "issues",
+      "strictIssues",
+      "valid",
+      "warnings"
+    ],
+    "version_info": [
+      "buildTimeUtc",
+      "gitHash",
+      "mcpServerName",
+      "mcpVersion",
+      "productId",
+      "productVersion",
+      "protocolVersion",
+      "sdkVersion"
+    ]
+  }
+}

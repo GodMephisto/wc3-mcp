@@ -230,6 +230,51 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
         Assert.False(Prop(empty, "ok").GetBoolean());
     }
 
+    [Fact, Trait("Category", "GameData"), Covers("hero_generate")]
+    public async Task Hero_generate_writes_a_unit_per_form_and_an_ability_per_slot()
+    {
+        // The bases come from the game install rather than the blank fixture, so this one needs it.
+        const string spec = """
+        {
+          "name": "Smoke Hero",
+          "base_unit": "Hpal",
+          "forms": [
+            { "id": "base", "abilities": [
+              { "slot": "Q", "name": "Smoke Strike", "base": "ANcl", "cooldown": [8,8,8,8], "cast": 0.35, "damage": 120 },
+              { "slot": "R", "name": "Smoke Shift", "kind": "transform", "to": "shifted" } ] },
+            { "id": "shifted", "abilities": [
+              { "slot": "Q", "name": "Smoke Surge", "base": "ANcl", "cooldown": [9,9,9,9], "cast": 0.35, "damage": 180 } ] } ]
+        }
+        """;
+
+        var before = Sha(Fixture);
+        string outPath = NewOut("hero-generate");
+        var r = await Call("hero_generate",
+            Args(("map", Fixture), ("out_path", outPath), ("spec_json", spec)));
+
+        Assert.Equal(before, Sha(Fixture));
+        Assert.True(File.Exists(outPath), "hero_generate wrote nothing");
+        Assert.True(Prop(r, "ok").GetBoolean(), r.ToString());
+
+        var units = Rows(Prop(r, "units"));
+        var abilities = Rows(Prop(r, "abilities"));
+        Assert.Equal(2, units.Count);
+        Assert.Equal(3, abilities.Count);
+        Assert.Equal(3, Prop(r, "orderIds").GetArrayLength());
+
+        // Distinct rawcodes and distinct order ids, which is what stops two generated abilities
+        // from sharing one order string in the engine.
+        Assert.Equal(3, abilities.Select(a => Prop(a, "rawcode").GetString()).Distinct().Count());
+        Assert.Equal(2, units.Select(u => Prop(u, "rawcode").GetString()).Distinct().Count());
+        Assert.All(abilities, a => Assert.Contains(
+            Prop(a, "rawcode").GetString()!, Prop(a, "orderId").GetString()));
+
+        Assert.Contains("HeroGen_Transform_shifted", Prop(r, "jass").GetString());
+        Assert.Contains(units, u => Prop(u, "abilityRawcodes").GetArrayLength() > 0);
+
+        await Call("map_info", Args(("map", outPath)));
+    }
+
     [Fact, Trait("Category", "GameData"), Covers("object_form", "object_field_options")]
     public async Task Object_form_and_field_options_come_from_the_game_data()
     {
@@ -282,6 +327,14 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
             throw new Xunit.Sdk.XunitException("no schemas directory available");
         }
 
+        // The write gate is fail closed, so replacing an existing settings file needs a grant. This
+        // test supplies one for its own duration rather than relying on the machine having none.
+        string grant = Path.Combine(Path.GetTempPath(), "wc3target-" + Guid.NewGuid().ToString("N") + ".json");
+        File.WriteAllText(grant, "{\"overwrite\": true}");
+        string? saved = Environment.GetEnvironmentVariable(Wc3.Mcp.Permissions.EnvironmentVariable);
+        Environment.SetEnvironmentVariable(Wc3.Mcp.Permissions.EnvironmentVariable, grant);
+        try
+        {
         var args = new Dictionary<string, object?> { ["schemas_dir"] = schemasDir };
 
         // target_get returns the build and source.
@@ -292,9 +345,9 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
         Assert.True(source == "default" || source == "settings" || source == "environment",
             "source was " + source);
 
-        // target_list returns an array of builds.
+        // target_list returns a capped collection, so the builds sit under items rather than at the root.
         var list = await Call("target_list", args);
-        var builds = list.EnumerateArray().ToList();
+        var builds = Prop(list, "items").EnumerateArray().ToList();
         Assert.True(builds.Any());
 
         // target_set with an invalid build fails.
@@ -304,12 +357,18 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
         // target_set with a valid build succeeds.
         // Use the first build from target_list.
         string firstBuild = builds.First().GetProperty("build").GetString()!;
-        var goodSet = await Call("target_set", Args(("build", firstBuild), ("schemas_dir", schemasDir)));
+        var goodSet = await Call("target_set", Args(("build", firstBuild), ("schemas_dir", schemasDir), ("overwrite", true)));
         Assert.True(Prop(goodSet, "ok").GetBoolean());
 
         // Verify target_get now shows settings as source.
         var get2 = await Call("target_get", args);
         Assert.Equal("settings", Prop(get2, "source").GetString());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(Wc3.Mcp.Permissions.EnvironmentVariable, saved);
+            if (File.Exists(grant)) File.Delete(grant);
+        }
     }
 
     [Fact, Covers("validate_strict")]

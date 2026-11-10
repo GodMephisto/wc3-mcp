@@ -217,7 +217,121 @@ public sealed class ModelAssetCommandTests : IDisposable
         Assert.Contains("mtllib custom-out.mtl", export.Obj);
     }
 
+    [Fact]
+    public void Export_obj_publishes_every_file_and_leaves_no_staging_folder()
+    {
+        var doc = TriMap();
+        string objPath = Path.Combine(_dir, "Tri.obj");
+
+        var r = ModelExportObjCommand.Write(doc, @"war3mapImported\Tri.mdx", objPath);
+
+        Assert.Equal(objPath, r.SavedTo);
+        Assert.Equal(Path.Combine(_dir, "Tri.mtl"), r.Mtl);
+        Assert.Equal(new[] { "Tri.png" }, r.Textures);
+        foreach (string path in new[] { r.SavedTo, r.Mtl }
+                     .Concat(r.Textures.Select(t => Path.Combine(_dir, t))))
+        {
+            Assert.True(File.Exists(path), path);
+            Assert.True(new FileInfo(path).Length > 0, path);
+        }
+        Assert.Contains("mtllib Tri.mtl", File.ReadAllText(r.SavedTo));
+        Assert.Empty(r.Diagnostics);
+        Assert.Empty(Staging());
+        Assert.Empty(Directory.GetFiles(_dir, "*" + ".replaced-" + "*"));
+    }
+
+    [Fact]
+    public void Export_obj_refuses_an_existing_target_and_leaves_it_unchanged()
+    {
+        var doc = TriMap();
+        string objPath = Path.Combine(_dir, "Tri.obj");
+        byte[] original = Encoding.UTF8.GetBytes("previous export");
+        File.WriteAllBytes(objPath, original);
+
+        var ex = Assert.Throws<IOException>(() =>
+            ModelExportObjCommand.Write(doc, @"war3mapImported\Tri.mdx", objPath));
+
+        Assert.Contains("overwrite", ex.Message);
+        Assert.Equal(original, File.ReadAllBytes(objPath));
+        Assert.False(File.Exists(Path.Combine(_dir, "Tri.mtl")));
+        Assert.False(File.Exists(Path.Combine(_dir, "Tri.png")));
+        Assert.Empty(Staging());
+    }
+
+    [Fact]
+    public void Export_obj_overwrite_replaces_the_target_and_lists_the_new_files()
+    {
+        var doc = TriMap();
+        string objPath = Path.Combine(_dir, "Tri.obj");
+        string mtlPath = Path.Combine(_dir, "Tri.mtl");
+        File.WriteAllText(objPath, "previous export");
+        File.WriteAllText(mtlPath, "previous materials");
+
+        var r = ModelExportObjCommand.Write(doc, @"war3mapImported\Tri.mdx", objPath, overwrite: true);
+
+        Assert.Equal(new[] { "Tri.png" }, r.Textures);
+        Assert.Contains("mtllib Tri.mtl", File.ReadAllText(objPath));
+        Assert.Contains("newmtl tex0", File.ReadAllText(mtlPath));
+        Assert.True(new FileInfo(Path.Combine(_dir, "Tri.png")).Length > 0);
+        Assert.Empty(Staging());
+        Assert.Empty(Directory.GetFiles(_dir, "*" + ".replaced-" + "*"));
+    }
+
+    [Fact]
+    public void Export_obj_restores_the_previous_target_when_the_publish_fails_halfway()
+    {
+        var doc = TriMap();
+        string objPath = Path.Combine(_dir, "Tri.obj");
+        string mtlPath = Path.Combine(_dir, "Tri.mtl");
+        byte[] obj = Encoding.UTF8.GetBytes("previous export");
+        byte[] mtl = Encoding.UTF8.GetBytes("previous materials");
+        File.WriteAllBytes(objPath, obj);
+        File.WriteAllBytes(mtlPath, mtl);
+
+        // A folder squatting on a texture name is an obstruction the export cannot replace, so the
+        // texture move fails after the obj and the mtl have already been swapped in. The rollback
+        // has to put both originals back byte for byte.
+        Directory.CreateDirectory(Path.Combine(_dir, "Tri.png"));
+
+        Assert.Throws<IOException>(() =>
+            ModelExportObjCommand.Write(doc, @"war3mapImported\Tri.mdx", objPath, overwrite: true));
+
+        Assert.Equal(obj, File.ReadAllBytes(objPath));
+        Assert.Equal(mtl, File.ReadAllBytes(mtlPath));
+        Assert.True(Directory.Exists(Path.Combine(_dir, "Tri.png")));
+        Assert.Empty(Staging());
+        Assert.Empty(Directory.GetFiles(_dir, "*" + ".replaced-" + "*"));
+    }
+
+    [Fact]
+    public void Export_obj_leaves_no_staging_and_no_target_when_the_parent_is_a_file()
+    {
+        var doc = TriMap();
+        string blocker = Path.Combine(_dir, "blocker");
+        File.WriteAllText(blocker, "not a folder");
+        string objPath = Path.Combine(blocker, "Tri.obj");
+
+        Assert.Throws<IOException>(() =>
+            ModelExportObjCommand.Write(doc, @"war3mapImported\Tri.mdx", objPath));
+
+        Assert.Equal("not a folder", File.ReadAllText(blocker));
+        Assert.False(File.Exists(objPath));
+        Assert.Empty(Staging());
+        Assert.Equal(new[] { blocker }, Directory.GetFileSystemEntries(_dir));
+    }
+
     // ---- fixtures ------------------------------------------------------------
+
+    private static MapDocument TriMap() => MapDocument.Load(SyntheticMap.Build(
+        new Dictionary<string, byte[]>
+        {
+            [@"war3mapImported\Tri.mdx"] = SyntheticModel.BuildMdx(texturePath: @"Textures\Tri.blp"),
+            [@"Textures\Tri.blp"] = SyntheticModel.Blp(),
+        }));
+
+    /// <summary>Every leftover staging folder under the test's own root, which must be none.</summary>
+    private IEnumerable<string> Staging() => Directory.GetDirectories(
+        _dir, "*" + ModelExportObjCommand.StagingInfix + "*", SearchOption.AllDirectories);
 
     private static UnitObjectData CustomUnit(string rawcode)
     {

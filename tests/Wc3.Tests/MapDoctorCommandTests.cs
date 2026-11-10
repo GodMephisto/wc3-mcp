@@ -106,6 +106,153 @@ public class MapDoctorCommandTests : IDisposable
         Assert.Throws<ArgumentException>(() => MapDoctorCommand.Check(map, "1.27 --qol"));
     }
 
+    // ---- the answer cache, keyed by the map's bytes rather than its path ----
+
+    /// <summary>One lowercase key for a read-only command, using test identities unless given.</summary>
+    private static string KeyFor(string map, string command = "check", string tool = "0.4.13+test",
+        string doctor = "1.7.6:abc", params string[] extra)
+    {
+        var args = new List<string> { command, map };
+        args.AddRange(extra);
+        var key = MapDoctorCommand.CacheKey(command, args, tool, doctor, MapDoctorCommand.FileDigest);
+        Assert.NotNull(key);
+        return key;
+    }
+
+    private static MapDoctorResult AnAnswer(string command = "check") =>
+        new(command, 0, null, null, "1.7.6 sha256:abc", null);
+
+    private string WriteMap(string bytes)
+    {
+        var map = Path.Combine(_dir, "cache-me.w3x");
+        File.WriteAllText(map, bytes);
+        return map;
+    }
+
+    [Fact]
+    public void An_unchanged_map_is_a_hit()
+    {
+        var map = WriteMap("aaaa");
+        var first = KeyFor(map);
+        var second = KeyFor(map);
+        Assert.Equal(first, second);
+
+        var cache = new MapDoctorCommand.DoctorResultCache();
+        var answer = AnAnswer();
+        cache.Put(first, answer);
+        Assert.Same(answer, cache.Get(second));
+    }
+
+    [Fact]
+    public void One_changed_byte_at_the_same_path_is_a_miss()
+    {
+        var map = WriteMap("aaaa");
+        var stamp = File.GetLastWriteTimeUtc(map);
+        var first = KeyFor(map);
+
+        // Same length, same timestamp, same path, different bytes. A key made of the time and the
+        // size cannot see this, which is the defect this test pins.
+        File.WriteAllText(map, "aaab");
+        File.SetLastWriteTimeUtc(map, stamp);
+        Assert.Equal(stamp, File.GetLastWriteTimeUtc(map));
+        Assert.Equal(4, new FileInfo(map).Length);
+
+        var second = KeyFor(map);
+        Assert.NotEqual(first, second);
+
+        var cache = new MapDoctorCommand.DoctorResultCache();
+        cache.Put(first, AnAnswer());
+        Assert.Null(cache.Get(second));
+    }
+
+    [Fact]
+    public void A_version_bump_is_a_miss()
+    {
+        var map = WriteMap("aaaa");
+        var old = KeyFor(map, tool: "0.4.13+aaaaaaa");
+        var bumped = KeyFor(map, tool: "0.4.14+bbbbbbb");
+        Assert.NotEqual(old, bumped);
+
+        var cache = new MapDoctorCommand.DoctorResultCache();
+        cache.Put(old, AnAnswer());
+        Assert.Null(cache.Get(bumped));
+    }
+
+    [Fact]
+    public void A_different_doctor_build_is_a_miss()
+    {
+        var map = WriteMap("aaaa");
+        var cache = new MapDoctorCommand.DoctorResultCache();
+        var first = KeyFor(map, doctor: "1.7.6:522f9bda");
+        cache.Put(first, AnAnswer());
+        Assert.Null(cache.Get(KeyFor(map, doctor: "1.7.7:00000000")));
+    }
+
+    [Fact]
+    public void An_option_that_changes_the_verdict_is_a_miss()
+    {
+        var map = WriteMap("aaaa");
+        var plain = KeyFor(map);
+        var for127 = KeyFor(map, extra: "--game=1.27");
+        var for128 = KeyFor(map, extra: "--game=1.28");
+        Assert.NotEqual(plain, for127);
+        Assert.NotEqual(for127, for128);
+    }
+
+    [Fact]
+    public void A_command_that_writes_is_never_cached()
+    {
+        var map = WriteMap("aaaa");
+        Assert.Null(MapDoctorCommand.CacheKey("fix",
+            new List<string> { "fix", map }, "0.4.13", "1.7.6:abc", MapDoctorCommand.FileDigest));
+    }
+
+    [Fact]
+    public void A_folder_is_handled_without_being_hashed_as_a_file()
+    {
+        var folder = Directory.CreateDirectory(Path.Combine(_dir, "maps")).FullName;
+        File.WriteAllText(Path.Combine(folder, "inside.w3x"), "x");
+
+        // No throw, and no cache entry keyed by a folder's name alone.
+        Assert.Null(MapDoctorCommand.FileDigest(folder));
+        Assert.Null(MapDoctorCommand.CacheKey("check",
+            new List<string> { "check", folder }, "0.4.13", "1.7.6:abc", MapDoctorCommand.FileDigest));
+    }
+
+    [Fact]
+    public void A_path_named_twice_in_one_call_is_read_once()
+    {
+        // A hit must not cost more than one pass over the map, so a repeated path in the arguments
+        // is digested once. Compare takes two maps but is not a cached command, so this is pinned
+        // on check.
+        var map = WriteMap("aaaa");
+        var reads = 0;
+        string? Counting(string path) { reads++; return MapDoctorCommand.FileDigest(path); }
+
+        var key = MapDoctorCommand.CacheKey("check",
+            new List<string> { "check", map, map }, "0.4.13", "1.7.6:abc", Counting);
+        Assert.NotNull(key);
+        Assert.Equal(1, reads);
+    }
+
+    [Fact]
+    public void The_cache_is_bounded()
+    {
+        var cache = new MapDoctorCommand.DoctorResultCache(limit: 4);
+        for (var i = 0; i < 40; i++) cache.Put("key-" + i, AnAnswer());
+        Assert.Equal(4, cache.Count);
+        Assert.Null(cache.Get("key-0"));
+        Assert.NotNull(cache.Get("key-39"));
+    }
+
+    [Fact]
+    public void This_build_names_itself_in_the_key()
+    {
+        var identity = MapDoctorCommand.ToolIdentity();
+        Assert.False(string.IsNullOrWhiteSpace(identity));
+        Assert.Equal(identity, MapDoctorCommand.ToolIdentity());
+    }
+
     [Fact]
     [Trait("Category", "Corpus")]
     public void Check_reports_the_half_written_button_positions_in_GGGA_0_07c()

@@ -92,6 +92,45 @@ public sealed class McpSmokeGameDataTests : McpSmokeBase
         Assert.Equal("normal", Prop(Rows(Prop(entries[0], "values"))[0], "value").GetString());
     }
 
+    [Fact, Covers("gamedata_enum")]
+    public async Task Gamedata_enum_names_the_legal_types_when_the_type_is_unknown()
+    {
+        var root = BuildSchemas();
+        var dir = Directory.EnumerateDirectories(root).First();
+        File.WriteAllText(Path.Combine(dir, "enums.json"),
+            "{\"attackType\":[{\"value\":\"normal\",\"displayName\":\"Normal\"}],"
+            + "\"armorType\":[{\"value\":\"flesh\",\"displayName\":\"Flesh\"}],"
+            + "\"weaponType\":[{\"value\":\"normal\",\"displayName\":\"Normal\"}],"
+            + "\"targetType\":[{\"value\":\"ground\",\"displayName\":\"Ground\"}]}");
+
+        var message = await CallError("gamedata_enum", Args(("type", "noSuchType"), ("schemas_dir", root)));
+
+        Assert.Contains("unknown enum type 'noSuchType'", message);
+        Assert.Contains("attackType", message);
+        Assert.Contains("armorType", message);
+        Assert.Contains("weaponType", message);
+        Assert.Contains("targetType", message);
+    }
+
+    [Fact, Covers("gamedata_enum")]
+    public async Task Gamedata_enum_still_answers_a_legal_type()
+    {
+        var root = BuildSchemas();
+        var dir = Directory.EnumerateDirectories(root).First();
+        File.WriteAllText(Path.Combine(dir, "enums.json"),
+            "{\"attackType\":[{\"value\":\"normal\",\"displayName\":\"Normal\"}],"
+            + "\"armorType\":[{\"value\":\"flesh\",\"displayName\":\"Flesh\"}],"
+            + "\"weaponType\":[{\"value\":\"normal\",\"displayName\":\"Normal\"}],"
+            + "\"targetType\":[{\"value\":\"ground\",\"displayName\":\"Ground\"}]}");
+
+        var r = await Call("gamedata_enum", Args(("type", "armorType"), ("schemas_dir", root)));
+
+        Assert.Equal("armorType", Prop(r, "type").GetString());
+        var entries = Rows(Prop(r, "entries"));
+        var entry = Assert.Single(entries);
+        Assert.Equal("flesh", Prop(Rows(Prop(entry, "values"))[0], "value").GetString());
+    }
+
     [Fact, Covers("gamedata_sources")]
     public async Task Gamedata_sources_reports_a_hash_per_section_file()
     {
