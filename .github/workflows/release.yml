@@ -140,7 +140,9 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
           git add "$dir/v$v.json"
           git commit -m "chore(release): record v$v"
-          git push
+          # The release checks out the tag, so HEAD is detached and a bare push has no branch to
+          # send. Naming the branch is what makes the record land where the next build reads it.
+          git push origin HEAD:main
 
       # Publishes the zero-dependency npm launcher through OIDC trusted publishing, so no
       # long-lived token is stored. The launcher downloads the matching release asset at run
