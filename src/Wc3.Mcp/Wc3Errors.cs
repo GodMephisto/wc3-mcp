@@ -119,7 +119,7 @@ public static class Wc3ErrorCodes
     {
         MapNotFound, MapUnreadable, ObjectNotFound, GameDataMissing,
         OutPathIsInput, OutPathInsideInput, OutputExists, StaleInput,
-        ConfirmRequired, PolicyDenied, PermissionDenied,
+        ConfirmRequired, PolicyDenied, PermissionDenied, AliasExpired,
         InvalidArgument, LossyDecode, ResultTooLarge, DependencyMissing,
         UnsupportedPlatform, Internal,
         ArchiveEntries, EntryBytes, CallBytes, TempDisk,
