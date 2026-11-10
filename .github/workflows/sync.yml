@@ -51,7 +51,16 @@ jobs:
           # stale; dropping them by what they reference cannot.
           # The changelog tests require a note for the current version, and this checkout bumps its
           # version on every sync and carries no changelog directory, so they cannot hold here.
-          grep -rlE "Wc3Ctl|changelog/|CHANGELOG[.]md" tests/Wc3.Tests --include=*.cs | xargs -r rm -f
+          grep -rlE "Wc3Ctl|changelog/|CHANGELOG[.]md|ResultFieldStabilityTests" tests/Wc3.Tests --include=*.cs | xargs -r rm -f
+
+      - name: Keep the manifests on the same version
+        run: |
+          set -euo pipefail
+          v=$(grep -oP '(?<=<Version>)[^<]+' Directory.Build.props | head -1)
+          echo "mirroring $v into the manifests"
+          for f in npm/package.json mcpb/manifest.json server.json; do
+            [ -f "$f" ] && sed -i -E "s/\"version\": *\"[0-9.]+\"/\"version\": \"$v\"/" "$f" || true
+          done
 
       - name: Bump the patch version
         id: v
