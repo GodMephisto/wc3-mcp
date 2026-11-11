@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.40 - 2026-11-11
+
+See changelog/0.5.40.md.
+
+
 ## 0.5.39 - 2026-11-10
 
 See changelog/0.5.39.md.
