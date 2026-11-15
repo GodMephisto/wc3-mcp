@@ -3378,6 +3378,12 @@ public static class Wc3Tools
             return (r.Ok, r.Message);
         }));
 
+    [McpServerTool(Name = "texture_audit", Title = "Audit texture headers", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Read every texture header in a map and report the ones the engine mishandles, grouped by kind. Checks that a file carries a BLP signature, that a BLP1 or BLP2 header fits inside the file, that a declared JPEG header is not above the 624 bytes the engine allows, that every declared mip level ends inside the file, that a mip chain is not empty, and that dimensions are a power of two the engine will read. Read-only, needs no game install, and never decodes a pixel, so the cost is one kilobyte per texture. A header that points past the end makes the engine read outside its buffer, and a missing level draws transparent black.")]
+    public static TextureAuditResult TextureAudit(
+        [Description("Path to a .w3x/.w3m map file, or to an unpacked map folder holding the same entries.")] string map)
+        => Run(() => TextureAuditCommand.Execute(LoadMap(map)));
+
     [McpServerTool(Name = "game_file_shadows", Title = "Find files that override the game", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Find map files that sit on a path the installed game already ships, so the engine reads the map's copy in place of its own. Two maps closed the game in LAN and HD graphics this way, one with UI minimap textures and one with 1,486 repacked game textures, and removing the files fixed both. Read-only. The editor's own object data (SLK and text tables) shares paths with the game by construction and is excluded, so what comes back is art only. Needs an installed game to read its file list, and the list is that build's, so a map aimed at a classic build can override a path this build has renamed.")]
     public static GameFileShadowResult GameFileShadows(

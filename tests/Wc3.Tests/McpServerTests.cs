@@ -84,7 +84,7 @@ public class McpServerTests
         "terrain_audit", "terrain_blight", "terrain_cliff", "terrain_corner_get", "terrain_corner_set",
         "terrain_deform", "terrain_export_heightmap", "terrain_fill", "terrain_import_heightmap",
         "terrain_info", "terrain_optimize", "terrain_paint", "terrain_ramp", "terrain_smooth",
-        "terrain_stats", "terrain_water", "texture_atlas", "texture_optimize", "trigger_add", "trigger_add_category",
+        "terrain_stats", "terrain_water", "texture_atlas", "texture_audit", "texture_optimize", "trigger_add", "trigger_add_category",
         "trigger_add_eca", "trigger_catalog_describe", "trigger_catalog_list", "trigger_dead",
         "trigger_diff", "trigger_export", "trigger_lint", "trigger_move", "trigger_recover_from_script",
         "trigger_remove", "trigger_remove_eca", "trigger_rename",

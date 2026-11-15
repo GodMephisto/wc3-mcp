@@ -101,6 +101,23 @@ public static class ModelPathCommand
 
         var gameCache = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         var archiveModels = ArchiveModelsByStem(doc);
+
+        // The game's own models are indexed only when a path is unresolved, because the walk costs a
+        // listfile read and most maps never need it.
+        Dictionary<string, List<string>>? gameModels = null;
+        bool gameIndexTried = false;
+        string? Resolve(string path)
+        {
+            var hit = Suggest(path, archiveModels);
+            if (hit is not null) return hit;
+            if (!gameIndexTried)
+            {
+                gameIndexTried = true;
+                gameModels = GameModelsByStem(gameDirOverride);
+            }
+            return gameModels is null ? null : Suggest(path, gameModels);
+        }
+
         int examined = 0, byMap = 0, byGame = 0, unchecked_ = 0;
         var missing = new List<MissingModel>();
 
@@ -121,7 +138,7 @@ public static class ModelPathCommand
                         game.TryReadFile(c, out _) || game.TryReadFile("war3.w3mod:_hd.w3mod:" + c, out _));
                 if (inGame) { byGame += uses; return; }
             }
-            missing.Add(new(source, kind, rawcode, field, path, uses, false, Suggest(path, archiveModels)));
+            missing.Add(new(source, kind, rawcode, field, path, uses, false, Resolve(path)));
         }
 
         // The script, one entry per distinct literal, counting every occurrence.
@@ -301,6 +318,32 @@ public static class ModelPathCommand
             list.Add(name);
         }
         return by;
+    }
+
+    /// <summary>
+    /// The installed game's models by stem, or null when there is no install to read. A broken path
+    /// often means a model the game already ships under a different folder, which is the case no
+    /// archive index can answer, and the reason Devo's doctor carries a name dictionary to do it.
+    /// This reads the same answer from the game the map will run on, at the cost of one listfile walk.
+    /// </summary>
+    private static Dictionary<string, List<string>>? GameModelsByStem(string? gameDirOverride)
+    {
+        string? install = Wc3.GameData.GameInstall.Locate(gameDirOverride);
+        if (install is null) return null;
+        if (!Wc3.GameData.CascGameDataSource.TryOpen(install, out var casc, out _) || casc is null) return null;
+        using (casc)
+        {
+            var by = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            foreach (var raw in casc.EnumerateFileNames())
+            {
+                string name = GameFileShadowCommand.Normalize(raw);
+                if (name.Length == 0 || !ModelExtension.IsMatch(name)) continue;
+                string s = Stem(name);
+                if (!by.TryGetValue(s, out var list)) by[s] = list = new List<string>();
+                if (!list.Contains(name, StringComparer.OrdinalIgnoreCase)) list.Add(name);
+            }
+            return by;
+        }
     }
 
     /// <summary>

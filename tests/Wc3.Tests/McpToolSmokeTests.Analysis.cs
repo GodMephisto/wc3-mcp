@@ -395,6 +395,16 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
         Assert.NotNull(Prop(r, "conflicts"));
     }
 
+    [Fact, Covers("texture_audit")]
+    public async Task Texture_audit_counts_every_texture_and_reports_its_kinds()
+    {
+        var r = await Call("texture_audit", Args(("map", Fixture)));
+        Assert.NotNull(r);
+        Assert.NotNull(Prop(r, "textures"));
+        Assert.NotNull(Prop(r, "findings"));
+        Assert.NotNull(Prop(r, "problems"));
+    }
+
     [Fact, Covers("reforged3_check", "repair_reforged3")]
     public async Task Reforged3_repair_reports_its_counts_and_writes_a_copy()
     {

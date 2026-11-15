@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.44 - 2026-11-16
+
+`texture_audit` reports the texture headers the engine mishandles. See `changelog/0.5.44.md`.
+
 ## 0.5.43 - 2026-11-16
 
 `game_file_shadows` finds map files that override the installed game's own files, and `repair_game_files` writes a copy without them. See `changelog/0.5.43.md`.

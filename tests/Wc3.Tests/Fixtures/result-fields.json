@@ -1836,6 +1836,15 @@
       "tilesChanged"
     ],
     "texture_atlas": [],
+    "texture_audit": [
+      "bytes",
+      "findings",
+      "items",
+      "message",
+      "ok",
+      "problems",
+      "textures"
+    ],
     "texture_optimize": [],
     "trigger_add": [
       "bytesWritten",

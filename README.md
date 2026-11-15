@@ -366,6 +366,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | terrain_smooth | writes | Smooth the whole map: each pass replaces every corner height with the mean of itself and its in-grid four neighbours, saving the edited map to out_path. The... |
 | terrain_stats | read-only | Summarize a map's terrain (war3map.w3e): tile count, min/mean/max ground height and min/max cliff level. Read-only. |
 | terrain_water | writes | Set/raise/lower/remove water over a brush, saving the edited map to out_path. The input map is NEVER modified in place. |
+| texture_audit | read-only | Read every texture header in a map and report the ones the engine mishandles, grouped by kind. Checks the BLP signature, that a BLP1 or BLP2 header fits inside... |
 | texture_atlas | writes | Pack two or more .blp, .dds or standard image textures into one power-of-two atlas and write it at out_path in the first input's format. Every input is decod... |
 | texture_optimize | writes | Shrink a .blp, .dds or standard image texture to fit a maximum side, preserving aspect ratio, and write it at out_path in the same format. The input is never... |
 | trigger_add | writes | Add a trigger to a category in the map's GUI trigger tree and save the edited map to out_path. The new trigger is created enabled and initially on, matching... |

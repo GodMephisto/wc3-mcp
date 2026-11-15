@@ -279,6 +279,7 @@ public static class McpToolFamilies
         ["doctor_schema"] = "repair",
         ["new_map"] = "repair",
         ["game_file_shadows"] = "assets",
+        ["texture_audit"] = "assets",
         ["repair_audit_errors"] = "repair",
         ["repair_game_files"] = "repair",
         ["repair_generated"] = "repair",
