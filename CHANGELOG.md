@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.42 - 2026-11-16
+
+`repair_reforged3` repairs a legacy SLK map for Warcraft III 3.0 in code, with no doctor, no game install and no name dictionary, and `reforged3_check` reports the same six counts read-only. See `changelog/0.5.42.md`.
+
 ## 0.5.41 - 2026-11-16
 
 Devo's Map Doctor pinned at 2.3.2, which reads the obfuscated names a protected archive hides, and a doctor_schema tool that returns the installed doctor's own JSON contract. See `changelog/0.5.41.md`.

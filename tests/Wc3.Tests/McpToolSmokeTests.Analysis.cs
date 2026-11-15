@@ -387,6 +387,16 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
         Assert.NotNull(Prop(bench, "functions"));
     }
 
+    [Fact, Covers("reforged3_check", "repair_reforged3")]
+    public async Task Reforged3_repair_reports_its_counts_and_writes_a_copy()
+    {
+        var check = await Call("reforged3_check", Args(("map", Fixture)));
+        Assert.NotNull(check);
+        Assert.NotNull(Prop(check, "issueCount"));
+        var repaired = await Call("repair_reforged3", Args(("map", Fixture), ("out_path", NewOut("reforged3"))));
+        Assert.NotNull(repaired);
+    }
+
     [Fact, Trait("Category", "GameData"), Covers("repair_audit_errors", "repair_portraits")]
     public async Task Repairs_write_a_copy_and_leave_the_input_alone()
     {

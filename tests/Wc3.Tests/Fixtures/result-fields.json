@@ -1263,6 +1263,19 @@
     ],
     "rag_install": [],
     "rag_status": [],
+    "reforged3_check": [
+      "abilityLevelColumnsAdded",
+      "applied",
+      "buttonPositionsCompleted",
+      "changedFiles",
+      "fileColumnsRemoved",
+      "issueCount",
+      "message",
+      "modelsMoved",
+      "numericCellsNormalized",
+      "ok",
+      "strayCommentTerminatorsRemoved"
+    ],
     "region_create": [
       "bytesWritten",
       "creationNumber",
@@ -1330,6 +1343,14 @@
       "savedTo"
     ],
     "repair_portraits": [
+      "bytesWritten",
+      "filesRewritten",
+      "inputSha256",
+      "message",
+      "outputSha256",
+      "savedTo"
+    ],
+    "repair_reforged3": [
       "bytesWritten",
       "filesRewritten",
       "inputSha256",

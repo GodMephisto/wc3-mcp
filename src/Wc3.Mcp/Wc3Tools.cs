@@ -3359,6 +3359,25 @@ public static class Wc3Tools
                 $"{r.ModelsRepaired} of {r.ModelsAtRisk} at-risk model(s) repaired.");
         }));
 
+    [McpServerTool(Name = "reforged3_check", Title = "Detect 3.0 SLK rejections", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Report what Warcraft III 3.0 build 24268 refuses or misreads in a legacy SLK map, without writing anything. Counts the obsolete SLK file columns, the model paths still carrying a file value there, numeric cells that are not numbers, empty button positions, unmatched FDF comment terminators and abilities whose declared levels have no level 5 or 6 column. The repair is repair_reforged3, and it needs no external tool, no game install and no name dictionary.")]
+    public static Reforged3RepairResult Reforged3Check(
+        [Description("Path to a .w3x/.w3m map file, or to an unpacked map folder holding the same entries. Read-only.")] string map)
+        => Run(() => Reforged3RepairCommand.Execute(LoadMap(map), apply: false));
+
+    [McpServerTool(Name = "repair_reforged3", Title = "Repair a 3.0 SLK map", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Repair a legacy SLK-mode map so Warcraft III 3.0 build 24268 renders it, and save the result to out_path. Model paths move out of the obsolete file column of unitUI.slk and ItemData.slk into merged UnitSkin.txt and ItemSkin.txt profiles, numeric cells and button positions are normalized, unmatched FDF comment terminators are removed, and abilities that declare more levels than they have columns gain level 5 and 6 columns inheriting the level 4 value. Every object keeps its rawcode and its text, and no model is renamed or dropped. This is the same repair doctor_fix performs through Devo's Map Doctor, done here in code, so it works with no doctor installed and no game install. The input map is NEVER modified in place.")]
+    public static EditToolResult RepairReforged3(
+        [Description("Path to the source .w3x/.w3m map file, or to an unpacked map folder holding the same entries. Read-only, the repaired copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map).")] string out_path,
+        [Description("Replace an existing output file. Default false, and a rerun that would overwrite is refused with OUTPUT_EXISTS (SAF-05).")] bool overwrite = false,
+        [Description("The SHA-256 of the input map as you last read it. A mismatch is refused with STALE_INPUT, so an edit cannot land on a file that changed underneath it (SAF-07).")] string? expect_input_sha256 = null)
+        => Run(() => SaveEdit(map, out_path, overwrite, expect_input_sha256, doc =>
+        {
+            var r = Reforged3RepairCommand.Execute(doc, apply: true);
+            return (r.Ok, r.Message);
+        }));
+
     [McpServerTool(Name = "repair_audit_errors", Title = "Repair audited defects", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Repair the object-data defects audit reports. Fills ability level gaps (a field with no value at a declared level, copied from the nearest valid level), clears dangling references and impossible requirements, and saves to out_path. The input map is NEVER modified in place.")]
     public static EditToolResult RepairAuditErrors(

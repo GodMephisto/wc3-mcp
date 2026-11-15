@@ -294,6 +294,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | port_preview | read-only | Dry run, listing exactly what a port of the rawcode into the target map would add or change, writing nothing. Same code path as port_unit, so the preview and... |
 | port_unit | writes | Port a unit (its custom-object closure + imported assets + strings, and best-effort its JASS trigger closure) from a source map into a target map, auto-remap... |
 | quickstart | read-only | Route a broad request to the right workflow. Returns the ten core workflows a map task usually falls into (inspect, port-hero, reforged-3-fix, black-portrait... |
+| reforged3_check | read-only | Report what Warcraft III 3.0 build 24268 refuses in a legacy SLK map, without writing anything. Counts the obsolete file columns, the model paths still carryin... |
 | region_create | writes | Create a rectangular region from its south-west corner (x, y) plus a width w and height h, and save the edited map to out_path. The input map is NEVER modifi... |
 | region_list | read-only | List the map's rectangular regions (war3map.w3r), each with its creation number, name, and bounds. Add regions with place_region. |
 | region_remove | writes | Remove a region by name and save the edited map to out_path. The input map is NEVER modified in place. |
@@ -301,6 +302,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | region_validate | read-only | Flag overlapping regions, zero-area regions and regions that fall outside the playable bounds in a map's war3map.w3r. Regions sharing only an edge do not ove... |
 | render_model | writes | Render an object's model (map-imported .mdx/.mdl) to a PNG written at out_path. Returns the saved path and byte size; small images also come back inline as M... |
 | repair_generated | writes | Repair a map that wc3ctl itself generated, whose preplaced-hero helper block is too narrow for the heroes installed into it, and save the repaired map to out... |
+| repair_reforged3 | writes | Repair a legacy SLK map for Warcraft III 3.0 and save it to out_path. Model paths move out of the obsolete file column into merged skin profiles, numeric cells... |
 | replay_diff | read-only | Compare two recorded games (.w3g). Reports whether they played the same map, the length difference, and each player's leave time difference, keyed by slot. R... |
 | replay_find_map | read-only | The map path a replay (.w3g) records, and whether that map file exists in the Maps folder, resolving the .w3x or .w3m. Default folder is the user's Documents... |
 | replay_players | read-only | Per-player table for one recorded game (.w3g). Reports name, slot, result, leave time and leave reason. Team and race are not carried by this replay parser,... |

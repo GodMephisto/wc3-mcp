@@ -281,6 +281,8 @@ public static class McpToolFamilies
         ["repair_audit_errors"] = "repair",
         ["repair_generated"] = "repair",
         ["repair_portraits"] = "repair",
+        ["repair_reforged3"] = "repair",
+        ["reforged3_check"] = "repair",
         ["target_get"] = "repair",
         ["target_list"] = "repair",
         ["target_set"] = "repair",
