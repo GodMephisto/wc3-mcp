@@ -3675,11 +3675,22 @@ public static class Wc3Tools
     [Description("Read-only doctor reports on one map. diag is what protects the map and what the World "
         + "Editor needs, including whether it runs in SLK mode and the fix steps that apply. files lists "
         + "the archive's files with recovered names, card the name, author, players and loading screen, "
-        + "rawcodes the object ids with names, recipes the item recipes the script makes." + DoctorNote)]
+        + "rawcodes the object ids with names, recipes the item recipes the script makes, qol which "
+        + "quality of life edits the map supports, cheatpacks the cheat packs it takes, script the map's "
+        + "script." + DoctorNote)]
     public static MapDoctorResult DoctorInspect(
         [Description("Path to a .w3x/.w3m map file, or to an unpacked map folder holding the same entries.")] string map,
-        [Description("One of diag, files, card, rawcodes, recipes.")] string report = "diag")
+        [Description("One of diag, files, card, rawcodes, recipes, qol, cheatpacks, script.")] string report = "diag")
         => Run(() => MapDoctorCommand.ReadOnly(report, map));
+
+    [McpServerTool(Name = "doctor_schema", Title = "Show the doctor's JSON contract", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("The installed doctor's own --json contract, read at run time: every command, its "
+        + "options, the fix steps and extras it accepts, and the keys each result carries, versioned by "
+        + "the schema number the doctor stamps on every answer. Use it to see what this build can do "
+        + "instead of relying on a list baked into the wrapper, which is how a pin bump leaves a stale "
+        + "option behind." + DoctorNote)]
+    public static MapDoctorResult DoctorSchema()
+        => Run(() => MapDoctorCommand.Schema());
 
     [McpServerTool(Name = "doctor_compare", Title = "Compare two map versions", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("What differs between two versions of a map, file by file (added, removed, changed) "
@@ -3698,11 +3709,16 @@ public static class Wc3Tools
     public static MapDoctorResult DoctorFix(
         [Description("Path to a .w3x/.w3m map file, or to an unpacked map folder holding the same entries.")] string map,
         [Description("Where to write the repaired copy. Default <map>_doctor.<ext> beside the input.")] string? out_path = null,
-        [Description("Steps and extras, without dashes, such as listfile, data, portraits, uabi. Prefix no- to "
-            + "drop a default step. Empty applies the steps the doctor picks for this map. Allowed: unprotect, "
+        [Description("Steps and extras, without dashes, such as listfile, data, uabi. Prefix no- to "
+            + "drop a default step. Empty applies the steps the doctor picks for this map. Steps: unprotect, "
             + "fake-files, listfile, ids, data, script-back, editor-files, counts, doodads, gui-triggers, "
-            + "script-objects, safe-units, models, model-names, portraits, data-pointers, kk-textures, "
-            + "green-icons, uabi, preload, single-player, shrink, strip-indent. At most 1000, and a longer list is refused with a tool error naming the limit.")] string[]? options = null,
+            + "script-objects, safe-units. Extras: models, model-names, data-pointers, kk-textures, "
+            + "green-icons, console-sides, uabi, preload, single-player, shrink, shrink-lossy, strip-indent, "
+            + "fix-attributes, remove-game-files, remove-game-copies, fix-requirements, fix-model-paths, "
+            + "fix-fdf, null-handles, minify, strip-comment-blocks, slk-objects, fix-graphics-modes, "
+            + "shrink-models, shrink-models-lossy, translation-keep, and portraits with a value, "
+            + "portraits=stamp or portraits=upgrade. At most 1000, and a longer list is refused with a tool "
+            + "error naming the limit. doctor_schema lists what the installed build accepts.")] string[]? options = null,
         [Description("Replace an existing output file. Default false, and a rerun that would overwrite is refused with OUTPUT_EXISTS (SAF-05).")] bool overwrite = false,
         [Description("The SHA-256 of the input map as you last read it. A mismatch is refused with STALE_INPUT, so an edit cannot land on a file that changed underneath it (SAF-07).")] string? expect_input_sha256 = null,
         [Description("Cancels the call at the next check point. The repair itself is not interruptible once it starts.")] CancellationToken cancellationToken = default)

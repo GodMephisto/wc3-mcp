@@ -63,13 +63,19 @@ public class MapDoctorCommandTests : IDisposable
     [Theory]
     [InlineData("listfile", "--listfile")]
     [InlineData("--portraits", "--portraits")]
+    [InlineData("portraits=stamp", "--portraits=stamp")]
+    [InlineData("portraits=upgrade", "--portraits=upgrade")]
     [InlineData("no-gui-triggers", "--no-gui-triggers")]
+    [InlineData("remove-game-files", "--remove-game-files")]
+    [InlineData("fix-model-paths", "--fix-model-paths")]
     public void Allowed_fix_options_pass_through(string given, string passed) =>
         Assert.Equal(new[] { passed }, MapDoctorCommand.FixArgs(new[] { given }).ToArray());
 
     [Theory]
     [InlineData("translation=C:/secrets.txt")]
     [InlineData("editor-version=1.27")]
+    [InlineData("portraits=sometimes")]
+    [InlineData("no-portraits=stamp")]
     [InlineData("anything")]
     public void Other_fix_options_are_refused(string given) =>
         Assert.Throws<ArgumentException>(() => MapDoctorCommand.FixArgs(new[] { given }).ToArray());
@@ -79,8 +85,12 @@ public class MapDoctorCommandTests : IDisposable
     {
         var map = Path.Combine(_dir, "m.w3x");
         File.WriteAllText(map, "");
-        foreach (var verb in new[] { "fix", "cheat", "qol", "port", "editor" })
+        foreach (var verb in new[] { "fix", "cheat", "port", "editor", "diagnose", "extract", "translation" })
             Assert.Throws<ArgumentException>(() => MapDoctorCommand.ReadOnly(verb, map));
+
+        // The 2.3.2 verbs are reads of one map with no output file, so inspect carries them.
+        foreach (var verb in new[] { "qol", "cheatpacks", "script" })
+            Assert.Contains(verb, MapDoctorCommand.ReadOnlyCommands);
     }
 
     [Fact]

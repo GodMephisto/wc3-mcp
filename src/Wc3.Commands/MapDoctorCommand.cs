@@ -42,26 +42,53 @@ public static class MapDoctorCommand
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["522f9bda060535d7589fa56db24eacae737924391e68b5c2d8f115f09e703462"] = "1.7.6",
+            ["125c39c5dac2a8931f111265684732afe8a49327a56bcc6764228a0ef43831aa"] = "2.3.2",
         };
 
     public const string ExeName = "DevosMapDoctor.exe";
 
     /// <summary>Read-only doctor commands that take one map.</summary>
+    /// <remarks>
+    /// The list grows with the pinned builds. qol and cheatpacks arrive in 2.3.2 and answer what the
+    /// window would offer for the map, and script prints the map's script, so each is a read of one
+    /// map with no output file and belongs here rather than behind a write tool.
+    /// </remarks>
     public static readonly IReadOnlySet<string> ReadOnlyCommands =
-        new HashSet<string>(StringComparer.Ordinal) { "check", "diag", "files", "card", "rawcodes", "recipes" };
+        new HashSet<string>(StringComparer.Ordinal)
+        {
+            "check", "diag", "files", "card", "rawcodes", "recipes", "qol", "cheatpacks", "script",
+        };
 
     /// <summary>
-    /// The fix steps and extras the doctor accepts, from its --help in 1.7.6. Anything else is
-    /// refused here, so a caller cannot pass an option such as --translation that reads another
-    /// file, or one a later release gives a different meaning.
+    /// The flag-only fix steps and extras the doctor accepts, from its --help in 2.3.2. Anything
+    /// else is refused here, so a caller cannot pass an option such as --translation or
+    /// --lobby-image that reads another file, or one a later release gives a different meaning.
+    /// An option that takes a value is listed in <see cref="FixOptionValues"/> instead.
     /// </summary>
     public static readonly IReadOnlySet<string> FixOptions = new HashSet<string>(StringComparer.Ordinal)
     {
+        // steps
         "unprotect", "fake-files", "listfile", "ids", "data", "script-back", "editor-files", "counts",
         "doodads", "gui-triggers", "script-objects", "safe-units",
-        "models", "model-names", "portraits", "data-pointers", "kk-textures", "green-icons", "uabi",
-        "preload", "single-player", "shrink", "strip-indent",
+        // extras
+        "models", "model-names", "portraits", "data-pointers", "kk-textures", "green-icons", "console-sides", "uabi",
+        "preload", "single-player", "shrink", "shrink-lossy", "strip-indent", "fix-attributes",
+        "remove-game-files", "remove-game-copies", "fix-requirements", "fix-model-paths", "fix-fdf",
+        "null-handles", "minify", "strip-comment-blocks", "slk-objects", "fix-graphics-modes",
+        "shrink-models", "shrink-models-lossy", "translation-keep",
     };
+
+    /// <summary>
+    /// The fix options that take a value, with the values this wrapper allows. Kept apart from
+    /// <see cref="FixOptions"/> because a value is a token the caller supplies, and a free form one
+    /// such as --translation or --lobby-image names a file this wrapper would then read. portraits
+    /// takes only the two words the doctor defines, so it is safe to pass through.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> FixOptionValues =
+        new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
+        {
+            ["portraits"] = new HashSet<string>(StringComparer.Ordinal) { "stamp", "upgrade" },
+        };
 
     public static MapDoctorResult Check(string map, string? game = null)
     {
@@ -85,6 +112,15 @@ public static class MapDoctorCommand
 
     public static MapDoctorResult Compare(string map, string other) =>
         Run("compare", new List<string> { "compare", RequireMap(map), RequireMap(other) }, null);
+
+    /// <summary>
+    /// The doctor's own <c>--json</c> contract, which is versioned by the schema number every JSON
+    /// result carries. Read at run time rather than copied into this wrapper, so a caller can see
+    /// the steps, extras and result keys of the build that is actually installed, and so a pin
+    /// bump cannot leave a stale option list behind in a comment.
+    /// </summary>
+    public static MapDoctorResult Schema() =>
+        Run("schema", new List<string> { "schema", "--json-schema" }, null);
 
     /// <summary>
     /// Repairs a copy of <paramref name="map"/> and writes it to <paramref name="output"/>, by
@@ -141,10 +177,30 @@ public static class MapDoctorCommand
         foreach (var raw in options ?? Array.Empty<string>())
         {
             var o = raw.Trim().TrimStart('-');
-            var name = o.StartsWith("no-", StringComparison.Ordinal) ? o[3..] : o;
-            if (!FixOptions.Contains(name))
+            var eq = o.IndexOf('=');
+            var head = eq < 0 ? o : o[..eq];
+            var value = eq < 0 ? null : o[(eq + 1)..];
+            var name = head.StartsWith("no-", StringComparison.Ordinal) ? head[3..] : head;
+
+            if (value is not null)
+            {
+                // A value never travels with no-. Dropping a step and setting its value are
+                // different instructions, and the doctor's own parser reads only one of them.
+                if (!string.Equals(name, head, StringComparison.Ordinal))
+                    throw new ArgumentException($"'{raw}' combines no- with a value, which is refused.");
+                if (!FixOptionValues.TryGetValue(name, out var allowed))
+                    throw new ArgumentException($"'{raw}' passes a value to an option that takes none here. "
+                        + $"Options that take a value: {string.Join(", ", FixOptionValues.Keys)}.");
+                if (!allowed.Contains(value))
+                    throw new ArgumentException($"'{value}' is not a value of {name}. "
+                        + $"Allowed: {string.Join(", ", allowed)}.");
+            }
+            else if (!FixOptions.Contains(name))
+            {
                 throw new ArgumentException($"'{raw}' is not a fix option this wrapper allows. "
-                    + $"Allowed, each optionally prefixed no-: {string.Join(", ", FixOptions)}.");
+                    + $"Allowed, each optionally prefixed no-: {string.Join(", ", FixOptions)}. "
+                    + $"With a value: {string.Join(", ", FixOptionValues.Keys)}.");
+            }
             yield return "--" + o;
         }
     }

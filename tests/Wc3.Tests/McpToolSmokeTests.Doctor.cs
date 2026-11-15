@@ -31,6 +31,9 @@ public sealed class McpSmokeDoctorTests : McpSmokeBase
     public Task Doctor_inspect_names_the_install_when_missing() =>
         Refuses("doctor_inspect", Args(("map", Fixture), ("report", "files")));
 
+    [Fact, Covers("doctor_schema")]
+    public Task Doctor_schema_names_the_install_when_missing() => Refuses("doctor_schema", Args());
+
     [Fact, Covers("doctor_compare")]
     public Task Doctor_compare_names_the_install_when_missing() =>
         Refuses("doctor_compare", Args(("map", Fixture), ("other", Fixture)));

@@ -26,7 +26,7 @@ public class McpServerTests
         "ci_all", "ci_compat", "ci_lint", "ci_schema", "ci_validate",
         "compat_explain",
         "compat_matrix", "content_scaffold", "deprotect_map", "diff", "docs_search", "doctor_check", "doctor_compare", "doctor_fix",
-        "doctor_inspect", "editor_catalog_get", "editor_catalog_list", "error_codes",
+        "doctor_inspect", "doctor_schema", "editor_catalog_get", "editor_catalog_list", "error_codes",
         "file_extract", "file_get_text", "file_list", "file_set", "force_list", "force_rename",
         "force_set_flags", "force_set_players",
         "gamedata_bounds", "gamedata_changelog", "gamedata_coverage", "gamedata_enum", "gamedata_export_schemas",

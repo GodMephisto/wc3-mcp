@@ -138,9 +138,9 @@ public class McpAnnotationAuditTests
         var infos = McpToolCatalog.Describe();
         var missing = infos.Where(i => string.IsNullOrEmpty(i.Family)).Select(i => i.Name).ToList();
         Assert.True(missing.Count == 0, "tools with no family: " + string.Join(", ", missing));
-        Assert.Equal(277, infos.Count);
+        Assert.Equal(278, infos.Count);
         Assert.Equal(11, infos.Select(i => i.Family).Distinct().Count());
-        Assert.Equal(277, McpToolFamilies.All.Count);
+        Assert.Equal(278, McpToolFamilies.All.Count);
     }
 
     [Fact]

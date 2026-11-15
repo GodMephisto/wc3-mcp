@@ -347,6 +347,14 @@
       "result",
       "stderr"
     ],
+    "doctor_schema": [
+      "command",
+      "doctor",
+      "exitCode",
+      "output",
+      "result",
+      "stderr"
+    ],
     "editor_catalog_get": [
       "catalog",
       "entries",

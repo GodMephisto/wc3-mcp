@@ -276,6 +276,7 @@ public static class McpToolFamilies
         ["doctor_compare"] = "repair",
         ["doctor_fix"] = "repair",
         ["doctor_inspect"] = "repair",
+        ["doctor_schema"] = "repair",
         ["new_map"] = "repair",
         ["repair_audit_errors"] = "repair",
         ["repair_generated"] = "repair",

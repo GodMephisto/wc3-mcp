@@ -184,6 +184,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | doctor_compare | read-only | What differs between two versions of a map, file by file (added, removed, changed) with names recovered on protected archives, plus object, script and string... |
 | doctor_fix | writes | Repair a COPY of a map for Reforged 3.0 with the doctor's Fix map: protection, fake file tables, scrambled ids, data the 3.0 engine refuses, broken SLK table... |
 | doctor_inspect | read-only | Read-only doctor reports on one map. diag is what protects the map and what the World Editor needs, including whether it runs in SLK mode and the fix steps t... |
+| doctor_schema | read-only | The installed doctor's own --json contract, read at run time: every command, its options, the fix steps and extras it accepts, and the keys each result carries... |
 | editor_catalog_get | read-only | Show one World Editor catalog's entries, each with its stored key (the token a map file actually carries), its resolved display name and every payload field.... |
 | editor_catalog_list | read-only | List the World Editor's catalog names from UI\WorldEditData.txt with entry counts (TileSets, SkyModels, LoadingScreens, SoundChannels, MapSizes, the brush pa... |
 | file_get_text | read-only | Read one internal file decoded as UTF-8, with any leading BOM stripped. Use it for the override text files, war3mapSkin.txt and friends, that carry a map's s... |
