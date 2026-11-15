@@ -3383,7 +3383,8 @@ public static class Wc3Tools
     public static GameFileShadowResult GameFileShadows(
         [Description("Path to a .w3x/.w3m map file, or to an unpacked map folder holding the same entries. Read-only.")] string map,
         [Description("Warcraft III install directory (overrides auto-detection and the WC3_GAME_DIR env var).")] string? game_dir = null)
-        => Run(() => GameFileShadowCommand.Detect(LoadMap(map), ResolveGameDir(game_dir) ?? game_dir));
+        => Run(() => GameFileShadowCommand.Detect(LoadMap(map),
+            ResolveGameDir(game_dir) ?? game_dir ?? Wc3.GameData.GameInstall.Locate()));
 
     [McpServerTool(Name = "repair_game_files", Title = "Drop files that override the game", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Write a copy of the map with the game-overriding files removed, which is the repair for the shadows game_file_shadows reports. The archive is rebuilt from disk, so every other entry is carried over byte for byte, and the input map is NEVER modified in place. A shadow can be deliberate, a retexture for instance, so read the list first. With names left empty every detected shadow is dropped, otherwise only the ones named.")]
@@ -3402,7 +3403,8 @@ public static class Wc3Tools
             if (names is { Length: > 0 }) drop = names;
             else
             {
-                var report = GameFileShadowCommand.Detect(LoadMap(map), ResolveGameDir(game_dir) ?? game_dir);
+                var report = GameFileShadowCommand.Detect(LoadMap(map),
+                    ResolveGameDir(game_dir) ?? game_dir ?? Wc3.GameData.GameInstall.Locate());
                 if (!report.Ok) return new GameFileShadowApplyResult(false, report.Message, target, 0, 0, 0, 0, 0);
                 drop = report.Files.Select(f => f.Name).ToList();
             }
