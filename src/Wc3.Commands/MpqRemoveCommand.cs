@@ -104,7 +104,9 @@ public static class MpqRemoveCommand
             string? entryName = file.FileName ?? file.RecoveredFileName;
             if (entryName is null) continue;
             if (wanted.Contains(entryName)) { found++; continue; }
-            if (!doc.TryReadFileByName(entryName, out var bytes) || bytes.Length == 0) continue;
+            // Zero-length entries are real files and must survive the rebuild, a map carries
+            // several of them (Units\CampaignAbilityFunc.txt is 0 bytes in a stock export).
+            if (!doc.TryReadFileByName(entryName, out var bytes)) continue;
             if (!seen.Add(entryName)) continue;
             entries.Add(new MpqWriteEntry(entryName, bytes));
         }

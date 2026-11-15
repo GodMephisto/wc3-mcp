@@ -167,6 +167,12 @@ public static class GameFileShadowCommand
     /// Rebuilds the map from disk without the named entries. Everything else is carried over
     /// byte for byte by the archive rebuild.
     /// </summary>
+    /// <remarks>
+    /// A protected map keeps entries the archive no longer names, and the rebuild works by name, so
+    /// those entries cannot be written back. Measured on a 101 MB campaign map, a rebuild that
+    /// ignored this took 1578 entries to 1000 and produced a smaller, broken map. The pre-flight
+    /// count refuses instead, because a silent loss of 578 assets is worse than no repair.
+    /// </remarks>
     public static GameFileShadowApplyResult Apply(string mapPath, IReadOnlyList<string> names, string outPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(mapPath);
@@ -177,10 +183,32 @@ public static class GameFileShadowCommand
             return new GameFileShadowApplyResult(false, "no file names were given, so nothing was removed",
                 outPath, 0, 0, 0, 0, 0);
 
+        var doc = MapDocument.Load(mapPath);
+        var unnamed = doc.Files.Count(f => f.FileName is null && f.RecoveredFileName is null);
+        if (unnamed > 0)
+        {
+            return new GameFileShadowApplyResult(false,
+                $"refused, this map holds {unnamed} entries the archive does not name and the rebuild works by "
+                + "name, so the copy would lose them. Devo's Map Doctor keeps those blocks and is the path to "
+                + "use on a protected map. The list above is still what would need removing",
+                outPath, names.Count, 0, doc.Files.Count, doc.Files.Count, 0);
+        }
+
         var r = MpqRemoveCommand.ExecuteMany(mapPath, names, outPath);
         var message = r.Dropped == 0
             ? $"none of the {r.Requested} name(s) were present in the archive, so the copy is unchanged"
             : $"removed {r.Dropped} of {r.Requested} name(s), {r.InputEntries} to {r.OutputEntries} entries";
+
+        // A rebuild that loses entries it was not asked to drop is a broken map, so say so.
+        var expected = r.InputEntries - r.Dropped;
+        if (r.Reopens && r.OutputEntries != expected)
+        {
+            return new GameFileShadowApplyResult(false,
+                message + $", which is {expected - r.OutputEntries} fewer than the input minus the dropped names. "
+                + "The copy is not a repair, do not ship it",
+                r.SavedTo, r.Requested, r.Dropped, r.InputEntries, r.OutputEntries, r.OutputBytes);
+        }
+
         return new GameFileShadowApplyResult(r.Reopens, message, r.SavedTo, r.Requested, r.Dropped,
             r.InputEntries, r.OutputEntries, r.OutputBytes);
     }
