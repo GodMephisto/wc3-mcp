@@ -3378,6 +3378,37 @@ public static class Wc3Tools
             return (r.Ok, r.Message);
         }));
 
+    [McpServerTool(Name = "game_file_shadows", Title = "Find files that override the game", ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Find map files that sit on a path the installed game already ships, so the engine reads the map's copy in place of its own. Two maps closed the game in LAN and HD graphics this way, one with UI minimap textures and one with 1,486 repacked game textures, and removing the files fixed both. Read-only. The editor's own object data (SLK and text tables) shares paths with the game by construction and is excluded, so what comes back is art only. Needs an installed game to read its file list, and the list is that build's, so a map aimed at a classic build can override a path this build has renamed.")]
+    public static GameFileShadowResult GameFileShadows(
+        [Description("Path to a .w3x/.w3m map file, or to an unpacked map folder holding the same entries. Read-only.")] string map,
+        [Description("Warcraft III install directory (overrides auto-detection and the WC3_GAME_DIR env var).")] string? game_dir = null)
+        => Run(() => GameFileShadowCommand.Detect(LoadMap(map), ResolveGameDir(game_dir) ?? game_dir));
+
+    [McpServerTool(Name = "repair_game_files", Title = "Drop files that override the game", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
+    [Description("Write a copy of the map with the game-overriding files removed, which is the repair for the shadows game_file_shadows reports. The archive is rebuilt from disk, so every other entry is carried over byte for byte, and the input map is NEVER modified in place. A shadow can be deliberate, a retexture for instance, so read the list first. With names left empty every detected shadow is dropped, otherwise only the ones named.")]
+    public static GameFileShadowApplyResult RepairGameFiles(
+        [Description("Path to the source .w3x/.w3m map file. Read-only, the repaired copy is written to out_path.")] string map,
+        [Description("Output map file path (must differ from the input map).")] string out_path,
+        [Description("Only drop these names, as game_file_shadows reported them. Leave empty to drop every detected shadow.")] string[]? names = null,
+        [Description("Warcraft III install directory (overrides auto-detection and the WC3_GAME_DIR env var).")] string? game_dir = null)
+        => Run(() =>
+        {
+            string target = Path.GetFullPath(out_path);
+            if (string.Equals(target, Path.GetFullPath(map), StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("out_path must differ from map, this tool never writes in place");
+
+            IReadOnlyList<string> drop;
+            if (names is { Length: > 0 }) drop = names;
+            else
+            {
+                var report = GameFileShadowCommand.Detect(LoadMap(map), ResolveGameDir(game_dir) ?? game_dir);
+                if (!report.Ok) return new GameFileShadowApplyResult(false, report.Message, target, 0, 0, 0, 0, 0);
+                drop = report.Files.Select(f => f.Name).ToList();
+            }
+            return GameFileShadowCommand.Apply(map, drop, target);
+        });
+
     [McpServerTool(Name = "repair_audit_errors", Title = "Repair audited defects", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Repair the object-data defects audit reports. Fills ability level gaps (a field with no value at a declared level, copied from the nearest valid level), clears dangling references and impossible requirements, and saves to out_path. The input map is NEVER modified in place.")]
     public static EditToolResult RepairAuditErrors(

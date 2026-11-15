@@ -60,5 +60,18 @@ public sealed class CascGameDataSource : IGameDataSource
         }
     }
 
+    /// <summary>
+    /// True when the store holds a file at this path, without reading its bytes. The listfile does
+    /// not name every file the store can open, so a name missing from
+    /// <see cref="EnumerateFileNames"/> is not proof of absence, and this is the per-path answer.
+    /// </summary>
+    public bool HasFile(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        if (!_storage.TryOpenFile(name, out var stream) || stream is null) return false;
+        stream.Dispose();
+        return true;
+    }
+
     public void Dispose() => _storage.Dispose();
 }

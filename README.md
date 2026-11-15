@@ -194,6 +194,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | force_rename | writes | Rename a force (team) in war3map.w3i and save the edited map to out_path. The input map is NEVER modified in place. |
 | force_set_flags | writes | Set a force's alliance/sharing flags and save the edited map to out_path. The input map is NEVER modified in place. |
 | force_set_players | writes | Add or remove a player from a force (team) in war3map.w3i and save the edited map to out_path. Pass exactly one of add or remove. Adding clears the player fr... |
+| game_file_shadows | read-only | Find map files that sit on a path the installed game already ships, so the engine reads the map's copy in place of its own. Two maps closed the game in LAN and... |
 | gamedata_bounds | read-only | Report a field code's type, minimum and maximum bounds, whether it can be empty, and the object metadata file that defines it, in one build or every build wh... |
 | gamedata_changelog | read-only | Diff two builds' object data field by field. Reports fields added, removed, retyped, or whose minimum or maximum bound changed, grouped by object metadata fi... |
 | gamedata_coverage | read-only | List one row per schema folder with the build, its era, and which sections it holds (objects, triggers, script, enums), plus field and native counts, so a re... |
@@ -302,6 +303,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | region_validate | read-only | Flag overlapping regions, zero-area regions and regions that fall outside the playable bounds in a map's war3map.w3r. Regions sharing only an edge do not ove... |
 | render_model | writes | Render an object's model (map-imported .mdx/.mdl) to a PNG written at out_path. Returns the saved path and byte size; small images also come back inline as M... |
 | repair_generated | writes | Repair a map that wc3ctl itself generated, whose preplaced-hero helper block is too narrow for the heroes installed into it, and save the repaired map to out... |
+| repair_game_files | writes | Write a copy of the map without the files game_file_shadows reports. The archive is rebuilt from disk so every other entry is carried over byte for byte, and t... |
 | repair_reforged3 | writes | Repair a legacy SLK map for Warcraft III 3.0 and save it to out_path. Model paths move out of the obsolete file column into merged skin profiles, numeric cells... |
 | replay_diff | read-only | Compare two recorded games (.w3g). Reports whether they played the same map, the length difference, and each player's leave time difference, keyed by slot. R... |
 | replay_find_map | read-only | The map path a replay (.w3g) records, and whether that map file exists in the Maps folder, resolving the .w3x or .w3m. Default folder is the user's Documents... |

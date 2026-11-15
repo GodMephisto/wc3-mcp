@@ -387,6 +387,14 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
         Assert.NotNull(Prop(bench, "functions"));
     }
 
+    [Fact, Covers("game_file_shadows", "repair_game_files")]
+    public async Task Game_file_shadows_answers_without_a_game_and_names_the_reason()
+    {
+        var r = await Call("game_file_shadows", Args(("map", Fixture)));
+        Assert.NotNull(r);
+        Assert.NotNull(Prop(r, "conflicts"));
+    }
+
     [Fact, Covers("reforged3_check", "repair_reforged3")]
     public async Task Reforged3_repair_reports_its_counts_and_writes_a_copy()
     {

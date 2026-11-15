@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.43 - 2026-11-16
+
+`game_file_shadows` finds map files that override the installed game's own files, and `repair_game_files` writes a copy without them. See `changelog/0.5.43.md`.
+
 ## 0.5.42 - 2026-11-16
 
 `repair_reforged3` repairs a legacy SLK map for Warcraft III 3.0 in code, with no doctor, no game install and no name dictionary, and `reforged3_check` reports the same six counts read-only. See `changelog/0.5.42.md`.

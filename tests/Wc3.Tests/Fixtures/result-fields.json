@@ -439,6 +439,16 @@
       "outputSha256",
       "savedTo"
     ],
+    "game_file_shadows": [
+      "conflicts",
+      "files",
+      "folders",
+      "gameDir",
+      "gameFiles",
+      "mapEntries",
+      "message",
+      "ok"
+    ],
     "gamedata_bounds": [
       "code",
       "entries",
@@ -1332,6 +1342,16 @@
       "inputSha256",
       "message",
       "outputSha256",
+      "savedTo"
+    ],
+    "repair_game_files": [
+      "dropped",
+      "inputEntries",
+      "message",
+      "ok",
+      "outputBytes",
+      "outputEntries",
+      "requested",
       "savedTo"
     ],
     "repair_generated": [
