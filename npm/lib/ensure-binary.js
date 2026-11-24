@@ -123,6 +123,11 @@ function pruneOldVersions(currentVersion) {
 }
 
 async function ensureBinary(options = {}) {
+  if (process.platform !== 'win32') {
+    // The release this package fetches is win-x64, so say that here rather than
+    // failing inside tar.exe or PowerShell on a machine that has neither.
+    throw new Error('this package ships the Windows build, install the macOS release of wc3-mcp instead');
+  }
   const version = options.version || pkg.version;
   const { exe, casc } = pathsFor(version);
 
