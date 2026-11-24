@@ -58,9 +58,9 @@ jobs:
 # 1. The job builds and never publishes, and dist-mcp is ignored by git, so a runner
 #    holds no published server. check_counts.py and measure_surface.py both open
 #    dist-mcp/Wc3.Mcp.exe and exit 1 with "no published server found" on a runner.
-# 2. check_changelog_ids.py defaults to C:\playground\Programming\Wc3_CLI\changelog,
-#    the release notes of the other repository, and exits 1 when that folder is absent,
-#    which it is on a runner.
+# 2. check_changelog_ids.py reads the changelog folder beside the code, or the folder
+#    named by WC3_CHANGELOG, so a runner no longer needs the other repository checked
+#    out to run it.
 #
 # Two guards also fail on the tree as it stands, because IDN-02 and PKG-13 are open.
 # check_versions.py exits 2 on four live values and check_provenance.py exits 2 because

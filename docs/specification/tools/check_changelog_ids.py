@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import tempfile
@@ -32,7 +33,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REQUIREMENTS = HERE.parent / "requirements.json"
-DEFAULT_CHANGELOG = Path(r"C:\playground\Programming\Wc3_CLI\changelog")
+REPO = HERE.parent.parent.parent
+# The release notes sit beside the code, so the default travels with the checkout
+# instead of naming one machine. WC3_CHANGELOG overrides it.
+DEFAULT_CHANGELOG = Path(os.environ.get("WC3_CHANGELOG") or REPO / "changelog")
 
 # Section 15.1.1 fixes this line. Requirement first, then the defect, each
 # ending in a full stop.

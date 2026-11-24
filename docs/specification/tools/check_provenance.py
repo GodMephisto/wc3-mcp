@@ -20,7 +20,7 @@ version is refused, because a version number alone cannot be resolved to source.
     python tools/check_provenance.py
     python tools/check_provenance.py --tag v0.5.16
     python tools/check_provenance.py --assets dist/release
-    python tools/check_provenance.py --git "C:\\Program Files\\Git\\bin\\git.exe"
+    python tools/check_provenance.py --git /usr/bin/git
     python tools/check_provenance.py --selftest
 
 Exit 0 when every artifact carries a resolved commit, a matching digest and the
@@ -33,8 +33,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -43,7 +43,10 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent.parent
 
-DEFAULT_GIT = r"C:\Program Files\Git\bin\git.exe"
+
+def default_git() -> str:
+    """git where the PATH keeps it, which is where both systems install it."""
+    return shutil.which("git") or "git"
 
 TAG_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -66,11 +69,7 @@ def sort_key(text: str) -> tuple[int, int, int]:
 
 
 def git_binary(explicit: str | None) -> str:
-    if explicit:
-        return explicit
-    if os.name == "nt" and Path(DEFAULT_GIT).is_file():
-        return DEFAULT_GIT
-    return "git"
+    return explicit or default_git()
 
 
 def git(repo: Path, git_path: str, *args: str) -> str:

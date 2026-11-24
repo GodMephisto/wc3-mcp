@@ -70,12 +70,8 @@ def sha256_of(path: Path) -> str:
 
 
 def git_binary() -> str:
-    """The git to run, from the environment, the PATH, or the usual Windows install."""
+    """The git to run, from the environment, or from the PATH, wherever it is installed."""
     git = os.environ.get("GIT") or shutil.which("git")
-    if not git and os.name == "nt":
-        fallback = Path("C:/Program Files/Git/bin/git.exe")
-        if fallback.is_file():
-            git = str(fallback)
     if not git:
         raise RecordError("no git found, pass --commit with the commit the artifacts were built from")
     return git

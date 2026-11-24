@@ -38,6 +38,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -46,7 +47,10 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent.parent
 
-DEFAULT_GIT = r"C:\Program Files\Git\bin\git.exe"
+
+def default_git() -> str:
+    """git where the PATH keeps it, which is where both systems install it."""
+    return shutil.which("git") or "git"
 
 TAG_RE = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 VERSION_RE = re.compile(r"(\d+)\.(\d+)\.(\d+)")
@@ -70,11 +74,7 @@ def sort_key(text: str) -> tuple[int, int, int]:
 
 
 def git_binary(explicit: str | None) -> str:
-    if explicit:
-        return explicit
-    if os.name == "nt" and Path(DEFAULT_GIT).is_file():
-        return DEFAULT_GIT
-    return "git"
+    return explicit or default_git()
 
 
 def newest_tag(repo: Path, git: str) -> str | None:
