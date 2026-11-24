@@ -212,6 +212,20 @@ public static class MapDoctorCommand
         return map;
     }
 
+    /// <summary>Whether a doctor build is present, so a caller can skip instead of catching a throw.</summary>
+    public static bool IsInstalled(Func<string, string?>? env = null, string? localAppData = null)
+    {
+        try
+        {
+            Locate(env, localAppData);
+            return true;
+        }
+        catch (FileNotFoundException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>Finds the doctor and checks it against the pinned builds.</summary>
     public static (string Exe, string Version, string Sha256) Locate(
         Func<string, string?>? env = null, string? localAppData = null)

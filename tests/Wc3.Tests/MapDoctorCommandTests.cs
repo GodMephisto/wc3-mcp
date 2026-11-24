@@ -270,6 +270,9 @@ public class MapDoctorCommandTests : IDisposable
         var map = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
             "Warcraft III", "Maps", "Download", "GGGA_V0.07c_slk.w3x");
         if (!File.Exists(map)) return;
+        // The corpus map can be on a machine without the doctor build, macOS keeps the Python
+        // CLI instead of the Windows exe, and this test is about the map, not the install.
+        if (!MapDoctorCommand.IsInstalled()) return;
         var r = MapDoctorCommand.Check(map);
         Assert.Equal(0, r.ExitCode);
         var codes = r.Result!.Value.GetProperty("items").EnumerateArray()

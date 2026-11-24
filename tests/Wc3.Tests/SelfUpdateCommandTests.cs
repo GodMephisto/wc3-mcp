@@ -33,11 +33,12 @@ public class SelfUpdateCommandTests
         string locked = Path.Combine(tmp.Dir, "locked.old");
         File.WriteAllText(locked, "x");
 
-        // FileShare.Read alone denies delete, so the remove fails and must be swallowed.
+        // Windows denies the delete while a reader without FileShare.Delete holds the file, and
+        // the remove is swallowed. macOS and Linux unlink an open file happily, so it goes.
         using (new FileStream(locked, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             int removed = SelfUpdateCommand.CleanupOldFiles(tmp.Dir);
-            Assert.Equal(0, removed);
+            Assert.Equal(OperatingSystem.IsWindows() ? 0 : 1, removed);
         }
     }
 

@@ -585,7 +585,7 @@
       "id": "PKG-09",
       "group": "PKG",
       "statement": "On a platform the server is not published for it SHALL fail with one sentence that names the targets it is published for, not a missing native library trace",
-      "basis": "Measured. `PlatformRefusal` runs before the stdio loop, writes one sentence naming `win-x64 and osx-arm64` to stderr and exits 3. Five tests cover Linux, macOS x64, Windows ARM64, the allowed Windows x64 and the allowed Apple silicon arm64. The osx-arm64 build on the Mac prints `wc3-mcp 0.5.44` and answers `quickstart` with all 12 entries",
+      "basis": "Measured. `PlatformRefusal` runs before the stdio loop, writes one sentence naming `win-x64 and osx-arm64` to stderr and exits 3. Five tests cover Linux, macOS x64, Windows ARM64, the allowed Windows x64 and the allowed Apple silicon arm64. The osx-arm64 build on the Mac prints `wc3-mcp 0.5.44` and answers `quickstart` with all 12 entries. Game data on the Mac needs a native CascLib, which the NuGet package ships for win-x64 only, so `tools/build-casclib-macos.sh` builds upstream CascLib and drops `libCascLib.dylib` beside the server, after which the 50 game data and install tests pass on the Mac",
       "status": "met",
       "test": "named in the basis"
     },
