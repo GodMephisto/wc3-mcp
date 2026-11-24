@@ -47,6 +47,10 @@ internal sealed class TempGitRepo : IDisposable
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };
+        // A global core.hooksPath runs in this throwaway repo too, and a hook that belongs to the
+        // developer's checkout has no business gating a fixture. Empty it for these calls.
+        psi.ArgumentList.Add("-c");
+        psi.ArgumentList.Add("core.hooksPath=");
         foreach (var a in args) psi.ArgumentList.Add(a);
         using var p = Process.Start(psi) ?? throw new InvalidOperationException("git did not start");
         string stdout = p.StandardOutput.ReadToEnd();

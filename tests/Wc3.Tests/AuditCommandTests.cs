@@ -1,4 +1,4 @@
-// tests/Wc3.Tests/AuditCommandTests.cs
+﻿// tests/Wc3.Tests/AuditCommandTests.cs
 using System.Text;
 using War3Net.Build.Extensions;
 using War3Net.Build.Object;
@@ -123,6 +123,7 @@ public class AuditCommandTests
     [Trait("Category", "GameData")]
     public void Level_gap_is_silent_when_the_base_ability_supplies_the_missing_levels()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         // AHbz carries acdn at levels 1, 2 and 3, so a map setting only level 1 is ORDINARY
         // authoring and the other two resolve. Reporting it flagged 333 fields on one real map
         // where the real number was 99, and noise at that ratio teaches a reader to skip the
@@ -141,6 +142,7 @@ public class AuditCommandTests
     [Trait("Category", "GameData")]
     public void Level_gap_fires_past_the_end_of_a_real_base_abilitys_own_levels()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         // AHbz carries acdn at levels 1 to 3 only. An ability declaring 5 therefore resolves 2
         // and 3 and has nothing at 4 and 5, which is the exact defect a player reports as "the
         // level 5 spell has no cooldown".
@@ -519,6 +521,7 @@ public class AuditCommandTests
     [Trait("Category", "GameData")]
     public void Dangling_reference_fires_for_a_buff_id_nothing_defines()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var map = Map(w3a =>
         {
             var a = Ability("A000");
@@ -586,6 +589,7 @@ public class AuditCommandTests
     [Trait("Category", "GameData")]
     public void Dangling_reference_states_the_population_it_walked_even_when_it_finds_nothing()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var map = Map(w3a =>
         {
             var a = Ability("A000");
@@ -615,6 +619,7 @@ public class AuditCommandTests
     [Trait("Category", "GameData")]
     public void Repair_removes_a_dead_uabi_id_and_keeps_every_other_entry()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var map = Map(_ => { }, w3u =>
         {
             var u = Unit("h000");
@@ -635,6 +640,7 @@ public class AuditCommandTests
     [Trait("Category", "GameData")]
     public void Repair_restores_a_missing_buff_from_the_base_ability()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         // GGGA_V0.07b's A1A3 is exactly this, a Storm Bolt copy naming B06H on every level.
         var map = Map(w3a =>
         {
@@ -654,6 +660,7 @@ public class AuditCommandTests
     [Trait("Category", "GameData")]
     public void Repair_clears_an_inherited_requirement_at_level_zero()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         // Absk inherits the Berserker upgrade Robk, which this map never defines.
         var map = Map(w3a =>
         {
@@ -673,6 +680,7 @@ public class AuditCommandTests
     [Trait("Category", "GameData")]
     public void Repair_dry_run_lists_the_edits_and_changes_nothing()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var map = Map(_ => { }, w3u =>
         {
             var u = Unit("h000");

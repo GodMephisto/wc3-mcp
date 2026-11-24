@@ -37,9 +37,11 @@ cmake -S "$repo" -B "$repo/build" \
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build "$repo/build" --parallel "$(sysctl -n hw.ncpu)"
 
-# CMake marks the target FRAMEWORK on Apple, so the binary lives inside the bundle and
-# has to be named the way the P/Invoke probe expects.
+# CMake marks the target FRAMEWORK on Apple, so the binary lives inside the bundle. It is
+# installed under the name the managed wrapper asks for, CascLib.dll, because the wrapper's
+# DllImport names that literal and macOS probing will not find a .dylib it never asked for.
+# dlopen reads a Mach-O whatever the extension says.
 mkdir -p "$target"
-cp "$repo/build/casc.framework/casc" "$target/libCascLib.dylib"
-echo "installed $target/libCascLib.dylib"
+cp "$repo/build/casc.framework/casc" "$target/CascLib.dll"
+echo "installed $target/CascLib.dll"
 echo "game data now opens from the server installed there"

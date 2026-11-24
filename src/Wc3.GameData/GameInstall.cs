@@ -27,16 +27,21 @@ public static class GameInstall
             }
         }
         // Apple silicon installs the game under Applications, and the data folder is the one
-        // holding .build.info, which every CASC era install ships.
+        // holding .build.info, which every CASC era install ships. The launcher shell exists on
+        // machines where the game itself was never downloaded, so existence is not enough.
         if (OperatingSystem.IsMacOS())
         {
             string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            foreach (var p in new[]
+            foreach (var root in new[]
             {
                 "/Applications/Warcraft III",
                 Path.Combine(home, "Applications", "Warcraft III"),
             })
-                if (Directory.Exists(p)) return p;
+            {
+                if (!Directory.Exists(root)) continue;
+                foreach (var candidate in new[] { root, Path.Combine(root, "_retail_") })
+                    if (File.Exists(Path.Combine(candidate, ".build.info"))) return candidate;
+            }
         }
         foreach (var p in new[] { @"C:\Warcraft III", @"C:\Program Files (x86)\Warcraft III", @"C:\Program Files\Warcraft III" })
             if (Directory.Exists(p)) return p;

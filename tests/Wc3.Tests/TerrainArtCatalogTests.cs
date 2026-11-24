@@ -1,4 +1,4 @@
-using Wc3.GameData;
+﻿using Wc3.GameData;
 using Wc3.Modeling;
 using Wc3.Render;
 using Xunit;
@@ -13,6 +13,7 @@ public class TerrainArtCatalogTests
     [Fact]
     public void Resolves_LordaeronSummer_grass_to_rgba_cell()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         Assert.True(Wc3.GameData.GameData.TryOpen(null, out var ctx, out var diag), $"GameData open failed: {diag}");
         Assert.NotNull(ctx);
 
@@ -33,6 +34,7 @@ public class TerrainArtCatalogTests
     [Fact]
     public void Caches_and_returns_same_instance()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         Assert.True(Wc3.GameData.GameData.TryOpen(null, out var ctx, out _));
         var cat = TerrainArtCatalog.Open(ctx!);
         var a = cat.Resolve("Ldrt");

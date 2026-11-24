@@ -1,4 +1,4 @@
-// tests/Wc3.Tests/TerrainRenderColorTests.cs
+﻿// tests/Wc3.Tests/TerrainRenderColorTests.cs
 using War3Net.Build.Environment;
 using Wc3.Model;
 using Wc3.Render;
@@ -36,6 +36,7 @@ public class TerrainRenderColorTests
     [Trait("Category", "GameData")]
     public void Sampled_colours_come_from_the_tileset_not_the_hardcoded_table()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         string? path = AnyMap();
         if (path is null) { _out.WriteLine("no maps on disk"); return; }
 

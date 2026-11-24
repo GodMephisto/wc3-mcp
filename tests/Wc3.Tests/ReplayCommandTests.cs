@@ -1,4 +1,4 @@
-// tests/Wc3.Tests/ReplayCommandTests.cs
+﻿// tests/Wc3.Tests/ReplayCommandTests.cs
 using System.IO.Compression;
 using System.Text;
 using Wc3.Commands;
@@ -77,6 +77,7 @@ public class ReplayCommandTests
     [Trait("Category", "Corpus")]
     public void Every_saved_replay_reads()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var r = ReplayCommand.Execute();
         Assert.NotEmpty(r.Games);
         Assert.All(r.Games, g => Assert.Null(g.Problem));

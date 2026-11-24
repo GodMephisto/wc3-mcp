@@ -424,7 +424,7 @@ These are the limits a caller should know before it starts, each with where the 
 
 | Limit | What it means for a caller | Evidence |
 |---|---|---|
-| Windows x64 and Apple silicon | Linux, macOS x64 and Windows ARM64 are refused with one sentence naming the two published targets. Game data on the Mac needs a CascLib build, which `tools/build-casclib-macos.sh` does | 2, PKG-09 |
+| Windows x64 and Apple silicon | Linux, macOS x64 and Windows ARM64 are refused with one sentence naming the two published targets. Game data on the Mac needs a CascLib build, which `tools/build-casclib-macos.sh` does, and the game installed there | 2, PKG-09 |
 | Base game data needs an install | Tools that merge base data need `game_dir` or `WC3_GAME_DIR`, and without it they return less, not an error | PAR-02, PAR-04 |
 | A non-ASCII script is not safe as text | `war3map.j` must be extracted as bytes and transformed as bytes. Reading it as UTF-8 and writing it back corrupts it | RES-04, 13 |
 | A Wurst script is refused by `script_to_lua` | Its package runtime does not survive the conversion. `allow_wurst` overrides the refusal, and the documentation says not to | 12, 13 |

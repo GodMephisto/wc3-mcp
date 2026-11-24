@@ -1,4 +1,4 @@
-// tests/Wc3.Tests/ModelPathTests.cs
+﻿// tests/Wc3.Tests/ModelPathTests.cs
 using War3Net.Build.Extensions;
 using War3Net.Build.Object;
 using War3Net.Common.Extensions;
@@ -151,6 +151,7 @@ public class ModelPathTests
     [Trait("Category", "GameData")]
     public void The_empty_model_is_byte_identical_to_the_one_the_game_ships()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         Assert.True(GameData.GameData.TryOpen(@"C:\Warcraft III", out var ctx, out var diag), diag);
         Assert.True(ctx!.TryReadFile(@"war3.w3mod:_de.w3mod:doodads\cinematic\empty\empty.mdx", out var shipped),
             "the installed game no longer ships doodads\\cinematic\\empty\\empty.mdx");

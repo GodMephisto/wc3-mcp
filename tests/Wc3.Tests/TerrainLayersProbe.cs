@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using Wc3.Model;
@@ -24,6 +24,7 @@ public class TerrainLayersProbe
     [Fact]
     public void BuildLayersForMap_resolves_real_textures()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         if (!Directory.Exists(MapsRoot)) return; // gated: only runs where local maps are present
 
         // CASC needs the game install as well as the maps. On a machine with the map library but no

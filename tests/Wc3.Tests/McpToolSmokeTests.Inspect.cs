@@ -1,4 +1,4 @@
-// tests/Wc3.Tests/McpToolSmokeTests.Inspect.cs
+﻿// tests/Wc3.Tests/McpToolSmokeTests.Inspect.cs
 // Read-only analysis (validate, lint, diff, search, script and string listings, the audits) and
 // the hero definition tools. Each read is checked against content put there through MCP first,
 // so an empty answer cannot pass for a correct one.
@@ -233,6 +233,7 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("hero_generate")]
     public async Task Hero_generate_writes_a_unit_per_form_and_an_ability_per_slot()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         // The bases come from the game install rather than the blank fixture, so this one needs it.
         const string spec = """
         {
@@ -278,6 +279,7 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("object_form", "object_field_options")]
     public async Task Object_form_and_field_options_come_from_the_game_data()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var form = await Call("object_form", Args(("map", Fixture), ("rawcode", "hfoo")));
         Assert.Equal("Footman", Prop(form, "name").GetString());
         Assert.NotEmpty(Rows(Prop(form, "groups")));
@@ -289,6 +291,7 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("asset_list", "editor_catalog_list", "editor_catalog_get")]
     public async Task Asset_and_editor_catalogs_list_the_installs_content()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var icons = await Call("asset_list", Args(("family", "icon")));
         Assert.Contains(Prop(icons, "gamePaths").EnumerateArray(), p => p.GetString()!.Contains("btn", StringComparison.OrdinalIgnoreCase));
 

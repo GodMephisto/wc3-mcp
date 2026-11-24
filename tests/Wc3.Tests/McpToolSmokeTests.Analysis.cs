@@ -1,4 +1,4 @@
-// tests/Wc3.Tests/McpToolSmokeTests.Analysis.cs
+﻿// tests/Wc3.Tests/McpToolSmokeTests.Analysis.cs
 // Analysis tools. A richer map is built through MCP itself (a custom unit with a custom ability, a
 // second ability the script hands out, and a script with a leak), so each tool has something real
 // to find. Tools that read the Warcraft III install are tagged GameData.
@@ -231,6 +231,7 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("trigger_catalog_list", "trigger_catalog_describe")]
     public async Task Trigger_catalog_lists_and_describes_a_known_action()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var list = await Call("trigger_catalog_list", Args(("game_dir", GameDir), ("search", "CreateNUnitsAtLoc")));
         Assert.Contains(Rows(Prop(list, "functions")), f => Prop(f, "name").GetString() == "CreateNUnitsAtLoc");
         var one = await Call("trigger_catalog_describe", Args(("name", "CreateNUnitsAtLoc"), ("game_dir", GameDir)));
@@ -241,6 +242,7 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("palette_doodad")]
     public async Task Palette_doodad_lists_base_game_doodads()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var r = await Call("palette_doodad", Args(("map", Fixture), ("game_dir", GameDir)));
         Assert.True(Prop(r, "ok").GetBoolean());
         Assert.NotEmpty(Rows(Prop(r, "entries")));
@@ -250,6 +252,7 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("render_model")]
     public async Task Render_model_writes_a_png_and_returns_it_inline()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var png = NewOut("render", ".png");
         byte[]? inline = null;
         string? text = null;
@@ -418,6 +421,7 @@ public sealed class McpSmokeAnalysisTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("repair_audit_errors", "repair_portraits")]
     public async Task Repairs_write_a_copy_and_leave_the_input_alone()
     {
+        if (!GameDataGate.Available) return;  // needs the install and a native CascLib
         var audit = await Call("repair_audit_errors", Args(("map", Fixture), ("out_path", NewOut("audit-fix"))));
         Assert.NotNull(audit);
         var portraits = await Call("repair_portraits", Args(("map", Fixture), ("out_path", NewOut("portrait-fix"))));
