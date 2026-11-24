@@ -340,4 +340,27 @@ public sealed class McpWriteGateTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// macOS hands out temp paths as /var/folders/..., and /var is one of the system's own
+    /// symbolic links, so the guard refused every temp file until the aliases were exempt. The
+    /// shared smoke fixture failed on exactly this and took 259 tests with it.
+    /// </summary>
+    [Fact]
+    public void A_temp_path_is_writable_even_where_the_platform_links_var()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "wc3gate-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        string output = Path.Combine(dir, "out.txt");
+        try
+        {
+            WriteGate.WriteText(output, "x", Array.Empty<string>(), overwrite: false, null);
+
+            Assert.True(File.Exists(output));
+        }
+        finally
+        {
+            if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+        }
+    }
+
 }

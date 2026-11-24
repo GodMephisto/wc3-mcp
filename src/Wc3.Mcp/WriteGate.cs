@@ -348,11 +348,17 @@ internal static class WriteGate
     /// Refuse a destination whose path crosses a reparse point, a symbolic link or a junction, so a
     /// write cannot follow a link out of the folder the caller named. Every existing component is
     /// checked, the destination itself included, and the refusal names the link it found.
+    ///
+    /// The operating system's own aliases are exempt. macOS ships /var, /tmp, /etc and /home as
+    /// symbolic links, and every path Path.GetTempPath returns crosses /var, so refusing them made
+    /// a plain temp file unwritable on that platform while protecting nothing. A link the caller
+    /// or anything else placed inside their own folder is still refused.
     /// </summary>
     internal static void RefuseReparsePoint(string full)
     {
         foreach (var part in Components(full))
         {
+            if (IsSystemAlias(part)) continue;
             if (!File.Exists(part) && !Directory.Exists(part)) continue;
             FileAttributes attributes;
             try { attributes = File.GetAttributes(part); }
@@ -362,6 +368,19 @@ internal static class WriteGate
                     "the output path crosses a symbolic link at '" + part + "'",
                     "name an output path whose folders are real directories, or write beside the link");
         }
+    }
+
+    /// <summary>Where the platform keeps its own links, which resolve to the same place always.</summary>
+    private static readonly string[] SystemAliases = OperatingSystem.IsMacOS()
+        ? new[] { "/var", "/tmp", "/etc", "/home" }
+        : Array.Empty<string>();
+
+    private static bool IsSystemAlias(string part)
+    {
+        string trimmed = part.TrimEnd('/', '\\');
+        foreach (string alias in SystemAliases)
+            if (string.Equals(trimmed, alias, StringComparison.Ordinal)) return true;
+        return false;
     }
 
     /// <summary>The full path and each of its parents, outermost first, so a link anywhere is seen.</summary>
