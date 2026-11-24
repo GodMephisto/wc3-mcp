@@ -15,9 +15,9 @@ namespace Wc3.Mcp;
 /// </summary>
 public static class Program
 {
-    /// <summary>The one target this binary is published for. Anything else gets a refusal, not the
-    /// operating system's message about a Windows executable.</summary>
-    public const string SupportedTarget = "win-x64";
+    /// <summary>The targets this binary is published for. Anything else gets a refusal, not the
+    /// operating system's message about an executable built for another platform.</summary>
+    public const string SupportedTarget = "win-x64 and osx-arm64";
 
     public static async Task<int> Main(string[] args)
     {
@@ -53,6 +53,9 @@ public static class Program
     internal static string? PlatformRefusal(OSPlatform os, Architecture arch)
     {
         if (os == OSPlatform.Windows && arch == Architecture.X64) return null;
+        // Apple silicon is the second target. Rosetta runs the x64 build, which this refusal
+        // still names, so an arm64 machine asking for x64 is told what to install instead.
+        if (os == OSPlatform.OSX && arch == Architecture.Arm64) return null;
         string osName = os == OSPlatform.Windows ? "Windows"
             : os == OSPlatform.Linux ? "Linux"
             : os == OSPlatform.OSX ? "macOS"

@@ -584,8 +584,8 @@
     {
       "id": "PKG-09",
       "group": "PKG",
-      "statement": "On a non-Windows or non-x64 platform the server SHALL fail with one sentence that names the supported target, not a missing native library trace",
-      "basis": "Measured. `PlatformRefusal` runs before the stdio loop, writes one sentence naming `win-x64` to stderr and exits 3, and four tests cover Linux, macOS, Windows ARM64 and the allowed Windows x64",
+      "statement": "On a platform the server is not published for it SHALL fail with one sentence that names the targets it is published for, not a missing native library trace",
+      "basis": "Measured. `PlatformRefusal` runs before the stdio loop, writes one sentence naming `win-x64 and osx-arm64` to stderr and exits 3. Five tests cover Linux, macOS x64, Windows ARM64, the allowed Windows x64 and the allowed Apple silicon arm64. The osx-arm64 build on the Mac prints `wc3-mcp 0.5.44` and answers `quickstart` with all 12 entries",
       "status": "met",
       "test": "named in the basis"
     },

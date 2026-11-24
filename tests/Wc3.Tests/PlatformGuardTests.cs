@@ -30,7 +30,7 @@ public sealed class PlatformGuardTests
     }
 
     [Fact]
-    public void A_macos_process_is_refused_and_names_win_x64()
+    public void A_macos_process_is_refused_and_names_the_targets()
     {
         string? refusal = Program.PlatformRefusal(OSPlatform.OSX, Architecture.X64);
 
@@ -42,5 +42,11 @@ public sealed class PlatformGuardTests
     public void A_windows_x64_process_is_allowed()
     {
         Assert.Null(Program.PlatformRefusal(OSPlatform.Windows, Architecture.X64));
+    }
+
+    [Fact]
+    public void An_apple_silicon_process_is_allowed()
+    {
+        Assert.Null(Program.PlatformRefusal(OSPlatform.OSX, Architecture.Arm64));
     }
 }
