@@ -689,8 +689,8 @@
     {
       "id": "PRF-09",
       "group": "PRF",
-      "statement": "The server SHALL state a memory budget on a named reference machine for the largest supported map, and a call that would exceed it SHALL be refused rather than attempted",
-      "basis": "Measured. The budget is 1 GiB, 320 MiB fixed plus 8 bytes per input byte, so the largest supported input is 88 MiB and a bigger one is refused with `PRF09_MEMORY_BUDGET` naming the projection before it is read. Peak working set was 201 MB for a 38 MB map",
+      "statement": "The server SHALL state the memory budget in force on the machine it runs on for the largest supported map, and a call that would exceed it SHALL be refused rather than attempted",
+      "basis": "Derived. The budget is an eighth of the physical memory the runtime reports, floored at 1 GiB, so a 32 GB machine admits 472 MiB of input and a bigger one is refused with `PRF09_MEMORY_BUDGET` naming the projection and where the budget came from, before it is read. `WC3_MCP_MEMORY_BUDGET` overrides it in bytes with an optional K, M or G suffix. Peak working set was 201 MB for a 38 MB map",
       "status": "met",
       "test": "named in the basis"
     },

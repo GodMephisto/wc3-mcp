@@ -752,12 +752,38 @@ internal static class ServerRuntime
     /// PRF-09. The stated memory budget. The measured anchor is the reference machine on 2026-11-10,
     /// where map_overview peaked at 201 MB of working set for a 38 MB archive and 204 MB for the
     /// 767 KB reference map, so the fixed part is the surface itself and the parsed sections grow
-    /// with the archive. Eight bytes of working set per input byte is that growth rounded up.
+    /// with the archive. Eight bytes of working set per input byte is that growth rounded up. A fixed
+    /// 1 GiB admitted 88 MiB of input and refused a 331 MB map, so the budget follows the host now,
+    /// an eighth of the memory it reports, and a 32 GB machine admits about 472 MiB of input.
     /// </summary>
     public static class MemoryBudget
     {
-        /// <summary>The working set one call may reach on the reference machine.</summary>
-        public const long BudgetBytes = 1024L * 1024 * 1024;
+        /// <summary>
+        /// The variable that sets the budget for this process, in bytes, with an optional K, M or G
+        /// suffix. A value that does not parse leaves the derived budget in force.
+        /// </summary>
+        public const string BudgetEnvVar = "WC3_MCP_MEMORY_BUDGET";
+
+        /// <summary>The share of physical memory one call may reach, so a bigger host admits bigger maps.</summary>
+        public const int MemoryShare = 8;
+
+        /// <summary>The floor, so a small or unreported host still opens a map.</summary>
+        public const long FloorBytes = 1024L * 1024 * 1024;
+
+        /// <summary>
+        /// The budget in force for this call. It follows the host, an eighth of physical memory with
+        /// a 1 GiB floor, and <see cref="BudgetEnvVar"/> overrides it. Deriving it rather than fixing
+        /// it keeps one number out of the build and lets the refusal name the figure that applied.
+        /// </summary>
+        public static long BudgetBytes => Read(BudgetEnvVar) ?? BudgetFor(TotalMemoryBytes());
+
+        /// <summary>The physical memory the runtime reports for this host, or 0 when it reports none.</summary>
+        public static long TotalMemoryBytes() => GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+
+        /// <summary>The budget a host with this much memory gets, an eighth of it or the floor.</summary>
+        public static long BudgetFor(long totalMemoryBytes) => totalMemoryBytes <= 0
+            ? FloorBytes
+            : Math.Max(FloorBytes, totalMemoryBytes / MemoryShare);
 
         /// <summary>The surface and the runtime, measured at 204 MB and rounded up for headroom.</summary>
         public const long FixedBytes = 320L * 1024 * 1024;
@@ -765,8 +791,8 @@ internal static class ServerRuntime
         /// <summary>Working set added per byte of input archive, rounded up from the measurement.</summary>
         public const int BytesPerInputByte = 8;
 
-        /// <summary>The largest archive this budget supports, which the projection puts at 88 MiB.</summary>
-        public const long LargestSupportedInputBytes = (BudgetBytes - FixedBytes) / BytesPerInputByte;
+        /// <summary>The largest archive this budget supports, worked out from the budget each call.</summary>
+        public static long LargestSupportedInputBytes => (BudgetBytes - FixedBytes) / BytesPerInputByte;
 
         /// <summary>What a call on an input of this size is projected to need.</summary>
         public static long ProjectedBytes(long inputBytes) => FixedBytes + inputBytes * BytesPerInputByte;
@@ -782,9 +808,34 @@ internal static class ServerRuntime
         public static string Explain(long inputBytes) =>
             "This call is refused rather than attempted. The input is " + inputBytes + " bytes and the"
             + " projection is " + ProjectedBytes(inputBytes) + " bytes of working set, against a budget of "
-            + BudgetBytes + " bytes per call on the reference machine (Windows 10 x64, 32 GB, the win-x64"
-            + " self contained build, measured 201 MB peak for a 38 MB map on 2026-11-10). The largest"
+            + BudgetBytes + " bytes per call" + Basis() + ". The largest"
             + " supported input is " + LargestSupportedInputBytes + " bytes.";
+
+        /// <summary>Where the budget in force came from, so a refusal names the number that applied.</summary>
+        private static string Basis() => Read(BudgetEnvVar) is null
+            ? " on this host, an eighth of the " + TotalMemoryBytes() + " bytes of memory it reports"
+              + " (the growth rate is the 201 MB peak measured for a 38 MB map on 2026-11-10)"
+            : " set by " + BudgetEnvVar;
+
+        /// <summary>
+        /// The variable's value, or null when it is absent, unparseable or not positive. A typo
+        /// leaves the default in force rather than opening the guard or closing it at zero.
+        /// </summary>
+        private static long? Read(string variable)
+        {
+            string? text = Environment.GetEnvironmentVariable(variable)?.Trim();
+            if (string.IsNullOrEmpty(text)) return null;
+            long scale = char.ToUpperInvariant(text[^1]) switch
+            {
+                'K' => 1024L,
+                'M' => 1024L * 1024,
+                'G' => 1024L * 1024 * 1024,
+                _ => 1L,
+            };
+            if (scale != 1L) text = text[..^1];
+            if (!long.TryParse(text, out long value) || value <= 0) return null;
+            return value > long.MaxValue / scale ? null : value * scale;
+        }
     }
 
     /// <summary>
