@@ -11,18 +11,25 @@ it returned. Security problems go through [SECURITY.md](SECURITY.md) instead.
 
 ## Building and testing
 
-You need Windows and the .NET 8 SDK.
+You need the .NET 8 SDK. On Windows or Apple silicon, the same commands work.
 
 ```powershell
 git clone https://github.com/GodMephisto/wc3-mcp
 cd wc3-mcp
 dotnet build
-dotnet test --filter "Category!=Corpus&Category!=GameData&Category!=Doctor"
+dotnet test --filter "Category!=Corpus&Category!=GameData&Category!=Doctor&Category!=Timing"
+dotnet test --filter "Category=Timing"
 ```
 
 Tests marked `GameData` need a Warcraft III install, and `Corpus` tests need
-real maps on disk. CI runs only the hermetic set, so run the others yourself if
-your change touches game data or map parsing.
+real maps on disk. `Timing` tests assert wall clock, so they run on their own
+after the suite rather than beside 3,200 parallel tests, where the scheduler
+decides the number. CI runs only the hermetic set, so run the others yourself
+if your change touches game data, map parsing or a hot path.
+
+On a Mac with no game data installed, tests that merge base game data return
+early rather than failing. Game data there also needs a native CascLib, which
+`tools/build-casclib-macos.sh` builds and installs beside the server.
 
 ## Pull requests
 

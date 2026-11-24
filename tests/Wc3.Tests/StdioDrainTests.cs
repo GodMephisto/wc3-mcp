@@ -42,6 +42,7 @@ public class StdioDrainTests
     }
 
     [Fact]
+    [Trait("Category", "Timing")]  // wall clock, so it runs alone rather than beside a suite
     public async Task End_of_stream_returns_once_nothing_is_pending()
     {
         var gate = new ServerRuntime.DrainGate(() => true, () => true);

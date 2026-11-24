@@ -10,6 +10,11 @@ using Wc3.Model;
 
 namespace Wc3.Tests;
 
+/// <summary>
+/// Wall clock gates, so they run alone. Beside a full suite the scheduler decides the numbers,
+/// not the adapter, and every failure this class produced measured the runner.
+/// </summary>
+[Trait("Category", "Timing")]
 public class AdapterPerfGateTests
 {
     /// <summary>
@@ -55,7 +60,7 @@ public class AdapterPerfGateTests
             var warm = await client.CallToolAsync("map_info", arguments, cancellationToken: ct);
             Assert.True(warm.IsError != true, "map_info failed on the reference map, so there is no gate");
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 15; i++)
             {
                 long started = Stopwatch.GetTimestamp();
                 var result = await client.CallToolAsync("map_info", arguments, cancellationToken: ct);
@@ -74,12 +79,12 @@ public class AdapterPerfGateTests
             + $", baseline {BaselineMs:0} ms, allowed {AllowedMultiple:0}x, limit {limit:0} ms");
 
         // The absolute baseline was recorded on one machine, so it is a development guard rather
-        // than a claim about shared hardware. The relative check runs everywhere, and asks that the
-        // median stay close to the fastest call this run managed, which catches a regression in the
-        // adapter without failing because a runner is slow.
-        double fastest = times[0];
-        Assert.True(median <= fastest * AllowedMultiple,
-            $"the median call took {median:0.0} ms against the fastest {fastest:0.0} ms this run,"
+        // than a claim about shared hardware. The relative check runs everywhere, and asks that
+        // the median stay close to the lower quartile of this run, because a single lucky call
+        // beside a full suite is noise and the quartile tracks contention honestly.
+        double fast = times[times.Count / 4];
+        Assert.True(median <= fast * AllowedMultiple,
+            $"the median call took {median:0.0} ms against {fast:0.0} ms at the lower quartile,"
             + $" which is beyond {AllowedMultiple:0}x");
 
         bool sharedRunner = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"));
