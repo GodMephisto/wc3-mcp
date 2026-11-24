@@ -72,6 +72,7 @@ public sealed class MapDocument
         // Not disposed here on purpose, the document keeps it for deferred entry
         // reads (see _archive). Disposing it would only dispose the MemoryStream.
         MpqArchive archive;
+        bool repaired = false;
         try
         {
             archive = MpqArchive.Open(new MemoryStream(fileBytes), loadListFile: true);
@@ -89,14 +90,31 @@ public sealed class MapDocument
             }
             catch (Exception reopenFailure)
             {
-                throw new InvalidDataException(
-                    $"the archive could not be opened. With its listfile, {listFileFailure.Message}. "
-                    + $"Without it, {reopenFailure.Message}.", reopenFailure);
+                // A rebuild that removed files can leave a hash entry behind as "deleted", and
+                // War3Net dereferences that index instead of skipping it, so the archive refuses
+                // to open over an inert slot. Clear those entries and try once more.
+                int cleared = MpqTableRepair.TryNormalize(fileBytes);
+                if (cleared > 0)
+                {
+                    archive = MpqArchive.Open(new MemoryStream(fileBytes), loadListFile: false);
+                    repaired = true;
+                    doc._diagnostics.Add(new Diagnostic(DiagnosticSeverity.Warning, "(hash table)",
+                        $"{cleared} hash table entr{(cleared == 1 ? "y" : "ies")} named a block "
+                        + "the archive no longer holds, so they were written as empty. The files "
+                        + "they used to point at are gone, and nothing else changed."));
+                }
+                else
+                {
+                    throw new InvalidDataException(
+                        $"the archive could not be opened. With its listfile, {listFileFailure.Message}. "
+                        + $"Without it, {reopenFailure.Message}.", reopenFailure);
+                }
             }
-            doc._diagnostics.Add(new Diagnostic(DiagnosticSeverity.Warning, "(listfile)",
-                $"The (listfile) entry could not be read ({listFileFailure.Message}), so the map was "
-                + "opened without it. The standard file names still resolve, and a harvest or deprotect "
-                + "pass can name more."));
+            if (!repaired)
+                doc._diagnostics.Add(new Diagnostic(DiagnosticSeverity.Warning, "(listfile)",
+                    $"The (listfile) entry could not be read ({listFileFailure.Message}), so the map was "
+                    + "opened without it. The standard file names still resolve, and a harvest or deprotect "
+                    + "pass can name more."));
         }
         doc._archive = archive;
 
