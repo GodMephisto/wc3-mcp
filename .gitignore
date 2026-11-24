@@ -12,3 +12,14 @@ TestResults/
 *.w3m
 *.w3g
 *.zip
+
+# Local sweep corpus, 49 MB, rebuilt from the game data
+/wc3-corpus.tgz
+
+# The advisor writes plans here and the plan README says they are not committed
+/plans/
+
+# Superseded by docs/specification/tools/release_record.py, left untracked so the
+# duplicate stays visible instead of being lost
+/tools/release_record.py
+/tools/test_release_record.py
