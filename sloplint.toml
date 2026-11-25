@@ -10,4 +10,7 @@ dash = ["docs/specification/tools/build_pdf.py"]
 # The example record in release_record.py carries an example.invalid download
 # URL. RFC 2606 reserves the name and nothing resolves it, the tool only checks
 # the field is present and shaped.
+# find_chrome() reads CHROME first and only then tries the paths each platform
+# installs a browser into. Those are system locations, not one user's folders.
+machine-path-literal = ["docs/specification/tools/build_pdf.py"]
 absolute-url = ["docs/specification/tools/release_record.py"]
