@@ -484,10 +484,9 @@ public sealed class TargetCompatTests
     [Fact]
     public void SabotageDeclaredSkip_MakesAllIdentifiersSkipped()
     {
-        // This test verifies the "declared-in-map skip" by temporarily modifying
-        // the behavior so declared identifiers are skipped for every identifier,
-        // not just declared ones. The test goes red to prove the skip exists.
-        // Then we restore the behavior.
+        // The declared-in-map skip is only visible when it is wrong, so the switch is
+        // temporarily widened to skip every identifier, not just declared ones. An empty
+        // result proves the skip is live. The original switch is back in place in finally.
 
         var temp = Path.Combine(Path.GetTempPath(), "wc3ctl-compat-sabotage-test");
         Directory.CreateDirectory(temp);

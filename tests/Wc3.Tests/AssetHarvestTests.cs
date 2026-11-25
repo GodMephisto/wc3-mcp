@@ -31,7 +31,7 @@ public class AssetHarvestTests
 
         var doc = MapDocument.Load(bytes);
 
-        Assert.NotNull(doc.GetFile("war3map.j")); // phase 1 already recovers the script itself
+        Assert.NotNull(doc.GetFile("war3map.j")); // the script pass recovers it, no model needed
         Assert.Null(doc.GetFile(@"war3mapImported\Foo.mdx"));
     }
 

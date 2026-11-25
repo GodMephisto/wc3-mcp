@@ -212,7 +212,6 @@ def sidecar_provenance(path: Path, tag: str) -> tuple[str | None, str | None]:
             named_tag = document.get("tag") if isinstance(document, dict) else None
             if isinstance(named_tag, str) and named_tag.strip() != tag.strip():
                 return None, f"{sidecar.name} names tag {named_tag} while the checked tag is {tag}"
-        else:
             commit = text.strip().split()[0] if text.strip() else None
         if not isinstance(commit, str) or not COMMIT_RE.match(commit.strip().lower()):
             return None, f"{sidecar.name} names no full 40 character commit"

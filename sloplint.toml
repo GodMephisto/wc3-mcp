@@ -1,11 +1,17 @@
 # Places where a rule fires on a line that has to keep its shape. Each entry
 # names the rule and the file, and says why the finding is not a defect.
 
+[allow]
+# "Client best practices" is the name of the Anthropic client docs page this
+# specification cites, in a source table and in a sentence that names it by
+# that title. A claim would read "follow best practices", with no name on it.
+unnamed-practice = ["(?i)client best practices"]
+
 [exempt]
 # build_pdf.py writes HTML, CSS, JavaScript and Mermaid inside Python string
 # literals, so the punctuation rules read markup as prose.
-colon = ["docs/specification/tools/build_pdf.py"]
-semicolon = ["docs/specification/tools/build_pdf.py"]
+colon = ["docs/specification/tools/build_pdf.py", "docs/specification/tools/spec_theme.py"]
+semicolon = ["docs/specification/tools/build_pdf.py", "docs/specification/tools/spec_theme.py"]
 dash = ["docs/specification/tools/build_pdf.py"]
 # The example record in release_record.py carries an example.invalid download
 # URL. RFC 2606 reserves the name and nothing resolves it, the tool only checks

@@ -251,15 +251,13 @@ public static class CameraCommand
     /// </summary>
     /// <remarks>
     /// A map with no war3map.w3c has no cameras, which is not the same as having cameras that
-    /// cannot be edited. Throwing here made <see cref="Add"/> refuse on every map that never
-    /// defined one, so the Cameras panel could show a map's cameras but never give it a first
-    /// one, and the reason surfaced as an exception rather than a message. That contradicted
-    /// this file's own documented intent, "add creates the file on first use", and it made
-    /// cameras behave unlike regions, where PlacementCommand.GetOrCreateRegions has always
-    /// created the section on demand. The two now match.
+    /// cannot be edited. <see cref="Add"/> creates the section, the way
+    /// PlacementCommand.GetOrCreateRegions creates the region section, so a map that never
+    /// defined a camera still takes its first one and the panel reports a message rather than
+    /// an exception.
     ///
-    /// Set and Remove reach through here too and are still correct, an absent section yields
-    /// zero cameras, so they report "no camera named X" instead of raising.
+    /// Set and Remove reach through here too. An absent section yields zero cameras, so they
+    /// report "no camera named X" instead of raising.
     /// </remarks>
     internal static MapCameras GetOrCreateCameras(MapDocument doc) =>
         doc.GetFile(FileName)?.Model as MapCameras

@@ -132,9 +132,9 @@ public class ProtectedMapNameRecoveryTests
         File.WriteAllLines(dictPath, dictionary);
         _out.WriteLine($"dictionary: {dictPath}");
 
-        // Reporting is the deliverable, nothing here is a pass/fail condition over the
-        // user's map library.
-        Assert.True(true);
+        // The report file is the deliverable. Nothing here judges the user's map library,
+        // but the report has to have been written for the run to mean anything.
+        Assert.True(File.Exists(outPath), "the report was not written");
     }
 
     /// <summary>Opens the archive with no help at all (no standard-name probe, no dictionary),
