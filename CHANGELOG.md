@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.45 - 2026-11-25
+
+Every image decode runs through one configuration that registers no TIFF and reads no ICC, so the open advisories against the pinned ImageSharp are unreachable. See `changelog/0.5.45.md`.
+
 ## 0.5.44 - 2026-11-16
 
 `texture_audit` reports the texture headers the engine mishandles. See `changelog/0.5.44.md`.
