@@ -24,7 +24,3 @@ THIRD-PARTY-NOTICES.md
 # byte for byte identical. Their prose belongs to the shipped skill.
 src/Wc3.Mcp/docs/skills/
 
-# Release notes are parsed by the changelog tool and written by a release, so
-# their headings and dashes are part of the format, not prose to restyle.
-CHANGELOG.md
-changelog/

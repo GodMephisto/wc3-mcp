@@ -97,15 +97,24 @@ jobs:
                 lines=""
               fi
               if [ -z "$lines" ]; then
-                lines="- Source tree at $(git rev-parse --short HEAD)"
+                lines="A mirror sync release. The four manifests move to $v and no file under src/ changed."
               fi
               printf '%s\n' "$lines"
             } > "changelog/$v.md"
             echo "wrote a note from the mirror, since the source has none for $v"
           fi
 
+          # The row carries the note's own first sentence. A row that said only "see the note"
+          # made a reader open every version to learn what shipped.
+          para=$(awk '/^#/{next} /^[[:space:]]*$/{if (seen) exit; next} seen && /^- /{exit} {seen=1; printf "%s ", $0}' "changelog/$v.md")
+          summary=$(printf '%s' "$para" | tr -d '\r' | tr -s ' ' | sed -e 's/^ //' -e 's/ $//' -e 's/^- //' -e 's/\. .*//')
+          case "$summary" in
+            *.) ;;
+            *) summary="$summary." ;;
+          esac
+          [ -n "$summary" ] || summary="No note was written for this version."
           if [ -f CHANGELOG.md ]; then
-            tail -n +2 CHANGELOG.md > CHANGELOG.rest
+            tail -n +2 CHANGELOG.md | sed -e '/./,$!d' > CHANGELOG.rest
           else
             : > CHANGELOG.rest
           fi
@@ -114,11 +123,31 @@ jobs:
             echo
             echo "## $v - $day"
             echo
-            echo "See changelog/$v.md."
+            echo "$summary See \`changelog/$v.md\`."
             echo
             cat CHANGELOG.rest
           } > CHANGELOG.md
           rm -f CHANGELOG.rest
+
+      # A row that says "see the note" makes a reader open every version to learn what shipped,
+      # which is how six releases came to carry nothing but a pointer. This fails the sync instead.
+      - name: Check every release has a row and a summary
+        run: |
+          set -euo pipefail
+          failed=0
+          for f in changelog/*.md; do
+            v=$(basename "$f" .md)
+            if ! grep -q "^## $v - " CHANGELOG.md; then
+              echo "CHANGELOG.md has no row for $v"
+              failed=1
+            fi
+          done
+          while read -r line; do
+            echo "a row points at a note instead of summarising it: $line"
+            failed=1
+          done < <(grep -E "^See changelog/" CHANGELOG.md || true)
+          if [ "$failed" -ne 0 ]; then exit 1; fi
+          echo "every release has a row with a summary"
 
       - name: Keep the manifests on the same version
         run: |
