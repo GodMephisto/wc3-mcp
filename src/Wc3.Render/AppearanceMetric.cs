@@ -27,8 +27,8 @@ public static class AppearanceMetric
 
     public static AppearanceScore Compare(byte[] pngA, byte[] pngB)
     {
-        using var a = Image.Load<Rgba32>(pngA);
-        using var b = Image.Load<Rgba32>(pngB);
+        using var a = SafeImages.Load<Rgba32>(pngA);
+        using var b = SafeImages.Load<Rgba32>(pngB);
         return Compare(a, b);
     }
 

@@ -146,7 +146,7 @@ public static class PathingPng
         }
 
         Image<Rgba32> image;
-        try { image = Image.Load<Rgba32>(png); }
+        try { image = SafeImages.Load<Rgba32>(png); }
         catch (Exception ex) { error = $"could not decode pathing PNG ({ex.Message})"; return false; }
 
         using (image)

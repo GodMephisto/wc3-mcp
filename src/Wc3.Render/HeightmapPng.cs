@@ -69,7 +69,7 @@ public static class HeightmapPng
     public static HeightmapImage Decode(byte[] png)
     {
         ArgumentNullException.ThrowIfNull(png);
-        using var image = Image.Load<L16>(png);
+        using var image = SafeImages.Load<L16>(png);
         int w = image.Width, h = image.Height;
         var pixels = new ushort[w * h];
         for (int y = 0; y < h; y++)
