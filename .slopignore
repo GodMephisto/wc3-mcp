@@ -1,0 +1,8 @@
+# Trees this repository does not author, so the linter has nothing to say
+# about them. dataset/ and data/ are sample inputs, and the dist-mcp trees are
+# build output of src/, which is scanned on its own.
+dataset/
+data/
+dist-mcp/
+dist-mcp.bak/
+dist-mcp.old/
