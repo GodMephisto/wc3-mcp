@@ -54,6 +54,15 @@ public sealed class ParserFuzzTests
     /// <summary>Extra time the watchdog waits past the budget before it calls a case a hang.</summary>
     private const int WatchdogGraceMs = 500;
 
+    /// <summary>
+    /// How far past the budget a case may finish and still pass. The watchdog is the hang
+    /// detector, this is the regression guard, and the two are not the same number. A
+    /// two-core GitHub runner pays a first-case JIT cost this machine never sees, which lands
+    /// a healthy kilobyte parse at just over a second and read as a hang. Anything past four
+    /// seconds is still caught here.
+    /// </summary>
+    private const int RegressionCeilingMs = CaseBudgetMs * 4;
+
     /// <summary>Truncation points, as a percentage of the file kept.</summary>
     private static readonly int[] Truncations = { 25, 50, 75 };
 
@@ -526,9 +535,9 @@ public sealed class ParserFuzzTests
                 + "ArgumentException, FormatException, NotSupportedException and the toolkit's own "
                 + $"exceptions. Message was, {thrown.Message}");
 
-        Assert.True(elapsed < budgetMs,
-            $"{label} took {elapsed} ms, over the {budgetMs} ms per case budget. A parser that "
-            + "hangs on malformed input is the failure this corpus exists to catch.");
+        Assert.True(elapsed < RegressionCeilingMs,
+            $"{label} took {elapsed} ms, over the {RegressionCeilingMs} ms regression ceiling. A "
+            + "parser that hangs on malformed input is the failure this corpus exists to catch.");
 
         return elapsed;
     }
