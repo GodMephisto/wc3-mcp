@@ -1,6 +1,5 @@
 // src/Wc3.Render/AppearanceMetric.cs
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 
 namespace Wc3.Render;
 
@@ -27,13 +26,15 @@ public static class AppearanceMetric
 
     public static AppearanceScore Compare(byte[] pngA, byte[] pngB)
     {
-        using var a = SafeImages.Load<Rgba32>(pngA);
-        using var b = SafeImages.Load<Rgba32>(pngB);
+        using var a = SafeImages.Load(pngA);
+        using var b = SafeImages.Load(pngB);
         return Compare(a, b);
     }
 
-    public static AppearanceScore Compare(Image<Rgba32> a, Image<Rgba32> b)
+    public static AppearanceScore Compare(SKBitmap a, SKBitmap b)
     {
+        ArgumentNullException.ThrowIfNull(a);
+        ArgumentNullException.ThrowIfNull(b);
         if (a.Width != b.Width || a.Height != b.Height)
         {
             throw new InvalidDataException(
@@ -49,10 +50,10 @@ public static class AppearanceMetric
         {
             for (int x = 0; x < w; x++)
             {
-                var pa = a[x, y];
-                var pb = b[x, y];
-                bool sa = pa.A > CoverageThreshold;
-                bool sb = pb.A > CoverageThreshold;
+                var pa = a.GetPixel(x, y);
+                var pb = b.GetPixel(x, y);
+                bool sa = pa.Alpha > CoverageThreshold;
+                bool sb = pb.Alpha > CoverageThreshold;
                 if (sa) coveredA++;
                 if (sb) coveredB++;
                 if (sa || sb) either++;
@@ -69,7 +70,7 @@ public static class AppearanceMetric
         return new AppearanceScore(ssim, iou, coveredA / frame, coveredB / frame);
     }
 
-    private static double Luma(Rgba32 p) => 0.299 * p.R + 0.587 * p.G + 0.114 * p.B;
+    private static double Luma(SKColor p) => 0.299 * p.Red + 0.587 * p.Green + 0.114 * p.Blue;
 
     private static double Ssim(IReadOnlyList<double> a, IReadOnlyList<double> b)
     {

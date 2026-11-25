@@ -1,7 +1,6 @@
-// src/Wc3.Render/TerrainRenderer.cs
+﻿// src/Wc3.Render/TerrainRenderer.cs
 using System.Numerics;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using War3Net.Build.Environment;
 
 namespace Wc3.Render;
@@ -35,7 +34,7 @@ public static class TerrainRenderer
         // enum name once (a map has at most a handful of ground types). Blank
         // maps have an empty TerrainTypes list, so fall back to a neutral color.
         var typeColors = BuildTypeColors(doc, env);
-        var fallback = new Rgba32(96, 108, 84); // muted grass-green
+        var fallback = new SKColor(96, 108, 84); // muted grass-green
 
         // TerrainTile.Height excludes cliff level. One cliff step equals 1.0 in
         // War3Net's normalized height units. Combine them for elevation shading.
@@ -51,7 +50,7 @@ public static class TerrainRenderer
         float range = max - min;
 
         int scale = Math.Max(1, MaxSide / Math.Max(w, h));
-        using var image = new Image<Rgba32>(w * scale, h * scale);
+        using var image = SafeImages.NewBitmap(w * scale, h * scale);
         for (int y = 0; y < h; y++)
         {
             for (int x = 0; x < w; x++)
@@ -72,7 +71,7 @@ public static class TerrainRenderer
                 }
 
                 // Base color from the tile's ground type.
-                Rgba32 c;
+                SKColor c;
                 if (typeColors.Length > 0 && tile.Texture >= 0 && tile.Texture < typeColors.Length)
                     c = typeColors[tile.Texture];
                 else
@@ -95,23 +94,21 @@ public static class TerrainRenderer
                 // Water, blend toward blue. Deeper ground under the water is darker.
                 if (tile.IsWater)
                 {
-                    var deep = new Rgba32(28, 52, 104);
-                    var shallow = new Rgba32(70, 116, 176);
+                    var deep = new SKColor(28, 52, 104);
+                    var shallow = new SKColor(70, 116, 176);
                     var water = Lerp(deep, shallow, n);
                     c = Lerp(c, water, 0.68f);
                 }
 
                 // Blight, cracked reddish earth overlay.
                 if (tile.IsBlighted)
-                    c = Lerp(c, new Rgba32(104, 66, 54), 0.7f);
+                    c = Lerp(c, new SKColor(104, 66, 54), 0.7f);
 
                 Paint(image, x, y, h, scale, c);
             }
         }
 
-        using var ms = new MemoryStream();
-        image.SaveAsPng(ms);
-        return ms.ToArray();
+        return SafeImages.EncodePng(image);
     }
 
     /// <summary>
@@ -186,9 +183,9 @@ public static class TerrainRenderer
         const float AmbientFloor = 0.35f;
 
         // Screen buffers.
-        var col = new Rgba32[W * H];
+        var col = new SKColor[W * H];
         var zbuf = new float[W * H];
-        var sky = new Rgba32((byte)28, (byte)32, (byte)38, (byte)255);
+        var sky = new SKColor((byte)28, (byte)32, (byte)38, (byte)255);
         for (int i = 0; i < col.Length; i++) { col[i] = sky; zbuf[i] = float.MaxValue; }
 
         // Project every tilepoint once (terrain), and the water plane if needed.
@@ -209,8 +206,8 @@ public static class TerrainRenderer
             {
                 int a = j * w + i, b = a + 1, c = a + w, d = c + 1;
                 var tile = tiles[j * w + i];
-                Rgba32 baseCol = (tile.Texture >= 0 && tile.Texture < typeColors.Length)
-                    ? typeColors[tile.Texture] : new Rgba32((byte)120, (byte)120, (byte)120, (byte)255);
+                SKColor baseCol = (tile.Texture >= 0 && tile.Texture < typeColors.Length)
+                    ? typeColors[tile.Texture] : new SKColor((byte)120, (byte)120, (byte)120, (byte)255);
                 Raster(pv[a], pv[c], pv[b], Shade(baseCol, FaceShade(verts[a], verts[c], verts[b])), 1f, true);
                 Raster(pv[b], pv[c], pv[d], Shade(baseCol, FaceShade(verts[b], verts[c], verts[d])), 1f, true);
             }
@@ -218,7 +215,7 @@ public static class TerrainRenderer
         // Water pass, translucent plane over water tiles (z-tested, no z-write).
         if (pw is not null)
         {
-            var wcol = new Rgba32((byte)48, (byte)96, (byte)168, (byte)255);
+            var wcol = new SKColor((byte)48, (byte)96, (byte)168, (byte)255);
             for (int j = 0; j < h - 1; j++)
                 for (int i = 0; i < w - 1; i++)
                 {
@@ -229,13 +226,9 @@ public static class TerrainRenderer
                 }
         }
 
-        var image = new Image<Rgba32>(W, H);
-        for (int y = 0; y < H; y++)
-            for (int x = 0; x < W; x++)
-                image[x, y] = col[y * W + x];
-        using var ms = new MemoryStream();
-        image.SaveAsPng(ms);
-        return ms.ToArray();
+        using var image = SafeImages.NewBitmap(W, H);
+        image.Pixels = col;
+        return SafeImages.EncodePng(image);
 
         // --- locals -------------------------------------------------------
         (float sx, float sy, float vz) Project(Vector3 p)
@@ -256,12 +249,12 @@ public static class TerrainRenderer
             return AmbientFloor + (1f - AmbientFloor) * MathF.Min(d, 1f);
         }
 
-        static Rgba32 Shade(Rgba32 c, float s) => new(
-            (byte)MathF.Min(c.R * s, 255f), (byte)MathF.Min(c.G * s, 255f),
-            (byte)MathF.Min(c.B * s, 255f), (byte)255);
+        static SKColor Shade(SKColor c, float s) => new(
+            (byte)MathF.Min(c.Red * s, 255f), (byte)MathF.Min(c.Green * s, 255f),
+            (byte)MathF.Min(c.Blue * s, 255f), (byte)255);
 
         void Raster((float sx, float sy, float vz) p0, (float sx, float sy, float vz) p1,
-                    (float sx, float sy, float vz) p2, Rgba32 c, float alpha, bool writeZ)
+                    (float sx, float sy, float vz) p2, SKColor c, float alpha, bool writeZ)
         {
             float area = (p1.sx - p0.sx) * (p2.sy - p0.sy) - (p1.sy - p0.sy) * (p2.sx - p0.sx);
             if (MathF.Abs(area) < 1e-6f) return;
@@ -289,10 +282,10 @@ public static class TerrainRenderer
                     else
                     {
                         var bgc = col[idx];
-                        col[idx] = new Rgba32(
-                            (byte)(c.R * alpha + bgc.R * (1f - alpha)),
-                            (byte)(c.G * alpha + bgc.G * (1f - alpha)),
-                            (byte)(c.B * alpha + bgc.B * (1f - alpha)), (byte)255);
+                        col[idx] = new SKColor(
+                            (byte)(c.Red * alpha + bgc.Red * (1f - alpha)),
+                            (byte)(c.Green * alpha + bgc.Green * (1f - alpha)),
+                            (byte)(c.Blue * alpha + bgc.Blue * (1f - alpha)), (byte)255);
                     }
                 }
         }
@@ -462,18 +455,18 @@ public static class TerrainRenderer
     /// tileset-letter prefix and a descriptive suffix. We match the suffix.
     /// </summary>
     /// <summary>What a tile outside the playable area is drawn as. The game shows void there.</summary>
-    internal static readonly Rgba32 VoidColor = new(10, 10, 12, 255);
+    internal static readonly SKColor VoidColor = new(10, 10, 12, 255);
 
     /// <summary>
     /// Fills one tilepoint's cell. Tilepoints are stored row-major from the south-west corner,
     /// so rows are flipped to put north at the top of the image.
     /// </summary>
-    private static void Paint(Image<Rgba32> image, int x, int y, int h, int scale, Rgba32 c)
+    private static void Paint(SKBitmap image, int x, int y, int h, int scale, SKColor c)
     {
         int px = x * scale, py = (h - 1 - y) * scale;
         for (int dy = 0; dy < scale; dy++)
             for (int dx = 0; dx < scale; dx++)
-                image[px + dx, py + dy] = c;
+                image.SetPixel(px + dx, py + dy, c);
     }
 
     /// <summary>
@@ -487,56 +480,63 @@ public static class TerrainRenderer
     /// in one shared place rather than copied into each renderer. With no game install
     /// sampling returns null and the built-in colours stand, so both paths stay headless.
     /// </remarks>
-    internal static Rgba32[] BuildTypeColors(Wc3.Model.MapDocument doc, MapEnvironment env)
+    internal static SKColor[] BuildTypeColors(Wc3.Model.MapDocument doc, MapEnvironment env)
     {
-        var colors = new Rgba32[env.TerrainTypes.Count];
+        var colors = new SKColor[env.TerrainTypes.Count];
         for (int i = 0; i < colors.Length; i++)
-            colors[i] = ColorForTerrainType(env.TerrainTypes[i]);
+            colors[i] = ToColor(ColorForTerrainType(env.TerrainTypes[i]));
 
         var sampled = TerrainArtCatalog.AverageColorsForMap(doc);
         if (sampled is null) return colors;
 
         for (int i = 0; i < colors.Length && i < sampled.Length; i++)
             if (sampled[i] is { } s)
-                colors[i] = new Rgba32(s.R, s.G, s.B);
+                colors[i] = new SKColor(s.R, s.G, s.B);
         return colors;
     }
 
-    internal static Rgba32 ColorForTerrainType(TerrainType type)
+    /// <summary>
+    /// The built-in fallback colour of a tile type as plain bytes, not a pixel type, so that a
+    /// caller that only wants the numbers (the tileset sampler) does not take a dependency on the
+    /// imaging library's colour struct.
+    /// </summary>
+    internal static (byte R, byte G, byte B) ColorForTerrainType(TerrainType type)
     {
         string name = type.ToString();
         bool Has(string s) => name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0;
 
         // Order matters, check more specific terms before generic ones.
-        if (Has("Lava")) return new Rgba32(150, 52, 30);
-        if (Has("Abyss")) return new Rgba32(26, 22, 32);
-        if (Has("Snow") || Has("Ice")) return new Rgba32(228, 232, 242);
-        if (Has("Water") || Has("Shore")) return new Rgba32(60, 96, 156);
+        if (Has("Lava")) return (150, 52, 30);
+        if (Has("Abyss")) return (26, 22, 32);
+        if (Has("Snow") || Has("Ice")) return (228, 232, 242);
+        if (Has("Water") || Has("Shore")) return (60, 96, 156);
         if (Has("Sand") || Has("Desert") || Has("Dune") || Has("Waste"))
-            return new Rgba32(198, 176, 120);
-        if (Has("Rock") || Has("Stone")) return new Rgba32(112, 110, 106);
+            return (198, 176, 120);
+        if (Has("Rock") || Has("Stone")) return (112, 110, 106);
         if (Has("Brick") || Has("Tiles") || Has("Path") || Has("Cobble") || Has("Flag"))
-            return new Rgba32(150, 140, 122);
+            return (150, 140, 122);
         if (Has("Mud") || Has("Bog") || Has("Marsh") || Has("Swamp"))
-            return new Rgba32(92, 78, 52);
-        if (Has("Dirt") || Has("Ground") || Has("Earth")) return new Rgba32(124, 92, 58);
+            return (92, 78, 52);
+        if (Has("Dirt") || Has("Ground") || Has("Earth")) return (124, 92, 58);
         if (Has("Leaves") || Has("Vines") || Has("Foliage") || Has("Grassy"))
-            return new Rgba32(58, 88, 44);
-        if (Has("Grass")) return new Rgba32(86, 125, 57);
-        return new Rgba32(96, 108, 84); // unknown → muted grass-green
+            return (58, 88, 44);
+        if (Has("Grass")) return (86, 125, 57);
+        return (96, 108, 84); // unknown → muted grass-green
     }
 
-    private static Rgba32 Scale(Rgba32 c, float f) => new(
-        (byte)Math.Clamp(c.R * f, 0f, 255f),
-        (byte)Math.Clamp(c.G * f, 0f, 255f),
-        (byte)Math.Clamp(c.B * f, 0f, 255f));
+    private static SKColor ToColor((byte R, byte G, byte B) c) => new(c.R, c.G, c.B);
 
-    private static Rgba32 Lerp(Rgba32 a, Rgba32 b, float t)
+    private static SKColor Scale(SKColor c, float f) => new(
+        (byte)Math.Clamp(c.Red * f, 0f, 255f),
+        (byte)Math.Clamp(c.Green * f, 0f, 255f),
+        (byte)Math.Clamp(c.Blue * f, 0f, 255f));
+
+    private static SKColor Lerp(SKColor a, SKColor b, float t)
     {
         t = Math.Clamp(t, 0f, 1f);
-        return new Rgba32(
-            (byte)(a.R + (b.R - a.R) * t),
-            (byte)(a.G + (b.G - a.G) * t),
-            (byte)(a.B + (b.B - a.B) * t));
+        return new SKColor(
+            (byte)(a.Red + (b.Red - a.Red) * t),
+            (byte)(a.Green + (b.Green - a.Green) * t),
+            (byte)(a.Blue + (b.Blue - a.Blue) * t));
     }
 }

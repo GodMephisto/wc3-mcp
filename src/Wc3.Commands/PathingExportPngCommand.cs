@@ -1,5 +1,5 @@
 // src/Wc3.Commands/PathingExportPngCommand.cs
-using SixLabors.ImageSharp.PixelFormats;   // Rgba32
+using SkiaSharp;                            // SKColor
 using War3Net.Build.Environment;            // MapPathingMap
 using Wc3.Model;
 
@@ -42,5 +42,5 @@ public static class PathingExportPngCommand
         }
     }
 
-    private static string Hex(Rgba32 c) => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+    private static string Hex(SKColor c) => $"#{c.Red:X2}{c.Green:X2}{c.Blue:X2}";
 }

@@ -1,6 +1,5 @@
-// tests/Wc3.Tests/TextureConvertTests.cs
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+﻿// tests/Wc3.Tests/TextureConvertTests.cs
+using SkiaSharp;
 using Wc3.Modeling;
 using Wc3.Render;
 
@@ -84,7 +83,7 @@ public class TextureConvertTests
         var blp = TextureConvert.Convert(QuadrantPng(16, 16), ".png", ".blp");
         var png = TextureConvert.Convert(blp, ".blp", ".png");
         Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, png[..4]);
-        using var image = Image.Load<Rgba32>(png);
+        using var image = SafeImages.Load(png);
         Assert.Equal(16, image.Width);
         Assert.Equal(16, image.Height);
     }
@@ -100,13 +99,13 @@ public class TextureConvertTests
         var tga = TextureConvert.Convert(bmp, ".bmp", ".tga");
         var back = TextureConvert.Convert(tga, ".tga", ".png");
 
-        using var a = Image.Load<Rgba32>(png);
-        using var b = Image.Load<Rgba32>(back);
+        using var a = SafeImages.Load(png);
+        using var b = SafeImages.Load(back);
         Assert.Equal(a.Width, b.Width);
         Assert.Equal(a.Height, b.Height);
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
-                Assert.Equal(a[x, y], b[x, y]);
+                Assert.Equal(a.GetPixel(x, y), b.GetPixel(x, y));
     }
 
     [Fact]
@@ -140,12 +139,16 @@ public class TextureConvertTests
     [Fact]
     public void A_tiff_source_is_refused_so_the_pinned_tiff_decoder_never_runs()
     {
-        // ImageSharp 3.1.12's TIFF decoder has an open advisory (GHSA-wmxv-xphr-5c9g). The
-        // default configuration would decode this, so a pass here proves TIFF is not registered.
-        using var img = new Image<Rgba32>(4, 4);
-        using var ms = new MemoryStream();
-        img.SaveAsTiff(ms);
-        Assert.Throws<NotSupportedException>(() => TextureConvert.Convert(ms.ToArray(), ".tif", ".png"));
+        // No decoder in this library accepts TIFF: the format is not on SafeImages' allow-list, so
+        // the bytes are refused before a parser is constructed. A minimal TIFF header is enough to
+        // prove that, since the refusal happens on the magic number.
+        var bytes = new byte[32];
+        bytes[0] = (byte)'I';
+        bytes[1] = (byte)'I';
+        bytes[2] = 42;
+        BitConverter.GetBytes(8).CopyTo(bytes, 4);
+        BitConverter.GetBytes((ushort)0).CopyTo(bytes, 8); // empty IFD
+        Assert.Throws<NotSupportedException>(() => TextureConvert.Convert(bytes, ".tif", ".png"));
     }
 
     [Fact]

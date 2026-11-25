@@ -1,8 +1,7 @@
-// tests/Wc3.Tests/DdsPreviewConvertTests.cs
+﻿// tests/Wc3.Tests/DdsPreviewConvertTests.cs
 using System.Buffers.Binary;
 using System.Text;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using Wc3.Commands;
 using Wc3.Model;
 using Wc3.Render;
@@ -44,11 +43,11 @@ public class DdsPreviewConvertTests
     private static void AssertSolidRedPng(byte[] png)
     {
         Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, png[..4]);
-        using var image = Image.Load<Rgba32>(png);
+        using var image = SafeImages.Load(png);
         Assert.Equal(4, image.Width);
         Assert.Equal(4, image.Height);
-        Assert.Equal(new Rgba32(255, 0, 0, 255), image[0, 0]);
-        Assert.Equal(new Rgba32(255, 0, 0, 255), image[3, 3]);
+        Assert.Equal(new SKColor(255, 0, 0, 255), image.GetPixel(0, 0));
+        Assert.Equal(new SKColor(255, 0, 0, 255), image.GetPixel(3, 3));
     }
 
     [Fact]

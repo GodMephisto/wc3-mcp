@@ -1,6 +1,5 @@
-// tests/Wc3.Tests/PathingImageCommandTests.cs
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+﻿// tests/Wc3.Tests/PathingImageCommandTests.cs
+using SkiaSharp;
 using War3Net.Build.Environment; // MapPathingMap, PathingType
 using Wc3.Commands;
 using Wc3.Model;
@@ -86,16 +85,13 @@ public class PathingImageCommandTests
     {
         var doc = Blank();
         int w = (int)Map(doc).Width, h = (int)Map(doc).Height;
-        using var image = new Image<Rgba32>(w, h);
+        using var image = SafeImages.NewBitmap(w, h);
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
-                image[x, y] = new Rgba32(0, 0, 0);
-        image[1, 1] = new Rgba32(255, 0, 255);   // not a palette colour
+                image.SetPixel(x, y, new SKColor(0, 0, 0));
+        image.SetPixel(1, 1, new SKColor(255, 0, 255)); // not a palette colour
 
-        using var ms = new MemoryStream();
-        image.SaveAsPng(ms);
-
-        var r = PathingImportPngCommand.Import(doc, ms.ToArray());
+        var r = PathingImportPngCommand.Import(doc, SafeImages.EncodePng(image));
         Assert.False(r.Ok);
         Assert.Contains("unknown pathing colour", r.Message);
     }
@@ -104,12 +100,10 @@ public class PathingImageCommandTests
     public void Import_refuses_an_image_smaller_than_the_grid()
     {
         var doc = Blank();
-        using var image = new Image<Rgba32>(1, 1);
-        image[0, 0] = new Rgba32(0, 0, 0);
-        using var ms = new MemoryStream();
-        image.SaveAsPng(ms);
+        using var image = SafeImages.NewBitmap(1, 1);
+        image.SetPixel(0, 0, new SKColor(0, 0, 0));
 
-        var r = PathingImportPngCommand.Import(doc, ms.ToArray());
+        var r = PathingImportPngCommand.Import(doc, SafeImages.EncodePng(image));
         Assert.False(r.Ok);
     }
 

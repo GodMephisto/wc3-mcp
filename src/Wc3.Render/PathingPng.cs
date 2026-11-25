@@ -1,6 +1,5 @@
 // src/Wc3.Render/PathingPng.cs
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using War3Net.Build.Environment;
 
 namespace Wc3.Render;
@@ -35,7 +34,7 @@ public static class PathingPng
     private const int Gap = 2;
 
     /// <summary>Legend border, chosen so it is not a valid palette colour and reads as a frame.</summary>
-    private static readonly Rgba32 BorderColour = new(255, 255, 255);
+    private static readonly SKColor BorderColour = new(255, 255, 255);
 
     /// <summary>The OR of every named flag, so a decoded byte must not set any other bit.</summary>
     public static readonly PathingType ValidFlags = ComputeValidFlags();
@@ -49,7 +48,7 @@ public static class PathingPng
     }
 
     /// <summary>One legend row of a flag set, its name, and the colour that encodes it.</summary>
-    public sealed record PathingLegend(string Name, PathingType Flags, Rgba32 Colour);
+    public sealed record PathingLegend(string Name, PathingType Flags, SKColor Colour);
 
     /// <summary>The legend shown in every rendered image, none first then each named flag.</summary>
     public static IReadOnlyList<PathingLegend> Legend { get; } = BuildLegend();
@@ -63,19 +62,19 @@ public static class PathingPng
     }
 
     /// <summary>A pathing flag set to its palette colour.</summary>
-    public static Rgba32 EncodeColor(PathingType flags)
+    public static SKColor EncodeColor(PathingType flags)
     {
         int b = (int)flags;
-        return new Rgba32((byte)((b & 0x0F) * Step), (byte)(((b >> 4) & 0x0F) * Step), 0);
+        return new SKColor((byte)((b & 0x0F) * Step), (byte)(((b >> 4) & 0x0F) * Step), 0, 255);
     }
 
     /// <summary>A palette colour back to its flag set, or false for any colour the palette refuses.</summary>
-    public static bool TryDecodeColor(Rgba32 colour, out PathingType flags)
+    public static bool TryDecodeColor(SKColor colour, out PathingType flags)
     {
         flags = default;
-        if (colour.B != 0 || colour.R % Step != 0 || colour.G % Step != 0)
+        if (colour.Blue != 0 || colour.Red % Step != 0 || colour.Green % Step != 0)
             return false;
-        int b = (colour.R / Step) | ((colour.G / Step) << 4);
+        int b = (colour.Red / Step) | ((colour.Green / Step) << 4);
         if ((b & ~(int)ValidFlags) != 0)
             return false;
         flags = (PathingType)b;
@@ -98,16 +97,17 @@ public static class PathingPng
         int imageWidth = w + Gap + Swatch;
         int imageHeight = Math.Max(h, legendHeight);
 
-        using var image = new Image<Rgba32>(imageWidth, imageHeight);
+        using var image = SafeImages.NewBitmap(imageWidth, imageHeight);
+        var black = new SKColor(0, 0, 0, 255);
         for (int y = 0; y < imageHeight; y++)
             for (int x = 0; x < imageWidth; x++)
-                image[x, y] = new Rgba32(0, 0, 0, 255);
+                image.SetPixel(x, y, black);
 
         for (int y = 0; y < h; y++)
         {
             int rowBase = y * w;
             for (int x = 0; x < w; x++)
-                image[x, y] = EncodeColor(cells[rowBase + x]);
+                image.SetPixel(x, y, EncodeColor(cells[rowBase + x]));
         }
 
         int legendX = w + Gap;
@@ -119,13 +119,11 @@ public static class PathingPng
                 for (int dx = 0; dx < Swatch; dx++)
                 {
                     bool border = dx == 0 || dy == 0 || dx == Swatch - 1 || dy == Swatch - 1;
-                    image[legendX + dx, legendY + dy] = border ? BorderColour : colour;
+                    image.SetPixel(legendX + dx, legendY + dy, border ? BorderColour : colour);
                 }
         }
 
-        using var ms = new MemoryStream();
-        image.SaveAsPng(ms);
-        return ms.ToArray();
+        return SafeImages.EncodePng(image);
     }
 
     /// <summary>
@@ -145,8 +143,8 @@ public static class PathingPng
             return false;
         }
 
-        Image<Rgba32> image;
-        try { image = SafeImages.Load<Rgba32>(png); }
+        SKBitmap image;
+        try { image = SafeImages.Load(png); }
         catch (Exception ex) { error = $"could not decode pathing PNG ({ex.Message})"; return false; }
 
         using (image)
@@ -162,10 +160,10 @@ public static class PathingPng
             for (int y = 0; y < regionHeight; y++)
                 for (int x = 0; x < regionWidth; x++)
                 {
-                    var colour = image[x, y];
+                    var colour = image.GetPixel(x, y);
                     if (!TryDecodeColor(colour, out var flags))
                     {
-                        error = $"unknown pathing colour rgb({colour.R},{colour.G},{colour.B}) at ({x},{y})";
+                        error = $"unknown pathing colour rgb({colour.Red},{colour.Green},{colour.Blue}) at ({x},{y})";
                         return false;
                     }
                     result[y * regionWidth + x] = flags;

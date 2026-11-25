@@ -1,6 +1,5 @@
-// tests/Wc3.Tests/ModelRendererTests.cs
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+﻿// tests/Wc3.Tests/ModelRendererTests.cs
+using SkiaSharp;
 using Wc3.Modeling;
 using Wc3.Render;
 
@@ -46,7 +45,7 @@ public class ModelRendererTests
         var png = ModelRenderer.RenderPng(Tetrahedron(), NoTextures, 128, 128);
 
         Assert.Equal(PngSignature, png[..8]);
-        using var image = Image.Load<Rgba32>(png);
+        using var image = SafeImages.Load(png);
         Assert.Equal(128, image.Width);
         Assert.Equal(128, image.Height);
 
@@ -54,8 +53,9 @@ public class ModelRendererTests
         for (int y = 0; y < image.Height; y++)
             for (int x = 0; x < image.Width; x++)
             {
-                if (image[x, y].A == 255) opaque++;
-                else if (image[x, y].A == 0) transparent++;
+                byte alpha = image.GetPixel(x, y).Alpha;
+                if (alpha == 255) opaque++;
+                else if (alpha == 0) transparent++;
             }
         Assert.True(opaque > 100, $"expected a visible model, got {opaque} opaque pixels");
         Assert.True(transparent > 100, $"expected a transparent background, got {transparent} transparent pixels");
@@ -69,16 +69,16 @@ public class ModelRendererTests
         for (int i = 0; i < red.Length; i += 4) { red[i] = 255; red[i + 3] = 255; }
         var textures = new Dictionary<int, TextureImage> { [0] = new TextureImage(2, 2, red) };
 
-        using var image = Image.Load<Rgba32>(ModelRenderer.RenderPng(Tetrahedron(), textures, 64, 64));
+        using var image = SafeImages.Load(ModelRenderer.RenderPng(Tetrahedron(), textures, 64, 64));
 
         bool sawRed = false;
         for (int y = 0; y < image.Height; y++)
             for (int x = 0; x < image.Width; x++)
             {
-                var p = image[x, y];
-                if (p.A == 0) continue;
-                Assert.True(p.G == 0 && p.B == 0, $"({x},{y}) has non-red channels {p}");
-                if (p.R > 0) sawRed = true;
+                var p = image.GetPixel(x, y);
+                if (p.Alpha == 0) continue;
+                Assert.True(p.Green == 0 && p.Blue == 0, $"({x},{y}) has non-red channels {p}");
+                if (p.Red > 0) sawRed = true;
             }
         Assert.True(sawRed, "no red-textured pixel rendered");
     }
@@ -112,13 +112,13 @@ public class ModelRendererTests
         Assert.Equal(PngSignature, png[..8]);
         Assert.True(png.Length > 10_000, $"suspiciously small render ({png.Length} bytes)");
 
-        using var image = Image.Load<Rgba32>(png);
+        using var image = SafeImages.Load(png);
         Assert.Equal(512, image.Width);
         Assert.Equal(512, image.Height);
         int opaque = 0;
         for (int y = 0; y < image.Height; y++)
             for (int x = 0; x < image.Width; x++)
-                if (image[x, y].A == 255) opaque++;
+                if (image.GetPixel(x, y).Alpha == 255) opaque++;
         Assert.True(opaque > 5_000, $"expected a substantial model silhouette, got {opaque} opaque pixels");
     }
 }
