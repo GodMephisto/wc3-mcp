@@ -13,7 +13,7 @@ binary lives in a versioned folder, upgrading never hits a Windows file lock on 
 
 ```text
 npx -y wc3-mcp@latest
-```text
+```
 
 Point any MCP client at the same command to get one-click setup and an auto-update on every
 launch. For example, a client config that takes a command and args looks like this.
@@ -27,14 +27,14 @@ launch. For example, a client config that takes a command and args looks like th
     }
   }
 }
-```text
+```
 
 Then start the setup wizard once, which writes the `npx` entry into every supported client on
 this PC.
 
 ```text
 npx -y wc3-mcp@latest install --all
-```text
+```
 
 ## Requirements
 

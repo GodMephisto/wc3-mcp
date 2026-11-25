@@ -14,7 +14,7 @@ JSON. No map parsing or logic lives here.
 ```text
 dotnet build src/Wc3.Mcp
 dotnet publish src/Wc3.Mcp -c Release --self-contained -r win-x64 -o dist-mcp
-```text
+```
 
 The published server is `dist-mcp/Wc3.Mcp.exe`, with the native `CascLib.dll`
 (for base-game data) beside it. Keep them together. Publish into an empty folder,
@@ -30,7 +30,7 @@ itself up in the supported AI apps.
 ```text
 wc3ctl mcp install --all          registers "wc3ctl.exe mcp serve"
 Wc3.Mcp.exe install --all         registers "Wc3.Mcp.exe" with no arguments
-```text
+```
 
 `config <app>` prints the entry to paste by hand instead, `clients` shows which
 apps are set up and `doctor` checks the install. The setup code is in `Setup/`,
@@ -47,7 +47,7 @@ other client, add an entry like this under `mcpServers`.
     }
   }
 }
-```text
+```
 
 `WC3_GAME_DIR` is optional. It sets the Warcraft III install used to resolve
 base-game data. Precedence per call is the tool's `game_dir` argument, then the

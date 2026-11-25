@@ -25,7 +25,7 @@ Open PowerShell and run
 
 ```powershell
 irm https://raw.githubusercontent.com/GodMephisto/wc3-mcp/main/install.ps1 | iex
-```text
+```
 
 That downloads the latest release, checks its SHA-256, unpacks it into
 `%LOCALAPPDATA%\Programs\wc3-mcp`, adds that folder to your PATH and sets up
@@ -38,7 +38,7 @@ any folder you like, then from that folder run
 
 ```powershell
 .\wc3-mcp.exe install --all
-```text
+```
 
 The setup records wherever the exe actually is, so any folder works. It also adds
 that folder to your user PATH once, so from then on plain `wc3-mcp` works in any
@@ -60,7 +60,7 @@ For the full corpus and semantic search, install the local index. From your AI a
 
 ```powershell
 wc3ctl rag install
-```text
+```
 
 It fetches two files, once, and verifies each against a pinned digest. The embedding model `BAAI/bge-small-en-v1.5`, about 130 MB, and the corpus, about 61 MB from this repo's `dataset-v1` release. It then builds a local vector index and a graph. No database, no service, no key, and it is set low on CPU by default. After that `docs_search` is semantic and the graph tools `graph_neighbors`, `graph_hubs` and `graph_path` are live. `wc3ctl rag status` reports what is installed.
 
@@ -70,14 +70,14 @@ These need `wc3-mcp` on your PATH, which the one-line install and the first
 `wc3-mcp.exe install` both arrange. Until then, run them as `.\wc3-mcp.exe ...`
 from the folder the exe is in.
 
-```text
+```
 wc3-mcp install --all            set up every supported app found on this PC
 wc3-mcp install cursor vscode    set up only the apps named
 wc3-mcp uninstall --all          remove it again
 wc3-mcp config <app>             print the settings to paste by hand
 wc3-mcp clients                  list supported apps and whether each is set up
 wc3-mcp doctor                   check the install, the game folder and the apps
-```text
+```
 
 | App | Name to use | Where it is written |
 |---|---|---|
@@ -97,7 +97,7 @@ file stays as it was, and the file is copied to `NAME.wc3-mcp.bak` first. A file
 with comments in it (common in Zed and VS Code) is never rewritten, because that
 would delete the comments. The settings to paste are printed instead.
 
-### # Any other MCP app
+### Any other MCP app
 
 It is a standard stdio MCP server. Point your app at `wc3-mcp.exe` with no
 arguments. `wc3-mcp config cursor` prints a ready-made JSON entry with the real
@@ -126,7 +126,7 @@ cd wc3-mcp
 dotnet test --filter "Category!=Corpus&Category!=GameData&Category!=Doctor"
 dotnet publish src/Wc3.Mcp/Wc3.Mcp.csproj -c Release --self-contained -r win-x64 -o dist-mcp
 .\dist-mcp\wc3-mcp.exe install --all
-```text
+```
 
 The apps then start the exe inside your clone's `dist-mcp` folder, and that
 folder is what goes on your PATH, so keep the clone where it is or rerun the last
@@ -398,6 +398,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | validate | read-only | Check the map for structural problems, missing or empty files, entries that fail to load, and a script that cannot compile. Narrower than lint and a good fir... |
 | validate_strict | read-only | A stricter validate. Runs the default checks and adds three that are too strict to be a default, a map with no (listfile), a script that declares no entry po... |
 | version_info | read-only | Report the product version, the git short hash and UTC build time stamped into this build, and the name and version of the MCP server it carries. Read-only. |
+
 ## Safety
 
 Writing tools require `out_path` to differ from the input map. The original is

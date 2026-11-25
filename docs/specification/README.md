@@ -38,7 +38,7 @@ From this folder.
 ```text
 python tools/build_pdf.py
 python tools/build_pdf.py --light    # the light printing edition
-```text
+```
 
 The build runs `tools/measure_surface.py` and `tools/check_counts.py` first. That tool starts the published server, reads sections 3.1, 3.3 and 3.5 out of the markdown, and refuses to print when a figure disagrees with the exe. It looks for `dist-mcp/Wc3.Mcp.exe` in `../Wc3_CLI` and can be pointed anywhere with `--exe` or `WC3_MCP_EXE`. To print a document edit with no server at hand, pass `--skip-measure`, and record which exe the numbers came from.
 
@@ -58,6 +58,6 @@ The markdown is the file to edit. The PDF is the artifact, and both are kept in 
 ```text
 python tools/sync_requirements.py    # refresh the data and the column
 python tools/build_pdf.py            # print the PDF
-```text
+```
 
 A new requirement starts as `gap` when a row in section 10 names it, and `unassessed` otherwise. To mark one met, set `"status": "met"` and `"test": "Test_Name"` in the JSON and run the sync again. Do not edit the Status column by hand.

@@ -19,7 +19,7 @@ cd wc3-mcp
 dotnet build
 dotnet test --filter "Category!=Corpus&Category!=GameData&Category!=Doctor&Category!=Timing"
 dotnet test --filter "Category=Timing"
-```text
+```
 
 Tests marked `GameData` need a Warcraft III install, and `Corpus` tests need
 real maps on disk. `Timing` tests assert wall clock, so they run on their own

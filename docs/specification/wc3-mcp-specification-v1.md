@@ -143,7 +143,7 @@ flowchart TD
   classDef core fill:#1d1a33,stroke:#7a6bb5,color:#e2dcf5,stroke-width:1.4px
   classDef file fill:#0f1a28,stroke:#5b7a9c,color:#cddced,stroke-width:1.4px
   classDef data fill:#101c2a,stroke:#405a78,color:#b9cbe0,stroke-width:1.4px,stroke-dasharray:5 3
-```text
+```
 
 *Each arrow names the requirement behind it, here and in every diagram after it.*
 
@@ -383,7 +383,7 @@ The initialize reply is the whole first impression. It is reproduced here as the
   "serverInfo", { "name", "wc3ctl", "version", "0.4.13" },
   "instructions", "wc3ctl 0.4.13, target Beta-ROC-v1.00 (settings), game data available (3.0.1.24371). Three rules. Read a map before you change it. A write never overwrites its input, it writes a sibling .edited copy or the out_path you name. Chain edits by passing the previous output as the next call's map. Call quickstart when the request names an outcome rather than a tool, and read wc3://tools for the whole surface."
 }
-```text
+```
 
 The revision in that reply is the one the client offered, because the capture sent 2025-06-18. The same build answers 2025-11-25 to a client that offers it, and the start line names that newest revision.
 
@@ -395,11 +395,11 @@ A write returns a JSON object, not prose. The shape varies by family, but every 
 
 ```json
 { "savedTo", "C:\\maps\\MyMap.edited.w3x", "message", "set Name = ..." }
-```text
+```
 
 ```json
 { "savedTo", "C:\\maps\\MyMap.ported.w3x", "report", { "remaps", [], "objects", 12 } }
-```text
+```
 
 There is no digest, no count of files rewritten and no output schema. A caller cannot tell from the result whether the output is really the file it intended, nor whether the edit touched one internal file or forty (SAF-06, RES-02).
 
@@ -845,7 +845,7 @@ sequenceDiagram
     P-->>C, JSON result (RES-01)
     C->>P, close stdin
     P-->>C, exit 0 (TRN-03)
-```text
+```
 
 Two properties matter here. The surface is built once, so the tool list and the catalog cannot disagree. And nothing the server writes on this path touches a map, so a client that lists tools and stops has changed nothing on disk.
 
@@ -874,7 +874,7 @@ sequenceDiagram
     H-->>T, result POCO
     T-->>C, JSON + structuredContent (RES-01, RES-02)
     Note over T,D, no write gate is reachable on this path (SAF-02)
-```text
+```
 
 A read that needs base game data resolves the game directory from the argument, then `WC3_GAME_DIR`, then auto-detection, and when none is present it returns the fields it can read from the map with the missing ones marked (PAR-04).
 
@@ -908,7 +908,7 @@ sequenceDiagram
     W->>FS, read step1
     W-->>C, savedTo step2, with the digest of step1 as its input
     Note over C,FS, the second call names the first output, so neither edit is lost
-```text
+```
 
 The digest is an input revision check, not a chain. It refuses a base that changed after it was read, and it cannot detect a caller that reused an unchanged base by mistake. The chaining rule lives in the tool descriptions and the instructions, and the digest makes only the first half of it enforceable. A batch call removes the mistake entirely for one family, and `object_batch_set` is it. The remaining families still chain, which is G-50.
 
@@ -966,7 +966,7 @@ sequenceDiagram
     P-->>C, savedTo target.ported.w3x and the port report
     C->>P, audit_hero(target.ported, rawcode)
     P-->>C, the cast chain, or the exact missing link
-```text
+```
 
 The source and the target are never modified, and the result is a third file. That is why a port can be reviewed before it is adopted, and why a failed port leaves both inputs as they were.
 
@@ -1000,7 +1000,7 @@ sequenceDiagram
     else verdict yes
         C->>M, play test, outside the server
     end
-```text
+```
 
 The server can prove the script compiles and that the archive is structurally sound. It cannot prove the map plays. The instructions and the prompt SHALL say so, because a green audit that reads as a play test is the failure this flow exists to prevent.
 
@@ -1033,7 +1033,7 @@ sequenceDiagram
     D->>I, embed the query, rank chunks
     I-->>D, semantic matches
     D-->>C, passages, mode semantic
-```text
+```
 
 Lexical search is the contract. Semantic search is an improvement a caller opts into, and a failed index build leaves lexical search working.
 
@@ -1065,7 +1065,7 @@ sequenceDiagram
     E-->>U, restart each client
     U->>E, doctor
     E-->>U, exe, CascLib, context, game, clients, version (SET-06)
-```text
+```
 
 The install is idempotent, so running it again after an update changes nothing except the version the entry points at.
 
@@ -1095,7 +1095,7 @@ sequenceDiagram
     G->>N, publish npm with OIDC (PKG-02)
     G->>N, publish server.json (PKG-05)
     N-->>M, the version a user gets
-```text
+```
 
 A commit that changes the MCP server is not released until the mirror has exported it, bumped its version, tagged, built and published. The specification treats that as one release with two repositories, not two releases.
 
@@ -1184,7 +1184,7 @@ A result is a JSON object in the text content and, after RES-02, the same object
   "bytesWritten", 767366,
   "message", "set unit u000 hit points to 500"
 }
-```text
+```
 
 A list result is wrapped, so a caller always receives an object.
 
@@ -1198,7 +1198,7 @@ A list result is wrapped, so a caller always receives an object.
   "hasMore", true,
   "nextOffset", 100
 }
-```text
+```
 
 An error is a tool error with a stable code.
 
@@ -1274,7 +1274,7 @@ erDiagram
     string next "later"
     string path
   }
-```text
+```
 
 The write fields carry the digest and the rewritten count so a caller can prove what changed (SAF-06). The list fields exist so a page can be asked for rather than returned whole (RES-03, RES-10). The error fields carry a stable code and a next step, so a caller can branch rather than read prose (ERR-02).
 
@@ -1298,7 +1298,7 @@ pie showData
   "Repair and compatibility" , 15
   "Leaks and benchmarks" , 27
   "Product and context" , 14
-```text
+```
 
 ### 6.6 Resources
 
@@ -1381,7 +1381,7 @@ mcpb/manifest.json           the Claude Desktop bundle manifest
 server.json                  the MCP Registry entry, filled at release
 %LOCALAPPDATA%/Programs/wc3-mcp/versions/v<version>/
                              the per-version binary cache
-```text
+```
 
 The per-version cache is why an upgrade never hits a Windows lock on a running exe. Two versions are kept, and a prune that cannot delete a running exe is ignored. A self-update over a fixed install follows the same idea, renaming a locked exe or DLL to a `.old` sibling and copying the new file in.
 
@@ -1808,7 +1808,7 @@ The toolkit is unusually well served by commands that generate what a person wou
 
 ```text
 wc3ctl changelog --from v0.4.12 --to v0.4.13 --out changelog/0.4.13.md
-```text
+```
 
 The limit is in what it cannot see. It does not read requirement IDs, it does not put a `BREAKING CHANGE` paragraph in its own section, it does not link an issue, and it cannot tell a commit that shipped from one that was later reverted. AUT-10 records those limits. G-37 records that no note names what it serves, which is DOC-04, and `tools/check_changelog_ids.py` is the check that reports it.
 
@@ -1871,7 +1871,7 @@ sequenceDiagram
     G->>P, npm with OIDC (PKG-02)
     G->>P, server.json (PKG-05)
     G->>P, mcpb bundle (PKG-04)
-```text
+```
 
 The chain is automated from the tag onward. The parts before it, the changelog, the docs, the publish and the local test run, are commands a person or an agent runs in an order they have to remember. That is the gap the automation requirements target.
 
@@ -1926,7 +1926,7 @@ flowchart TD
   a1["Handler in Wc3.Commands"] --> a2["CLI verb"]
   classDef s fill:#14263d,stroke:#5f8fc4,color:#dbe7f2,stroke-width:1.2px
   class a1,a2 s
-```text
+```
 
 **2 Surface.** The tool is declared once, and the tests hold its name and its hints.
 
@@ -1935,7 +1935,7 @@ flowchart TD
   b1["Tool method<br/>hints, title, text"] --> b2["Mutating prefix"] --> b3["ExpectedTools"] --> b4["Parity map"]
   classDef s fill:#14263d,stroke:#5f8fc4,color:#dbe7f2,stroke-width:1.2px
   class b1,b2,b3,b4 s
-```text
+```
 
 **3 Proof.** A write is proven against a synthetic map, and a publish is proven against the exe.
 
@@ -1999,7 +1999,7 @@ flowchart TD
   s1 --> s2 --> s3 --> s5
   s1 --> s4 --> s5
   classDef s fill:#14263d,stroke:#5f8fc4,color:#dbe7f2,stroke-width:1.2px
-```text
+```
 
 - **Safe chaining.** The write gate, the digests, `expect_input_sha256`, `confirm`, atomic save and the error codes. It unlocks every workflow where an agent makes more than one edit. The first part is in, and `object_batch_set` removes the chained-edit mistake for object fields by applying up to 500 edits in one load and one save.
 - **Small client.** Output schemas, the result cap and paging, the lossy decode report, `file_extract` and `tool_help`. It makes the server usable from a context that cannot hold 275 descriptions.
