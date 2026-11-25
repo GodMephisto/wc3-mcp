@@ -6,3 +6,7 @@ data/
 dist-mcp/
 dist-mcp.bak/
 dist-mcp.old/
+
+# Third-party reference docs shipped so the agent can read them, written by
+# Hive Workshop authors, not by this repository.
+src/Wc3.Mcp/context/
