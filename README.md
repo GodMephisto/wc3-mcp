@@ -70,7 +70,7 @@ These need `wc3-mcp` on your PATH, which the one-line install and the first
 `wc3-mcp.exe install` both arrange. Until then, run them as `.\wc3-mcp.exe ...`
 from the folder the exe is in.
 
-```
+```text
 wc3-mcp install --all            set up every supported app found on this PC
 wc3-mcp install cursor vscode    set up only the apps named
 wc3-mcp uninstall --all          remove it again
