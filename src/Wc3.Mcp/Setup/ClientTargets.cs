@@ -20,7 +20,7 @@ public enum ConfigStyle
 /// <param name="DisplayName">The product name shown to people.</param>
 /// <param name="Style">How the config is written.</param>
 /// <param name="ServersKey">Top-level key holding the server map (Json style only).</param>
-/// <param name="WriteType">Whether entries carry <c>"type": "stdio"</c>.</param>
+/// <param name="WriteType">Whether entries carry <c>"type", "stdio"</c>.</param>
 /// <param name="Candidates">Config files to use, each paired with the folder whose presence means the client is installed.</param>
 /// <param name="Docs">Where the format was confirmed.</param>
 public sealed record ClientTarget(

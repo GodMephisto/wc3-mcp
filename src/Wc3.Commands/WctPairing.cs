@@ -14,7 +14,7 @@ namespace Wc3.Commands;
 /// The rule is conditional on the wtg sub-version, and both branches were measured across the
 /// whole map library rather than reasoned about (WctPairingRuleSweep, 9 decisive maps and no
 /// counter-example, 5 more consistent but unable to distinguish the branches because they have no
-/// GUI triggers at all):
+/// GUI triggers at all),
 ///
 ///   sub-version ABSENT  one slot per TriggerDefinition, and a GUI trigger holds an EMPTY slot.
 ///                       RATankD_516.2 has 606 slots for 606 definitions with exactly 42 empty
@@ -52,7 +52,7 @@ public static class WctPairing
         bool guiHoldsSlot = GuiTriggersHoldASlot(wtg);
 
         // Keyed by reference on purpose. Two distinct trigger definitions can carry the same Id
-        // (measured: Anime_WOS2_0.30d has 24 duplicate ids, because the sub-version format
+        // (measured, Anime_WOS2_0.30d has 24 duplicate ids, because the sub-version format
         // namespaces ids by item type), and a value-equality key would collapse them onto one
         // slot. ReferenceEqualityComparer is IEqualityComparer<object>, so it needs wrapping to
         // be used as a typed comparer rather than cast, which yields null and silently reverts to

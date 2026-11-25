@@ -13,12 +13,12 @@ namespace Wc3.Commands;
 /// configuration. A collision with a content-identical target object (a prior port of
 /// the same object) reuses the existing code instead, so re-porting the same unit is a
 /// no-op rather than a duplicator. This is the reliable "Tier 1" port (object data +
-/// assets + strings); the JASS script closure is layered on separately.
+/// assets + strings). The JASS script closure is layered on separately.
 /// </summary>
 public static class PortCommand
 {
     /// <summary>
-    /// Durability trap, surfaced whenever any script is ported: the ported JASS lands in
+    /// Durability trap, surfaced whenever any script is ported, the ported JASS lands in
     /// war3map.j only, never in the GUI trigger tree (war3map.wtg/wct), and the World
     /// Editor regenerates war3map.j from that tree on save, silently wiping the port.
     /// </summary>
@@ -98,7 +98,7 @@ public static class PortCommand
             results.Add(PortCore(source, bundle, target, used, alreadyPorted, pendingCopies,
                 includeScript: false, apply));
 
-        // One combined script port: the union of the closures (shared dispatcher functions
+        // One combined script port, the union of the closures (shared dispatcher functions
         // carried once) with the union of every unit's rawcode remap.
         ScriptPortInfo? script = null;
         var warnings = new List<string>();
@@ -133,9 +133,9 @@ public static class PortCommand
     /// <summary>
     /// The single shared port pipeline. <paramref name="apply"/> true mutates the target;
     /// false computes the identical report without touching it. <paramref name="used"/>
-    /// accumulates allocated rawcodes across a batch; <paramref name="alreadyPorted"/>
+    /// accumulates allocated rawcodes across a batch. <paramref name="alreadyPorted"/>
     /// (batch only) maps source ids already ported by an earlier bundle to their target
-    /// ids so shared dependencies are reused, not duplicated; <paramref name="pendingCopies"/>
+    /// ids so shared dependencies are reused, not duplicated. <paramref name="pendingCopies"/>
     /// (preview only) simulates the asset copies a real port would have made.
     /// </summary>
     private static PortResult PortCore(
@@ -154,7 +154,7 @@ public static class PortCommand
         // ported object so the report can group them, the port itself carries both alike.
         var carriedByClosure = BundleStructure.CarriedByScriptClosure(bundle);
 
-        // 1) Rawcode remap: reassign any custom rawcode already defined in the target.
+        // 1) Rawcode remap, reassign any custom rawcode already defined in the target.
         //    A collision whose target content is exactly what this port would inject is
         //    a prior port of the same object, reused, so re-porting stays idempotent.
         //    Objects an earlier bundle in this batch already ported are reused as-is.
@@ -193,12 +193,12 @@ public static class PortCommand
 
             if (used.Contains(id))
             {
-                // Idempotency: a colliding target object that is content-identical to
+                // Idempotency, a colliding target object that is content-identical to
                 // what this port would inject (same kind, same base, same modifications
                 // after TRIGSTR inlining) is a prior port of this very object, reuse
                 // its code instead of duplicating it under a fresh one. Any actual
                 // difference is a true collision and falls through to the remap below.
-                // Single-port only: in a batch (alreadyPorted != null) the shared-object
+                // Single-port only, in a batch (alreadyPorted != null) the shared-object
                 // reuse below handles cross-bundle dedup, and comparing against the
                 // live-mutating target would make preview (no mutation) diverge from port.
                 if (alreadyPorted is null && TargetHasIdenticalObject(source, target, o.Kind, id, srcStrings))
@@ -229,7 +229,7 @@ public static class PortCommand
             var kind = byKind.Key;
             var wantIds = byKind.Select(o => o.Rawcode.FromRawcode()).ToHashSet();
 
-            // Data-loss guard: if the target's object file for this kind is present but failed to
+            // Data-loss guard, if the target's object file for this kind is present but failed to
             // parse (Model null), injecting would build a fresh empty store and Save would drop
             // every object the target already had. Refuse and warn rather than wipe it.
             var kindFile = ObjectKinds.Info(kind).MapFile;
@@ -282,7 +282,7 @@ public static class PortCommand
         {
             if (!f.PresentInMap) { skipped.Add($"{f.Path} (base-game/not imported)"); continue; }
             // Models are referenced as ".mdl" but stored as ".mdx" (and vice versa, and
-            // sometimes extensionless): resolve them through the shared model-aware finder
+            // sometimes extensionless), resolve them through the shared model-aware finder
             // so the copy step locates the SAME bytes discovery marked present. Using plain
             // FindFile here silently dropped every custom model from the port.
             var srcEntry = ResolveEntry(source, f.Path, f.Category);
@@ -356,7 +356,7 @@ public static class PortCommand
                 warnings.Add(ScriptDurabilityWarning);
         }
 
-        // Batch bookkeeping: later bundles reuse everything this one ported (identity
+        // Batch bookkeeping, later bundles reuse everything this one ported (identity
         // mappings included, a later bundle must not treat them as fresh collisions).
         if (alreadyPorted is not null)
             foreach (var kv in remap)
@@ -373,14 +373,14 @@ public static class PortCommand
 
     // ---- prior-port detection (idempotent re-port) --------------------------
 
-    /// <summary>Empty remap for dedup normalization: TRIGSTR inlining only, nothing rewritten.</summary>
+    /// <summary>Empty remap for dedup normalization, TRIGSTR inlining only, nothing rewritten.</summary>
     private static readonly Dictionary<int, int> IdentityRemap = new();
 
     /// <summary>
     /// True when the target already defines <paramref name="id"/> as an object of the
     /// same kind whose content is EXACTLY what this port would inject for it, the
     /// merged map ⊕ skin group with TRIGSTR references inlined and no code rewritten.
-    /// That is the signature of a prior port of this very object; a different object
+    /// That is the signature of a prior port of this very object. A different object
     /// that merely shares the code never matches, so true collisions still remap.
     /// </summary>
     private static bool TargetHasIdenticalObject(
@@ -400,7 +400,7 @@ public static class PortCommand
     }
 
     /// <summary>The document's merged (map ⊕ skin, skin wins per field) group for one
-    /// object id of a kind, the neutral form the port injects; null when undefined.</summary>
+    /// object id of a kind, the neutral form the port injects. Null when undefined.</summary>
     private static PortGroup? MergedGroup(MapDocument doc, ObjectKind kind, int id)
     {
         var want = new HashSet<int> { id };
@@ -412,7 +412,7 @@ public static class PortCommand
         return merged;
     }
 
-    /// <summary>Exact content equality: same base/custom ids and the same modification
+    /// <summary>Exact content equality, same base/custom ids and the same modification
     /// set, every (level, field, type, value) equal, order-insensitively.</summary>
     private static bool GroupsEqual(PortGroup a, PortGroup b)
     {

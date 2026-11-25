@@ -80,7 +80,7 @@ public static class HeroRosterCommand
 
         // The roster is the call whose rawcodes are actually UNITS, not the one with the most
         // rawcodes. Counting alone picks the wrong function and does it narrowly enough to look
-        // right: on GGGA_V0.05 the native SetUnitAbilityLevelSwapped carries 172 distinct
+        // right, on GGGA_V0.05 the native SetUnitAbilityLevelSwapped carries 172 distinct
         // rawcodes against RPB_AddHero's 170 and wins by two, except that its rawcodes are
         // ABILITY codes and not one of them resolves to a unit. Scoring by unit resolution
         // separates them 170 to 0 rather than 172 to 170.

@@ -12,7 +12,7 @@ public sealed record LibraryValidateMap(
     IReadOnlyList<ValidationIssue> Issues,
     string? Error);
 
-/// <summary>A folder validation: every map's row plus the valid and invalid counts.</summary>
+/// <summary>A folder validation, every map's row plus the valid and invalid counts.</summary>
 public sealed record LibraryValidateResult(
     IReadOnlyList<LibraryValidateMap> Maps,
     int Valid,

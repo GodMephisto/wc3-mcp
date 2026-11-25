@@ -7,7 +7,7 @@ namespace Wc3.Modeling;
 /// <summary>
 /// Decodes .dds textures to RGBA8, Reforged repacked the classic .blp textures as DDS
 /// under the same CASC paths, so base-game model previews need it. Supports the formats
-/// those files actually use: BC1/DXT1, BC2/DXT3, BC3/DXT5 (fourCC or DX10 header) and
+/// those files actually use, BC1/DXT1, BC2/DXT3, BC3/DXT5 (fourCC or DX10 header) and
 /// uncompressed 32-bit RGBA/BGRA. Top mip only.
 /// </summary>
 public static class DdsDecoder
@@ -49,7 +49,7 @@ public static class DdsDecoder
 
         if ((pfFlags & PfFourCc) != 0 && fourCc == "DX10")
         {
-            // DXGI_FORMAT: BC1_* = 70-72, BC2_* = 73-75, BC3_* = 76-78.
+            // DXGI_FORMAT, BC1_* = 70-72, BC2_* = 73-75, BC3_* = 76-78.
             int dxgi = BinaryPrimitives.ReadInt32LittleEndian(span[128..]);
             dataOffset += 20;
             fourCc = dxgi switch
@@ -167,7 +167,7 @@ public static class DdsDecoder
     }
 
     /// <summary>The shared RGB565 palette block (8 bytes). BC2/BC3 always use the 4-color
-    /// palette (<paramref name="opaqueMode"/>); standalone BC1 switches on c0 &lt;= c1 to
+    /// palette (<paramref name="opaqueMode"/>). Standalone BC1 switches on c0 &lt;= c1 to
     /// the 3-color + transparent form.</summary>
     private static void DecodeColorBlock(byte[] dds, int src, byte[] block, bool opaqueMode)
     {

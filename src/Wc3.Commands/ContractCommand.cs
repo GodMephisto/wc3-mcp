@@ -4,7 +4,7 @@ using Wc3.Model;
 
 namespace Wc3.Commands;
 
-/// <summary>One real registration the target already performs: the rawcode it registers and the
+/// <summary>One real registration the target already performs, the rawcode it registers and the
 /// whole source line, kept so a caller can read the OTHER arguments of that call.</summary>
 public sealed record RosterCall(string Rawcode, string Line);
 
@@ -28,7 +28,7 @@ public sealed record HeroDispatchChain(string Function, int Branches, IReadOnlyL
 
 /// <summary>
 /// A roster expressed as a repeating STATEMENT BLOCK rather than a single call. Some maps register
-/// a hero with one function call; others need several statements (a slot assignment, a counter, a
+/// a hero with one function call. Others need several statements (a slot assignment, a counter, a
 /// hidden preview dummy, one call per ability). <see cref="TemplateLines"/> is a real existing
 /// entry, so an installer can copy it and substitute rather than invent the shape.
 /// </summary>
@@ -59,20 +59,20 @@ public sealed record ContractResult(
     IReadOnlyList<HeroArray> HeroArrays,
     IReadOnlyList<RosterTemplate> Templates,
     /// <summary>
-    /// Per-hero kit ladders. Measured in game on GGGA: an installed hero passed every gate the
+    /// Per-hero kit ladders. Measured in game on GGGA, an installed hero passed every gate the
     /// pick screen has (registered, right role, RPB_IsHeroCommitValid true) and CreateUnit
     /// produced her unit, and she still had no kit, because the map wires each hero's spells in a
     /// hand-written branch of WS_FinalizeWorkingSourceHero and she has none. Reported rather than
-    /// generated, for the same reason a stub is never bound on a name match alone: a branch copied
+    /// generated, for the same reason a stub is never bound on a name match alone, a branch copied
     /// from another hero would bind THAT hero's triggers and caster global to this unit, which is
     /// worse than doing nothing and is invisible until someone plays her.
     /// </summary>
     IReadOnlyList<HeroDispatchChain> HeroDispatchChains,
     /// <summary>
     /// What the map's own heroes agree a hero's stats look like, when they agree on anything.
-    /// Part of the contract for the same reason the roster call is: a hero can be registered,
+    /// Part of the contract for the same reason the roster call is, a hero can be registered,
     /// selectable and completely correct and still be unplayable because she brought her home
-    /// map's stat model with her. Measured over the whole roster here; install re-measures over
+    /// map's stat model with her. Measured over the whole roster here. Install re-measures over
     /// the hero's own role, which is narrower and more accurate.
     /// </summary>
     HeroStatConvention? StatConvention)
@@ -82,14 +82,14 @@ public sealed record ContractResult(
 }
 
 /// <summary>
-/// Discovers a map's HERO INTEGRATION CONTRACT: what a unit must be registered with before the
+/// Discovers a map's HERO INTEGRATION CONTRACT, what a unit must be registered with before the
 /// map's own systems will treat it as a playable hero.
 ///
 /// This is the piece nothing else in the ecosystem models, and it is where ported heroes actually
 /// die. A hero can have correct object data, correct assets and a compiling script and still not
 /// exist to the player, because the map builds its roster from its own script. GGGA's is
 /// <c>RPB_AddHero(rawcode, role, portrait)</c> called 165 times inside
-/// <c>RPB_SetHeroCardList</c>; a hero absent from that list has no card no matter how complete
+/// <c>RPB_SetHeroCardList</c>. A hero absent from that list has no card no matter how complete
 /// everything else is. Finding it took reading a 200,000-line script by hand.
 ///
 /// The generalisable signature is a function called many times whose first argument is a rawcode
@@ -143,7 +143,7 @@ public static class ContractCommand
                 Array.Empty<HeroDispatchChain>(), null);
 
         // Latin-1, not UTF-8. Unlike the other read-only scans in this codebase, what this one
-        // decodes DOES get written back: install copies ExampleCall and a RosterTemplate's lines
+        // decodes DOES get written back, install copies ExampleCall and a RosterTemplate's lines
         // verbatim into the target's war3map.j. A war3map.j is a byte stream with no declared
         // encoding and real maps carry bytes that are not valid UTF-8, so a UTF-8 decode turns each
         // into U+FFFD and the Latin-1 write-back then stores '?'. Latin-1 round-trips every byte.
@@ -220,7 +220,7 @@ public static class ContractCommand
     /// </summary>
     /// <remarks>
     /// Searching for a registration FUNCTION found nothing on a map that plainly has hero
-    /// selection, because its roster is an array of ability-id globals, not rawcode literals:
+    /// selection, because its roster is an array of ability-id globals, not rawcode literals,
     /// <c>set Hero_ID0[n]=Raiden_ID</c>, followed by a counter bump, a hidden preview dummy and one
     /// UnitAddAbility per spell. Five statements per hero, repeated 56 times, with the display name
     /// set in a separate if/elseif chain.
@@ -246,7 +246,7 @@ public static class ContractCommand
         foreach (var (name, at) in sites.OrderByDescending(kv => kv.Value.Count))
         {
             if (at.Count < 3) continue;   // a handful is a coincidence, not a roster
-            // The pattern alone is not enough: an item table matches it too
+            // The pattern alone is not enough, an item table matches it too
             // (ItemsCurrentItem_ID). The same discipline as identifying a registration function -
             // the NAME has to indicate a unit, or we report something the caller cannot use.
             if (!LooksLikeHeroArray(name)) continue;
@@ -281,7 +281,7 @@ public static class ContractCommand
 
     /// <summary>
     /// What separates a KIT ladder from a lookup table. Branching on a hero's rawcode many times
-    /// is not enough on its own: GGGA has several big ladders that only return a number (how much
+    /// is not enough on its own, GGGA has several big ladders that only return a number (how much
     /// SP an upgrade costs, which respawn portal a hero uses), and naming those as things a ported
     /// hero must be added to is noise that buries the one that matters. A kit branch WIRES the
     /// unit, so the function has to do at least one of these somewhere in its body.
@@ -296,7 +296,7 @@ public static class ContractCommand
     /// </summary>
     /// <remarks>
     /// This is the last thing a ported hero is missing after the roster, and it is invisible to
-    /// every other check: the hero is registered, selectable, and her unit is created, so nothing
+    /// every other check, the hero is registered, selectable, and her unit is created, so nothing
     /// reports a problem, and in game she simply has no spells. Detected so install can say which
     /// function needs a branch, by name, instead of leaving it to be found by playing her.
     /// </remarks>
@@ -330,7 +330,7 @@ public static class ContractCommand
         Flush();
 
         // The biggest five, not all of them. GGGA has thirteen ladders over the branch floor and a
-        // list that long is not read; the one that actually blocked a hero (93 branches) sits
+        // list that long is not read. The one that actually blocked a hero (93 branches) sits
         // fourth, so the cut has to be low enough to keep it and high enough to stay readable.
         return found.OrderByDescending(c => c.Branches).Take(5).ToList();
     }
@@ -354,7 +354,7 @@ public static class ContractCommand
         var entry = doc.GetFile("war3map.j") ?? doc.GetFile("scripts\\war3map.j");
         if (entry is null) return Array.Empty<IntegrationPoint>();
 
-        // Latin-1: a script is a byte stream with no declared encoding and real maps are not valid
+        // Latin-1, a script is a byte stream with no declared encoding and real maps are not valid
         // UTF-8, so decoding as UTF-8 mangles content this scan then fails to match.
         var lines = System.Text.Encoding.Latin1
             .GetString(entry.CurrentBytes).Split('\n');
@@ -389,7 +389,7 @@ public static class ContractCommand
     /// Detecting registries by shape found five rawcode-branching functions on GGGA and missed the
     /// rest, so a hero was fixed one requirement at a time out of about a dozen and the symptom
     /// never moved. Diffing against a hero that demonstrably works finds ALL of them at once,
-    /// because the map itself defines the contract by example: a native Stalker is referenced in 26
+    /// because the map itself defines the contract by example, a native Stalker is referenced in 26
     /// functions, a freshly installed hero in 9.
     ///
     /// A function whose NAME contains the reference hero's own name is flagged, since it is that

@@ -67,7 +67,7 @@ public sealed record MapInfoFields(
     bool ItemClassification,
     bool AccurateProbabilities);
 
-/// <summary>One picker choice for an enum-backed field: Name is the value
+/// <summary>One picker choice for an enum-backed field, Name is the value
 /// <see cref="MapInfoCommand.Set"/> accepts (and <see cref="MapInfoCommand.Read"/>
 /// returns), Id is the short World-Editor style code shown beside it.</summary>
 public sealed record FieldChoice(string Name, string Id);
@@ -76,7 +76,7 @@ public sealed record FieldChoice(string Name, string Id);
 /// Read/write access to the map-info file (war3map.w3i). The write side mutates the
 /// already-parsed War3Net <see cref="MapInfo"/> model and re-serializes the WHOLE file
 /// via War3Net's writer, so every field the parser captured, including the Unk*
-/// unknowns, is re-emitted; untouched fields survive byte-for-byte
+/// unknowns, is re-emitted. Untouched fields survive byte-for-byte
 /// (<c>MapInfoCommandTests.Unchanged_reserialize_is_byte_identical</c> pins this).
 /// MapDocument.SerializeEntry has no MapInfo case, so the bytes go back through
 /// <see cref="MapDocument.AddOrReplaceRawFile"/> (raw payloads are written verbatim on Save).
@@ -85,7 +85,7 @@ public static class MapInfoCommand
 {
     public const string FileName = "war3map.w3i";
 
-    /// <summary>Map Options checkboxes: Set/Read field name to its MapFlags bit.
+    /// <summary>Map Options checkboxes, Set/Read field name to its MapFlags bit.
     /// <see cref="Set"/> accepts true/false (or 1/0) for these.</summary>
     private static readonly IReadOnlyDictionary<string, MapFlags> FlagFields =
         new Dictionary<string, MapFlags>(StringComparer.OrdinalIgnoreCase)
@@ -149,7 +149,7 @@ public static class MapInfoCommand
         var info = GetInfo(doc);
         ApplyField(info, field, value);
         var entry = doc.AddOrReplaceRawFile(FileName, Serialize(info));
-        // AddOrReplaceRawFile drops the parsed model (raw payload wins on Save); restore
+        // AddOrReplaceRawFile drops the parsed model (raw payload wins on Save). Restore
         // it so in-memory readers keep seeing the mutated MapInfo. The two stay
         // consistent, the override bytes were serialized from this very model.
         entry.Model = info;
@@ -157,7 +157,7 @@ public static class MapInfoCommand
     }
 
     /// <summary>Pure field mapping onto the War3Net model (hermetically testable).
-    /// Values arrive as strings: floats/ints invariant, colors "R,G,B[,A]", flags
+    /// Values arrive as strings, floats/ints invariant, colors "R,G,B[,A]", flags
     /// true/false, enums by name (tilesets also by letter, weather also by 4cc).</summary>
     public static void ApplyField(MapInfo info, string field, string value)
     {
@@ -217,7 +217,7 @@ public static class MapInfoCommand
 
     // The identity/loading/prologue fields can be TRIGSTR_ references into war3map.wts (the
     // World Editor stores "Gutsy Geoid Game" as e.g. TRIGSTR_4084). Resolve them for display
-    // so the panel shows real text, not the raw key - the reason Map Info looked "erased".
+    // so the panel shows real text, not the raw key, the reason Map Info looked "erased".
     // Non-TRIGSTR values pass through unchanged, so codes/hex fields stay as-is.
     private static MapInfoFields ToFields(MapInfo info, MapStrings strings)
     {

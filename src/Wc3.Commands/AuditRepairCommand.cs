@@ -76,7 +76,7 @@ public static class AuditRepairCommand
             edits.Add(new("ability", r.Rawcode, "areq:0", r.Inherited, "_",
                 $"inherited Requirements name {string.Join(", ", r.Unmet)}, which the map never defines"));
 
-        // Level gaps: a field stops before the declared level count and the base has no value
+        // Level gaps, a field stops before the declared level count and the base has no value
         // there either, so the last level resolves to nothing. Copy the nearest lower level's
         // value into each gap, which is what the Object Editor does when a level is added.
         var gapScan = AuditCommand.Execute(doc, gameDirOverride, new[] { "level-gap" });

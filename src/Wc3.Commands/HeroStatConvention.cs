@@ -5,7 +5,7 @@ using Wc3.Model;
 namespace Wc3.Commands;
 
 /// <summary>
-/// One field of a target map's hero stat convention, with the evidence for it: how many of the
+/// One field of a target map's hero stat convention, with the evidence for it, how many of the
 /// map's own heroes were sampled, and how many of them state this exact value.
 /// </summary>
 public sealed record StatConventionField(string Code, string Value, int Samples, int Agreement)
@@ -26,7 +26,7 @@ public sealed record StatConventionField(string Code, string Value, int Samples,
 /// </summary>
 /// <remarks>
 /// Two maps can both be hero arenas and disagree completely about where a hero's durability comes
-/// from. Shadow Nanaya's home map drives it from attributes: she has strength 55, agility 72,
+/// from. Shadow Nanaya's home map drives it from attributes, she has strength 55, agility 72,
 /// intelligence 50 and a 100 point hit-point pool that those attributes inflate. GGGA does the
 /// opposite, every one of its 167 registered heroes has strength, agility and intelligence pinned
 /// at exactly 0 and states a flat pool instead (its Stalkers cluster on 3600 hit points and 1000
@@ -64,7 +64,7 @@ public sealed record HeroStatConvention(string SampleDescription, IReadOnlyList<
     /// Measures the convention from the heroes <paramref name="roster"/> already registers.
     ///
     /// When <paramref name="role"/> is given, only the target's heroes registered under that same
-    /// role are sampled, which is both more accurate and more honest: GGGA's Tankers sit around
+    /// role are sampled, which is both more accurate and more honest, GGGA's Tankers sit around
     /// 4500 hit points and its Stalkers around 3600, so sampling the whole roster would hand a
     /// Stalker a number no Stalker uses. Falls back to the whole roster when too few heroes share
     /// the role to measure anything.

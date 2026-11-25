@@ -8,9 +8,9 @@ using Wc3.Modeling;
 
 namespace Wc3.Render;
 
-/// <summary>One textured draw range inside a <see cref="PlacementMesh"/>: the indices
+/// <summary>One textured draw range inside a <see cref="PlacementMesh"/>, the indices
 /// [<see cref="IndexOffset"/>, +<see cref="IndexCount"/>) sample
-/// <c>Textures[TextureSlot]</c>; slot -1 means untextured (flat lit color).
+/// <c>Textures[TextureSlot]</c>. Slot -1 means untextured (flat lit color).
 /// <paramref name="FilterMode"/> is the source geoset's material blend mode so the
 /// viewport can blend glows/cutouts correctly. <paramref name="IsTeamColor"/> marks a
 /// section whose geoset samples an undecoded <c>ReplaceableId</c> (team-color) texture
@@ -31,7 +31,7 @@ public sealed record PlacementMeshSection(
 /// mesh is drawn once per placement with a per-instance world transform, so a map with
 /// hundreds of Footmen uploads the Footman (geometry and textures) exactly once.
 /// <paramref name="BoundsMin"/>/<paramref name="BoundsMax"/> is the LOCAL-space
-/// axis-aligned bounding box of the vertex positions (both zero for an empty mesh) , 
+/// axis-aligned bounding box of the vertex positions (both zero for an empty mesh) ,
 /// transform by an instance's <see cref="PlacementInstance.World"/> to ray-pick it.
 /// </summary>
 public sealed record PlacementMesh(
@@ -43,13 +43,13 @@ public sealed record PlacementMesh(
     Vector3 BoundsMin = default,
     Vector3 BoundsMax = default)
 {
-    /// <summary>Floats per vertex: px,py,pz, nx,ny,nz, u,v, r,g,b.</summary>
+    /// <summary>Floats per vertex, px,py,pz, nx,ny,nz, u,v, r,g,b.</summary>
     public const int Stride = 11;
 
     public int VertexCount => Vertices.Length / Stride;
 }
 
-/// <summary>One placed widget: which mesh to draw and its world transform
+/// <summary>One placed widget, which mesh to draw and its world transform
 /// (scale · Z-rotation · translation, System.Numerics row-vector convention).
 /// <paramref name="OwnerId"/> is the owning player for units (-1 for doodads, which
 /// have no owner) and feeds team-color tinting. <paramref name="CreationNumber"/> is
@@ -64,7 +64,7 @@ public sealed record PlacementInstance(
     int? CreationNumber = null,
     bool IsUnit = false);
 
-/// <summary>Everything the GL viewport needs to draw a map's placements: the unique
+/// <summary>Everything the GL viewport needs to draw a map's placements, the unique
 /// meshes plus one instance per placed unit/doodad referencing its mesh by key.</summary>
 public sealed record PlacementSceneData(
     IReadOnlyList<PlacementMesh> Meshes,
@@ -72,17 +72,17 @@ public sealed record PlacementSceneData(
     int UnitCount,
     int DoodadCount);
 
-/// <summary>A placement type's resolved render model: posed geometry plus its decoded
+/// <summary>A placement type's resolved render model, posed geometry plus its decoded
 /// textures keyed by the model's texture index (the shape
 /// <c>RenderModelCommand.Prepare(...).Textures</c> returns). Geosets whose texture is
 /// absent from the dictionary (ReplaceableId/team color, missing file) draw untextured.</summary>
 public sealed record PlacementModel(Model3D Model, IReadOnlyDictionary<int, TextureImage> Textures);
 
 /// <summary>
-/// Builds a <see cref="PlacementSceneData"/> from a parsed map document: units from
+/// Builds a <see cref="PlacementSceneData"/> from a parsed map document, units from
 /// <c>war3mapUnits.doo</c>, doodads/destructables from <c>war3map.doo</c>. Each unique
 /// type resolves its real model once (via the caller's resolver) with per-geoset UV
-/// texturing; types without a resolvable model share an upright unit-sized box mesh in
+/// texturing. Types without a resolvable model share an upright unit-sized box mesh in
 /// the kind's color. Every instance stands on the terrain (Z sampled from the heightmap)
 /// at its (x, y), rotated by its facing and scaled per the widget data.
 /// </summary>
@@ -101,12 +101,12 @@ public static class PlacementScene
     public const string UnitBoxKey = "box:unit";
     public const string DoodadBoxKey = "box:doodad";
 
-    /// <summary>WC3 start-location marker: stored in <c>war3mapUnits.doo</c> as a unit but
+    /// <summary>WC3 start-location marker, stored in <c>war3mapUnits.doo</c> as a unit but
     /// carries no renderable model (the World Editor shows a special flag, in-game it is
     /// invisible). Skipped entirely so it never renders as a placeholder box.</summary>
     public const string StartLocationRawcode = "sloc";
 
-    // Fallback box: roughly a unit's footprint and stature (before placement scale).
+    // Fallback box, roughly a unit's footprint and stature (before placement scale).
     private const float BoxHalf = 28f;
     private const float BoxHeight = 112f;
 
@@ -136,7 +136,7 @@ public static class PlacementScene
         var instances = new List<PlacementInstance>(unitCount + doodadCount);
 
         // The mesh key for a type, or null to SKIP the placement entirely (no box). When a
-        // real resolver is supplied, a type it can't turn into drawable geometry is skipped:
+        // real resolver is supplied, a type it can't turn into drawable geometry is skipped,
         // either no model at all (pathing blocker, ability doodad) or a mesh-less model whose
         // visual is pure particles/light (e.g. a bubble geyser) that we don't render anyway.
         // Only the no-resolver debug path (Build(doc)) still boxes, so placements are visible
@@ -150,7 +150,7 @@ public static class PlacementScene
             string? key;
             var model = resolveModel?.Invoke(rawcode, isUnit);
             if (model is not null && IsTeamColorEffect(model))
-                model = null; // glow/effect plane (all ReplaceableId, e.g. GeneralHeroGlow) , 
+                model = null; // glow/effect plane (all ReplaceableId, e.g. GeneralHeroGlow) ,
                               // renders as an opaque white/gray box without additive blend, so skip
             var mesh = model is null ? null : BuildModelMesh($"{(isUnit ? "unit" : "doodad")}:{rawcode}", model);
             if (mesh is not null)
@@ -202,7 +202,7 @@ public static class PlacementScene
     /// references a <c>ReplaceableId</c> texture or has none) with no real diffuse texture
     /// anywhere, a glow/effect plane such as <c>GeneralHeroGlow</c>. We don't decode
     /// replaceable textures or additive blending, so such a model would render as an opaque
-    /// white/gray quad ("white box"); it is skipped instead. A model with even one resolved
+    /// white/gray quad ("white box"). It is skipped instead. A model with even one resolved
     /// texture (a normal unit/doodad, including one with team-colored trim) is NOT an effect
     /// and renders normally, its untextured geosets shaded neutral gray.
     /// </summary>
@@ -221,7 +221,7 @@ public static class PlacementScene
         return !anyResolved && anyReplaceable;
     }
 
-    /// <summary>World transform for one placement: scale, face (Z-rotation, radians as
+    /// <summary>World transform for one placement, scale, face (Z-rotation, radians as
     /// the .doo format stores), then translate to (x, y, terrain height). Without terrain
     /// the widget's stored Z is used.</summary>
     private static Matrix4x4 WorldOf(Vector3 pos, float rotation, Vector3 scale, TerrainHeightField? heights)
@@ -232,11 +232,11 @@ public static class PlacementScene
              * Matrix4x4.CreateTranslation(pos.X, pos.Y, z);
     }
 
-    /// <summary>Widget scale components of 0 mean "unset" in some tools; treat as 1.</summary>
+    /// <summary>Widget scale components of 0 mean "unset" in some tools. Treat as 1.</summary>
     private static float SafeScale(float s) => MathF.Abs(s) < 1e-3f ? 1f : s;
 
     /// <summary>
-    /// Flattens the model's geosets into one indexed mesh: positions/normals/UVs pass
+    /// Flattens the model's geosets into one indexed mesh, positions/normals/UVs pass
     /// through (bind/posed model space, feet on the local Z=0 plane), and each geoset
     /// becomes a section bound to its texture (deduplicated across geosets). Geosets
     /// whose texture is unavailable get slot -1 and a neutral flat color. Returns null
@@ -271,7 +271,7 @@ public static class PlacementScene
                     slotByTextureId[g.TextureId] = slot;
                 }
             }
-            // Undecoded ReplaceableId texture inside an otherwise-textured model: a
+            // Undecoded ReplaceableId texture inside an otherwise-textured model, a
             // team-colored section (trim, banner) the shader tints by the owner's color.
             bool isTeamColor = slot < 0
                 && g.TextureId >= 0
@@ -279,8 +279,8 @@ public static class PlacementScene
                 && pm.Model.Textures[g.TextureId]
                     .StartsWith("ReplaceableId", StringComparison.OrdinalIgnoreCase);
 
-            // Textured sections ignore the color channel (white); team-color sections are
-            // white so the owner tint lands pure; other untextured sections shade gray.
+            // Textured sections ignore the color channel (white). Team-color sections are
+            // white so the owner tint lands pure. Other untextured sections shade gray.
             var color = slot >= 0 || isTeamColor ? Vector3.One : UntexturedColor;
 
             int n = g.Vertices.Length / 3;

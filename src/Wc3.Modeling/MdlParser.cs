@@ -108,7 +108,7 @@ internal static class MdlParser
         }
     }
 
-    /// <summary>MDL FilterMode keyword → enum; unknown words degrade to opaque.</summary>
+    /// <summary>MDL FilterMode keyword → enum. Unknown words degrade to opaque.</summary>
     private static FilterMode ParseFilterMode(string word) => word switch
     {
         "Transparent" => FilterMode.Transparent,
@@ -174,7 +174,7 @@ internal static class MdlParser
         return values.ToArray();
     }
 
-    /// <summary>Streams MDL tokens: braces, quote-prefixed strings, bare words/numbers. Commas are whitespace; // comments skipped.</summary>
+    /// <summary>Streams MDL tokens, braces, quote-prefixed strings, bare words/numbers. Commas are whitespace. // comments skipped.</summary>
     private sealed class Tokenizer(string s)
     {
         private int _i;

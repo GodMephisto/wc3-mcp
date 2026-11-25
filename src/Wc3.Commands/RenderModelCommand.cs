@@ -9,7 +9,7 @@ namespace Wc3.Commands;
 
 /// <summary>
 /// Renders an object's model to PNG bytes. Map-imported models resolve first (model
-/// file from the map archive, textures from the map's imports); models that live in
+/// file from the map archive, textures from the map's imports). Models that live in
 /// the base game fall back to CASC when a WC3 install is available, textures included.
 /// Missing/ReplaceableId (team-colour) textures always fall back to flat shading.
 /// </summary>
@@ -47,10 +47,10 @@ public static class RenderModelCommand
         => Prepare(doc, modelInternalPath, ctx: null);
 
     /// <summary>
-    /// Parses the model and resolves its textures: the map's own files first, then , 
+    /// Parses the model and resolves its textures, the map's own files first, then ,
     /// when <paramref name="ctx"/> is available, the base game via CASC, so units whose
     /// model was never imported (a plain Footman) render too. Both lookups try the usual
-    /// slash and .mdx/.mdl variants; texture paths missing on both sides shade flat.
+    /// slash and .mdx/.mdl variants. Texture paths missing on both sides shade flat.
     /// </summary>
     public static PreparedModel Prepare(MapDocument doc, string modelInternalPath, GameDataContext? ctx)
     {
@@ -73,7 +73,7 @@ public static class RenderModelCommand
                 : " or the base game data"));
     }
 
-    /// <summary>Convenience for front-ends: <see cref="Prepare(MapDocument, string, GameDataContext?)"/>
+    /// <summary>Convenience for front-ends, <see cref="Prepare(MapDocument, string, GameDataContext?)"/>
     /// with the game-data context opened from <paramref name="gameDir"/> (null = auto-detect;
     /// unavailable install degrades to map-only resolution).</summary>
     public static PreparedModel PrepareWithFallback(MapDocument doc, string modelInternalPath, string? gameDir)
@@ -101,7 +101,7 @@ public static class RenderModelCommand
         GameData.GameData.TryOpen(gameDir, out var ctx, out _) ? ctx : null;
 
     /// <summary>Renders the model at an internal map path (slash and .mdx/.mdl variants
-    /// tried; map-imported only).</summary>
+    /// tried. Map-imported only).</summary>
     public static byte[] Execute(
         MapDocument doc,
         string modelInternalPath,
@@ -138,7 +138,7 @@ public static class RenderModelCommand
             .RenderPng(yawDegrees: yawDegrees, pitchDegrees: pitchDegrees);
     }
 
-    /// <summary>Kind-agnostic: probes every kind for the rawcode, then any model-file field.
+    /// <summary>Kind-agnostic, probes every kind for the rawcode, then any model-file field.
     /// Base-game models fall back to CASC when the install is available.</summary>
     public static byte[] Execute(
         MapDocument doc,
@@ -154,7 +154,7 @@ public static class RenderModelCommand
     }
 
     /// <summary>
-    /// The object's model path: its merged model-file field first (a map delta always
+    /// The object's model path, its merged model-file field first (a map delta always
     /// wins), then, for untouched base objects, whose art fields Reforged moved out of
     /// the SLKs into skin-profile TXTs the stores don't resolve, the "file" key of the
     /// kind's skin profile via CASC.
@@ -169,7 +169,7 @@ public static class RenderModelCommand
         {
             var field = merged.Fields.FirstOrDefault(
                 f => string.Equals(f.Code, code, StringComparison.OrdinalIgnoreCase));
-            // Variation-heavy fields can list several paths comma-separated; render the first.
+            // Variation-heavy fields can list several paths comma-separated. Render the first.
             if (!string.IsNullOrWhiteSpace(field?.Value))
                 return field.Value.Split(',')[0].Trim();
         }
@@ -180,9 +180,9 @@ public static class RenderModelCommand
     }
 
     /// <summary>
-    /// Front-end hook: the base game's model path for an object that has no model-file
+    /// Front-end hook, the base game's model path for an object that has no model-file
     /// field in its merged fields (Reforged skin profiles), or null when the install/CASC
-    /// or the entry is unavailable. Kind-aware; never throws.
+    /// or the entry is unavailable. Kind-aware. Never throws.
     /// </summary>
     public static string? BaseModelPath(ObjectKind kind, string rawcode, string? gameDir)
     {
@@ -201,7 +201,7 @@ public static class RenderModelCommand
         };
 
     /// <summary>The "file" value of the object's skin-profile section ([hfoo] →
-    /// file=units\human\Footman\Footman); null kind probes every profile.</summary>
+    /// file=units\human\Footman\Footman). Null kind probes every profile.</summary>
     private static string? BaseSkinModelPath(GameDataContext ctx, ObjectKind? kind, string rawcode)
     {
         var profiles = kind is { } k
@@ -217,7 +217,7 @@ public static class RenderModelCommand
         return null;
     }
 
-    /// <summary>Minimal INI lookup: the first "key=value" under "[section]".</summary>
+    /// <summary>Minimal INI lookup, the first "key=value" under "[section]".</summary>
     private static string? IniValue(string text, string section, string key)
     {
         bool inSection = false;
@@ -317,7 +317,7 @@ public static class RenderModelCommand
     }
 
     /// <summary>
-    /// One universal asset resolver: resolves ANY asset reference (a model, texture, icon or
+    /// One universal asset resolver, resolves ANY asset reference (a model, texture, icon or
     /// sound) to the map entry that stores it, regardless of how it is spelled. It tries a model
     /// match (.mdx/.mdl swap and variation-0), then a texture match (.blp/.tga/.dds), then a
     /// sound match (.mp3/.wav/.flac), each covering both slash conventions, the case-insensitive
@@ -333,8 +333,8 @@ public static class RenderModelCommand
 
     /// <summary>Both slash conventions x {as-given, sibling .mdx/.mdl, extensionless + either,
     /// variation-0 + either}. The variation-0 forms come last so they can never shadow an
-    /// exact hit: classic doodads with variations store one model file per variation and no
-    /// bare file (dfil says ...\Ruins_Flower; CASC only has ruins_flower0.mdx..ruins_flower4.mdx),
+    /// exact hit, classic doodads with variations store one model file per variation and no
+    /// bare file (dfil says ...\Ruins_Flower. CASC only has ruins_flower0.mdx..ruins_flower4.mdx),
     /// so once the plain forms miss we try the "&lt;name&gt;0" file, variation 0 always exists
     /// when variations do, and is what the World Editor previews.</summary>
     private static IEnumerable<string> PathCandidates(string path)
@@ -360,7 +360,7 @@ public static class RenderModelCommand
     }
 
     /// <summary>
-    /// Decodes every resolvable model texture, keyed by texture index: the map's own
+    /// Decodes every resolvable model texture, keyed by texture index, the map's own
     /// files win (imports can override base textures), then the base game via CASC when
     /// a context is available. ReplaceableId entries (team colour etc.), unresolvable
     /// paths and undecodable formats are simply absent, the renderer shades those
@@ -401,7 +401,7 @@ public static class RenderModelCommand
             yield return Wc3Path.ChangeExtension(path, ".dds");
     }
 
-    /// <summary>Sniffs the container (DDS magic, else BLP); undecodable bytes are null , 
+    /// <summary>Sniffs the container (DDS magic, else BLP). Undecodable bytes are null ,
     /// the caller shades those geosets flat. Internal so the folder thumbnail renderer
     /// decodes a texture exactly the way the map renderer does.</summary>
     internal static TextureImage? TryDecodeTexture(byte[] bytes)

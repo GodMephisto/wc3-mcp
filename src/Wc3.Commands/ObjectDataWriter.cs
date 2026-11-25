@@ -11,8 +11,8 @@ internal enum ObjectDataShape { Simple, Level, Variation }
 /// Write-side adapter over one kind's object-data model, hiding the three group/mod
 /// type families (Simple/Level/Variation) behind delegates so ObjectSetCommand and
 /// ObjectNewCommand can mutate any kind uniformly. FindGroup resolves like the read
-/// side: customs by NewId first, then modified standards by OldId. The int slot in
-/// FindMod/AddMod is the mod's Level (ability/upgrade) or Variation (doodad); simple
+/// side, customs by NewId first, then modified standards by OldId. The int slot in
+/// FindMod/AddMod is the mod's Level (ability/upgrade) or Variation (doodad). Simple
 /// kinds ignore it.
 /// </summary>
 internal sealed record ObjectDataAccess(
@@ -73,7 +73,7 @@ internal static class ObjectDataWriter
         };
     }
 
-    /// <summary>Adapter for a model of any of the seven kinds; null for anything else
+    /// <summary>Adapter for a model of any of the seven kinds. Null for anything else
     /// (e.g. a file that parsed as an unexpected type).</summary>
     internal static ObjectDataAccess? AccessFor(object model) => model switch
     {

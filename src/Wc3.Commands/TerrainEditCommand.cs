@@ -16,13 +16,13 @@ namespace Wc3.Commands;
 /// falloff-weighted area raise for the raise/lower brush.
 ///
 /// <para><b>Height units:</b> heights are War3Net's normalized units, 1.0 equals one
-/// cliff step (512 raw file units, 128 world-Z units; world Z = (Height + CliffLevel)
+/// cliff step (512 raw file units, 128 world-Z units. World Z = (Height + CliffLevel)
 /// × 128). The file stores ground height as a ushort (raw = height×512 + 8192), so
 /// writes are quantized to 1/512 steps and clamped to the representable range
 /// [<see cref="MinGroundHeight"/>, <see cref="MaxGroundHeight"/>] up front, what
 /// <see cref="GetCorner"/> reports after an edit is exactly what a save/load round-trip
 /// preserves. Water level shares the encoding but keeps only 14 bits
-/// ([<see cref="MinWaterHeight"/>, <see cref="MaxWaterHeight"/>]); cliff level is the
+/// ([<see cref="MinWaterHeight"/>, <see cref="MaxWaterHeight"/>]). Cliff level is the
 /// file's 4-bit plateau layer (0..<see cref="MaxCliffLevel"/>).</para>
 /// </summary>
 public static class TerrainEditCommand
@@ -63,7 +63,7 @@ public static class TerrainEditCommand
 
     /// <summary>Clamps a ground height to the storable range and quantizes it to the 1/512
     /// grid, so a value read back equals what a save/load preserves. The brush paths call
-    /// this before writing a tile: the field is a 16-bit ushort (raw = height*512 + 8192),
+    /// this before writing a tile, the field is a 16-bit ushort (raw = height*512 + 8192),
     /// so an out-of-range height wraps modulo 65536 instead of erroring, and a brush that
     /// reported success would have stored the wrong number.</summary>
     public static float ClampGroundHeight(float height) =>
@@ -81,7 +81,7 @@ public static class TerrainEditCommand
     public static int ClampCliffLevel(int level) => Math.Clamp(level, 0, MaxCliffLevel);
 
     /// <summary>Terrain grid summary. <paramref name="Width"/>/<paramref name="Height"/>
-    /// are corner counts (tiles + 1 per axis); the tile lists are fourCC ids in map
+    /// are corner counts (tiles + 1 per axis). The tile lists are fourCC ids in map
     /// order, so a corner's texture index points into <paramref name="GroundTiles"/>.</summary>
     public sealed record TerrainInfo(
         int Width,
@@ -90,7 +90,7 @@ public static class TerrainEditCommand
         IReadOnlyList<string> CliffTiles);
 
     /// <summary>Snapshot of one corner tile. <paramref name="GroundHeight"/> excludes the
-    /// cliff level (elevation = (GroundHeight + CliffLevel) × 128 world units); texture
+    /// cliff level (elevation = (GroundHeight + CliffLevel) × 128 world units). Texture
     /// indices point into the map's ground/cliff tile lists (<see cref="GetInfo"/>).</summary>
     public sealed record CornerInfo(
         int Col,
@@ -138,7 +138,7 @@ public static class TerrainEditCommand
             t.IsWater, t.IsRamp, t.IsBlighted, t.IsBoundary, t.IsEdgeTile);
     }
 
-    /// <summary>Sets a corner's ground height (normalized units; quantized to 1/512 and
+    /// <summary>Sets a corner's ground height (normalized units. Quantized to 1/512 and
     /// clamped to the storable range, see the class remarks).</summary>
     public static TerrainEditResult SetGroundHeight(MapDocument doc, int col, int row, float height)
     {
@@ -159,7 +159,7 @@ public static class TerrainEditCommand
     }
 
     /// <summary>Adds <paramref name="delta"/> to a corner's ground height (normalized
-    /// units; the result is quantized and clamped like <see cref="SetGroundHeight"/>).</summary>
+    /// units. The result is quantized and clamped like <see cref="SetGroundHeight"/>).</summary>
     public static TerrainEditResult AddGroundHeight(MapDocument doc, int col, int row, float delta)
     {
         if (!float.IsFinite(delta))
@@ -217,7 +217,7 @@ public static class TerrainEditCommand
     }
 
     /// <summary>Sets a corner's cliff plateau layer (0..<see cref="MaxCliffLevel"/>, the
-    /// file's 4-bit range; War3Net refuses to serialize anything past it).</summary>
+    /// file's 4-bit range. War3Net refuses to serialize anything past it).</summary>
     public static TerrainEditResult SetCliffLevel(MapDocument doc, int col, int row, int level)
     {
         if (level < 0 || level > MaxCliffLevel)
@@ -236,9 +236,9 @@ public static class TerrainEditCommand
     }
 
     /// <summary>
-    /// Raise/lower-brush primitive: adds <paramref name="delta"/> to every corner within
+    /// Raise/lower-brush primitive, adds <paramref name="delta"/> to every corner within
     /// <paramref name="radius"/> corners of (<paramref name="centerCol"/>,
-    /// <paramref name="centerRow"/>), a circular footprint (dist ≤ radius; radius 0 is
+    /// <paramref name="centerRow"/>), a circular footprint (dist ≤ radius. Radius 0 is
     /// just the centre). With <paramref name="falloff"/> the delta is weighted
     /// 1 − dist/(radius+1), so the centre moves by the full delta and the rim by a
     /// fraction, giving a smooth mound instead of a plateau. Corners off the grid are
@@ -290,10 +290,10 @@ public static class TerrainEditCommand
 
     /// <summary>Snaps a normalized height onto the file's 1/512-step lattice so the
     /// in-memory value equals what a save/load round-trip yields (the serializer
-    /// truncates; pre-rounding makes the truncation exact).</summary>
+    /// truncates. Pre-rounding makes the truncation exact).</summary>
     private static float Quantize(float height) => MathF.Round(height * 512f) / 512f;
 
-    /// <summary>Fetches the terrain grid; returns an error message or null on success.</summary>
+    /// <summary>Fetches the terrain grid. Returns an error message or null on success.</summary>
     private static string? TryGetGrid(MapDocument doc, out MapEnvironment? env, out int w, out int h)
     {
         env = doc.GetFile(TerrainFile)?.Model as MapEnvironment;
@@ -307,7 +307,7 @@ public static class TerrainEditCommand
         return null;
     }
 
-    /// <summary>Bounds-checked corner lookup; returns an error message or null on success.</summary>
+    /// <summary>Bounds-checked corner lookup. Returns an error message or null on success.</summary>
     private static string? Locate(MapDocument doc, int col, int row, out MapEnvironment? env, out TerrainTile? tile)
     {
         tile = null;

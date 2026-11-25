@@ -1,7 +1,7 @@
 namespace Wc3.GameData;
 
 /// <summary>
-/// Localized World Editor UI strings (ui\worldeditstrings.txt): KEY=VALUE lines under a
+/// Localized World Editor UI strings (ui\worldeditstrings.txt), KEY=VALUE lines under a
 /// [WorldEditStrings] header. Values may be quoted (quotes stripped) and may contain
 /// formatting codes like |n and |cAARRGGBB..|r (kept as-is).
 /// </summary>
@@ -20,7 +20,7 @@ public sealed class WorldEditStrings
     /// Parses and merges several editor-string files into one table (for example
     /// worldeditstrings.txt for UI labels plus worldeditgamestrings.txt for the
     /// WESTRING_DEST_* / WESTRING_DOODAD_* object names). Null or missing files are
-    /// skipped; a key in a later file overrides the same key in an earlier one.
+    /// skipped. A key in a later file overrides the same key in an earlier one.
     /// </summary>
     public static WorldEditStrings FromByteSources(params byte[]?[] files)
     {

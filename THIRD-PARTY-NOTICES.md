@@ -271,7 +271,7 @@ SOFTWARE.
 
 The Lua 5.3 lexer, parser and printer under src/Wc3.Commands/Lua are ported from its lua_ast.py, the JASS to Lua converter (src/Wc3.Commands/Lua/JassToLua.cs) from its jass2lua.py at commit 80efaf6, the Lua 5.3 bytecode reader and translator (LuaBytecode.cs, Lua53Translate.cs) from its lua_bytecode.py and lua53_translate.py at the same commit, and the doctor tools run its release as an external program. devoltzz, MIT, https://github.com/devoltzz/devos-map-doctor
 
-```
+```text
 MIT License
 
 Copyright (c) 2026 devoltzz

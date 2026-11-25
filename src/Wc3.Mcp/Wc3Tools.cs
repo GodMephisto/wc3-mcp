@@ -1,4 +1,4 @@
-﻿// src/Wc3.Mcp/Wc3Tools.cs
+// src/Wc3.Mcp/Wc3Tools.cs
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -13,7 +13,7 @@ using Wc3.Model;
 namespace Wc3.Mcp;
 
 /// <summary>
-/// The MCP tool surface: one thin wrapper per Wc3.Commands handler. Each tool
+/// The MCP tool surface, one thin wrapper per Wc3.Commands handler. Each tool
 /// loads the map(s), calls the shared command layer and returns its result POCO
 /// (the SDK serializes it to JSON), no map parsing or logic lives here.
 /// <para>
@@ -1880,7 +1880,7 @@ public static class Wc3Tools
                 // assigning the raw PNG to it put binary where base64 text belongs, and the
                 // reply did not survive the round trip. An MCP client failed to deserialize
                 // it with "The JSON value could not be converted to ContentBlock.
-                // Path: $.content[1]", so every agent calling render_model got that instead
+                // Path, $.content[1]", so every agent calling render_model got that instead
                 // of an image. FromBytes is the SDK's factory for decoded bytes and does the
                 // encoding itself.
                 content.Add(ImageContentBlock.FromBytes(png, "image/png"));
@@ -1900,7 +1900,7 @@ public static class Wc3Tools
         => Run(() =>
         {
             var source = LoadMap(source_map);
-            var target = LoadMap(target_map); // fresh load - ported output never feeds back into inputs
+            var target = LoadMap(target_map); // fresh load, ported output never feeds back into inputs
             var bundle = BundleCommand.ResolveUnit(source, rawcode, ResolveGameDir(game_dir));
             var report = PortCommand.PortUnit(source, bundle, target, includeScript: include_script);
 
@@ -2957,7 +2957,7 @@ public static class Wc3Tools
         [Description("Path to a .w3x/.w3m map file, or to an unpacked map folder holding the same entries.")] string map)
         => Run(() => PathingCommand.Validate(LoadMap(map)));
 
-    // ---- scenario: map-info, players, forces (war3map.w3i) ---------------
+    // ---- scenario, map-info, players, forces (war3map.w3i) ---------------
 
     // Compile-time mirror of MapInfoCommand.EditableFields (attribute args must be const).
     private const string MapInfoFieldValues =
@@ -4051,7 +4051,7 @@ public static class Wc3Tools
         if (string.IsNullOrWhiteSpace(map))
             throw Missing("map path");
         // A folder map is a real Studio workflow, so `map` accepts one archive file or a folder.
-        // The extension check only applies to a file. PAR-01 reopens as a wording problem: every
+        // The extension check only applies to a file. PAR-01 reopens as a wording problem, every
         // parameter says which of the two it takes, rather than the loader refusing one of them.
         bool folder = Directory.Exists(map);
         if (!File.Exists(map) && !folder)
@@ -4159,7 +4159,7 @@ public static class Wc3Tools
     }
 
     /// <summary>Load the map, apply a placement mutation, and save the edited copy to out_path.
-    /// The input map is never modified in place (out_path must differ) - mirroring the no-clobber
+    /// The input map is never modified in place (out_path must differ), mirroring the no-clobber
     /// stance of render_model and port_unit. A rejected placement surfaces as a clean MCP error.</summary>
     private static PlacementToolResult SavePlacement(
         string map, string outPath, bool overwrite, string? expectInputSha256,
@@ -4227,7 +4227,7 @@ public static class Wc3Tools
             w.FilesRewritten, w.BytesWritten);
     }
 
-    /// <summary>Parse a string into an enum (case-insensitive); clean MCP error on failure.</summary>
+    /// <summary>Parse a string into an enum (case-insensitive). Clean MCP error on failure.</summary>
     private static TEnum ParseEnum<TEnum>(string value, string paramName) where TEnum : struct, Enum
     {
         if (Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed))
@@ -4282,7 +4282,7 @@ public static class Wc3Tools
         return true;
     }
 
-    /// <summary>Read a PNG the caller named; a missing file is a clean MCP error.</summary>
+    /// <summary>Read a PNG the caller named. A missing file is a clean MCP error.</summary>
     private static byte[] ReadPngFile(string png)
     {
         if (string.IsNullOrWhiteSpace(png))
@@ -4634,7 +4634,7 @@ public static class Wc3Tools
         : Environment.GetEnvironmentVariable(GameDirVariable) is var env && IsSet(env) ? env
         : null;
 
-    /// <summary>Resolve the target build: use the explicit value or fall through to settings.</summary>
+    /// <summary>Resolve the target build, use the explicit value or fall through to settings.</summary>
     internal static string ResolveTarget(string? target, string? schemas_dir)
     {
         if (target is not null)
@@ -4648,7 +4648,7 @@ public static class Wc3Tools
 
     // ---- target_* result POCOs ------------------------------------------
 
-    /// <summary>Target get outcome: the build, its source, and the installed game build.</summary>
+    /// <summary>Target get outcome, the build, its source, and the installed game build.</summary>
     public sealed record TargetGetResult(string Build, string Source, string? InstallBuild, IReadOnlyList<string> Sections);
 
     /// <summary>target_set outcome, whether the build validated and the settings file was written,
@@ -4658,16 +4658,16 @@ public static class Wc3Tools
         string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 }
 
-/// <summary>render_model outcome: where the PNG landed and whether it was also inlined.</summary>
+/// <summary>render_model outcome, where the PNG landed and whether it was also inlined.</summary>
 public sealed record RenderModelToolResult(string SavedTo, int SizeBytes, bool ImageInline,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>asset_thumbnails outcome: where the PNGs landed, how many, their names and any skips.</summary>
+/// <summary>asset_thumbnails outcome, where the PNGs landed, how many, their names and any skips.</summary>
 public sealed record AssetThumbnailsToolResult(
     string OutDir, int Rendered, IReadOnlyList<string> Files, IReadOnlyList<string> Diagnostics,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>mpq_extract_all outcome: where the entries landed, the counts, and the relative file names.</summary>
+/// <summary>mpq_extract_all outcome, where the entries landed, the counts, and the relative file names.</summary>
 public sealed record MpqExtractAllToolResult(
     string OutDir, int TotalEntries, int NamedEntries, int UnnamedEntries, long TotalBytes,
     IReadOnlyList<string> Files,
@@ -4676,7 +4676,7 @@ public sealed record MpqExtractAllToolResult(
 /// <summary>ERR-05. One item a batch skipped, named, with the reason it was skipped.</summary>
 public sealed record SkippedItem(string Item, string Reason);
 
-/// <summary>asset_convert_batch outcome: where the copies landed, how many, the target extension,
+/// <summary>asset_convert_batch outcome, where the copies landed, how many, the target extension,
 /// their relative paths, any skips, and each skipped file with its reason. Partial is true when
 /// anything was skipped, so a run that converted some of a folder is not reported as success.</summary>
 public sealed record AssetConvertBatchToolResult(
@@ -4684,37 +4684,37 @@ public sealed record AssetConvertBatchToolResult(
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0,
     IReadOnlyList<SkippedItem>? Failed = null, bool Partial = false);
 
-/// <summary>asset_import_wire outcome: where the edited copy landed, the imported paths, the
+/// <summary>asset_import_wire outcome, where the edited copy landed, the imported paths, the
 /// fields set and any skips.</summary>
 public sealed record AssetImportWireToolResult(
     string SavedTo, IReadOnlyList<string> Imported, IReadOnlyList<string> FieldsSet,
     IReadOnlyList<string> Diagnostics,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>model_export_obj outcome: where the .obj landed, its .mtl path and the texture names.</summary>
+/// <summary>model_export_obj outcome, where the .obj landed, its .mtl path and the texture names.</summary>
 public sealed record ModelExportObjToolResult(
     string SavedTo, string Mtl, IReadOnlyList<string> Textures, IReadOnlyList<string> Diagnostics);
 
-/// <summary>model_import outcome: where the .mdx landed, the counts it holds, the sequence count and
+/// <summary>model_import outcome, where the .mdx landed, the counts it holds, the sequence count and
 /// names, and the texture files written.</summary>
 public sealed record ModelImportToolResult(
     string SavedTo, int Geosets, int Vertices, int Faces, int Textures, int Materials,
     int Sequences, IReadOnlyList<string> SequenceNames, IReadOnlyList<string> TextureFiles);
 
-/// <summary>port_unit outcome: where the new .ported map was written plus the full port report.</summary>
+/// <summary>port_unit outcome, where the new .ported map was written plus the full port report.</summary>
 public sealed record PortUnitToolResult(string SavedTo, PortResult Report,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0,
     IReadOnlyList<OutputFile>? Files = null);
 
-/// <summary>port_into_version outcome: where the downgraded map was written plus the report.</summary>
+/// <summary>port_into_version outcome, where the downgraded map was written plus the report.</summary>
 public sealed record PortIntoVersionToolResult(string SavedTo, PortIntoVersionResult Report,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0,
     IReadOnlyList<OutputFile>? Files = null);
 
-/// <summary>bundle_merge outcome: where the merged bundle was written plus the merge result.</summary>
+/// <summary>bundle_merge outcome, where the merged bundle was written plus the merge result.</summary>
 public sealed record BundleMergeToolResult(string SavedTo, BundleMergeResult Merge);
 
-/// <summary>place_doodad / place_region outcome: where the edited map was written, a
+/// <summary>place_doodad / place_region outcome, where the edited map was written, a
 /// human-readable message, and the creation number assigned to the new instance.</summary>
 public sealed record PlacementToolResult(string SavedTo, string Message, int CreationNumber,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
@@ -4755,22 +4755,22 @@ public sealed record BulkPlacementToolResult(
     string SavedTo, string Message, int Placed, IReadOnlyList<int> CreationNumbers,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>terrain_* edit outcome: where the edited map was written, a message, and tiles changed.</summary>
+/// <summary>terrain_* edit outcome, where the edited map was written, a message, and tiles changed.</summary>
 public sealed record TerrainToolResult(
     string SavedTo, string Message, int TilesChanged,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>terrain_export_heightmap outcome: where the PNG landed, its grid, and its byte size.</summary>
+/// <summary>terrain_export_heightmap outcome, where the PNG landed, its grid, and its byte size.</summary>
 public sealed record ImageExportToolResult(string SavedTo, string Message, int Width, int Height, int SizeBytes,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>pathing_export_png outcome: where the PNG landed, its grid and size, and the flag legend.</summary>
+/// <summary>pathing_export_png outcome, where the PNG landed, its grid and size, and the flag legend.</summary>
 public sealed record PathingExportToolResult(
     string SavedTo, string Message, int Width, int Height, int SizeBytes,
     IReadOnlyList<PathingExportPngCommand.LegendEntry> Legend,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>object_set outcome: where the edited map was written, its digests, what was rewritten, a message, and any non-fatal warning.</summary>
+/// <summary>object_set outcome, where the edited map was written, its digests, what was rewritten, a message, and any non-fatal warning.</summary>
 public sealed record ObjectSetToolResult(
     string SavedTo, string? InputSha256, string OutputSha256, int FilesRewritten, long BytesWritten,
     string Message, string? Warning);
@@ -4778,27 +4778,27 @@ public sealed record ObjectSetToolResult(
 /// <summary>One edit in an object_batch_set request. Kind defaults to unit.</summary>
 public sealed record BatchEditInput(string Rawcode, string Field, string? Value, string Kind = "unit");
 
-/// <summary>object_batch_set outcome: where the map was written, its digests, how many edits
+/// <summary>object_batch_set outcome, where the map was written, its digests, how many edits
 /// applied, the message and any non-fatal warnings.</summary>
 public sealed record ObjectBatchSetToolResult(
     string SavedTo, string? InputSha256, string OutputSha256, int FilesRewritten, long BytesWritten,
     int Applied, string Message, string[] Warnings);
 
-/// <summary>object_new outcome: where the edited map was written, a message, and the newly allocated rawcode.</summary>
+/// <summary>object_new outcome, where the edited map was written, a message, and the newly allocated rawcode.</summary>
 public sealed record ObjectNewToolResult(string SavedTo, string Message, string? NewRawcode,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>object_clone outcome: where the edited map was written, a message, the new
+/// <summary>object_clone outcome, where the edited map was written, a message, the new
 /// rawcode, and how many field values the clone received.</summary>
 public sealed record ObjectCloneToolResult(string SavedTo, string Message, string? NewRawcode, int FieldsCopied,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>object_migrate outcome: the saved map, the target build, and the field counts.</summary>
+/// <summary>object_migrate outcome, the saved map, the target build, and the field counts.</summary>
 public sealed record ObjectMigrateToolResult(
     string SavedTo, string Message, string TargetBuild, int FieldsKept, int FieldsDropped, int Drops,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>object_bulk_set outcome: the saved map, how many objects matched and changed, and each
+/// <summary>object_bulk_set outcome, the saved map, how many objects matched and changed, and each
 /// object the write skipped with its reason. Partial is true when anything was skipped, so a run
 /// that changed some of the matches is not reported as success.</summary>
 public sealed record ObjectBulkSetToolResult(
@@ -4806,23 +4806,23 @@ public sealed record ObjectBulkSetToolResult(
     string Message, string Kind, int Matched, int Changed, int Skipped,
     IReadOnlyList<SkippedItem> Failed, bool Partial);
 
-/// <summary>object_export outcome: the CSV path, the kind, and the row and column counts.</summary>
+/// <summary>object_export outcome, the CSV path, the kind, and the row and column counts.</summary>
 public sealed record ObjectExportToolResult(
     string CsvPath, string Message, string Kind, int ObjectCount, int Columns);
 
-/// <summary>object_import outcome: the saved map and the added, updated and field counts.</summary>
+/// <summary>object_import outcome, the saved map and the added, updated and field counts.</summary>
 public sealed record ObjectImportToolResult(
     string SavedTo, string Message, string Kind, int Added, int Updated, int FieldsSet,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>object_rename outcome: the saved map, the old and new rawcodes, and the reference counts.</summary>
+/// <summary>object_rename outcome, the saved map, the old and new rawcodes, and the reference counts.</summary>
 public sealed record ObjectRenameToolResult(
     string SavedTo, string Message, string Kind, string OldRawcode, string NewRawcode,
     int FieldsRewritten, int ScriptLiteralsRewritten,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>sound_* write outcome: where the edited map was written plus a human-readable message.</summary>
-/// <summary>sound_import_events outcome: where the map landed, its digests, how many events and
+/// <summary>sound_* write outcome, where the edited map was written plus a human-readable message.</summary>
+/// <summary>sound_import_events outcome, where the map landed, its digests, how many events and
 /// catalog entries were written, and the generated dispatcher text.</summary>
 public sealed record SoundImportToolResult(
     string SavedTo, string? InputSha256, string OutputSha256, string Message,
@@ -4853,7 +4853,7 @@ public sealed record FileExtractResult(string SavedTo, string Name, int SizeByte
 public sealed record FileSetResult(string SavedTo, string Name, bool Replaced, int SizeBytes,
     string? InputSha256 = null, string OutputSha256 = "", int FilesRewritten = 0, long BytesWritten = 0);
 
-/// <summary>Generic write outcome for camera/pathing/map-info/player/force/new tools:
+/// <summary>Generic write outcome for camera/pathing/map-info/player/force/new tools,
 /// where the edited (or created) map was written, the digests and counts where a write gate ran,
 /// and a human-readable message.</summary>
 public sealed record EditToolResult(
@@ -4868,7 +4868,7 @@ public sealed record EditToolResult(
 /// <para>
 /// The last three fields are the names those twelve tools served before this version, kept for one
 /// minor release so a caller that already reads them keeps working. <c>truncated</c> is the same
-/// fact as <c>hasMore</c> and <c>total</c> the same fact as <c>totalCount</c>; <c>cap</c> is how
+/// fact as <c>hasMore</c> and <c>total</c> the same fact as <c>totalCount</c>. <c>cap</c> is how
 /// many items the result may carry. A tool with no offset argument reports
 /// <c>nextOffset</c> as the index the next page would start at, so a caller learns where the cut
 /// fell even though this version offers no argument to ask for it.

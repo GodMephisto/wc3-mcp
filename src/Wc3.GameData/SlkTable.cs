@@ -70,7 +70,7 @@ public sealed class SlkTable
         return table;
     }
 
-    // SLK fields are ';'-separated; a ';;' inside a value is a literal ';'.
+    // SLK fields are ';'-separated. A ';;' inside a value is a literal ';'.
     private static IEnumerable<string> SplitSlk(string s)
     {
         var parts = new List<string>();

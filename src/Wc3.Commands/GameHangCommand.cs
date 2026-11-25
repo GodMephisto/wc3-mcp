@@ -30,14 +30,14 @@ public sealed record HangReport(
     string? HotThreadNote);
 
 /// <summary>
-/// Samples a running Warcraft III process to answer the question no static comparison could:
+/// Samples a running Warcraft III process to answer the question no static comparison could,
 /// when a map sits forever on the loading screen, is the game SPINNING (an infinite loop in its
 /// own code) or WAITING (blocked on I/O or a lock)? Those are different bugs with different
 /// fixes, and "Not Responding" in the title bar looks identical for both.
 ///
 /// This exists because a map whose archive is measurably equivalent to a working one still would
 /// not load, so the artifact told us nothing and the behaviour had to be observed instead.
-/// Deliberately read-only: it attaches nothing, injects nothing, and only reads counters the OS
+/// Deliberately read-only, it attaches nothing, injects nothing, and only reads counters the OS
 /// already publishes, so it is safe to run against a live game.
 /// </summary>
 public static class GameHangCommand

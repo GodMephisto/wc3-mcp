@@ -23,7 +23,7 @@ public sealed record JassApi(
     IReadOnlyList<JassFunctionDecl> Functions);
 
 /// <summary>
-/// Reads the declarations of a JASS file, the shape of <c>common.j</c> and <c>blizzard.j</c>:
+/// Reads the declarations of a JASS file, the shape of <c>common.j</c> and <c>blizzard.j</c>,
 /// types, natives, globals and function headers. It is what decides whether a map's script
 /// compiles against a given game build, since a native or constant the build lacks is a compile
 /// error there. Function bodies are skipped, <see cref="JassFunctionIndex"/> covers them.

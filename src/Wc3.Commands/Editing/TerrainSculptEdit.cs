@@ -5,11 +5,11 @@ using Wc3.Model;
 namespace Wc3.Commands.Editing;
 
 /// <summary>
-/// One reversible terrain-sculpt stroke: the corner tiles a whole brush stroke changed,
+/// One reversible terrain-sculpt stroke, the corner tiles a whole brush stroke changed,
 /// each captured before and after. A drag stroke applies many per-corner edits live, then
 /// commits as a SINGLE <see cref="TerrainSculptEdit"/> so one Undo reverts the entire stroke
 /// and one Redo re-applies it (never a half-stroke). Built by diffing the tile grid across
-/// the stroke, so it holds only the tiles that actually changed - not the whole map.
+/// the stroke, so it holds only the tiles that actually changed, not the whole map.
 ///
 /// The stroke has already run by the time this is recorded, so <see cref="Apply"/> restores
 /// the "after" snapshot (a no-op on first record, the real work on redo) and

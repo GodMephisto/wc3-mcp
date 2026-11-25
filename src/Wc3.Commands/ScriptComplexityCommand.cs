@@ -19,7 +19,7 @@ public sealed record ScriptComplexityResult(
 ///
 /// The keywords are <c>if</c>, <c>loop</c>, <c>and</c> and <c>or</c>, each counted at word
 /// boundaries so <c>elseif</c> is one keyword, not two, and <c>endloop</c>/<c>endif</c> are none.
-/// A function with no branch has complexity zero; the classic +1 baseline is not added, so the
+/// A function with no branch has complexity zero. The classic +1 baseline is not added, so the
 /// number is the count of decisions rather than the count of paths. It is the same ordering
 /// either way, and the raw count is the one to compare across functions.
 ///

@@ -25,21 +25,21 @@ public sealed record ScriptLoopsResult(
 /// <summary>
 /// Finds JASS loops that may never terminate.
 ///
-/// Built after measuring a hang that no archive-level tool could explain: one core pinned at
+/// Built after measuring a hang that no archive-level tool could explain, one core pinned at
 /// 1.001, ~80% of instruction-pointer samples inside a 30-byte window of the game executable,
 /// while every structural check on the archive came back clean. The JASS interpreter lives in that
-/// executable, so a script loop that never exits presents exactly that way - a tight native loop,
+/// executable, so a script loop that never exits presents exactly that way, a tight native loop,
 /// no crash, no log entry, no error. Three separate archive tools each disproved their own theory
 /// before it was worth suspecting the script instead.
 ///
-/// Two shapes are worth flagging:
+/// Two shapes are worth flagging,
 /// <list type="bullet">
 /// <item>A loop with no <c>exitwhen</c> at all, which can only leave via <c>return</c>.</item>
 /// <item>A loop whose <c>exitwhen</c> condition names nothing the body ever assigns, so the
 /// condition cannot change and the loop spins until something external intervenes. This is also
 /// the shape of a deliberate anti-tamper stall.</item>
 /// </list>
-/// Heuristic by nature: it reports candidates to read, not proven infinite loops.
+/// Heuristic by nature, it reports candidates to read, not proven infinite loops.
 /// </summary>
 public static class ScriptLoopsCommand
 {
@@ -47,7 +47,7 @@ public static class ScriptLoopsCommand
         new(@"^\s*function\s+([A-Za-z_][A-Za-z0-9_]*)", RegexOptions.Compiled);
     private static readonly Regex Identifier =
         new(@"[A-Za-z_][A-Za-z0-9_]*", RegexOptions.Compiled);
-    /// <summary>Assignment or mutation of a name inside the body: set X=, set X[i]=, or a call taking X.</summary>
+    /// <summary>Assignment or mutation of a name inside the body, set X=, set X[i]=, or a call taking X.</summary>
     private static readonly Regex Assignment =
         new(@"^\s*set\s+([A-Za-z_][A-Za-z0-9_]*)", RegexOptions.Compiled);
 
@@ -86,7 +86,7 @@ public static class ScriptLoopsCommand
 
             if (trimmed == "endloop" || trimmed.StartsWith("endloop ", StringComparison.Ordinal))
             {
-                if (open.Count == 0) continue;   // unbalanced source; do not guess
+                if (open.Count == 0) continue;   // unbalanced source. Do not guess
                 var (startLine, body) = open.Pop();
                 total++;
                 var finding = Classify(currentFunction, startLine, i + 1, body);
@@ -121,7 +121,7 @@ public static class ScriptLoopsCommand
         {
             // 'exitwhen true' leaves on the first iteration, so it terminates by construction. It
             // names nothing the body assigns and would otherwise be flagged, which is exactly the
-            // false positive this check exists to suppress - real maps use it as a do-once block.
+            // false positive this check exists to suppress, real maps use it as a do-once block.
             if (IsAlwaysTrue(e)) return new(function, startLine, endLine, exits.Count, hasReturn,
                 "low", "exits unconditionally on the first iteration", Shorten(e));
         }

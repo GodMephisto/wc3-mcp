@@ -16,11 +16,11 @@ public sealed record TriggerFunctionSignature(
 /// <summary>
 /// Builds a <see cref="TriggerFunction"/> that the wtg reader can actually read back.
 ///
-/// The constraint that governs everything here: war3map.wtg stores a function's parameters but
+/// The constraint that governs everything here, war3map.wtg stores a function's parameters but
 /// NOT how many there are. The count comes from the World-Editor function table at read time. So
 /// a function written with the wrong number of parameters does not produce a wrong trigger, it
 /// produces a FILE NOBODY CAN PARSE, and the reader fails looking for the terminator of a string
-/// that was never written. Measured: writing DisplayTextToForce with one parameter when the table
+/// that was never written. Measured, writing DisplayTextToForce with one parameter when the table
 /// declares two ("force", "StringExt") makes every subsequent read of that map throw.
 ///
 /// That is why arity is not a suggestion to validate loosely. Every function built here carries

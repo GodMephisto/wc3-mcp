@@ -21,18 +21,18 @@ public sealed record FileState(
     int SizeBytes, bool IsDirty, bool HasOverride);
 
 /// <summary>
-/// Raw and text file editing on a <see cref="MapDocument"/>, byte-faithful by construction:
+/// Raw and text file editing on a <see cref="MapDocument"/>, byte-faithful by construction,
 /// writes go through <see cref="MapDocument.AddOrReplaceRawFile"/> (which stages the payload
-/// as <c>OverrideBytes</c> and marks the entry dirty; <c>RawBytes</c> stays the immutable
+/// as <c>OverrideBytes</c> and marks the entry dirty. <c>RawBytes</c> stays the immutable
 /// original), and every read helper resolves <see cref="MapFileEntry.CurrentBytes"/> so a read
 /// always reflects a prior write in the same session.
 ///
-/// Contracts:
+/// Contracts,
 /// <list type="bullet">
 /// <item><see cref="AddOrReplace"/> with an existing name REPLACES the payload (mirroring
-/// <c>MapDocument.AddOrReplaceRawFile</c>); the result reports which case occurred.</item>
+/// <c>MapDocument.AddOrReplaceRawFile</c>). The result reports which case occurred.</item>
 /// <item>Hard-removing an entry is not supported by the model, see <see cref="Remove"/>.</item>
-/// <item>Text: default encoding is UTF-8. <see cref="WriteText"/> never emits a BOM and
+/// <item>Text, default encoding is UTF-8. <see cref="WriteText"/> never emits a BOM and
 /// <see cref="ReadText"/> strips a leading BOM, so WriteText→ReadText is the identity and
 /// reading a BOM'd original yields clean text.</item>
 /// </list>
@@ -43,7 +43,7 @@ public static class FileEditCommand
 
     /// <summary>
     /// Adds a new file with the given raw bytes, or replaces an existing file's payload
-    /// verbatim. Thin validating wrapper over <see cref="MapDocument.AddOrReplaceRawFile"/>:
+    /// verbatim. Thin validating wrapper over <see cref="MapDocument.AddOrReplaceRawFile"/>,
     /// the bytes are staged as <c>OverrideBytes</c> and written unchanged on the next Save.
     /// </summary>
     public static FileEditResult AddOrReplace(MapDocument doc, string name, byte[] bytes)
@@ -61,7 +61,7 @@ public static class FileEditCommand
     /// <summary>
     /// Hard-removing a file is NOT supported by the model, so this fails loudly.
     /// <c>MapDocument</c> exposes no way to delete an entry (<c>Files</c> is read-only), and
-    /// <c>SaveToBytes</c> rebuilds from the original archive by only ADDING dirty entries , 
+    /// <c>SaveToBytes</c> rebuilds from the original archive by only ADDING dirty entries ,
     /// removal is deliberately unwired because <c>MpqArchiveBuilder.RemoveFile</c> +
     /// <c>AddFile</c> of the same name silently drops the file. The nearest supported
     /// operation is <see cref="AddOrReplace"/> with an empty payload, which blanks the
@@ -126,7 +126,7 @@ public static class FileEditCommand
     private static MapFileEntry RequireEntry(MapDocument doc, string name) =>
         doc.GetFile(name) ?? throw new FileNotFoundException($"'{name}' is not in the map", name);
 
-    /// <summary>The one rule that keeps reads honest: a pending replacement
+    /// <summary>The one rule that keeps reads honest, a pending replacement
     /// (OverrideBytes) wins over the immutable original (RawBytes).</summary>
     /// <remarks>Kept as a one-line forwarder so this file's many call sites read the same
     /// as they always did. The decision itself now lives on the entry, where it is made

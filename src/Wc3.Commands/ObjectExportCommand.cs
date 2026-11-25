@@ -6,7 +6,7 @@ using Wc3.Model;
 namespace Wc3.Commands;
 
 /// <summary>
-/// The CSV for one Object Editor kind: one row per object the map defines (merged base game
+/// The CSV for one Object Editor kind, one row per object the map defines (merged base game
 /// data overlaid by the map's deltas), one column per field code, a header row first. The
 /// columns are the union of every field any exported object carries, ordinally sorted, so a
 /// round trip through <see cref="ObjectImportCommand"/> restores the same set.
@@ -18,7 +18,7 @@ public sealed record ObjectExportResult(
 /// <summary>
 /// Exports the objects of one kind to CSV. Read-only, no map bytes change. Base game fields
 /// merge in when a game install is available, so a field the map did not touch still exports
-/// its base value; without one the export is map-deltas only and says so. A field whose
+/// its base value. Without one the export is map-deltas only and says so. A field whose
 /// delta equals the base value is exported once, at its merged value.
 /// </summary>
 public static class ObjectExportCommand
@@ -37,7 +37,7 @@ public static class ObjectExportCommand
         string kindName = kind.ToString().ToLowerInvariant();
         var entries = ObjectKinds.MergedEntries(doc, info);
 
-        // Merged fields per object: base game fields overlaid by the map's deltas.
+        // Merged fields per object, base game fields overlaid by the map's deltas.
         var rows = entries.Select(e => (Entry: e, Fields: MergedFields(ctx, kind, e))).ToList();
 
         var columns = rows

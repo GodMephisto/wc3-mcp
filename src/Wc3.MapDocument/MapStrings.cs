@@ -33,7 +33,7 @@ public sealed partial class MapStrings
     /// <summary>
     /// If <paramref name="raw"/> is a TRIGSTR_ reference (leading zeros tolerated)
     /// with a known id, returns the referenced string (trailing whitespace/newlines
-    /// trimmed); otherwise returns <paramref name="raw"/> unchanged. Null/empty → "".
+    /// trimmed). Otherwise returns <paramref name="raw"/> unchanged. Null/empty → "".
     /// </summary>
     public string Resolve(string? raw)
     {

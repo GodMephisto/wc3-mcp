@@ -247,7 +247,7 @@ public static class ScriptCommand
     /// <summary>
     /// Returns the full <paramref name="source"/> with the 1-based line range
     /// [fn.StartLine, fn.EndLine] replaced by <paramref name="newFunctionText"/>.
-    /// Byte-faithful everywhere else: bytes before StartLine and after EndLine, including
+    /// Byte-faithful everywhere else, bytes before StartLine and after EndLine, including
     /// EndLine's own line terminator, or its absence when the last line runs to EOF, are
     /// untouched, so the file keeps its original trailing-newline state. The replacement
     /// text's newlines are converted to the source's convention (CRLF when the source
@@ -255,7 +255,7 @@ public static class ScriptCommand
     /// <paramref name="newFunctionText"/> is dropped (the replaced range never includes
     /// EndLine's terminator, so "with" and "without" splice identically). Returns
     /// <paramref name="source"/> unchanged when the fn range is invalid (StartLine out of
-    /// range); EndLine is clamped into [StartLine, lineCount] like
+    /// range). EndLine is clamped into [StartLine, lineCount] like
     /// <see cref="SliceFunction"/>, making replace the exact inverse of slice.
     /// <paramref name="lineStarts"/> must come from <see cref="ComputeLineStarts"/>.
     /// </summary>
@@ -265,7 +265,7 @@ public static class ScriptCommand
         if (lineStarts is null || lineStarts.Length == 0) return source;
         if (fn.StartLine < 1 || fn.StartLine > lineStarts.Length) return source;
 
-        // Same range math as SliceFunction: [start, end) excludes EndLine's terminator.
+        // Same range math as SliceFunction, [start, end) excludes EndLine's terminator.
         var clampedEnd = Math.Clamp(fn.EndLine, fn.StartLine, lineStarts.Length);
         var start = lineStarts[fn.StartLine - 1];
         var end = clampedEnd < lineStarts.Length

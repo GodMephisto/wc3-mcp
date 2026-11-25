@@ -9,23 +9,23 @@ namespace Wc3.Commands;
 /// <summary>The seven Object Editor types, each backed by its own map file pair.</summary>
 public enum ObjectKind { Unit, Item, Ability, Destructable, Doodad, Buff, Upgrade }
 
-/// <summary>Per-kind wiring: map/skin file names, the object-name field code, plus
+/// <summary>Per-kind wiring, map/skin file names, the object-name field code, plus
 /// adapters over the per-kind stores and metadata in <see cref="GameDataContext"/>.</summary>
 internal sealed record ObjectKindInfo(ObjectKind Kind, string MapFile, string SkinFile, string NameCode);
 
 /// <summary>
 /// A map object-data entry normalized across the three War3Net modification shapes
 /// (Simple / Level / Variation). Id is the object's own rawcode (NewId for customs,
-/// OldId for modified standards); OldId is the base (0 = base-less). Mod keys are the
+/// OldId for modified standards). OldId is the base (0 = base-less). Mod keys are the
 /// bare field code, or "code:N" for per-level/per-variation values (N > 0).
 /// </summary>
 internal sealed record MapObjectEntry(int Id, int OldId, IReadOnlyList<KeyValuePair<string, string>> Mods);
 
 public static class ObjectKinds
 {
-    // Name field codes confirmed against the live metadata SLKs: units/items share
-    // "unam"; the rest follow the type's field-code prefix letter. Units resolve base
-    // names via UnitNameTable; destructables/doodads carry SLK-backed WESTRING refs;
+    // Name field codes confirmed against the live metadata SLKs, units/items share
+    // "unam". The rest follow the type's field-code prefix letter. Units resolve base
+    // names via UnitNameTable. Destructables/doodads carry SLK-backed WESTRING refs.
     // items/abilities/buffs/upgrades keep names in Profile TXTs (unresolved in v1).
     internal static ObjectKindInfo Info(ObjectKind kind) => kind switch
     {
@@ -51,7 +51,7 @@ public static class ObjectKinds
                 string.Join("|", All.Select(k => k.ToString().ToLowerInvariant())));
 
     /// <summary>
-    /// The kind's entries from war3map.* overlaid by the Reforged war3mapSkin.* twin:
+    /// The kind's entries from war3map.* overlaid by the Reforged war3mapSkin.* twin,
     /// union by object rawcode, per-field skin-wins, in first-seen order. Missing or
     /// unparsed files contribute nothing.
     /// </summary>
@@ -64,7 +64,7 @@ public static class ObjectKinds
             foreach (var e in Entries(doc.GetFile(file)?.Model))
             {
                 if (byId.TryGetValue(e.Id, out var existing))
-                    // Same object in both layers: skin mods append, so they win
+                    // Same object in both layers, skin mods append, so they win
                     // when the consumer folds Mods into a last-wins dictionary.
                     byId[e.Id] = existing with
                     {
@@ -86,13 +86,13 @@ public static class ObjectKinds
     }
 
     // Normalization across the three modification shapes (confirmed by reflection
-    // against War3Net.Build.Core 6.0.3):
-    //   w3u/w3t/w3b/w3h → Base*/New* : List<SimpleObjectModification>
-    //     { OldId, NewId, Modifications: List<SimpleObjectDataModification { Id, Type, Value }> }
+    // against War3Net.Build.Core 6.0.3),
+    //   w3u/w3t/w3b/w3h → Base*/New* , List<SimpleObjectModification>
+    //     { OldId, NewId, Modifications, List<SimpleObjectDataModification { Id, Type, Value }> }
     //   w3a/w3q → List<LevelObjectModification>
-    //     { ..., Modifications: List<LevelObjectDataModification { Level, Pointer, Id, Type, Value }> }
+    //     { ..., Modifications, List<LevelObjectDataModification { Level, Pointer, Id, Type, Value }> }
     //   w3d → List<VariationObjectModification>
-    //     { ..., Modifications: List<VariationObjectDataModification { Variation, Pointer, Id, Type, Value }> }
+    //     { ..., Modifications, List<VariationObjectDataModification { Variation, Pointer, Id, Type, Value }> }
     // int ids are little-endian rawcodes via ToRawcode/FromRawcode.
     private static IEnumerable<MapObjectEntry> Entries(object? model) => model switch
     {
@@ -141,8 +141,8 @@ public static class ObjectKinds
         }
     }
 
-    /// <summary>Field-name pipeline generalized over kinds: metadata displayName (a
-    /// WESTRING key) → localized English string; fallbacks: the WESTRING key itself,
+    /// <summary>Field-name pipeline generalized over kinds, metadata displayName (a
+    /// WESTRING key) → localized English string. Fallbacks, the WESTRING key itself,
     /// then the raw key. Leveled keys ("code:N") look up by the bare code.</summary>
     internal static Func<string, string> FieldNameLookup(GameDataContext? ctx, ObjectKind kind) => key =>
     {
@@ -179,7 +179,7 @@ public static class ObjectKinds
     /// Two sources, and the order matters. UnitEditorData.txt states the closed set for an
     /// enumerated type together with the names the World Editor shows. Only when the field's type
     /// names no such section does this fall back to collecting the distinct values the base data
-    /// happens to use, which is a guess at a closed set and is wrong in two directions: it misses
+    /// happens to use, which is a guess at a closed set and is wrong in two directions, it misses
     /// legal values no stock object uses, and it yields raw tokens, so a team colour field reads
     /// "-1, 0, 1, 2" instead of "None, Red, Blue, Teal".
     /// Empty means the field is genuinely free text or a number.
@@ -234,7 +234,7 @@ public static class ObjectKinds
     /// option set, generalized over every kind. Options are the distinct base-data values
     /// the field takes across all objects of the kind, correct-by-construction, so a
     /// dropdown/multiselect can only ever write a token the game already uses. For list
-    /// types ("*List") the options are the individual comma-separated tokens; otherwise
+    /// types ("*List") the options are the individual comma-separated tokens. Otherwise
     /// the whole values. Empty options ⇒ caller should fall back to free text. Leveled
     /// keys ("code:N") resolve by the bare code.
     /// </summary>
@@ -274,8 +274,8 @@ public static class ObjectKinds
     }
 
     /// <summary>
-    /// The base game's name for a standard object, when resolvable: units via the
-    /// localized name table; other kinds via the store's name field, whose SLK-backed
+    /// The base game's name for a standard object, when resolvable, units via the
+    /// localized name table. Other kinds via the store's name field, whose SLK-backed
     /// values are WESTRING refs (an unresolvable ref is not a name → null). Kinds whose
     /// names live in Profile TXTs simply never resolve here.
     /// </summary>

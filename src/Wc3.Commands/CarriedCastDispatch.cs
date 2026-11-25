@@ -16,7 +16,7 @@ public sealed record CastDispatchWiring(string ConditionFunction, string Generat
 /// <c>GetSpellAbilityId()</c> and calls the right spell-start function. What it cannot bring is the
 /// TRIGGER, because a trigger is a runtime handle created by the source map's own init, not a
 /// function in the closure. So the dispatcher arrives complete, compiles, and is never called by
-/// anything. Measured on GGGA: the installed hero's dispatcher
+/// anything. Measured on GGGA, the installed hero's dispatcher
 /// (<c>hH0DA__GearHero_Conditions</c>) is declared and referenced nowhere, every one of her
 /// spell-start functions is unreachable, and her abilities do nothing when cast. That is the
 /// difference between a hero who spawns and a hero who plays.

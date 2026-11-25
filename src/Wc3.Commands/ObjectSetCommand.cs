@@ -18,21 +18,21 @@ public static class ObjectSetCommand
     /// Sets a field on an object of any Object Editor kind and marks the kind's
     /// war3map.* file dirty so the next Save re-serializes it (that file only).
     ///
-    /// Field syntax: a bare 4-char code, or "code:N" selecting level N (ability/
+    /// Field syntax, a bare 4-char code, or "code:N" selecting level N (ability/
     /// upgrade) or variation N (doodad). A bare code on a leveled kind edits an
-    /// existing non-leveled (level 0) modification when present, else level 1; a
+    /// existing non-leveled (level 0) modification when present, else level 1. A
     /// brand-new modification lands at level 1 (variation 0 for doodads).
     ///
     /// On a Reforged map each kind's data is split across war3map.* and the
     /// war3mapSkin.* twin, and the edit goes to whichever layer that map keeps the
-    /// field in (see <see cref="SkinFieldPartition"/>): a field the object already
+    /// field in (see <see cref="SkinFieldPartition"/>), a field the object already
     /// carries in the skin layer is edited there, otherwise the layer is the one the
     /// map's own objects use for that field code. Writing a skin-layer field into
     /// war3map.* instead would be silently overridden at load time, since the skin
     /// layer is merged on top. A classic map has no skin file and everything routes
     /// to war3map.*, exactly as before.
     /// An existing modification keeps its declared type (the value must parse as
-    /// that type); a new modification infers its type from the value's shape
+    /// that type). A new modification infers its type from the value's shape
     /// (int → Int, decimal → Unreal, else String) and reports a warning.
     /// </summary>
     public static ObjectSetResult Execute(
@@ -60,7 +60,7 @@ public static class ObjectSetCommand
         string kindName = kind.ToString().ToLowerInvariant();
         int id = rawcode.FromRawcode();
 
-        // The object must already be defined by the map (either layer); the merged
+        // The object must already be defined by the map (either layer). The merged
         // entry also supplies the base id when the group must be mirrored from skin.
         if (!session.Merged.TryGetValue(id, out var merged))
             return new(false, $"{kindName} {rawcode} not found in map");
@@ -74,8 +74,8 @@ public static class ObjectSetCommand
         var group = access.FindGroup(id);
         if (group is null)
         {
-            // Not yet present in the layer this field belongs in: create the group there. A
-            // custom keeps its base as OldId (0 = base-less); a modified standard
+            // Not yet present in the layer this field belongs in, create the group there. A
+            // custom keeps its base as OldId (0 = base-less). A modified standard
             // is keyed by OldId with NewId 0, same as the read side.
             bool isCustom = merged.OldId != id;
             group = isCustom ? access.CreateGroup(merged.OldId, id) : access.CreateGroup(id, 0);
@@ -123,7 +123,7 @@ public static class ObjectSetCommand
         {
             var (typed, type) = Infer(value);
             access.AddMod(group, fieldId, slot, type, typed);
-            // New field (no prior modification): the type is guessed from the value's
+            // New field (no prior modification), the type is guessed from the value's
             // shape, which is not authoritative. Int vs Real are not byte-compatible, so
             // a wrong guess stores a wrong in-game value (structure stays valid).
             warning = $"field {field} was newly added with inferred type {type} (guessed from the value); "
@@ -136,7 +136,7 @@ public static class ObjectSetCommand
     }
 
     /// <summary>
-    /// Which layer to edit: the skin layer when the object already carries this field there
+    /// Which layer to edit, the skin layer when the object already carries this field there
     /// (so the edit lands on the value that actually takes effect), otherwise the layer this
     /// map keeps the field code in.
     /// </summary>
@@ -245,7 +245,7 @@ public static class ObjectSetCommand
                 typed = f; return true;
             // WC3 object data stores only int/real/unreal/string (variable types 0-3).
             // War3Net's Bool/Char are obsolete and never emitted by the read path, so a
-            // mod's Type is always one of the above; no Bool/Char cases are reachable.
+            // mod's Type is always one of the above. No Bool/Char cases are reachable.
             case ObjectDataType.String:
                 typed = value; return true;
             default:

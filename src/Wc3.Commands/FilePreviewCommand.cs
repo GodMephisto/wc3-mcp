@@ -7,7 +7,7 @@ using Wc3.Render;
 namespace Wc3.Commands;
 
 /// <summary>
-/// How a map file should be shown: decoded text, a PNG (for BLP/DDS images), or a hex
+/// How a map file should be shown, decoded text, a PNG (for BLP/DDS images), or a hex
 /// dump for opaque binary. Kind is "text" | "image" | "binary".
 /// </summary>
 public sealed record FilePreview(string Name, string Kind, string Info, string? Text, byte[]? Png);
@@ -94,7 +94,7 @@ public static class FilePreviewCommand
             HexDump(bytes, HexDumpBytes), null);
     }
 
-    /// <summary>Sniff: mostly-printable + no NULs in the first block reads as text.</summary>
+    /// <summary>Sniff, mostly-printable + no NULs in the first block reads as text.</summary>
     private static bool LooksLikeText(byte[] bytes)
     {
         int n = Math.Min(bytes.Length, 512);

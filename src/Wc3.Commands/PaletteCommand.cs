@@ -12,18 +12,18 @@ namespace Wc3.Commands;
 /// Enumerates the doodad types placeable on a map, the "palette" a caller consults
 /// before <see cref="PlacementCommand.PlaceDoodad"/>. The base-game doodad catalog
 /// (installed GameData) is unioned with the map's own object-data (war3map.w3d overlaid
-/// by war3mapSkin.w3d): custom doodads (New*) and modified base doodads (Base*). Each
+/// by war3mapSkin.w3d), custom doodads (New*) and modified base doodads (Base*). Each
 /// entry carries its four-char rawcode, a resolved display name (the map's name-field
-/// delta wins over the base game's name; null when unresolvable), its source, the base
+/// delta wins over the base game's name. Null when unresolvable), its source, the base
 /// it derives from, and, for units, its icon art path (the map's 'uico' delta wins
-/// over the base skin profile; decode via <see cref="IconPng(MapDocument, string,
-/// string?)"/>). Deterministic order: base catalog by rawcode, then map-only
+/// over the base skin profile. Decode via <see cref="IconPng(MapDocument, string,
+/// string?)"/>). Deterministic order, base catalog by rawcode, then map-only
 /// customs by rawcode. Without a WC3 install the base catalog is unavailable, so the
 /// palette is map-only and the open diagnostic is surfaced (never throws).
 /// </summary>
 public static class PaletteCommand
 {
-    /// <summary>CLI/default overload: opens game data by locating the install (or override).</summary>
+    /// <summary>CLI/default overload, opens game data by locating the install (or override).</summary>
     public static DoodadPaletteResult DoodadPalette(MapDocument doc, string? gameDirOverride)
     {
         GameData.GameData.TryOpen(gameDirOverride, out var ctx, out var diag);
@@ -94,9 +94,9 @@ public static class PaletteCommand
         return new DestructablePaletteResult(true, msg, entries, diagnostics);
     }
 
-    /// <summary>Kind-generic palette builder: unions the base-game catalog (<paramref
+    /// <summary>Kind-generic palette builder, unions the base-game catalog (<paramref
     /// name="baseRawcodes"/>) with the map's own object-data for <paramref name="kind"/>,
-    /// folding the map's name/source in where they overlap. Deterministic order: base catalog
+    /// folding the map's name/source in where they overlap. Deterministic order, base catalog
     /// by rawcode, then map-only codes by rawcode.</summary>
     private static (List<PaletteEntry> Entries, List<string> Diagnostics, string Message) BuildPalette(
         MapDocument doc, GameDataContext? ctx, ObjectKind kind,
@@ -107,7 +107,7 @@ public static class PaletteCommand
         var diagnostics = new List<string>();
         if (openDiag != null) diagnostics.Add(openDiag);
 
-        // Icon art (units only for now): base icon art lives in Reforged's skin-profile
+        // Icon art (units only for now), base icon art lives in Reforged's skin-profile
         // TXT, not the SLK stores, same story as the model-file field in
         // RenderModelCommand, so the profile is parsed once for the whole catalog.
         var iconField = kind == ObjectKind.Unit ? UnitIconField : null;
@@ -115,7 +115,7 @@ public static class PaletteCommand
         var mapIcon = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         // Map object-data, indexed by code so base-catalog rows can adopt the map's name
-        // and source. A New* custom has Id != OldId (its own distinct code); a Base*
+        // and source. A New* custom has Id != OldId (its own distinct code). A Base*
         // modification has Id == OldId (the same code as the base doodad it edits).
         var mapName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var mapSource = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -135,7 +135,7 @@ public static class PaletteCommand
                 mapIcon[code] = FirstArtPath(art);
         }
 
-        // The entry's icon: its own icon-field delta wins, then its own skin art
+        // The entry's icon, its own icon-field delta wins, then its own skin art
         // (base/map-modified rows), then the skin art of the base it derives from
         // (map-custom rows that never overrode the icon).
         string? IconOf(string code, string? baseRawcode) =>
@@ -152,7 +152,7 @@ public static class PaletteCommand
         var baseCodes = baseRawcodes?.ToList() ?? new List<string>();
         foreach (var code in baseCodes.OrderBy(c => c, StringComparer.OrdinalIgnoreCase))
         {
-            if (!emitted.Add(code)) continue; // Rawcodes is already Distinct; guard anyway
+            if (!emitted.Add(code)) continue; // Rawcodes is already Distinct. Guard anyway
             var name = mapName.TryGetValue(code, out var mn) ? mn : ObjectKinds.BaseName(ctx, kind, code);
             var source = mapSource.TryGetValue(code, out var ms) ? ms : "base";
             var baseRawcode = source == "map-modified" ? code : (string?)null;
@@ -177,7 +177,7 @@ public static class PaletteCommand
     /// <summary>Object-data field that names a unit's command-button icon ("Interface Icon").</summary>
     private const string UnitIconField = "uico";
 
-    /// <summary>Reforged's home for base unit icon art (the SLK stores never carry it , 
+    /// <summary>Reforged's home for base unit icon art (the SLK stores never carry it ,
     /// 'uico' is a Profile-backed field, see <see cref="BaseUnitStore"/>).</summary>
     private const string UnitSkinProfile = @"units\unitskin.txt";
 
@@ -217,7 +217,7 @@ public static class PaletteCommand
     private static string FirstArtPath(string value) => value.Split(',')[0].Trim().Trim('"');
 
     /// <summary>
-    /// Front-end hook: decodes a palette entry's icon art path (see
+    /// Front-end hook, decodes a palette entry's icon art path (see
     /// <see cref="PaletteEntry.IconPath"/>) to PNG bytes for display. The map's own files
     /// win (imported icons override base art), then the base game via CASC, Reforged
     /// repacks classic .blp/.tga icons as .dds at the same path, so both are tried and

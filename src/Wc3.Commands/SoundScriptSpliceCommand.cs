@@ -29,7 +29,7 @@ public sealed record SoundScriptSpliceResult(
 /// block is therefore split, its declarations go inside the script's existing globals block (or a
 /// new block is created before the first function), and only its functions are appended.
 ///
-/// Contracts:
+/// Contracts,
 /// <list type="bullet">
 /// <item>Every original byte is preserved. The two insertion points are line starts, the text
 /// outside them is byte-identical and keeps its order, and the bytes before the first insertion

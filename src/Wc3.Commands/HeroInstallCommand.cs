@@ -31,11 +31,11 @@ public sealed record InstallResult(
 /// <summary>
 /// Installs a <see cref="HeroDefinition"/> into any map, the <c>install</c> verb of the format.
 ///
-/// Three rules here exist because their absence caused real, expensive failures:
+/// Three rules here exist because their absence caused real, expensive failures,
 ///
 /// ASSETS ARE NEVER CLOBBERED. The porter silently overwrote six of a target map's own textures
 /// and a model with same-named files from the source, changing how unrelated heroes rendered. An
-/// asset whose hash matches is skipped as already present; one that differs is REFUSED and
+/// asset whose hash matches is skipped as already present. One that differs is REFUSED and
 /// reported, never overwritten.
 ///
 /// RAWCODES ARE REMAPPED, NOT ASSUMED. The target may already use the definition's codes, so each
@@ -112,7 +112,7 @@ public static class HeroInstallCommand
 
         // Fields are applied in a SECOND pass, after every object exists and the remap is complete.
         // A field value can name another carried rawcode, and a hero's ability list is exactly
-        // that: uhab = "A1QZ,A1R1,...". Writing it verbatim pointed the installed hero at the
+        // that, uhab = "A1QZ,A1R1,...". Writing it verbatim pointed the installed hero at the
         // SOURCE map's ability codes, which do not exist in the target, so she arrived with no
         // abilities at all. Applying fields inside the creation loop could not have worked either,
         // since an object referenced later in the list has not been created yet.
@@ -121,7 +121,7 @@ public static class HeroInstallCommand
                 if (ObjectSetCommand.Execute(target, kind, code, f.Code, RemapRawcodes(f.Value, remap)).Ok)
                     fields++;
 
-        // 3. Assets, now that nothing has been refused. Each one also gets a war3map.imp entry:
+        // 3. Assets, now that nothing has been refused. Each one also gets a war3map.imp entry,
         // an archive file the import table does not declare is a real inconsistency, and 'lint'
         // reports it, so writing the bytes without the entry only moves the bug.
         foreach (var (path, bytes) in pending)
@@ -151,13 +151,13 @@ public static class HeroInstallCommand
                 // implementation rather than at a private no-op the definition brought with it.
                 body = BindStubs(body, head, def, bindings, stubUnmet);
 
-                // Globals must land INSIDE the target's own globals block; appended after it they
+                // Globals must land INSIDE the target's own globals block. Appended after it they
                 // are a syntax error, and the carried functions that read them will not compile.
                 head = InsertGlobals(head, def.Globals, remap);
 
                 // The closure brings the source map's cast dispatcher but not the trigger that
                 // drove it, because a trigger is a runtime handle and not a function. Measured on
-                // GGGA: the carried dispatcher was declared, referenced nowhere, and every one of
+                // GGGA, the carried dispatcher was declared, referenced nowhere, and every one of
                 // the hero's spell-start functions was unreachable. Wire it, gated to this hero.
                 string installedForDispatch = remap.TryGetValue(def.Id, out var dispatchCode) ? dispatchCode : def.Id;
                 var wirings = CarriedCastDispatch.Wire(head, body, installedForDispatch);
@@ -171,7 +171,7 @@ public static class HeroInstallCommand
                 // Latin-1 out, not FileEditCommand.WriteText, which is UTF-8. The head was DECODED
                 // as Latin-1, so re-encoding it as UTF-8 turns each of the target's 51,779
                 // non-ASCII bytes into two, silently mangling every localised string and author
-                // name in the map. Measured on WOS2 before this line was fixed: the installed
+                // name in the map. Measured on WOS2 before this line was fixed, the installed
                 // war3map.j carried 103,572 non-ASCII bytes where the original had 51,779. The
                 // read was switched to Latin-1 earlier, the write was not, and half a fix here is
                 // still a corrupted map.
@@ -188,11 +188,11 @@ public static class HeroInstallCommand
         var next = new List<string>();
         var contract = ContractCommand.Run(target);
         // Call count and a near-1.0 rawcode ratio are NOT enough to identify a hero roster. On a
-        // map with no roster at all they matched SetItemRelatives(integer itemId, ...) - an
-        // item-relation table - and inserted a bogus call. The signature is the discriminator: a
-        // hero roster names its first parameter for a unit (GGGA: RPB_AddHero(integer unitCode,
+        // map with no roster at all they matched SetItemRelatives(integer itemId, ...), an
+        // item-relation table, and inserted a bogus call. The signature is the discriminator, a
+        // hero roster names its first parameter for a unit (GGGA, RPB_AddHero(integer unitCode,
         // ...)), an item table names it for an item. Refusing to guess is the correct outcome when
-        // no candidate looks unit-shaped; a wrong automatic edit is far worse than a manual step.
+        // no candidate looks unit-shaped. A wrong automatic edit is far worse than a manual step.
         var roster = contract.Registries.FirstOrDefault(r =>
             r.CallCount >= 8
             && r.RegisteredRawcodes.Count >= r.CallCount * 0.8
@@ -205,7 +205,7 @@ public static class HeroInstallCommand
         {
             // Block-style roster. The target registers each hero with several statements rather
             // than one call, so copy a REAL existing entry and substitute. Inventing the shape is
-            // what fails here: the block carries a counter, a hidden preview dummy and one
+            // what fails here, the block carries a counter, a hidden preview dummy and one
             // UnitAddAbility per spell, and omitting any of those half-registers the hero.
             var tmpl = contract.Templates[0];
             var block = InstantiateTemplate(tmpl, installedRoot, def, remap, assumptions);
@@ -216,7 +216,7 @@ public static class HeroInstallCommand
                 next.Add("registered automatically into " + tmpl.ArrayName
                          + " as entry " + tmpl.Entries);
                 // The display name lives in a separate if/elseif chain, not in the roster block,
-                // so it needs its own edit. Same principle as the roster itself: copy the branch
+                // so it needs its own edit. Same principle as the roster itself, copy the branch
                 // the map already uses for another hero and substitute, rather than invent a shape.
                 if (AddDisplayNameBranch(target, tmpl, def, assumptions) is { } named)
                     next.Add("display name wired: " + named);
@@ -293,7 +293,7 @@ public static class HeroInstallCommand
                       + "but do nothing.");
 
         // 7. The per-hero kit ladder, the last thing a ported hero is missing and the only one no
-        // check used to mention. Measured in game on GGGA: this hero passed every pick-screen gate
+        // check used to mention. Measured in game on GGGA, this hero passed every pick-screen gate
         // and CreateUnit produced her unit, and WS_FinalizeWorkingSourceHero still returned false
         // because it has a hand-written branch per hero and none for her, so she arrived with no
         // caster global, no spell trigger registrations and no kit. Named here rather than
@@ -308,7 +308,7 @@ public static class HeroInstallCommand
                       + "point this unit at another character's kit.");
 
         // 8. Every OTHER per-hero table. The kit ladder above is one of many, and reporting only it
-        // understated the work twelvefold on GGGA. Measured in the running game: the spawn path is
+        // understated the work twelvefold on GGGA. Measured in the running game, the spawn path is
         // not what fails, an installed hero reaches the world alive, visible and selected, and is
         // simply absent from the tables that give her damage routing, death handling, portraits and
         // ability hints. Named, never generated, for the same reason as the kit branch.
@@ -359,7 +359,7 @@ public static class HeroInstallCommand
     /// must reach the shared thing. Binding is un-namespacing one symbol so the reference resolves
     /// to the target's declaration, and deleting the stub so it does not shadow it.
     ///
-    /// A bind is only performed when all four hold, because a wrong bind is worse than a no-op:
+    /// A bind is only performed when all four hold, because a wrong bind is worse than a no-op,
     /// <list type="number">
     /// <item>Not a peer. A target's own <c>AlucardSpells</c> is its Alucard, not a service.</item>
     /// <item>The definition did not carry the class's private instance tables. If it did, the ids
@@ -477,7 +477,7 @@ public static class HeroInstallCommand
     }
 
     /// <summary>
-    /// A declaration reduced to the only thing that decides whether a call compiles: its parameter
+    /// A declaration reduced to the only thing that decides whether a call compiles, its parameter
     /// types and return type. Parameter NAMES differ freely between two maps that compiled the same
     /// class, so comparing whole declaration lines would refuse every safe bind.
     /// </summary>
@@ -496,9 +496,9 @@ public static class HeroInstallCommand
     }
 
     /// <summary>
-    /// Builds the registration call by copying the target's OWN convention: same function, same
+    /// Builds the registration call by copying the target's OWN convention, same function, same
     /// argument count, our rawcode first. A string argument that looks like an asset path is
-    /// filled from the definition's icon; every other argument reuses the value an existing
+    /// filled from the definition's icon. Every other argument reuses the value an existing
     /// registration used, so the call is always well-formed even on a map we have never seen.
     /// </summary>
     /// <summary>A short quoted word that is not a file path, which is what a role looks like.</summary>
@@ -521,7 +521,7 @@ public static class HeroInstallCommand
                 .FirstOrDefault(f => f.Code is "uico" or "ussi")?.Value
             ?? def.Assets.FirstOrDefault(a =>
                 a.Category.Equals("icon", StringComparison.OrdinalIgnoreCase))?.Path;
-        // The field omits the extension; match it to a carried asset so the emitted path is real.
+        // The field omits the extension. Match it to a carried asset so the emitted path is real.
         if (icon is not null && !icon.Contains('.'))
             icon = def.Assets.FirstOrDefault(a =>
                 a.Path.StartsWith(icon, StringComparison.OrdinalIgnoreCase))?.Path ?? icon;
@@ -603,7 +603,7 @@ public static class HeroInstallCommand
 
     /// <summary>
     /// Appends paths to <c>war3map.imp</c>, bumping its declared count. The table is a version and
-    /// a count followed by (flag byte, NUL-terminated path) records; the flag is copied from the
+    /// a count followed by (flag byte, NUL-terminated path) records. The flag is copied from the
     /// map's own first entry rather than guessed.
     /// </summary>
     private static void AddImportEntries(MapDocument target, IEnumerable<string> paths)
@@ -676,7 +676,7 @@ public static class HeroInstallCommand
 
     /// <summary>
     /// True when the registration's FIRST parameter names a unit rather than an item, ability or
-    /// anything else. Deliberately conservative: an unrecognised shape returns false, so install
+    /// anything else. Deliberately conservative, an unrecognised shape returns false, so install
     /// reports the requirement as unmet instead of writing a call it cannot justify.
     /// </summary>
     private static bool FirstParameterLooksLikeAUnit(string signature)
@@ -712,7 +712,7 @@ public static class HeroInstallCommand
         var addAbility = new Regex(@"UnitAddAbility\s*\([^,]*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)");
         int sampleAbilityCount = tmpl.TemplateLines.Count(l => addAbility.IsMatch(l));
 
-        // Ours: the abilities the definition carries, in declaration order, after install's remap.
+        // Ours, the abilities the definition carries, in declaration order, after install's remap.
         var ours = def.Objects
             .Where(o => o.Kind.Equals("ability", StringComparison.OrdinalIgnoreCase))
             .Select(o => remap.TryGetValue(o.Rawcode, out var to) ? to : o.Rawcode)
@@ -727,14 +727,14 @@ public static class HeroInstallCommand
             // This hero goes after every existing entry.
             line = Regex.Replace(line, @"^(\s*set\s+n\s*=\s*)-?\d+", "${1}" + tmpl.Entries);
             line = line.Replace(sampleHeroId, "'" + rawcode + "'", StringComparison.Ordinal);
-            // The sample carried a trailing "// Tomioka"; keeping it mislabels this hero.
+            // The sample carried a trailing "// Tomioka". Keeping it mislabels this hero.
             int cmt = line.IndexOf("//", StringComparison.Ordinal);
             if (cmt > 0) line = line[..cmt].TrimEnd();
 
             var am = addAbility.Match(line);
             if (am.Success)
             {
-                // Fewer abilities than the sample: drop the surplus line rather than emit a
+                // Fewer abilities than the sample, drop the surplus line rather than emit a
                 // reference to an ability this hero does not have.
                 if (abilityIndex >= ours.Count) continue;
                 line = line.Replace(am.Groups[1].Value, "'" + ours[abilityIndex] + "'",
@@ -795,7 +795,7 @@ public static class HeroInstallCommand
     }
 
     /// <summary>
-    /// Byte-preserving codec for script text. A map's war3map.j is NOT necessarily UTF-8: WOS2
+    /// Byte-preserving codec for script text. A map's war3map.j is NOT necessarily UTF-8, WOS2
     /// carries bytes that are not valid UTF-8, and decoding then re-encoding them as UTF-8 replaces
     /// each with '?', which pjass reports as "Unrecognized character ? (ASCII 63)" and which
     /// silently corrupts author names and localised strings. Latin-1 maps every byte 0..255 to the
@@ -809,7 +809,7 @@ public static class HeroInstallCommand
     /// roster slot to the text shown in the pick UI.
     /// </summary>
     /// <remarks>
-    /// A roster entry alone is not enough on a map built this way: the hero occupies a slot but the
+    /// A roster entry alone is not enough on a map built this way, the hero occupies a slot but the
     /// picker shows nothing for her. The chain is found by looking for a string array assigned
     /// literal names many times over, then the LAST branch of it is copied and substituted, so the
     /// new branch matches whatever comparison variable and formatting the map already uses. Copying
@@ -891,7 +891,7 @@ public static class HeroInstallCommand
     /// Object fields reference other objects by rawcode, and a comma separated list is the common
     /// shape (a hero's uhab and uabi list her abilities that way). Install has to rename objects
     /// because the target's codes are its own, so a value copied verbatim points at codes that do
-    /// not exist there. The symptom is silent: the hero installs cleanly, the script compiles, and
+    /// not exist there. The symptom is silent, the hero installs cleanly, the script compiles, and
     /// she simply has no abilities in game.
     /// Only whole four character tokens are replaced, so a path or a piece of prose that happens to
     /// contain four matching characters is left alone.

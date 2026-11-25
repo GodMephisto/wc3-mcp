@@ -3,9 +3,9 @@ namespace Wc3.GameData;
 /// <summary>
 /// Resolves a base unit rawcode (e.g. "hfoo") to its default field values by joining
 /// unitmetadata.slk with the unit data SLKs. Metadata "slk" values name the table
-/// (e.g. "UnitBalance" -> unitbalance.slk); fields whose slk is "Profile" live in TXT
+/// (e.g. "UnitBalance" -> unitbalance.slk). Fields whose slk is "Profile" live in TXT
 /// profile files and are not resolved in v1. The join itself lives in the generic
-/// ObjectDataStore; the unit table set stays explicit so item fields (which share
+/// ObjectDataStore. The unit table set stays explicit so item fields (which share
 /// unitmetadata.slk) resolve via the Items store instead.
 /// </summary>
 public sealed class BaseUnitStore
@@ -30,7 +30,7 @@ public sealed class BaseUnitStore
         return new BaseUnitStore(UnitMetadata.FromSlk(metaTable), store);
     }
 
-    /// <summary>Field-code -> base value for the given unit; false if no field resolves.</summary>
+    /// <summary>Field-code -> base value for the given unit. False if no field resolves.</summary>
     public bool TryGetUnit(string rawcode, out IReadOnlyDictionary<string, string> fieldsByCode)
         => _store.TryGet(rawcode, out fieldsByCode);
 

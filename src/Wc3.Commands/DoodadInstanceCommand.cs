@@ -7,9 +7,9 @@ namespace Wc3.Commands;
 
 /// <summary>One placed doodad/destructable from war3map.doo. Scale is per-axis;
 /// LifePercent is the World Editor's 0..100 health override (the .doo stores it as a
-/// byte). Name is the map's object-data name delta for the type when one exists , 
+/// byte). Name is the map's object-data name delta for the type when one exists ,
 /// war3map.doo holds both destructables (w3b deltas) and doodads (w3d deltas), so both
-/// are consulted, else null; base-game names need a game-data context which this
+/// are consulted, else null. Base-game names need a game-data context which this
 /// hermetic read deliberately does not open.</summary>
 public sealed record DoodadInstanceInfo(
     int CreationNumber,
@@ -28,8 +28,8 @@ public sealed record DoodadEditResult(bool Ok, string Message);
 /// <summary>
 /// Read/edit access to the doodads/destructables already placed on the map
 /// (war3map.doo), the way the World Editor's doodad-properties dialog exposes them.
-/// The doodad analogue of <see cref="UnitInstanceCommand"/>: reads walk the parsed
-/// War3Net <see cref="MapDoodads"/> model; edits mutate the matching
+/// The doodad analogue of <see cref="UnitInstanceCommand"/>, reads walk the parsed
+/// War3Net <see cref="MapDoodads"/> model. Edits mutate the matching
 /// <see cref="DoodadData"/> in place and re-register the model via
 /// <see cref="MapDocument.AddOrReplaceModelFile"/> (exactly the PlacementCommand
 /// write path), so the file re-serializes on the next Save.
@@ -74,7 +74,7 @@ public static class DoodadInstanceCommand
             $"scale set to ({sx}, {sy}, {sz})");
     }
 
-    /// <summary>Sets which model variation the doodad displays (>= 0; how many exist
+    /// <summary>Sets which model variation the doodad displays (>= 0. How many exist
     /// is a property of the doodad type, which this hermetic edit cannot see).</summary>
     public static DoodadEditResult SetVariation(MapDocument doc, int creationNumber, int variation)
     {

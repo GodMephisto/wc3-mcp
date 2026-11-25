@@ -3,7 +3,7 @@ using Wc3.GameData;
 namespace Wc3.Commands;
 
 /// <summary>
-/// The editor shape for a single object field: its metadata type token, whether it is a
+/// The editor shape for a single object field, its metadata type token, whether it is a
 /// multi-value list, and the enumerated option set with each value's display name. When the
 /// game install is unavailable, or the field is genuinely free text or a number, Options is
 /// empty and the caller should fall back to a plain text editor.
@@ -21,7 +21,7 @@ public sealed record ObjectFieldOptionsResult(
 /// distinct values the base data happens to use.
 ///
 /// The order matters, and it used to be the other way round. Deriving a closed set by observation
-/// is wrong in two directions: it misses legal values no stock object uses, and it yields raw
+/// is wrong in two directions, it misses legal values no stock object uses, and it yields raw
 /// tokens rather than names, so a team colour field offered "-1, 0, 1, 2" where the editor offers
 /// "Match Owning Player" and the player colours. A value the game defines but nothing happens to
 /// use is exactly the value someone opens an editor to set.

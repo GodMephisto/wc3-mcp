@@ -34,7 +34,7 @@ public sealed class BaseAbilityStore
         return new BaseAbilityStore(AbilityMetadata.FromSlk(metaTable), store);
     }
 
-    /// <summary>Field-code -> base value for the given ability; false if no field resolves.</summary>
+    /// <summary>Field-code -> base value for the given ability. False if no field resolves.</summary>
     public bool TryGetAbility(string rawcode, out IReadOnlyDictionary<string, string> fieldsByCode)
         => _store.TryGet(rawcode, out fieldsByCode);
 

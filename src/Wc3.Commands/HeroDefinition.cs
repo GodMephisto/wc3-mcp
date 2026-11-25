@@ -4,7 +4,7 @@ using System.Text.Json;
 namespace Wc3.Commands;
 
 /// <summary>
-/// One field the source map set on an object. Only map-level fields are carried: a base-game
+/// One field the source map set on an object. Only map-level fields are carried, a base-game
 /// value is not the hero's data, it is the engine's, and re-stating it would make the definition
 /// brittle across patches.
 /// </summary>
@@ -12,7 +12,7 @@ public sealed record DefinitionField(string Code, string Value);
 
 /// <summary>
 /// One object the hero needs, with its fields STATED rather than inferred. Carrying the fields is
-/// what makes a definition self-contained: without them an install would still need the original
+/// what makes a definition self-contained, without them an install would still need the original
 /// map, and the whole point of the format is that it does not.
 /// </summary>
 public sealed record DefinitionObject(
@@ -25,7 +25,7 @@ public sealed record DefinitionObject(
     IReadOnlyList<DefinitionField> Fields);
 
 /// <summary>
-/// One asset. <see cref="Sha256"/> makes an install idempotent and lets a collision be judged:
+/// One asset. <see cref="Sha256"/> makes an install idempotent and lets a collision be judged,
 /// same hash means the target already has this exact file and nothing needs writing.
 /// </summary>
 public sealed record DefinitionAsset(
@@ -36,7 +36,7 @@ public sealed record DefinitionAsset(
 
 /// <summary>
 /// Something the TARGET map must provide. This is the part the World Editor has no concept of and
-/// the reason a hero with perfect object data can still not exist to the player: a map builds its
+/// the reason a hero with perfect object data can still not exist to the player, a map builds its
 /// roster from its own script, so a unit absent from that call is simply not a hero there.
 /// </summary>
 public sealed record DefinitionRequirement(
@@ -49,7 +49,7 @@ public sealed record DefinitionRequirement(
 /// no-op stub that was emitted in its place so the script would compile.
 ///
 /// A stub is a placeholder, not an implementation, so recording it is what lets an install replace
-/// it. Without this list the stubs were indistinguishable from carried code: they were namespaced
+/// it. Without this list the stubs were indistinguishable from carried code, they were namespaced
 /// like everything else, so a call to the source map's HashMap became a call to a private empty
 /// function that returns 0, and a target that already implements HashMap could never be reached.
 /// Install reads these and BINDS the call to the target's own function where that is safe.
@@ -91,8 +91,8 @@ public sealed record DefinitionStub(
 /// A hero as a self-describing artifact, rather than something inferred out of a host map every
 /// time it is needed.
 ///
-/// The reason this exists: extracting a hero from a merged 200,000-line arena map is intractable,
-/// and every failure in that direction came from INFERENCE - guessing which objects belong to it,
+/// The reason this exists, extracting a hero from a merged 200,000-line arena map is intractable,
+/// and every failure in that direction came from INFERENCE, guessing which objects belong to it,
 /// which functions are reachable, which calls can be trimmed. A definition replaces inference with
 /// declaration. Stated once, reviewed by a human, then installed mechanically.
 ///
@@ -113,7 +113,7 @@ public sealed record HeroDefinition(
     IReadOnlyList<string> ScriptEntryPoints,
     /// <summary>
     /// Global declarations the carried functions read, verbatim. Without these the script
-    /// does not compile: carrying functions alone produced 50 'undeclared variable' errors,
+    /// does not compile, carrying functions alone produced 50 'undeclared variable' errors,
     /// which is the same fatal outcome as a missing callee, and an un-compilable war3map.j
     /// means a hosted map shows no player slots.
     /// </summary>
@@ -130,7 +130,7 @@ public sealed record HeroDefinition(
 {
     /// <remarks>
     /// Deliberately NOT bumped for <see cref="Stubs"/>. The version exists so an older build can
-    /// REFUSE a definition it would mis-handle, and this field is additive and optional: System.Text
+    /// REFUSE a definition it would mis-handle, and this field is additive and optional, System.Text
     /// .Json ignores an unknown property, so an older build installs such a definition exactly as
     /// it does today, keeping every stub. Bumping would make older builds refuse a definition they
     /// can still install correctly, which is a regression dressed up as caution. Bump this only for
@@ -149,7 +149,7 @@ public sealed record HeroDefinition(
     /// hand-authored files routinely use camelCase. A camelCase definition left every collection
     /// null, and the first enumeration (RootPresent on Objects, or the asset loop) threw a raw
     /// NullReferenceException or ArgumentNullException instead of reporting an ordinary lint
-    /// finding. Case-insensitive matching fixes the casing; coalescing a genuinely absent collection
+    /// finding. Case-insensitive matching fixes the casing. Coalescing a genuinely absent collection
     /// to empty turns the remaining "nothing declared" case into a lint error rather than a crash.
     /// </summary>
     public static HeroDefinition? ReadJson(string json)

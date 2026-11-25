@@ -15,7 +15,7 @@ public static partial class TerrainCommand
     // ---- Ground query -------------------------------------------------------
 
     /// <summary>
-    /// The ground surface level at one corner, in cliff-step units: <c>Height + CliffLevel</c>,
+    /// The ground surface level at one corner, in cliff-step units, <c>Height + CliffLevel</c>,
     /// the exact quantity the terrain mesh multiplies by 128 for world Z. Returns null when the
     /// map has no terrain, the grid is inconsistent, or (col,row) is off-grid. A caller that
     /// wants water to sit a set depth above the brushed ground reads this, adds the depth, and
@@ -44,7 +44,7 @@ public static partial class TerrainCommand
         Raise,
         /// <summary>Subtract from the existing water height (the tile stays flagged as water).</summary>
         Lower,
-        /// <summary>Clear the water flag (drain); the stored height is left untouched.</summary>
+        /// <summary>Clear the water flag (drain). The stored height is left untouched.</summary>
         Remove,
     }
 
@@ -52,7 +52,7 @@ public static partial class TerrainCommand
     /// Applies a water brush over a circular (default) or square footprint of the given
     /// <paramref name="radius"/> centred at (<paramref name="centerX"/>,<paramref name="centerY"/>).
     /// <paramref name="amount"/> is the absolute level for <see cref="WaterOp.Set"/> and the
-    /// delta for Raise/Lower; it is ignored for <see cref="WaterOp.Remove"/>.
+    /// delta for Raise/Lower. It is ignored for <see cref="WaterOp.Remove"/>.
     /// </summary>
     public static DeformResult Water(
         MapDocument doc,
@@ -82,7 +82,7 @@ public static partial class TerrainCommand
     }
 
     /// <summary>
-    /// Rectangle variant of <see cref="Water"/>: applies the op to every tile in the inclusive
+    /// Rectangle variant of <see cref="Water"/>, applies the op to every tile in the inclusive
     /// axis-aligned rectangle [x0,x1]×[y0,y1] (corners may be given in any order).
     /// </summary>
     public static DeformResult WaterRect(

@@ -13,10 +13,10 @@ namespace Wc3.Commands;
 ///
 /// <para>Warcraft III does NOT read war3mapUnits.doo directly for a map that ships a custom
 /// war3map.j. For such a map the World Editor bakes a <c>CreateAllUnits</c> function (and a
-/// <c>CreateAllItems</c> one) into the script and calls them from <c>main</c>; that generated
+/// <c>CreateAllItems</c> one) into the script and calls them from <c>main</c>. That generated
 /// code is what brings preplaced widgets to life. A map whose .doo holds units but whose script
 /// has no such function shows nothing in game, even though the editor still draws the widgets
-/// from the .doo. wc3ctl and the Studio only wrote the .doo, so this closes the gap: after any
+/// from the .doo. wc3ctl and the Studio only wrote the .doo, so this closes the gap, after any
 /// placement the creation script is regenerated and wired into <c>main</c>.</para>
 ///
 /// <para>The generated code lives between two marker comments so a later sync can replace exactly
@@ -67,7 +67,7 @@ public static class PreplacedUnitsScript
 
     private const string UnitsFunc = "CreateAllUnits";
     private const string ItemsFunc = "CreateAllItems";
-    // Internal, not private: DebugWiringCommand instruments this exact generated function on an
+    // Internal, not private, DebugWiringCommand instruments this exact generated function on an
     // already-ported map, and reuses the fixed name rather than keeping its own copy of it.
     internal const string WireSpellsFunc = "wc3ctl_WirePlacedHeroSpells";
 
@@ -87,7 +87,7 @@ public static class PreplacedUnitsScript
         bool HasSpellWiring)
     {
         public bool IsStale => HasBlock && BlockVersion < CurrentVersion;
-        /// <summary>The consequential failure: the wiring is required but absent, so casts go nowhere.</summary>
+        /// <summary>The consequential failure, the wiring is required but absent, so casts go nowhere.</summary>
         public bool IsMissingSpellWiring => HasBlock && NeedsSpellWiring && !HasSpellWiring;
     }
 
@@ -161,7 +161,7 @@ public static class PreplacedUnitsScript
 
         // Never downgrade. If the block was written by a NEWER generator, this build would silently
         // strip capabilities it does not know about (that is exactly how a map's heroes ended up
-        // unable to cast: an older binary regenerated a newer block and dropped its spell wiring).
+        // unable to cast, an older binary regenerated a newer block and dropped its spell wiring).
         // Leaving it alone keeps the better block, and the message names the fix.
         int existingVersion = BlockVersionOf(jass);
         if (hasOurBlock && existingVersion > GeneratorVersion)
@@ -173,11 +173,11 @@ public static class PreplacedUnitsScript
         if (!hasOurBlock && MentionsForeignFunction(jass, UnitsFunc))
             return new(false, "map already creates its preplaced units through its own script, left untouched", 0, 0);
 
-        // Nothing to create and nothing of ours to clean up: leave the file byte-identical.
+        // Nothing to create and nothing of ours to clean up, leave the file byte-identical.
         if (spawnable.Count == 0 && items.Count == 0 && !hasOurBlock)
             return new(true, "no preplaced widgets to wire", 0, 0);
 
-        // Rebuild from a clean slate: drop our old block, then splice a fresh one (if any) in
+        // Rebuild from a clean slate, drop our old block, then splice a fresh one (if any) in
         // just before main so every function it defines exists before main calls it.
         // An arena registers each player's hero in a global unit array (Hero[GetPlayerId(p)]=u), and
         // its spell handlers only act on a unit that is in that array. A placed hero never runs the
@@ -300,7 +300,7 @@ public static class PreplacedUnitsScript
             // cast. A hero-named array counts too, since an arena often passes it straight into its
             // spell functions rather than comparing it.
             //
-            // Deliberately NOT enough: merely being assigned a freshly created unit. That admits
+            // Deliberately NOT enough, merely being assigned a freshly created unit. That admits
             // arrays holding spawned helpers (a revenge unit, a dummy caster), and writing a real
             // hero into one of those makes that system believe it owns our hero, so it may kill,
             // recycle, or refuse to spawn. Missing an obscure array only mutes one hero, whereas
@@ -311,7 +311,7 @@ public static class PreplacedUnitsScript
             bool heroNamed = name.Contains("hero", StringComparison.OrdinalIgnoreCase);
             if (!comparedToCaster && !heroNamed) continue;
 
-            // Belt and braces on the same risk: never impersonate a dummy unit slot.
+            // Belt and braces on the same risk, never impersonate a dummy unit slot.
             if (name.Contains("dummy", StringComparison.OrdinalIgnoreCase)) continue;
 
             found.Add((new HeroArray(name, oneBased > zeroBased), Math.Max(zeroBased, oneBased)));
@@ -328,7 +328,7 @@ public static class PreplacedUnitsScript
     /// not reach the dispatcher, CreateAllUnits registers the placed hero's player on each instead.
     /// Registering an unrelated dispatcher is harmless, its condition just filters the cast out.
     ///
-    /// Internal, not private: DebugWiringCommand reuses this exact detection to find which trigger
+    /// Internal, not private, DebugWiringCommand reuses this exact detection to find which trigger
     /// to instrument on an already-ported map, rather than keeping a second copy of the pattern.
     /// </summary>
     internal static List<string> DetectPerPlayerSpellTriggers(string jass)
@@ -388,7 +388,7 @@ public static class PreplacedUnitsScript
     /// filter, an ordinary port hooks every carried InitTrig_* not already called by another carried
     /// aggregator straight into InitCustomTriggers (see ScriptPorter.HookInit), which includes a
     /// carried InitTrig_LvlUpCheck just as readily as any other, marking the call it inserts
-    /// <c>// wc3ctl ported: ...</c>. Left alone, that makes a hero's OWN carried, merely-lazy,
+    /// <c>// wc3ctl ported, ...</c>. Left alone, that makes a hero's OWN carried, merely-lazy,
     /// gated-behind-a-level-up per-player mechanism look "already reachable" in a freshly ported blank
     /// target too, exactly the case above that must still get our registration, since nothing else
     /// there promptly registers the dispatcher for an immediately castable placed hero. Every line
@@ -648,7 +648,7 @@ public static class PreplacedUnitsScript
         // Owners whose EVERY placed hero already has its own --synth-dispatch dispatcher wired (see
         // DetectSynthDispatchedHeroes) are excluded from the shared-dispatcher registration below, or
         // that hero's spells would run twice, once through each path. An arena places one hero per
-        // player, so this is the whole story in practice; a player who somehow owns a mix (one hero
+        // player, so this is the whole story in practice. A player who somehow owns a mix (one hero
         // ported plain, another with --synth-dispatch) still needs the shared dispatcher for the
         // plain one, so it stays registered there, the safer of the two imperfect choices.
         var fullySynthDispatchedOwners = heroes.Select(h => h.OwnerId).Distinct()
@@ -780,7 +780,7 @@ public static class PreplacedUnitsScript
                             sb.Append("        ").Append(SynthDispatchBuilder.ReplaceIdentifier(call, g.UnitParam, "u")).Append(nl);
                         sb.Append("    endif").Append(nl);
                     }
-                // Best-effort arena integration for a placed hero (see Sync): register it into the
+                // Best-effort arena integration for a placed hero (see Sync), register it into the
                 // per-player hero array so handlers that test Hero[pid] recognise it. Safe here because
                 // it is a plain global-array write (the array exists from map load), unlike the spell
                 // trigger registration, which must wait for the triggers and is done via the timer below.
@@ -861,7 +861,7 @@ public static class PreplacedUnitsScript
                 if (anchor >= 0 && anchor < mainEnd)
                     anchor = jass.IndexOf('\n', anchor) + 1;
             }
-            if (anchor < 0 || anchor > mainEnd) anchor = mainEnd; // last resort: end of main
+            if (anchor < 0 || anchor > mainEnd) anchor = mainEnd; // last resort, end of main
             int lineStart = jass.LastIndexOf('\n', Math.Min(anchor, jass.Length - 1)) + 1;
             string indent = LeadingWhitespace(jass, lineStart);
             string stmt = indent + "call " + func + "(  )" + nl;

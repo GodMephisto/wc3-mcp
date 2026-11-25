@@ -157,7 +157,7 @@ public sealed class MapDocument
             }
             catch (Exception ex)
             {
-                // Unreadable entry (encrypted/unnamed/corrupt): keep a placeholder
+                // Unreadable entry (encrypted/unnamed/corrupt), keep a placeholder
                 // instead of aborting Load. The real bytes are preserved either way on
                 // save, by the archive rebuild or by the in-place salvage patch.
                 readable = false;
@@ -262,7 +262,7 @@ public sealed class MapDocument
     /// archive, so a serialized sweep of a protected map's nameless entries reads one leading
     /// sector at a time, measured at 22.6 seconds for 64,738 of them. Past
     /// <see cref="ParallelSniffThreshold"/> this opens one <see cref="MpqArchive"/> per worker over
-    /// the same in-memory original bytes with <c>loadListFile: false</c> and reads each entry's
+    /// the same in-memory original bytes with <c>loadListFile, false</c> and reads each entry's
     /// prefix from its own archive, so <see cref="_archiveLock"/> is never taken and the reads run
     /// concurrently. The bytes sniffed are identical to the shared path, and a fresh archive
     /// enumerates blocks in the order Load assigned <see cref="MapFileEntry.BlockIndex"/>, so a
@@ -368,7 +368,7 @@ public sealed class MapDocument
             return;
         try
         {
-            // A parser that reached the end of the file returns the model directly; one that
+            // A parser that reached the end of the file returns the model directly. One that
             // stopped short returns the model plus the bytes it never looked at.
             var parsed = parse(entry.RawBytes);
             if (parsed is MapFormatRegistry.ParsedModel withTail)
@@ -417,7 +417,7 @@ public sealed class MapDocument
             foreach (var c in AssetPathCandidates.Expand(raw)) candidates.Add(c);
         }
 
-        // Source 1: string literals in the script. Whichever of the two script languages, and
+        // Source 1, string literals in the script. Whichever of the two script languages, and
         // whichever spelling the archive stores it under (see StandardMapFileNames), only the
         // text matters here, deliberately unscoped (every literal, not one hero's reachable
         // code, the way Wc3.Commands.BundleCommand's closure-scoped scan must be to avoid
@@ -427,7 +427,7 @@ public sealed class MapDocument
             ?? GetFile("war3map.lua") ?? GetFile("scripts\\war3map.lua");
         if (script is { RawBytes.Length: > 0 })
         {
-            // Latin-1: this scan looks for asset PATHS in string literals, and a path containing
+            // Latin-1, this scan looks for asset PATHS in string literals, and a path containing
             // a non-ASCII character would decode to U+FFFD under UTF-8 and silently never become a
             // candidate. That presents as a missing imported asset, not as a decoding fault, which
             // is a bad failure to debug. Nothing is written back here, so this only affects what
@@ -448,7 +448,7 @@ public sealed class MapDocument
                 Harvest(path);
         }
 
-        // Source 2: path-like field values inside the map's own object data (all seven kinds,
+        // Source 2, path-like field values inside the map's own object data (all seven kinds,
         // Reforged skin twins included, they parse into the same models). No game-data
         // metadata is available at this layer, unlike the porter's field scan this only needs
         // a coarse "might be a path" shape test, never attribution to a specific field or hero.
@@ -486,7 +486,7 @@ public sealed class MapDocument
     }
 
     // War3Net shape confirmed against the same three modification kinds Wc3.Commands.ObjectKinds
-    // normalizes (Simple: w3u/w3t/w3b/w3h, Level: w3a/w3q, Variation: w3d); read directly here
+    // normalizes (Simple, w3u/w3t/w3b/w3h, Level, w3a/w3q, Variation, w3d). Read directly here
     // rather than through that layer, Wc3.MapDocument must not depend on Wc3.Commands.
     private static IEnumerable<string> ObjectDataFieldValues(object model) => model switch
     {
@@ -801,7 +801,7 @@ public sealed class MapDocument
     /// Saves to <paramref name="path"/> in the form the map was loaded in, a folder for a folder
     /// map and an archive otherwise. An archive is staged in a temporary file beside the
     /// destination and renamed over it, so a crash or a full disk cannot truncate the map that is
-    /// already there; a folder map is already staged by <see cref="FolderMap.Unpack"/>.
+    /// already there. A folder map is already staged by <see cref="FolderMap.Unpack"/>.
     /// </summary>
     public void Save(string path)
     {
@@ -811,7 +811,7 @@ public sealed class MapDocument
     }
 
     /// <summary>
-    /// Test seam, internal and not part of the public surface: invoked with the staged temporary
+    /// Test seam, internal and not part of the public surface, invoked with the staged temporary
     /// path once its bytes are flushed and before the rename. A test throws from it to exercise
     /// the window a real crash or full disk would hit, which cannot be produced hermetically.
     /// Thread-static so a test that sets it cannot reach a save running on another thread.
@@ -823,7 +823,7 @@ public sealed class MapDocument
     /// Writes <paramref name="bytes"/> to <paramref name="path"/> through a unique temporary file
     /// in the destination's own folder, flushed to disk, then renamed over the destination. The
     /// rename is the only step that touches the existing file, so a failure before it leaves the
-    /// previous bytes intact; any failure deletes the temporary file and rethrows.
+    /// previous bytes intact. Any failure deletes the temporary file and rethrows.
     /// </summary>
     private static void WriteAtomically(string path, byte[] bytes)
     {
@@ -865,20 +865,20 @@ public sealed class MapDocument
             }
             catch (IOException) when (attempt < 8 && File.Exists(candidate))
             {
-                // Collided with a live staging file; draw another name.
+                // Collided with a live staging file. Draw another name.
             }
         }
     }
 
     public byte[] SaveToBytes()
     {
-        // Diagnostic: force the in-place patch, which keeps the source archive's hash table and
+        // Diagnostic, force the in-place patch, which keeps the source archive's hash table and
         // therefore its exact probe chains. A rebuild re-places every slot, and on a map whose
         // rebuilt chains are long the game stalls on the loading screen while content checks pass.
         if (Environment.GetEnvironmentVariable("WC3CTL_FORCE_SALVAGE") == "1")
             return SalvageSaveToBytes(new InvalidOperationException("forced by WC3CTL_FORCE_SALVAGE"));
 
-        // Diagnostic: compacting save, which keeps the source hash table verbatim and rewrites
+        // Diagnostic, compacting save, which keeps the source hash table verbatim and rewrites
         // only the block table, so the probe chains the game walks are unchanged.
         if (Environment.GetEnvironmentVariable("WC3CTL_COMPACT_SAVE") == "1")
         {
@@ -964,7 +964,7 @@ public sealed class MapDocument
 
         using var mpq = new MemoryStream();
         // SaveTo disposes the target stream unless leaveOpen, we still need to read it back.
-        // The two overloads do NOT agree on their bookkeeping defaults: passing an options
+        // The two overloads do NOT agree on their bookkeeping defaults, passing an options
         // object changes the emitted (listfile)/(attributes) even when only HashTableSize
         // is set on it. So take the plain overload untouched whenever the inherited table
         // is safe, which keeps every already-working map byte-for-byte as it was.
@@ -1052,7 +1052,7 @@ public sealed class MapDocument
 
     /// <summary>
     /// The source archive's block-size shift, read from its own header. Sector size is
-    /// 512 &lt;&lt; shift, and War3Net's default is 3, meaning 4 KB sectors.
+    /// 512 &lt;&lt. Shift, and War3Net's default is 3, meaning 4 KB sectors.
     /// </summary>
     /// <remarks>
     /// This is what made four of 34 maps in the user's Maps folder unsaveable, with
@@ -1182,10 +1182,10 @@ public sealed class MapDocument
 
     // MPQ hash tables are power-of-two sized and resolve names by linear probing, so a
     // nearly-full table makes every lookup miss walk a long chain of occupied slots.
-    // Inheriting the source archive's size is the trap: a big map can ship at ~96%
+    // Inheriting the source archive's size is the trap, a big map can ship at ~96%
     // occupancy and still work, because its entries were placed by whatever tool built
     // it, but a rebuild re-places all of them and the new chains can be catastrophic.
-    // The symptom is specific and was hard to find - the map hosts fine (the lobby reads
+    // The symptom is specific and was hard to find, the map hosts fine (the lobby reads
     // only a handful of files) and then stalls forever on the loading screen, while every
     // content-level check passes because no file's bytes changed. Keeping the table at
     // most half full means a rebuild can never inherit that failure mode.
@@ -1223,7 +1223,7 @@ public sealed class MapDocument
 
     /// <summary>
     /// Drops the optional MPQ bookkeeping files, <c>(listfile)</c> and <c>(attributes)</c>,
-    /// instead of regenerating them. Warcraft III needs neither: it resolves a map's files
+    /// instead of regenerating them. Warcraft III needs neither, it resolves a map's files
     /// through the hash table by name, and treats attributes as advisory.
     /// </summary>
     /// <remarks>
@@ -1238,7 +1238,7 @@ public sealed class MapDocument
 
     /// <summary>
     /// Parses the drop selection. <c>attributes</c> is the one worth reaching for, it holds the
-    /// per-file CRC32 a rebuild can invalidate. Dropping <c>listfile</c> costs real capability:
+    /// per-file CRC32 a rebuild can invalidate. Dropping <c>listfile</c> costs real capability,
     /// an entry with a non-standard name becomes unnameable, so ls cannot list it and extract
     /// cannot find it, even though the game still resolves it by hashing the name.
     /// </summary>
@@ -1293,7 +1293,7 @@ public sealed class MapDocument
         if (Fits(fileCount, originalSize))
             return null;
 
-        // Already at the format ceiling: nothing to grow into, so leave it untouched
+        // Already at the format ceiling, nothing to grow into, so leave it untouched
         // rather than emit a size the writer cannot represent.
         if (originalSize >= MaxHashTableSize)
             return null;
@@ -1349,7 +1349,7 @@ public sealed class MapDocument
             foreach (var duplicate in existing)
             {
                 duplicate.OverrideBytes = bytes;
-                duplicate.Model = null; // raw payload wins; drop any stale parsed model
+                duplicate.Model = null; // raw payload wins. Drop any stale parsed model
                 duplicate.IsDirty = true;
             }
             return existing[0];
@@ -1397,7 +1397,7 @@ public sealed class MapDocument
 
     private int NextBlockIndex() => _files.Count == 0 ? 0 : _files.Max(f => f.BlockIndex) + 1;
 
-    // Serialization by model type. A raw OverrideBytes payload always wins; otherwise
+    // Serialization by model type. A raw OverrideBytes payload always wins. Otherwise
     // the model's War3Net writer is used. Only formats with a byte-faithful writer are
     // handled, anything else must stay non-dirty (raw) so Save preserves original bytes.
     // Internal rather than private so SerializerFidelitySweep can measure the REAL save
@@ -1419,7 +1419,7 @@ public sealed class MapDocument
     /// files re-serialize to a strict PREFIX of themselves, so without this, editing a single unit
     /// in such a map silently drops four bytes nobody asked to remove.
     ///
-    /// This is what makes byte-faithfulness statable in one line: everything we read is written
+    /// This is what makes byte-faithfulness statable in one line, everything we read is written
     /// back, and so is everything we did not understand. See <see cref="MapFileEntry.UnreadTail"/>.
     /// </summary>
     private static byte[] WithUnreadTail(MapFileEntry entry, byte[] written)
@@ -1444,7 +1444,7 @@ public sealed class MapDocument
         ObjectDataSets.EnsureSetPrefixes(entry.Model);
 
         // Typed models with a byte-faithful War3Net writer (all seven object-data
-        // kinds share the ReadXxxObjectData/Write(xxx) round-trip; skin twins carry
+        // kinds share the ReadXxxObjectData/Write(xxx) round-trip. Skin twins carry
         // the same model types, so dispatch on the model, not the file name).
         switch (entry.Model)
         {
@@ -1459,37 +1459,37 @@ public sealed class MapDocument
             // Widget placement files (war3mapUnits.doo / war3map.doo). The read path
             // (Parsers.cs) parses these into MapUnits/MapDoodads, so the write path must
             // match or a dirtied placement edit would hit the throw below. Confirmed via
-            // reflection: BinaryWriterExtensions.Write(BinaryWriter, MapUnits/MapDoodads).
+            // reflection, BinaryWriterExtensions.Write(BinaryWriter, MapUnits/MapDoodads).
             case MapUnits m: return WriteBinary(w => w.Write(m));
             case MapDoodads m: return WriteBinary(w => w.Write(m));
-            // Pathing map (war3map.wpm). Read via ReadMapPathingMap (Parsers.cs); write
-            // confirmed via reflection: BinaryWriterExtensions.Write(BinaryWriter, MapPathingMap).
+            // Pathing map (war3map.wpm). Read via ReadMapPathingMap (Parsers.cs). Write
+            // confirmed via reflection, BinaryWriterExtensions.Write(BinaryWriter, MapPathingMap).
             case MapPathingMap m: return WriteBinary(w => w.Write(m));
-            // Regions (war3map.w3r). Read via ReadMapRegions (Parsers.cs); write
-            // confirmed via reflection: BinaryWriterExtensions.Write(BinaryWriter, MapRegions).
+            // Regions (war3map.w3r). Read via ReadMapRegions (Parsers.cs). Write
+            // confirmed via reflection, BinaryWriterExtensions.Write(BinaryWriter, MapRegions).
             case MapRegions m: return WriteBinary(w => w.Write(m));
             // Terrain environment (war3map.w3e). Read via ReadMapEnvironment (Parsers.cs);
             // byte-faithfulness of the War3Net writer is pinned by
             // MapWriteTests.Environment_writer_is_byte_faithful_on_real_map.
             case MapEnvironment m: return WriteBinary(w => w.Write(m));
-            // Sound definitions (war3map.w3s). Read via ReadMapSounds (Parsers.cs); the
+            // Sound definitions (war3map.w3s). Read via ReadMapSounds (Parsers.cs). The
             // byte-faithful writer BinaryWriterExtensions.Write(BinaryWriter, MapSounds)
             // was confirmed by MapSoundsProbe (reflection dump) and is pinned by
             // MapWriteTests.Sounds_writer_is_byte_faithful_on_real_map.
             case MapSounds m: return WriteBinary(w => w.Write(m));
             // GUI trigger tree (war3map.wtg) and the custom-text bodies (war3map.wct). Read via
-            // ReadMapTriggers/ReadMapCustomTextTriggers (Parsers.cs); the inverse writers exist as
+            // ReadMapTriggers/ReadMapCustomTextTriggers (Parsers.cs). The inverse writers exist as
             // BinaryWriterExtensions.Write(BinaryWriter, MapTriggers) and (..., MapCustomTextTriggers),
             // confirmed by reflection against War3Net.Build.Core 6.0.3 and pinned for
             // byte-faithfulness by MapWriteTests.
             //
             // Worth stating why this case matters beyond completeness. Without it, editing a map's
-            // compiled script while leaving its trigger tree behind is a ONE-WAY operation: the two
+            // compiled script while leaving its trigger tree behind is a ONE-WAY operation, the two
             // disagree, and the next World Editor save regenerates the script from the stale tree and
             // silently discards the edit.
             case War3Net.Build.Script.MapTriggers m: return WriteBinary(w => w.Write(m));
             // war3map.wct is deliberately NOT here. War3Net ships a writer for it, and that writer
-            // is not byte-faithful: a real map measured 549,168 bytes in and 549,170 out, a 2 byte
+            // is not byte-faithful, a real map measured 549,168 bytes in and 549,170 out, a 2 byte
             // gain on an untouched file. Adding the case would grow the file a little on every
             // save of a map nobody had even edited. Pinned by
             // TriggerWriteTests.Custom_text_triggers_have_no_model_writer_because_it_is_not_faithful.

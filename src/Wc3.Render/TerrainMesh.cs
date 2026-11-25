@@ -21,7 +21,7 @@ public readonly record struct TerrainMesh(
     Vector3 Center,
     float Radius)
 {
-    /// <summary>Floats per vertex: px,py,pz, nx,ny,nz, u,v, l00,l10,l01,l11.</summary>
+    /// <summary>Floats per vertex, px,py,pz, nx,ny,nz, u,v, l00,l10,l01,l11.</summary>
     public const int Stride = 12;
 }
 
@@ -59,7 +59,7 @@ public static class TerrainMeshBuilder
                 if (z > maxZ) maxZ = z;
             }
 
-        // Per-grid-point normal (central difference, Z-up; borders clamp to the edge sample).
+        // Per-grid-point normal (central difference, Z-up. Borders clamp to the edge sample).
         var nrm = new Vector3[n];
         for (int j = 0; j < h; j++)
             for (int i = 0; i < w; i++)

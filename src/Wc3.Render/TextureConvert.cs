@@ -17,7 +17,7 @@ namespace Wc3.Render;
 /// Converts image bytes between WC3's .blp/.dds and standard formats
 /// (.png/.jpg/.jpeg/.bmp/.tga, plus any source format ImageSharp sniffs).
 /// DDS is source-only (no encoder), decoded via <see cref="DdsDecoder"/>.
-/// Produced .blp files are BLP1 JPEG-content with mipmaps; WC3 stores the JPEG
+/// Produced .blp files are BLP1 JPEG-content with mipmaps. WC3 stores the JPEG
 /// channels as BGRA, so RGBA pixels are swapped before encoding (round-trip
 /// through <see cref="BlpDecoder"/> is proven in tests).
 /// </summary>

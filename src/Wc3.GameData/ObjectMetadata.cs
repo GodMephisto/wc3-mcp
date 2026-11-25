@@ -61,10 +61,10 @@ public sealed record ObjectFieldMeta(
 
 /// <summary>
 /// Type-agnostic view of the metadata SLK shape shared by every Object Editor type
-/// (units, items, abilities, buffs, destructables, doodads, upgrades). Confirmed shape:
+/// (units, items, abilities, buffs, destructables, doodads, upgrades). Confirmed shape,
 /// row key = "ID" column = the 4-char field code (matches w3u/w3t/w3a/w3h/w3b/w3d/w3q
-/// mod codes); "field" = the column name inside the data SLK, or the profile key when
-/// "slk" says "Profile" (resolved via <see cref="ProfileTxtStore"/>); "displayName" = a
+/// mod codes). "field" = the column name inside the data SLK, or the profile key when
+/// "slk" says "Profile" (resolved via <see cref="ProfileTxtStore"/>). "displayName" = a
 /// WESTRING key.
 /// </summary>
 public sealed class ObjectMetadata

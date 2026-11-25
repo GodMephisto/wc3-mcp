@@ -10,7 +10,7 @@ public static class ObjectNewCommand
     public sealed record ObjectNewResult(bool Ok, string Message, string? NewRawcode = null);
 
     /// <summary>
-    /// Creates a custom object of <paramref name="kind"/> derived from a base rawcode:
+    /// Creates a custom object of <paramref name="kind"/> derived from a base rawcode,
     /// a fresh unused rawcode is allocated (scanning every kind in both object-data
     /// layers, keeping the base's leading category char) and an empty modification
     /// group (OldId = base, NewId = fresh, no field mods) is appended to the kind's

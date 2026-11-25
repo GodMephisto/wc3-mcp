@@ -5,7 +5,7 @@ public delegate object ParseFn(byte[] raw);
 
 public static class MapFormatRegistry
 {
-    // Known WC3 map files. Parse delegates are wired in Task 8; a null delegate
+    // Known WC3 map files. Parse delegates are wired in Task 8. A null delegate
     // means "known but not yet parsed into a typed model" (degrades to raw).
     private static readonly Dictionary<string, ParseFn?> _parsers = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -30,7 +30,7 @@ public static class MapFormatRegistry
         ["war3map.w3d"] = null,          // doodad object data
         ["war3map.w3h"] = null,          // buff object data
         ["war3map.w3q"] = null,          // upgrade object data
-        // Reforged skin object-data layer: same binary formats as war3map.*.
+        // Reforged skin object-data layer, same binary formats as war3map.*.
         ["war3mapSkin.w3u"] = null,      // unit object data (skin)
         ["war3mapSkin.w3a"] = null,      // ability object data (skin)
         ["war3mapSkin.w3t"] = null,      // item object data (skin)
@@ -92,13 +92,13 @@ public static class MapFormatRegistry
     /// A parsed model plus the bytes the parser never consumed.
     ///
     /// Real maps carry trailing bytes past the end of what the format's reader understands, and
-    /// they are not noise to be discarded. Measured across the map library: six object tables on
+    /// they are not noise to be discarded. Measured across the map library, six object tables on
     /// three maps end with a trailing int32 zero (an empty table count the World Editor writes and
     /// War3Net's writer omits), and one war3mapUnits.doo ends with a stray 0x0A. Re-serializing
     /// those models produces a strict PREFIX of the original file, so a user who edited a single
     /// unit would silently shorten the file.
     ///
-    /// Carrying the tail turns byte-faithfulness into something stronger and simpler to state:
+    /// Carrying the tail turns byte-faithfulness into something stronger and simpler to state,
     /// everything we read is written back, and so is everything we did not understand.
     /// </summary>
     public sealed record ParsedModel(object Model, byte[] UnreadTail);

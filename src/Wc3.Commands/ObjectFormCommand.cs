@@ -84,7 +84,7 @@ public static class ObjectFormCommand
     // ObjectEditorCategories section, localized, and those are authoritative, so they are read
     // from there and these strings are only the fallback for a machine with no install. The file
     // lists the categories alphabetically by key, which is not a reading order, so the sequence
-    // below stays hardcoded on purpose: Art first because it is what someone looks at first, and
+    // below stays hardcoded on purpose, Art first because it is what someone looks at first, and
     // Editor last because it is metadata about the object rather than the object.
     private static readonly (string Key, string Title)[] CategoryOrder =
     {

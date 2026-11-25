@@ -33,15 +33,15 @@ public static class HexDumpCommand
     /// <summary>
     /// Dump lines for the window [<paramref name="offset"/>, offset+length) of
     /// <paramref name="data"/>. Each line is
-    /// <c>OOOOOOOO  XX XX .. XX  |ascii|</c>: an 8-hex-digit absolute offset (the index of
+    /// <c>OOOOOOOO  XX XX .. XX  |ascii|</c>, an 8-hex-digit absolute offset (the index of
     /// the line's first byte), <paramref name="bytesPerRow"/> bytes as 2-hex-digit
     /// space-separated uppercase pairs (a partial last row is space-padded to full column
     /// width so the ASCII gutter starts in the same column on every line), then the ASCII
     /// gutter between pipes, printable bytes 0x20, 0x7E as-is, everything else '.'.
-    /// Lines start exactly at the (clamped) offset; a caller wanting conventional
+    /// Lines start exactly at the (clamped) offset. A caller wanting conventional
     /// row-aligned labels passes a multiple of <paramref name="bytesPerRow"/>
     /// (e.g. firstVisibleRow * bytesPerRow).
-    /// Never throws: the window is intersected with [0, data.Length), note the window end
+    /// Never throws, the window is intersected with [0, data.Length), note the window end
     /// stays offset+length, so a negative offset shrinks the window rather than shifting
     /// it, and an empty intersection (offset past EOF, non-positive length, ...) yields an
     /// empty list. offset+length is computed in 64-bit, so int.MaxValue cannot overflow.
@@ -57,7 +57,7 @@ public static class HexDumpCommand
         if (end <= start) return Array.Empty<string>();
 
         var lines = new List<string>((int)((end - start + bytesPerRow - 1) / bytesPerRow));
-        // One builder reused per line: offset(8) + gap(2) + hex(3n-1) + gap(2) + |ascii|(n+2).
+        // One builder reused per line, offset(8) + gap(2) + hex(3n-1) + gap(2) + |ascii|(n+2).
         var sb = new StringBuilder(8 + 2 + (bytesPerRow * 3 - 1) + 2 + bytesPerRow + 2);
 
         for (long row = start; row < end; row += bytesPerRow)

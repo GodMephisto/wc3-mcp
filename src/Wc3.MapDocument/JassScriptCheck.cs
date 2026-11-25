@@ -26,7 +26,7 @@ public sealed record JassIssue(JassIssueKind Kind, DiagnosticSeverity Severity, 
 /// <summary>
 /// Checks whether a JASS script would still compile, and repairs the damage this tool itself can do.
 ///
-/// Why this exists: in JASS a single undeclared variable fails the whole <c>war3map.j</c>, so
+/// Why this exists, in JASS a single undeclared variable fails the whole <c>war3map.j</c>, so
 /// <c>config()</c> never runs and a hosted map shows no player slots. A port that trims calls to
 /// functions it did not carry can leave exactly that behind, and until now nothing verified the
 /// result, so a broken map saved silently and only failed in the lobby.
@@ -259,7 +259,7 @@ public static class JassScriptCheck
 
     /// <summary>The script with comments blanked out, same line count and indices, so a "set" or an
     /// identifier inside a comment (or a commented-out statement this tool wrote) is never mistaken
-    /// for code. Block comments are tracked across lines; string literals are left alone, which is
+    /// for code. Block comments are tracked across lines. String literals are left alone, which is
     /// safe because no check keys off a statement that could hide inside one.</summary>
     private static string[] StripComments(string[] lines)
     {

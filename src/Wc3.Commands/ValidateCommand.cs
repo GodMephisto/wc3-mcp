@@ -4,16 +4,16 @@ using War3Net.Build.Info;
 namespace Wc3.Commands;
 
 /// <summary>
-/// Static, read-only sanity check ("lint") over a loaded map. Surfaces the loader's
+/// Static, read-only quick check ("lint") over a loaded map. Surfaces the loader's
 /// own diagnostics plus missing/empty required files and obviously-wrong map-info
-/// values. A map is "valid" when it has zero Error-severity issues; warnings never
+/// values. A map is "valid" when it has zero Error-severity issues. Warnings never
 /// flip the verdict. Pure over <see cref="MapDocument"/>, writes nothing.
 /// </summary>
 public static class ValidateCommand
 {
-    // A runnable, playable map is expected to contain these:
-    //   war3map.w3i - map info header (name, players, bounds)
-    //   war3map.w3e - terrain / environment
+    // A runnable, playable map is expected to contain these,
+    //   war3map.w3i, map info header (name, players, bounds)
+    //   war3map.w3e, terrain / environment
     private static readonly string[] RequiredFiles = { "war3map.w3i", "war3map.w3e" };
 
     // A map needs at least one of these to run at all.

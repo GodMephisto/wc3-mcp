@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 namespace Wc3.GameData;
 
 /// <summary>
-/// One-call facade: locate the install, open CASC, build the base-game resolvers.
+/// One-call facade, locate the install, open CASC, build the base-game resolvers.
 /// Never throws, callers degrade gracefully on false + diagnostic.
 /// </summary>
 public static class GameData
@@ -24,7 +24,7 @@ public static class GameData
 
     /// <summary>Build the resolvers for all seven Object Editor types plus editor strings
     /// and unit names from a single CASC open, caching the result per install for the
-    /// process lifetime. The source is disposed before returning; the context holds only
+    /// process lifetime. The source is disposed before returning. The context holds only
     /// parsed data.</summary>
     public static bool TryOpen(string? gameDirOverride, out GameDataContext? ctx, out string diagnostic)
     {
@@ -54,7 +54,7 @@ public static class GameData
         // dispose as soon as they return, success or failure.
         try
         {
-            // The five newer types degrade individually: a missing/corrupt SLK leaves
+            // The five newer types degrade individually, a missing/corrupt SLK leaves
             // that store Empty with a diagnostic rather than failing the whole open.
             var diags = new List<string>();
             ObjectDataStore BuildSafe(string type, Func<IGameDataSource, ObjectDataStore> build)
@@ -105,7 +105,7 @@ public static class GameData
                 Diagnostics = diags,
                 InstallDir = dir, // lets TryReadFile lazily re-open CASC for raw assets
             };
-            // Concurrent builders may race; whichever lands first wins and both
+            // Concurrent builders may race. Whichever lands first wins and both
             // contexts are equivalent, so GetOrAdd keeps callers consistent.
             ctx = ContextCache.GetOrAdd(dir, ctx);
             return true;

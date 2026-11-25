@@ -19,22 +19,22 @@ public sealed record HashTableView(
 /// <summary>
 /// Renders an MPQ hash table so a rebuild's placement can be inspected rather than guessed at.
 ///
-/// The distinction this exists for: MPQ resolves a name by hashing it to a home slot and probing
+/// The distinction this exists for, MPQ resolves a name by hashing it to a home slot and probing
 /// FORWARD until it either matches or reaches a slot that was NEVER USED (0xFFFFFFFF). A DELETED
 /// slot (0xFFFFFFFE) does NOT stop that scan, because a deleted entry may have displaced the one
 /// being searched for. So an archive with zero never-used slots gives a lookup that misses no
 /// terminator at all, and the probe runs forever.
 ///
 /// That is a real infinite loop, inside the game's own executable, with no crash and no log entry,
-/// which matches a measured hang exactly: one core pinned, ~80% of instruction-pointer samples
+/// which matches a measured hang exactly, one core pinned, ~80% of instruction-pointer samples
 /// inside a 30-byte window. Earlier tooling here collapsed deleted and never-used into a single
 /// "free" bucket and so could not see it.
 /// </summary>
 public static class MpqHashTableCommand
 {
     private const int SlotBytes = 16;
-    private const uint SlotEmpty = 0xFFFFFFFF;      // never used - terminates a probe
-    private const uint SlotDeleted = 0xFFFFFFFE;    // deleted - does NOT terminate a probe
+    private const uint SlotEmpty = 0xFFFFFFFF;      // never used, terminates a probe
+    private const uint SlotDeleted = 0xFFFFFFFE;    // deleted, does NOT terminate a probe
 
     public static HashTableView Read(string path, int sampleLimit = 0)
     {
@@ -75,7 +75,7 @@ public static class MpqHashTableCommand
             all.Add(new HashSlot(i, nameA, nameB, locale, block, kind));
         }
 
-        // Worst-case probe for a name that is NOT present: how far a scan runs before it meets a
+        // Worst-case probe for a name that is NOT present, how far a scan runs before it meets a
         // never-used slot. If there are none, that scan never ends.
         int longest = LongestRunWithoutTerminator(all);
         bool canLoop = never == 0;

@@ -15,7 +15,7 @@ public sealed record ScriptNullLocalsResult(
     IReadOnlyList<NullLocal> Locals);
 
 /// <summary>
-/// Finds the classic JASS handle leak: a local of a handle type that the function destroys with
+/// Finds the classic JASS handle leak, a local of a handle type that the function destroys with
 /// the matching Remove or Destroy but never sets to <c>null</c>.
 ///
 /// JASS frees the handle's resources when it is destroyed, but the local still holds the value
@@ -25,7 +25,7 @@ public sealed record ScriptNullLocalsResult(
 /// for the absence of, destroy then <c>set x = null</c>.
 ///
 /// Only the unambiguous shape is reported. A local that is never destroyed is a different leak and
-/// belongs to <see cref="ScriptLeaksCommand"/>; this command stays silent on it. Array locals are
+/// belongs to <see cref="ScriptLeaksCommand"/>. This command stays silent on it. Array locals are
 /// skipped, since an array slot cannot be nulled as a whole.
 /// </summary>
 public static class ScriptNullLocalsCommand

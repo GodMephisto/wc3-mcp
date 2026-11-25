@@ -42,16 +42,16 @@ public sealed record StructureDiff(
 /// this project days. <c>diff</c> compares file CONTENTS, <c>roundtrip</c> excludes MPQ
 /// bookkeeping by design, and <c>validate</c>/pjass only look at the script. So a rebuilt
 /// archive whose every byte of every file was identical still failed to load, and no tool we
-/// owned could say why: the difference was in HOW files were stored, not WHAT was stored.
+/// owned could say why, the difference was in HOW files were stored, not WHAT was stored.
 ///
-/// This reports the physical facts a loader actually consumes - format version, sector size,
+/// This reports the physical facts a loader actually consumes, format version, sector size,
 /// hash table capacity and crowding, and per-file storage flags, compressed size and offset -
 /// so "our rebuild differs from the original in this specific way" becomes an observation
 /// instead of a guess.
 /// </summary>
 public static class MpqStructureCommand
 {
-    /// <summary>An MPQ hash table entry is 16 bytes: nameA, nameB, locale+platform, block index.</summary>
+    /// <summary>An MPQ hash table entry is 16 bytes, nameA, nameB, locale+platform, block index.</summary>
     private const int HashEntryBytes = 16;
 
     /// <summary>The archive begins after any prefix block (a .w3x carries a 512-byte HM3W header,
@@ -122,7 +122,7 @@ public static class MpqStructureCommand
             for (int i = 0; i < hashTableSize; i++)
             {
                 // A slot's last uint32 is the block index. 0xFFFFFFFF is never-used and
-                // 0xFFFFFFFE is deleted; both are free for probing purposes.
+                // 0xFFFFFFFE is deleted. Both are free for probing purposes.
                 uint blockIndex = BinaryPrimitives.ReadUInt32LittleEndian(
                     raw.AsSpan(i * HashEntryBytes + 12));
                 slots.Add(blockIndex < 0xFFFFFFFE);

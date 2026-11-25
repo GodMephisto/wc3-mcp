@@ -20,17 +20,17 @@ public sealed record ScriptRootsResult(
 
 /// <summary>
 /// Finds the functions a dead-code pass must treat as ROOTS because nothing calls them by
-/// identifier: they are invoked by name at runtime, <c>call ExecuteFunc("SomeFunc")</c>.
+/// identifier, they are invoked by name at runtime, <c>call ExecuteFunc("SomeFunc")</c>.
 ///
 /// This is the prerequisite for cleaning a ported script by reachability instead of by the
-/// porter's current line-by-line trimming. Trimming is what breaks ported maps: commenting out a
+/// porter's current line-by-line trimming. Trimming is what breaks ported maps, commenting out a
 /// call it cannot resolve leaves a local declared and never assigned (the script then does not
 /// compile, so a hosted map has no player slots), or strips an iterator's advance so
 /// <c>exitwhen not X_hasNext(it)</c> can never change and the loop spins forever.
-/// Carry complete, never trim, then strip what is genuinely unreachable - but a reachability pass
+/// Carry complete, never trim, then strip what is genuinely unreachable, but a reachability pass
 /// that cannot see string dispatch would delete these and break the map silently.
 ///
-/// Measured on a 4,428-function arena map: 95 roots, 2.1%, all following a per-hero event
+/// Measured on a 4,428-function arena map, 95 roots, 2.1%, all following a per-hero event
 /// convention. Small and regular enough to hand to an optimizer, which is what makes the whole
 /// strategy viable.
 /// </summary>

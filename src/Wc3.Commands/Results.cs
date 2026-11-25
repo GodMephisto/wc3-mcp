@@ -22,7 +22,7 @@ public sealed record DiffEntry(string Name, string Change);
 public sealed record DiffResult(IReadOnlyList<DiffEntry> Entries);
 public sealed record RoundtripResult(
     bool Faithful, IReadOnlyList<string> Mismatches, IReadOnlyList<string> ExcludedNotes);
-public sealed record MergedField(string Code, string Name, string Value, string Source) // Source: "base" | "map"
+public sealed record MergedField(string Code, string Name, string Value, string Source) // Source, "base" | "map"
 {
     private readonly string? _display;
     /// <summary><see cref="Value"/> with TRIGSTR_ references resolved against war3map.wts,
@@ -35,12 +35,12 @@ public sealed record MergedObjectResult(
     IReadOnlyList<MergedField> Fields, IReadOnlyList<string> Diagnostics);
 public sealed record ObjectListItem(string Rawcode, string? BaseRawcode, string? Name);
 public sealed record ObjectListResult(IReadOnlyList<ObjectListItem> Items);
-// Doodad "palette": the placeable doodad catalog = base-game set (GameData) unioned with
-// the map's own object-data (war3map.w3d ⊕ war3mapSkin.w3d). Source: "base" (stock, from
+// Doodad "palette", the placeable doodad catalog = base-game set (GameData) unioned with
+// the map's own object-data (war3map.w3d ⊕ war3mapSkin.w3d). Source, "base" (stock, from
 // the install), "map-custom" (a New* doodad defined by the map), or "map-modified" (a
 // base doodad the map edits in place). BaseRawcode = the base a map entry derives from
 // (null for pure base-catalog rows). Name is null when unresolvable (no install / WESTRING).
-// IconPath = the entry's icon art (units: 'uico' delta, else the base skin profile's Art);
+// IconPath = the entry's icon art (units, 'uico' delta, else the base skin profile's Art).
 // null when the kind has no icon (doodads) or nothing resolves. Decode via PaletteCommand.IconPng.
 public sealed record PaletteEntry(
     string Rawcode, string? Name, string Source, string? BaseRawcode, string? IconPath = null);
@@ -90,7 +90,7 @@ public sealed record PortResult(
     // CopiedFiles stays complete and truthful about what was written, this only says which of
     // them are not the root's own, so a report can count them instead of listing them.
     IReadOnlyList<string>? CarriedFiles = null);
-// Combined outcome of porting several units into one target: per-unit results in input
+// Combined outcome of porting several units into one target, per-unit results in input
 // order (their Script is always null, the batch splices the merged closure once), the
 // single merged script summary, and batch-level warnings.
 public sealed record BatchPortResult(
@@ -98,11 +98,11 @@ public sealed record BatchPortResult(
     ScriptPortInfo? Script,
     IReadOnlyList<string> Warnings);
 public sealed record BundleNode(string Rawcode, ObjectKind Kind, string? Name, bool CustomToMap);
-public sealed record BundleFile(string Path, string Category, bool PresentInMap); // Category: model|texture|icon|sound|other
-public sealed record BundleEdge(string From, string To, string Via); // From/To = rawcode or file path; Via = field code
-// Reason: "references '<rawcode>'[, ...]" (call-graph seed) or "called by <FunctionName>" (first discoverer).
+public sealed record BundleFile(string Path, string Category, bool PresentInMap); // Category, model|texture|icon|sound|other
+public sealed record BundleEdge(string From, string To, string Via); // From/To = rawcode or file path. Via = field code
+// Reason, "references '<rawcode>'[, ...]" (call-graph seed) or "called by <FunctionName>" (first discoverer).
 public sealed record BundleFunction(string Name, int StartLine, int EndLine, string Reason);
-// Despite the name, this is a generic object bundle: the root may be ANY ObjectKind
+// Despite the name, this is a generic object bundle, the root may be ANY ObjectKind
 // (BundleCommand.ResolveObject). "Unit" is kept for API/JSON compatibility this pass.
 public sealed record UnitBundle(string RootRawcode, string? RootName,
     IReadOnlyList<BundleNode> Objects, IReadOnlyList<BundleFile> Files,

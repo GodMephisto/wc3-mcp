@@ -21,7 +21,7 @@ public sealed record HeroLintResult(
 ///
 /// A definition is the artifact people keep, share and edit by hand, so it is worth catching a
 /// problem at authoring time rather than after it has been written into someone's map. Install
-/// mutates a target; lint does not, so this is the cheap check that should always run first.
+/// mutates a target. Lint does not, so this is the cheap check that should always run first.
 ///
 /// The hash check is the important one. Assets carry a SHA-256 precisely so an install can tell
 /// "the target already has exactly this file" from "a DIFFERENT file lives at this path" and
@@ -160,7 +160,7 @@ public static class HeroLintCommand
     /// name, so a stale record silently costs a hero its infrastructure. Catching it here, where
     /// nothing has been written to anyone's map yet, is the cheap version of that discovery.
     ///
-    /// The tally is worth printing even when everything checks out: a stub is a placeholder, and
+    /// The tally is worth printing even when everything checks out, a stub is a placeholder, and
     /// how many of them can bind is the difference between a hero that works on a given target and
     /// one that loads and then does nothing.
     /// </remarks>

@@ -20,7 +20,7 @@ public sealed record ObjectImportResult(
 /// yet define and updating those it does. The table is validated first, and an unknown column
 /// refuses the import rather than dropping data. A blank cell leaves the field untouched, so
 /// an export/import round trip restores exactly the fields the export carried. When a game
-/// install is available, a column must be a field the kind's metadata declares; without one a
+/// install is available, a column must be a field the kind's metadata declares. Without one a
 /// syntactically valid field token is accepted and the import says it could not verify codes.
 /// </summary>
 public static class ObjectImportCommand

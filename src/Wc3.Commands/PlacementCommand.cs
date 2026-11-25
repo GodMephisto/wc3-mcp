@@ -33,7 +33,7 @@ public static class PlacementCommand
     /// Places a unit of type <paramref name="typeRawcode"/> owned by
     /// <paramref name="ownerId"/> at map coordinates (<paramref name="x"/>,
     /// <paramref name="y"/>). Returns the assigned CreationNumber (the id triggers
-    /// use to reference the unit); it is unique within the file (max existing + 1).
+    /// use to reference the unit). It is unique within the file (max existing + 1).
     /// </summary>
     public static PlaceUnitResult PlaceUnit(
         MapDocument doc,
@@ -106,7 +106,7 @@ public static class PlacementCommand
             Position = new Vector3(x, y, z),
             Rotation = rotation,
             Scale = new Vector3(scale, scale, scale),
-            // -1 means "use the object's default" for these; matches the World Editor.
+            // -1 means "use the object's default" for these. Matches the World Editor.
             HP = -1,
             MP = -1,
             GoldAmount = 0,
@@ -129,7 +129,7 @@ public static class PlacementCommand
 
     /// <summary>The 4-character type id the World Editor uses for a start location inside
     /// war3mapUnits.doo. A start location is stored as a preplaced "unit" of this type owned
-    /// by the player it belongs to; the unit's (x, y) is that player's spawn point.</summary>
+    /// by the player it belongs to. The unit's (x, y) is that player's spawn point.</summary>
     public const string StartLocationRawcode = "sloc";
 
     /// <summary>
@@ -147,7 +147,7 @@ public static class PlacementCommand
         var units = GetOrCreateUnits(doc);
         int slocType = StartLocationRawcode.FromRawcode();
 
-        // One start location per player: move the existing one in place if present so its
+        // One start location per player, move the existing one in place if present so its
         // CreationNumber (and any trigger references keyed off it) survive the edit.
         var existing = units.Units.FirstOrDefault(u => u.TypeId == slocType && u.OwnerId == player);
         if (existing is not null)
@@ -159,7 +159,7 @@ public static class PlacementCommand
                 existing.CreationNumber);
         }
 
-        // None yet: delegate to PlaceUnit so the UnitData defaults (skin, hero fields, inventory
+        // None yet, delegate to PlaceUnit so the UnitData defaults (skin, hero fields, inventory
         // lists) live in exactly one place.
         var result = PlaceUnit(doc, StartLocationRawcode, player, x, y);
         return result.Ok
@@ -199,7 +199,7 @@ public static class PlacementCommand
 
     /// <summary>
     /// Places a doodad of <paramref name="typeRawcode"/> at (x, y[, z]) and returns
-    /// its creation number. Mirrors <see cref="PlaceUnit"/>; writes war3map.doo.
+    /// its creation number. Mirrors <see cref="PlaceUnit"/>. Writes war3map.doo.
     /// </summary>
     public static PlaceDoodadResult PlaceDoodad(
         MapDocument doc,
@@ -288,7 +288,7 @@ public static class PlacementCommand
             CreationNumber = creationNumber,
             WeatherType = WeatherType.None,  // no weather effect
             AmbientSound = string.Empty,     // no ambient sound
-            // The World Editor assigns each region a display colour; any valid colour works.
+            // The World Editor assigns each region a display colour. Any valid colour works.
             Color = Color.FromArgb(255, 76, 255, 76),
         });
 

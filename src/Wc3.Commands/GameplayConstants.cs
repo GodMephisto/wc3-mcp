@@ -18,7 +18,7 @@ public static class GameplayConstants
     /// <summary>The gameplay constants that gate ported content and are safe to raise in place.</summary>
     private static readonly string[] LevelCapKeys = { "MaxHeroLevel", "MaxUnitLevel" };
 
-    // war3mapMisc.txt is a Windows-1252 / Latin1 INI file; Latin1 round-trips every byte.
+    // war3mapMisc.txt is a Windows-1252 / Latin1 INI file. Latin1 round-trips every byte.
     private static readonly Encoding Enc = Encoding.Latin1;
 
     /// <summary>

@@ -6,7 +6,7 @@ using War3Net.Build.Script;
 namespace Wc3.Commands;
 
 /// <summary>One GUI-trigger-tree item, flattened for read-back and listing. Categories,
-/// GUI/comment/script triggers and deleted stubs all share Id/ParentId/Type/Name; the
+/// GUI/comment/script triggers and deleted stubs all share Id/ParentId/Type/Name. The
 /// trigger-only flags (<see cref="IsEnabled"/> etc.) are null for non-trigger rows.</summary>
 public sealed record TriggerItemFields(
     int Id, int ParentId, string Type, string Name,
@@ -304,7 +304,7 @@ public static class TriggerCommand
         return false;
     }
 
-    /// <summary>Renames the trigger item with the given id (any kind: category, trigger or
+    /// <summary>Renames the trigger item with the given id (any kind, category, trigger or
     /// deleted stub) and writes the re-serialized wtg back into the in-memory document.
     /// Rejects a blank name or an id that no item carries.</summary>
     public static TriggerOpResult Rename(MapDocument doc, int id, string newName)
@@ -350,7 +350,7 @@ public static class TriggerCommand
             if (parent is not TriggerCategoryDefinition)
                 return new TriggerOpResult(false, $"Item {newParentId} is not a category.");
 
-            // Refuse a cycle: walk up from the new parent, and if we meet the item, the move
+            // Refuse a cycle, walk up from the new parent, and if we meet the item, the move
             // would place the item inside itself and orphan its whole subtree.
             var byId = triggers.TriggerItems.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.First());
             int cursor = newParentId;
@@ -391,7 +391,7 @@ public static class TriggerCommand
     ///
     /// Warcraft III runs war3map.j, the compiled script. war3map.wtg is the World Editor's
     /// SOURCE for that script, and nothing regenerates one from the other except the World
-    /// Editor itself. Measured: adding a trigger with an event and an action to a real map left
+    /// Editor itself. Measured, adding a trigger with an event and an action to a real map left
     /// war3map.j byte-identical and never mentioning the trigger by name.
     ///
     /// So a trigger authored here is real, is visible in the World Editor, and does nothing in
@@ -410,7 +410,7 @@ public static class TriggerCommand
         + "'trigger recover-from-script' takes it, rebuilding a tree from the script for maps "
         + "that have no tree at all.";
 
-    /// <summary>What kind of trigger to create. Custom-text triggers are deliberately absent:
+    /// <summary>What kind of trigger to create. Custom-text triggers are deliberately absent,
     /// their body lives in war3map.wct, which cannot be written (see <see cref="Remove"/>), so
     /// creating one would produce a trigger whose code can never be set.</summary>
     public enum NewTriggerKind { Gui, Comment }
@@ -448,7 +448,7 @@ public static class TriggerCommand
     ///
     /// The new trigger is APPENDED rather than inserted next to its siblings, and that is
     /// deliberate. Document order is what pairs war3map.wct code bodies to trigger definitions, so
-    /// inserting mid-list would renumber every later body's slot. Appending cannot: the new
+    /// inserting mid-list would renumber every later body's slot. Appending cannot, the new
     /// definition's slot index is one past the end, which reads as "no body", which is correct for
     /// a trigger that has none. The World Editor groups the tree by ParentId, so position in the
     /// file is not position in the UI.
@@ -515,13 +515,13 @@ public static class TriggerCommand
     /// First, orphaning. Removing a category that still holds children would leave those children
     /// pointing at an id nothing carries. Pass <paramref name="recursive"/> to remove the subtree.
     ///
-    /// Second, and the reason this took measuring: war3map.wct pairs code bodies to definitions by
+    /// Second, and the reason this took measuring, war3map.wct pairs code bodies to definitions by
     /// POSITION (see <see cref="WctPairing"/>), and war3map.wct CANNOT be rewritten. Its decoder is
     /// lossy, measured on a real map as one byte of script text destroyed per undecodable
     /// character, invisible to a round trip because the replacement character re-encodes to
     /// itself. So the slot list is immovable, and removing a definition that holds a slot shifts
     /// every later definition onto its neighbour's code. That is refused unless it provably
-    /// changes nothing: either the removed definition holds the last slot, or every slot from its
+    /// changes nothing, either the removed definition holds the last slot, or every slot from its
     /// own index onward is empty.
     /// </summary>
     public static TriggerOpResult Remove(MapDocument doc, int id, bool recursive = false)
@@ -544,7 +544,7 @@ public static class TriggerCommand
         // Gather the subtree. Parenting is by id, and ids are numbered PER TYPE (categories 0..N,
         // triggers 0..M), so a trigger's id can equal a category's id. Recursing on a trigger id
         // would then pull in an unrelated category's children, and because those children carry
-        // their own colliding ids the walk cascades and swallows the entire tree: measured on
+        // their own colliding ids the walk cascades and swallows the entire tree, measured on
         // RATD, removing any one category removed a constant 148 descendants and left 0 triggers.
         // Only a category holds children, so recurse on category ids only, adding every direct
         // child but enqueueing just the category ones.
@@ -730,7 +730,7 @@ public static class TriggerCommand
 
         // Which surviving definitions would move onto a different slot, and what they would find
         // there. A definition holding slot j, with n removed slots below j, ends up reading slot
-        // j - n. Naming the VICTIM is what makes the refusal actionable: the trigger being deleted
+        // j, n. Naming the VICTIM is what makes the refusal actionable, the trigger being deleted
         // is not the one that ends up showing the wrong script.
         var victims = slots
             .Where(kv => kv.Value > first && !doomedSet.Contains(kv.Key))
@@ -813,7 +813,7 @@ public static class TriggerCommand
         if (item is null)
             return new TriggerOpResult(false, $"No trigger item with id {id}.");
         // Ids are not unique. Sub-version maps number items per type, and maps without a
-        // sub-version give EVERY trigger id 0 (measured: 606 triggers all id 0 on one real map).
+        // sub-version give EVERY trigger id 0 (measured, 606 triggers all id 0 on one real map).
         // Editing whichever one happens to come first is worse than refusing.
         int sharing = triggers.TriggerItems.Count(i => i.Id == id);
         if (sharing > 1)
@@ -841,7 +841,7 @@ public static class TriggerCommand
     private static TriggerOpResult Persist(MapDocument doc, MapTriggers triggers, string message)
     {
         var entry = doc.AddOrReplaceRawFile(FileName, Serialize(triggers));
-        // AddOrReplaceRawFile drops the parsed model (raw payload wins on Save); restore it
+        // AddOrReplaceRawFile drops the parsed model (raw payload wins on Save). Restore it
         // so in-memory readers keep seeing the mutation. The override bytes were serialized
         // from this very model, so the two stay consistent.
         entry.Model = triggers;

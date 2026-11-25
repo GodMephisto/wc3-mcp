@@ -46,7 +46,7 @@ public static class PortDepsCommand
 
     internal static PortDepsResult Execute(MapDocument doc, UnitBundle bundle, ObjectKind rootKind)
     {
-        // An object is the root's own when the root reaches it through a real field; the rest
+        // An object is the root's own when the root reaches it through a real field. The rest
         // arrived through the script closure's synthetic seed edge (another hero's kit on a
         // shared arena script), so they are flagged rather than presented as this unit's.
         var carried = BundleStructure.CarriedByScriptClosure(bundle);

@@ -94,7 +94,7 @@ public static class ObjectMigrateCommand
 
         return new ObjectMigrateResult(
             Ok: true,
-            Message: $"migrated to {schema.Build}, dropped {drops.Count} field(s)", 
+            Message: $"migrated to {schema.Build}, dropped {drops.Count} field(s)",
             TargetBuild: schema.Build, FieldsKept: kept, FieldsDropped: drops.Count,
             Drops: drops, UncheckedKinds: uncheckedKinds, Diagnostics: diagnostics);
     }

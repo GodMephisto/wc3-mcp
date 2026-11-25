@@ -271,7 +271,7 @@ public static class SetupCli
     }
 
     /// <summary>
-    /// The files the installed product must carry beside the exe: the two reference documents
+    /// The files the installed product must carry beside the exe, the two reference documents
     /// served as <c>wc3://context/*</c> and the three skills served as <c>wc3://skills/*</c>.
     /// Named here rather than discovered by a folder scan, because a folder that lost a file
     /// still looks well formed to a scan.
@@ -311,7 +311,7 @@ public static class SetupCli
     }
 
     /// <summary>
-    /// Reports whether a newer release exists. Best effort by design: a lookup that fails,
+    /// Reports whether a newer release exists. Best effort by design, a lookup that fails,
     /// times out or answers nonsense is reported as skipped and never counts as a problem, so an
     /// offline machine still gets a healthy verdict. A newer release is a warning, not a failure,
     /// because the installed build works and updating is the user's choice.
@@ -332,7 +332,7 @@ public static class SetupCli
     }
 
     /// <summary>
-    /// The GitHub repository the running product ships from: the standalone server reads the
+    /// The GitHub repository the running product ships from, the standalone server reads the
     /// wc3-mcp repository, and the same command reached through 'wc3ctl mcp' reads the wc3ctl one.
     /// </summary>
     internal static string ReleaseRepo(SetupProduct product) =>

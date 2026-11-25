@@ -60,7 +60,7 @@ public sealed class EditorEnumData
 
     /// <summary>
     /// Parses one or more editor data files. <paramref name="strings"/> resolves the WESTRING
-    /// display keys; pass the same table the rest of the game data uses so a name never differs
+    /// display keys. Pass the same table the rest of the game data uses so a name never differs
     /// between two parts of the UI.
     /// </summary>
     public static EditorEnumData FromByteSources(WorldEditStrings strings, params byte[]?[] files)

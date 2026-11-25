@@ -16,7 +16,7 @@ public sealed record SoundFields(
 /// <summary>
 /// Edits the map's sound catalog (war3map.w3s → <see cref="MapSounds"/>). Sounds are keyed
 /// by <see cref="Sound.Name"/>, the label triggers/UI reference. Mutations persist through
-/// <see cref="MapDocument.AddOrReplaceModelFile"/>; the byte-faithful War3Net writer is
+/// <see cref="MapDocument.AddOrReplaceModelFile"/>. The byte-faithful War3Net writer is
 /// pinned by MapWriteTests.Sounds_writer_is_byte_faithful_on_real_map.
 /// </summary>
 public static class SoundCommand
@@ -31,7 +31,7 @@ public static class SoundCommand
         "ConeInside", "ConeOutside", "ConeOutsideVolume",
     };
 
-    // A map with no war3map.w3s simply has no sounds - return an empty catalog rather than
+    // A map with no war3map.w3s simply has no sounds, return an empty catalog rather than
     // throwing, so listing works everywhere (add creates the file on first use).
     public static IReadOnlyList<SoundFields> List(MapDocument doc) =>
         doc.GetFile(FileName)?.Model is MapSounds s
@@ -45,7 +45,7 @@ public static class SoundCommand
     /// <summary>
     /// The map's imported audio FILES (raw assets in the archive, the World Editor's Import
     /// Manager), sorted by path. These are distinct from the sound DEFINITIONS <see cref="List"/>
-    /// returns: a definition (war3map.w3s) names a file and gives it volume/channel/3D settings
+    /// returns, a definition (war3map.w3s) names a file and gives it volume/channel/3D settings
     /// so triggers and units can play it. A map can be packed with audio yet define no sounds -
     /// so this is what makes the imported mp3/wav visible next to the (often empty) definitions.
     /// </summary>
@@ -58,7 +58,7 @@ public static class SoundCommand
             .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-    /// <summary>A World-Editor-style sound label derived from a file path: the bare file name
+    /// <summary>A World-Editor-style sound label derived from a file path, the bare file name
     /// (no folders, no extension) prefixed with <c>gg_snd_</c>, non-identifier chars replaced
     /// with underscores. Callers ensure uniqueness (Add rejects a duplicate name).</summary>
     public static string SoundNameForFile(string filePath)
@@ -146,7 +146,7 @@ public static class SoundCommand
     private static SoundOpResult Persist(MapDocument doc, MapSounds sounds, string message)
     {
         // MapSounds has a byte-faithful writer registered in MapDocument.SerializeEntry,
-        // so the typed model is re-serialized on Save; no local serialization needed.
+        // so the typed model is re-serialized on Save. No local serialization needed.
         doc.AddOrReplaceModelFile(FileName, sounds);
         return new SoundOpResult(true, message, sounds.Sounds.Count);
     }
@@ -197,7 +197,7 @@ public static class SoundCommand
 
     /// <summary>
     /// Builds a serializable blank sound. War3Net's <c>Write(BinaryWriter, Sound, ...)</c>
-    /// writes every string member, so all 11 must be non-null or the writer NREs on Save , 
+    /// writes every string member, so all 11 must be non-null or the writer NREs on Save ,
     /// leave the ancillary ones empty and let the caller tune them with <see cref="Set"/>.
     /// </summary>
     private static Sound NewSound(string name, string? file) => new()
@@ -223,7 +223,7 @@ public static class SoundCommand
     private static MapSounds GetOrCreateSounds(MapDocument doc)
     {
         if (doc.GetFile(FileName)?.Model is MapSounds existing) return existing;
-        // No sound catalog yet: start an empty one at the latest known format version.
+        // No sound catalog yet, start an empty one at the latest known format version.
         var latest = (MapSoundsFormatVersion)Enum.GetValues<MapSoundsFormatVersion>().Cast<int>().Max();
         return new MapSounds(latest);
     }

@@ -5,7 +5,7 @@ namespace Wc3.GameData;
 /// <summary>
 /// A GUI-trigger type declared in <c>UI\TriggerData.txt</c> (<c>[TriggerTypes]</c>), e.g.
 /// <c>abilcode</c>, <c>unit</c>, <c>boolean</c>. The three leading flags are best-effort
-/// semantic names for the three integer fields the World Editor stores; <see cref="BaseType"/>
+/// semantic names for the three integer fields the World Editor stores. <see cref="BaseType"/>
 /// is the underlying primitive a typed code lowers to (e.g. <c>abilcode</c> → <c>integer</c>).
 /// </summary>
 public sealed record TriggerType(
@@ -16,7 +16,7 @@ public sealed record TriggerType(
     string DisplayNameKey,
     string? BaseType);
 
-/// <summary>A trigger category (<c>[TriggerCategories]</c>): folder + icon a function is filed under.</summary>
+/// <summary>A trigger category (<c>[TriggerCategories]</c>), folder + icon a function is filed under.</summary>
 public sealed record TriggerCategory(string Name, string DisplayNameKey, string IconPath, bool Selectable);
 
 /// <summary>
@@ -35,10 +35,10 @@ public sealed record TriggerParamPreset(
 public enum TriggerFunctionKind { Event, Condition, Action, Call }
 
 /// <summary>
-/// A GUI-trigger function: an event, condition, action, or call. <see cref="ArgumentTypes"/>
+/// A GUI-trigger function, an event, condition, action, or call. <see cref="ArgumentTypes"/>
 /// lists the parameter types (the sentinel <c>nothing</c> is dropped, an empty list means
 /// no parameters). <see cref="ReturnType"/> is set for <see cref="TriggerFunctionKind.Call"/>
-/// entries; conditions implicitly return <c>boolean</c>. Metadata (<see cref="DisplayName"/>,
+/// entries. Conditions implicitly return <c>boolean</c>. Metadata (<see cref="DisplayName"/>,
 /// <see cref="ParametersLayout"/>, <see cref="Defaults"/>, <see cref="Category"/>) comes from
 /// the <c>_Name_Field=…</c> sub-lines that follow the header.
 /// </summary>
@@ -59,7 +59,7 @@ public sealed record TriggerFunction(
 }
 
 /// <summary>
-/// The parsed World-Editor GUI-trigger catalog (<c>UI\TriggerData.txt</c>): the set of
+/// The parsed World-Editor GUI-trigger catalog (<c>UI\TriggerData.txt</c>), the set of
 /// categories, types, type defaults, preset parameter values, and functions the GUI exposes.
 /// Use <see cref="TriggerDataParser.Parse"/> to build one. Lookups are case-insensitive on
 /// the function/type/preset key.
@@ -110,7 +110,7 @@ public sealed class TriggerDataCatalog
 
 /// <summary>
 /// Parses the World-Editor <c>UI\TriggerData.txt</c> into a <see cref="TriggerDataCatalog"/>.
-/// The parser is tolerant: malformed or unrecognised lines are skipped rather than throwing,
+/// The parser is tolerant, malformed or unrecognised lines are skipped rather than throwing,
 /// so a slightly-off community file still yields a usable catalog.
 /// </summary>
 public static class TriggerDataParser
@@ -189,7 +189,7 @@ public static class TriggerDataParser
                 }
                 case Section.TypeDefaults:
                 {
-                    // "value[,WESTRING_key]", the westring is the trailing field; the value
+                    // "value[,WESTRING_key]", the westring is the trailing field. The value
                     // may itself contain commas, so keep everything before a trailing WESTRING_.
                     var p = SplitCsv(val);
                     string value = val;
@@ -216,7 +216,7 @@ public static class TriggerDataParser
                 {
                     if (key.StartsWith('_'))
                     {
-                        // Metadata for the current function: _Name_Field=value.
+                        // Metadata for the current function, _Name_Field=value.
                         if (current is not null) ApplyMeta(current, key, val);
                     }
                     else
@@ -281,7 +281,7 @@ public static class TriggerDataParser
 
     private static void ApplyMeta(FunctionBuilder fb, string key, string val)
     {
-        // key looks like "_Name_Field"; associate only when it belongs to this function.
+        // key looks like "_Name_Field". Associate only when it belongs to this function.
         string prefix = "_" + fb.Name + "_";
         if (!key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return;
         string field = key[prefix.Length..];

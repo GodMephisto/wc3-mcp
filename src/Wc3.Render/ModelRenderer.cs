@@ -7,16 +7,16 @@ using Wc3.Modeling;
 namespace Wc3.Render;
 
 /// <summary>
-/// Headless CPU rasterizer for models: z-buffered triangle fill with
-/// directional-light shading and nearest-neighbour texturing. No GPU/OpenGL , 
+/// Headless CPU rasterizer for models, z-buffered triangle fill with
+/// directional-light shading and nearest-neighbour texturing. No GPU/OpenGL ,
 /// runs anywhere the CLI does. Models with a parsed skeleton render posed at
 /// the first frame of their "Stand" sequence (bind pose when there is no usable
 /// skeleton), from an orbit camera with WC3's Z-up convention (models stand
-/// upright); the default angles give the classic 3/4 view.
+/// upright). The default angles give the classic 3/4 view.
 /// </summary>
 public static class ModelRenderer
 {
-    // Camera orbit for the default 3/4 view: yaw around the Z (up) axis, then pitch down.
+    // Camera orbit for the default 3/4 view, yaw around the Z (up) axis, then pitch down.
     public const float DefaultYawDegrees = 45f;
     public const float DefaultPitchDegrees = 30f;
     public const float DefaultZoom = 1f;
@@ -28,15 +28,15 @@ public static class ModelRenderer
     /// <summary>
     /// Renders <paramref name="model"/> to PNG bytes over a transparent background.
     /// <paramref name="textures"/> maps indices of <see cref="Model3D.Textures"/> to
-    /// decoded images; geosets whose texture is absent shade flat gray (covers
+    /// decoded images. Geosets whose texture is absent shade flat gray (covers
     /// ReplaceableId entries and textures the map does not contain).
     /// <paramref name="yawDegrees"/>/<paramref name="pitchDegrees"/> orbit the camera
-    /// around Z-up; pitch is clamped just short of the poles to keep the basis stable.
+    /// around Z-up. Pitch is clamped just short of the poles to keep the basis stable.
     /// <paramref name="zoom"/> magnifies the view (1 = fit-to-frame). Framing is derived
     /// from the model's bounding sphere so the model holds a steady size as it rotates,
     /// and a mild perspective (with perspective-correct interpolation) gives real depth.
     /// <paramref name="sequenceName"/> selects the animation pose ("Stand" by default;
-    /// see <see cref="Model3D.PosedAt"/> for the match rules); pass null to force the
+    /// see <see cref="Model3D.PosedAt"/> for the match rules). Pass null to force the
     /// bind pose. Models without a usable skeleton always render in bind pose.
     /// </summary>
     public static byte[] RenderPng(
@@ -55,7 +55,7 @@ public static class ModelRenderer
             throw new ArgumentOutOfRangeException(nameof(width), "image dimensions must be positive");
 
         if (sequenceName is not null && model.Skeleton is not null)
-            model = model.PosedAt(sequenceName); // never throws; bind pose on any failure
+            model = model.PosedAt(sequenceName); // never throws. Bind pose on any failure
 
         var geosets = model.Geosets.Where(g => g.Indices.Length >= 3 && g.Vertices.Length >= 9).ToList();
         if (geosets.Count == 0)
@@ -74,8 +74,8 @@ public static class ModelRenderer
         var right = Vector3.Normalize(Vector3.Cross(forward, Vector3.UnitZ));
         var up = Vector3.Cross(right, forward);
 
-        // Bounding sphere (view-independent) → a stable frame: the model keeps its size
-        // no matter how it is spun. Center on the box midpoint; radius covers every vertex.
+        // Bounding sphere (view-independent) → a stable frame, the model keeps its size
+        // no matter how it is spun. Center on the box midpoint. Radius covers every vertex.
         Vector3 min = new(float.MaxValue), max = new(float.MinValue);
         foreach (var g in geosets)
             for (int i = 0; i + 2 < g.Vertices.Length; i += 3)
@@ -91,13 +91,13 @@ public static class ModelRenderer
                 radius = MathF.Max(radius,
                     (new Vector3(g.Vertices[i], g.Vertices[i + 1], g.Vertices[i + 2]) - center).Length());
 
-        // Eye pulled back along the view direction; focal chosen so the sphere fills the
+        // Eye pulled back along the view direction. Focal chosen so the sphere fills the
         // frame at zoom 1. Perspective divide uses the per-vertex distance along forward.
         float dist = radius * DistanceFactor;
         var eye = center + eyeDir * dist;
         float focal = FillFraction * 0.5f * MathF.Min(width, height) * dist / radius * zoom;
 
-        // Project every vertex once: screen x/y (perspective) + inverse depth for
+        // Project every vertex once, screen x/y (perspective) + inverse depth for
         // perspective-correct attribute interpolation, + view depth for the z-buffer.
         var sx = new Vector2[geosets.Count][];
         var invW = new float[geosets.Count][];
@@ -144,7 +144,7 @@ public static class ModelRenderer
                 float bx = scr[i1].X, by = scr[i1].Y;
                 float cx = scr[i2].X, cy = scr[i2].Y;
 
-                // Signed doubled area; near-zero → degenerate sliver, skip.
+                // Signed doubled area. Near-zero → degenerate sliver, skip.
                 float areaFull = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
                 if (MathF.Abs(areaFull) < 1e-9f) continue;
 
@@ -161,7 +161,7 @@ public static class ModelRenderer
                     for (int px = pxMin; px <= pxMax; px++)
                     {
                         float px5 = px + 0.5f;
-                        // Screen-space barycentric weights (winding-independent inside test , 
+                        // Screen-space barycentric weights (winding-independent inside test ,
                         // no backface culling, WC3 materials are frequently two-sided).
                         float w0 = ((bx - px5) * (cy - py5) - (by - py5) * (cx - px5)) / areaFull;
                         float w1 = ((cx - px5) * (ay - py5) - (cy - py5) * (ax - px5)) / areaFull;
@@ -179,7 +179,7 @@ public static class ModelRenderer
                         if (d >= zbuffer[zi]) continue;
 
                         var rgba = SampleColor(geoset, texture, i0, i1, i2, p0, p1, p2);
-                        if (rgba.A < AlphaTestThreshold) continue; // cutout: keep depth open
+                        if (rgba.A < AlphaTestThreshold) continue; // cutout, keep depth open
 
                         float shade = ShadeAt(geoset, i0, i1, i2, p0, p1, p2, light);
                         zbuffer[zi] = d;
@@ -221,9 +221,9 @@ public static class ModelRenderer
             w0 * geoset.Normals[i0 * 3 + 1] + w1 * geoset.Normals[i1 * 3 + 1] + w2 * geoset.Normals[i2 * 3 + 1],
             w0 * geoset.Normals[i0 * 3 + 2] + w1 * geoset.Normals[i1 * 3 + 2] + w2 * geoset.Normals[i2 * 3 + 2]);
         float lengthSq = n.LengthSquared();
-        if (lengthSq < 1e-12f) return 1f; // missing/zero normals: render unshaded
+        if (lengthSq < 1e-12f) return 1f; // missing/zero normals, render unshaded
 
-        // |dot|: two-sided lighting so form reads regardless of winding.
+        // |dot|, two-sided lighting so form reads regardless of winding.
         float intensity = MathF.Abs(Vector3.Dot(n / MathF.Sqrt(lengthSq), light));
         return AmbientLight + (1f - AmbientLight) * MathF.Min(intensity, 1f);
     }

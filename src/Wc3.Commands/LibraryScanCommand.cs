@@ -19,7 +19,7 @@ public sealed record LibraryScanMap(
     int Diagnostics,
     string? Error);
 
-/// <summary>A folder scan: every map's row plus the loaded and failed counts and the byte total.</summary>
+/// <summary>A folder scan, every map's row plus the loaded and failed counts and the byte total.</summary>
 public sealed record LibraryScanResult(
     IReadOnlyList<LibraryScanMap> Maps,
     int Loaded,

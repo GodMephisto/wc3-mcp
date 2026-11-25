@@ -23,7 +23,7 @@ public sealed record ScriptUnusedGlobalsResult(
 /// as a read and <c>set g = 0</c> does not.
 ///
 /// The World Editor's generated globals are excluded, because they are framework rather than the
-/// author's: every <c>gg_</c> handle (a generated trigger, region, camera, unit or destructable),
+/// author's, every <c>gg_</c> handle (a generated trigger, region, camera, unit or destructable),
 /// every <c>bj_</c> name (the Blizzard.j convention the script checker already treats as
 /// external), and the literal <c>worldedit</c>. A <c>udg_</c> name is the author's GUI variable
 /// and IS checked, that is the whole point of the command.

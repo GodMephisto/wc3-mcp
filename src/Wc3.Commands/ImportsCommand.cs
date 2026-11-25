@@ -14,10 +14,10 @@ public sealed record ImportEntry(string Path, bool InManifest, bool InArchive, i
 public sealed record ImportsListResult(bool HasManifest, IReadOnlyList<ImportEntry> Entries);
 
 /// <summary>
-/// Lists a map's imported files. Imports are represented twice in a .w3x: the actual
+/// Lists a map's imported files. Imports are represented twice in a .w3x, the actual
 /// archive entries (arbitrary paths, e.g. "war3mapImported\foo.blp") plus a WorldEdit
-/// manifest, war3map.imp (parsed by War3Net into <see cref="ImportedFiles"/>: FullPath +
-/// flags per file). This command merges both views: manifest rows are checked against the
+/// manifest, war3map.imp (parsed by War3Net into <see cref="ImportedFiles"/>, FullPath +
+/// flags per file). This command merges both views, manifest rows are checked against the
 /// archive (also probing the default "war3mapImported\" prefix, which WorldEdit prepends
 /// for non-custom-path imports), and archive files that are neither standard map files nor
 /// manifest-listed appear as orphans (InManifest = false). Read-only by design.
@@ -30,7 +30,7 @@ public static class ImportsCommand
     /// without it (flag-relative, non-custom-path imports).</summary>
     public const string DefaultImportPrefix = @"war3mapImported\";
 
-    /// <summary>Archive entries that are never user imports: MPQ bookkeeping plus standard
+    /// <summary>Archive entries that are never user imports, MPQ bookkeeping plus standard
     /// map files that MapFormatRegistry doesn't (yet) register.</summary>
     private static readonly HashSet<string> NonImportFiles = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -98,7 +98,7 @@ public static class ImportsCommand
     /// Pure merge of the manifest path list with the archive's candidate import files
     /// (name → size in bytes). Case sensitivity of the match follows
     /// <paramref name="archiveFiles"/>'s comparer (<see cref="Execute"/> passes
-    /// OrdinalIgnoreCase, matching MPQ name hashing). Result is sorted by path; duplicate
+    /// OrdinalIgnoreCase, matching MPQ name hashing). Result is sorted by path. Duplicate
     /// manifest paths are collapsed to one row.
     /// </summary>
     public static IReadOnlyList<ImportEntry> BuildEntries(

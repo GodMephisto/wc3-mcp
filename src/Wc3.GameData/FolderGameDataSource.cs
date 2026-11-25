@@ -36,7 +36,7 @@ public sealed class FolderGameDataSource : IGameDataSource
         if (firstColon >= 0) list.Add(Rel(name[(firstColon + 1)..]));
         int lastColon = name.LastIndexOf(':');
         if (lastColon >= 0) list.Add(Rel(name[(lastColon + 1)..]));
-        // Fallback: some repos store UI strings under enus-strings/ instead of
+        // Fallback, some repos store UI strings under enus-strings/ instead of
         // _locales\enus.w3mod/. Try the same path with enus-strings/ replacing
         // _locales\enus.w3mod:.
         var idxBack = name.IndexOf("_locales\\enus.w3mod:", StringComparison.OrdinalIgnoreCase);

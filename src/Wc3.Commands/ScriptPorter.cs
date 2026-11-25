@@ -9,14 +9,14 @@ using Wc3.Model;
 namespace Wc3.Commands;
 
 /// <summary>
-/// Best-effort JASS script port: carries a unit's trigger-function closure (and the
+/// Best-effort JASS script port, carries a unit's trigger-function closure (and the
 /// globals it references) from the source map's war3map.j into the target's, renaming
 /// any symbol that collides with the target, rewriting rawcode literals to follow the
 /// object remap, and hooking carried InitTrig_* functions into the target's init.
 ///
 /// This is text surgery over an untyped, Turing-complete language, it is deliberately
 /// conservative and always reports what it did. Tightly-coupled maps (a shared spell
-/// dispatcher) produce very large closures; the mechanism still applies but the notes
+/// dispatcher) produce very large closures. The mechanism still applies but the notes
 /// flag that a large fraction of the source script was carried.
 /// </summary>
 internal static class ScriptPorter
@@ -29,7 +29,7 @@ internal static class ScriptPorter
         new(@"ExecuteFunc\s*\(\s*""([A-Za-z_][A-Za-z0-9_]*)""\s*\)", RegexOptions.Compiled);
     private static readonly Regex Rawcode = new(@"'(\\?.|[^'\\]{1,4})'", RegexOptions.Compiled);
 
-    /// <summary>A JASS local declaration, "local &lt;type&gt; [array] &lt;name&gt;[= expr]", the name
+    /// <summary>A JASS local declaration, "local &lt;type&gt. [array] &lt;name&gt;[= expr]", the name
     /// captured for <see cref="RenameLocalsCollidingWithGlobalScope"/>.</summary>
     private static readonly Regex LocalDeclLine = new(
         @"^\s*local\s+[A-Za-z_][A-Za-z0-9_]*\s+(?:array\s+)?(?<name>[A-Za-z_][A-Za-z0-9_]*)\b",
@@ -83,12 +83,12 @@ internal static class ScriptPorter
     /// same <see cref="ScriptPortInfo"/> without touching the target (dry-run preview;
     /// one code path so preview and port cannot drift). <paramref name="codeRemap"/> maps
     /// source rawcode → target rawcode (as 4-char strings) for the objects that were
-    /// remapped on collision; <paramref name="markerLabel"/> names the port in the spliced
+    /// remapped on collision. <paramref name="markerLabel"/> names the port in the spliced
     /// block's BEGIN/END comments (e.g. "Raiden Ei (H000)"). Returns null when there is
     /// nothing to port (no functions, or no target script).
     ///
     /// <paramref name="synthDispatchHero"/> is opt-in (null by default, so ordinary ports are
-    /// byte-for-byte unchanged): the rawcode of the unit being ported, ROOT one, so the source's
+    /// byte-for-byte unchanged), the rawcode of the unit being ported, ROOT one, so the source's
     /// shared cast dispatcher's OWN branch for it can be read and turned into a fresh, minimal,
     /// self-contained dispatcher that bypasses every gate the shared one carries (a placed-hero
     /// registration array, a map rect that reads null off the source map, a cooldown hashtable,
@@ -97,7 +97,7 @@ internal static class ScriptPorter
     /// (timers, dummies, per-player state), it only replaces the SHARED entry point into it.
     ///
     /// <paramref name="bootstrapState"/> is opt-in too (false by default, so an ordinary port is
-    /// unaffected): every carried global this port's own carried code reads but assigns nowhere in
+    /// unaffected), every carried global this port's own carried code reads but assigns nowhere in
     /// the spliced text (no InitGlobals ever carried it, no differently named helper Init ever
     /// reached it) is a global stuck at its type default, null for a handle. For the types that
     /// have a safe, universal, argument-free constructor (timer, group, hashtable, trigger, rect,
@@ -121,7 +121,7 @@ internal static class ScriptPorter
         if (srcEntry is null) { notes.Add("source has no war3map.j, script not ported."); return new ScriptPortInfo(0, 0, 0, false, notes); }
         if (tgtEntry is null) { notes.Add("target has no war3map.j, script not ported."); return new ScriptPortInfo(0, 0, 0, false, notes); }
 
-        // Byte-faithful codec: war3map.j is often authored in a legacy codepage (GBK/Big5 on
+        // Byte-faithful codec, war3map.j is often authored in a legacy codepage (GBK/Big5 on
         // Chinese maps, exactly this corpus). UTF8 with its replacement fallback would turn every
         // non-ASCII byte in the UNTOUCHED target script into U+FFFD on re-encode, corrupting names
         // and messages the port never meant to touch. Latin1 maps all 256 byte values one-to-one,
@@ -131,7 +131,7 @@ internal static class ScriptPorter
         string tgtJ = ByteText.GetString(tgtEntry.CurrentBytes);
         var srcLines = srcJ.Replace("\r\n", "\n").Split('\n');
 
-        // Idempotency: the object layer reuses an identical prior port rather than duplicating it,
+        // Idempotency, the object layer reuses an identical prior port rather than duplicating it,
         // and the MCP tool advertises port_unit as idempotent. The script layer must match. Splicing
         // again would append a second copy of every carried function under _p1 names and wire a
         // second call into InitCustomTriggers, so each ported spell would fire twice. If the target
@@ -159,15 +159,15 @@ internal static class ScriptPorter
         // and the ported script only ever calls carried functions or natives.
         var carried = new HashSet<string>(functions.Select(f => f.Name), StringComparer.Ordinal);
 
-        // Opt-in: read the hero's OWN branch of the source's shared cast dispatcher and seed every
+        // Opt-in, read the hero's OWN branch of the source's shared cast dispatcher and seed every
         // function it calls into the carry set, BEFORE the ordinary closure rules below run, so
         // those handlers come along even when the ordinary closure's scoping missed them. That is
-        // not hypothetical: a combo ability a hero grants at runtime through a shared "start a
+        // not hypothetical, a combo ability a hero grants at runtime through a shared "start a
         // timer, then add this ability" helper is invisible to a plain call-graph walk (the helper
         // receives the ability id as a plain argument, not a callback reference), exactly the trap
         // that silently drops a hero's second-tier abilities from a port that only trusted its
         // object data. See SynthDispatchBuilder for what "the hero's own branch" means and how it
-        // is found; the actual dispatcher function is built and spliced in further down, once the
+        // is found. The actual dispatcher function is built and spliced in further down, once the
         // rename/rawcode-remap machinery below is available to rewrite it consistently with every
         // other carried body.
         IReadOnlyList<SynthDispatchBuilder.CastBranch>? synthBranches = null;
@@ -185,7 +185,7 @@ internal static class ScriptPorter
         }
 
         // Also carry each InitTrig_* that turns on one of the hero's spells, plus the handlers it wires.
-        // The closure only reaches functions the hero's DATA references; a spell's InitTrig (CreateTrigger
+        // The closure only reaches functions the hero's DATA references. A spell's InitTrig (CreateTrigger
         // + TriggerAddAction of the handler) is reached only from the source's InitCustomTriggers, never
         // from the hero, so without this the spell comes across but is never registered, defined and dead
         // in the target, exactly the "abilities do nothing" break. An init counts as the hero's when it
@@ -244,7 +244,7 @@ internal static class ScriptPorter
             foreach (var r in toAdd) carried.Add(r);
         }
         // The set the last fixpoint pass trimmed against, kept around for the synthesized dispatcher
-        // below: it must go through the exact same discipline (a call to something not actually
+        // below, it must go through the exact same discipline (a call to something not actually
         // carried gets commented out, never left calling into the void) as every other carried body.
         var finalDropped = new HashSet<string>(allSourceFns, StringComparer.Ordinal);
         finalDropped.ExceptWith(carried);
@@ -283,7 +283,7 @@ internal static class ScriptPorter
         }
         var carriedGlobals = srcGlobalOrder.Where(used.Contains).ToList();  // recomputed below after the initializers
 
-        // Carry the map's own global-state initializer(s) too: the conventional InitGlobals (the
+        // Carry the map's own global-state initializer(s) too, the conventional InitGlobals (the
         // JASS entry point a GUI map's Variable Editor values are normally assigned through), plus
         // any differently named helper InitCustomTriggers calls before it wires a single trigger.
         // The second case is not a hypothetical, on a real corpus map InitGlobals is EMPTY and every
@@ -329,12 +329,12 @@ internal static class ScriptPorter
 
         // Symbols the target already defines (functions + its own globals), PLUS every local (or
         // parameter) name declared ANYWHERE in the target's own existing functions. A JASS local
-        // may not share a name with any global, and that rule runs in both directions: a carried
+        // may not share a name with any global, and that rule runs in both directions, a carried
         // GLOBAL whose name happens to already be some unrelated TARGET function's own local is
         // just as fatal as the reverse (see RenameLocalsCollidingWithGlobalScope below), but the
         // target's own locals are otherwise invisible here, JassFunctionIndex/JassGlobals only see
         // top-level globals and function NAMES, never what a function declares inside itself. Real
-        // case: Anime Choice Arena's own "string s=null" / "texttag txt=null" (a shared tooltip
+        // case, Anime Choice Arena's own "string s=null" / "texttag txt=null" (a shared tooltip
         // helper's globals) carried as-is into GGGA, which never declares a top-level "s" or "txt"
         // itself, so the ordinary collision check below saw no problem, yet GGGA's OWN (untouched)
         // ShieldDeduction has "local integer array s" and RPB_CreateClassHelp has "local string
@@ -344,25 +344,25 @@ internal static class ScriptPorter
 
         // Rename any carried symbol that collides with the target (or with common.j-ish reserved
         // names we can't see, OR with a name the target uses only as some unrelated function's own
-        // local, see the collision-avoidance set built just below); rewrite references within the
+        // local, see the collision-avoidance set built just below). Rewrite references within the
         // ported block only.
         var rename = new Dictionary<string, string>(StringComparer.Ordinal);
         var carriedSymbols = srcFns.Select(f => f.Name).Concat(carriedGlobals)
             .Concat(globalInitBodies.Keys).ToList();
 
-        // What a freshly carried GLOBAL or FUNCTION must avoid: the target's own top-level names,
+        // What a freshly carried GLOBAL or FUNCTION must avoid, the target's own top-level names,
         // PLUS every local (or parameter) name declared ANYWHERE in the target's own existing
         // functions. A JASS local may not share a name with any global, so a carried global whose
         // name happens to already be some unrelated TARGET function's own local is just as fatal as
         // the reverse (see RenameLocalsCollidingWithGlobalScope below), but the target's own locals
         // are otherwise invisible here, JassFunctionIndex/JassGlobals only see top-level globals and
-        // function NAMES, never what a function declares inside itself. Real case: Anime Choice
+        // function NAMES, never what a function declares inside itself. Real case, Anime Choice
         // Arena's own "string s=null" / "texttag txt=null" (a shared tooltip helper's globals)
         // carried as-is into GGGA, which never declares a top-level "s" or "txt" itself, so the
         // ordinary collision check here saw no problem before this was added, yet GGGA's OWN
         // (untouched) ShieldDeduction has "local integer array s" and RPB_CreateClassHelp has
         // "local string array txt", so the carried globals landed right on top of two unrelated
-        // locals anyway. Deliberately a SEPARATE, wider set from targetGlobalScope below: two
+        // locals anyway. Deliberately a SEPARATE, wider set from targetGlobalScope below, two
         // different functions' own locals never actually collide with EACH OTHER in real JASS
         // (locals are function scoped), only with something that is genuinely global, so this
         // wider set decides what a fresh carried GLOBAL/FUNCTION name must avoid, never what a
@@ -370,7 +370,7 @@ internal static class ScriptPorter
         var taken = new HashSet<string>(targetSymbols, StringComparer.Ordinal);
         foreach (var n in AllLocalAndParamNames(tgtJ)) taken.Add(n);
 
-        // What a carried LOCAL must avoid: only names that are genuinely GLOBAL (or a function) in
+        // What a carried LOCAL must avoid, only names that are genuinely GLOBAL (or a function) in
         // the FINAL merged script, the target's own top-level names, plus every carried symbol
         // under its FINAL, post-rename name, built alongside the loop below. Unlike taken above,
         // this deliberately excludes the target's buried locals, an unrelated function's own local
@@ -420,7 +420,7 @@ internal static class ScriptPorter
         foreach (var name in globalInitBodies.Keys)
             portedFns.Append(Rewrite(RenameLocalsCollidingWithGlobalScope(globalInitBodies[name], targetGlobalScope))).Append('\n');
 
-        // The synthesized dispatcher's function bodies: built from the hero's own extracted
+        // The synthesized dispatcher's function bodies, built from the hero's own extracted
         // branches, run through the exact same Trim discipline as every other carried body (so a
         // callee this port could not actually carry, for any reason, is commented out here too,
         // rather than left calling into the void), then through the SAME Rewrite every other
@@ -468,7 +468,7 @@ internal static class ScriptPorter
                 .Where(srcGlobals.ContainsKey),
             StringComparer.Ordinal);
 
-        // Opt-in: find every carried global this port's own spliced-in text reads but never
+        // Opt-in, find every carried global this port's own spliced-in text reads but never
         // assigns anywhere, and construct the ones whose type has a safe, universal constructor.
         // See BootstrapStateBuilder for the full reasoning and the type-to-constructor mapping.
         // Declarations are keyed by their FINAL (post rename) name, since that is the name the
@@ -567,10 +567,10 @@ internal static class ScriptPorter
             notes.Add($"{residual.Count} reference(s) to non-carried function(s) remain in a condition or "
                 + $"return and were left in place, verify the ported map ({string.Join(", ", residual.Take(8))}).");
 
-        // Splice into the target: globals into its globals block, functions after endglobals.
+        // Splice into the target, globals into its globals block, functions after endglobals.
         string merged = Splice(tgtJ, portedGlobals.ToString(), portedFns.ToString(), marker, notes);
 
-        // Best-effort init hook: call carried InitTrig_* functions from InitCustomTriggers.
+        // Best-effort init hook, call carried InitTrig_* functions from InitCustomTriggers.
         //
         // An init that a carried aggregator ALREADY calls must not be hooked a second time. Calling
         // InitTrig_X twice builds two triggers on the same event with the same action, so every spell
@@ -654,7 +654,7 @@ internal static class ScriptPorter
                   "its trigger registration may need to be wired manually.");
         }
 
-        // Call the carried global initializer(s), in the same relative order the source used: the
+        // Call the carried global initializer(s), in the same relative order the source used, the
         // literal InitGlobals from the target's main (before InitCustomTriggers, the JASS convention
         // the source itself follows, globals before triggers), any other helper from the FRONT of the
         // target's InitCustomTriggers (before the InitTrig_* calls just hooked above), matching how
@@ -762,7 +762,7 @@ internal static class ScriptPorter
         HashSet<string> residual) =>
         TrimLines(body, code => DroppedGlobalRefs(code, allGlobals, keep), residual);
 
-    /// <summary>Shared line classifier behind <see cref="Trim"/> and <see cref="TrimToGlobals"/>:
+    /// <summary>Shared line classifier behind <see cref="Trim"/> and <see cref="TrimToGlobals"/>,
     /// for each line, <paramref name="badRefsInLine"/> decides whether it names something we are not
     /// carrying (a dropped function, or a dropped global). A clean line passes through unchanged. A
     /// bad local initializer is stripped but the declaration kept (an undeclared variable is a
@@ -810,7 +810,7 @@ internal static class ScriptPorter
     private static string TrimLocalInitializer(string line)
     {
         int eq = line.IndexOf('=');
-        if (eq < 0) return line; // no initializer (e.g. a bare or array declaration): nothing to drop
+        if (eq < 0) return line; // no initializer (e.g. A bare or array declaration), nothing to drop
         return line[..eq].TrimEnd() + " " + TrimMarker + "(initializer dropped)";
     }
 
@@ -856,7 +856,7 @@ internal static class ScriptPorter
         return found;
     }
 
-    /// <summary>Internal, not private: <see cref="AbilityAuditCommand"/> reuses this exact
+    /// <summary>Internal, not private, <see cref="AbilityAuditCommand"/> reuses this exact
     /// comment/trim view rather than keeping a second copy of it.</summary>
     internal static string StripComment(string line)
     {
@@ -878,7 +878,7 @@ internal static class ScriptPorter
     /// on-cast trigger for a combo ability the hero grants at runtime, which the data-driven closure
     /// cannot reach because nothing but the init names it). Handlers pulled in this way feed their own
     /// rawcodes back into the live set, so a combo chain is followed to a fixpoint. Bounded by the
-    /// function count; spell ability ids are hero-unique, so unrelated heroes' inits are not pulled in.
+    /// function count. Spell ability ids are hero-unique, so unrelated heroes' inits are not pulled in.
     /// </summary>
     private static void CarryRegisteringInits(
         HashSet<string> carried, IReadOnlyDictionary<string, JassFunction> allByName, string[] srcLines,
@@ -907,7 +907,7 @@ internal static class ScriptPorter
                 f => ReferencedNames(BodyText(srcLines, f)).Where(allByName.ContainsKey).Distinct().ToList(),
                 StringComparer.Ordinal);
 
-        // Rawcodes tied to THIS hero: the ported objects, plus every rawcode the hero's own carried
+        // Rawcodes tied to THIS hero, the ported objects, plus every rawcode the hero's own carried
         // functions name (its abilities and the combo abilities its handlers grant at runtime, like
         // 'A1BP'). Fixed on purpose, we do NOT fold in rawcodes from initializers pulled in below.
         // Doing so cascades in a dense arena map (one hero's init shares a rawcode with another's, and
@@ -932,7 +932,7 @@ internal static class ScriptPorter
                         if (carried.Add(h)) grew = true;
                     continue;
                 }
-                // The hero's own init: it wires a handler we already carry, or wires a handler that
+                // The hero's own init, it wires a handler we already carry, or wires a handler that
                 // fires on one of the hero's rawcodes. Unrelated heroes' inits fire on their own
                 // (different) ability ids, so they are not pulled in.
                 bool wanted = handlers.Any(carried.Contains)
@@ -1051,7 +1051,7 @@ internal static class ScriptPorter
     private static void CarryCallbackReferences(
         HashSet<string> carried, IReadOnlyDictionary<string, JassFunction> allByName, string[] srcLines)
     {
-        // Bounded by the function count: each pass only adds names, and there are finitely many.
+        // Bounded by the function count, each pass only adds names, and there are finitely many.
         for (int guard = 0; guard <= allByName.Count; guard++)
         {
             var toAdd = new List<string>();
@@ -1096,7 +1096,7 @@ internal static class ScriptPorter
         IReadOnlyDictionary<string, JassFunction> allByName) =>
         ForwardClosure(branches.SelectMany(b => b.Callees), bodies, allByName);
 
-    /// <summary>The general form of <see cref="ReachableFromHeroCode"/>: the forward call-graph
+    /// <summary>The general form of <see cref="ReachableFromHeroCode"/>, the forward call-graph
     /// closure starting at <paramref name="seeds"/>, following <see cref="ReferencedNames"/> through
     /// each further function's own body in <paramref name="bodies"/>, restricted to names
     /// <paramref name="allByName"/> actually declares. See <see cref="ReachableFromHeroCode"/>'s doc
@@ -1318,7 +1318,7 @@ internal static class ScriptPorter
     /// "function Name takes ... returns ..." header line. That header names the function itself in
     /// the exact "function X" callback shape <see cref="ReferencedNames"/> looks for, and would
     /// otherwise make a function that happens to be reachable self-match on its own declaration.
-    /// Internal, not private: <see cref="AbilityAuditCommand"/> walks this same live-vs-trimmed view
+    /// Internal, not private, <see cref="AbilityAuditCommand"/> walks this same live-vs-trimmed view
     /// per ability rather than re-deriving it.</summary>
     internal static IEnumerable<string> LiveCode(string body)
     {
@@ -1330,13 +1330,13 @@ internal static class ScriptPorter
     }
 
     /// <summary>
-    /// The map's global-state initializer function(s): the conventional <c>InitGlobals</c> (the JASS
+    /// The map's global-state initializer function(s), the conventional <c>InitGlobals</c> (the JASS
     /// entry point a GUI map's Variable Editor values are normally assigned through) and any function
     /// <c>InitCustomTriggers</c> calls before it starts wiring individual triggers that is NOT itself
     /// an <c>InitTrig_*</c> constructor. The second shape is not hypothetical, on a real corpus map
     /// InitGlobals is EMPTY and every hero's per-player timers and unit groups are instead allocated
     /// once inside a differently named helper called as the very first statement of
-    /// InitCustomTriggers, before any trigger gets wired. Both are carried the same way: each body is
+    /// InitCustomTriggers, before any trigger gets wired. Both are carried the same way, each body is
     /// run through <see cref="TrimToGlobals"/> so only the assignments <paramref name="keepGlobals"/>
     /// actually needs survive, keyed by function name so <see cref="PortScript"/> can call the
     /// conventional one from the target's main and any other one from the front of the target's
@@ -1349,7 +1349,7 @@ internal static class ScriptPorter
         IReadOnlySet<string> droppedFunctions, HashSet<string> residualFunctions)
     {
         // Already carried (verbatim, by the ordinary closure) means it will already be emitted once
-        // from srcFns; adding it here too would define the same function twice and fail to compile.
+        // from srcFns. Adding it here too would define the same function twice and fail to compile.
         var names = new List<string>();
         if (allByName.ContainsKey("InitGlobals") && !alreadyCarried.Contains("InitGlobals"))
             names.Add("InitGlobals");
@@ -1415,8 +1415,8 @@ internal static class ScriptPorter
         return bodies;
     }
 
-    /// <summary>The GUI-trigger stem of a function name, the shared Trig_&lt;TriggerName&gt; prefix the
-    /// World Editor gives a trigger's Conditions, Actions and Func&lt;n&gt; children. Two functions with
+    /// <summary>The GUI-trigger stem of a function name, the shared Trig_&lt;TriggerName&gt. Prefix the
+    /// World Editor gives a trigger's Conditions, Actions and Func&lt;n&gt. Children. Two functions with
     /// the same stem belong to the same GUI trigger. A name that is not a Trig_ GUI function is returned
     /// unchanged (so it matches only itself).</summary>
     private static string TriggerStem(string name)
@@ -1430,7 +1430,7 @@ internal static class ScriptPorter
     /// Unlike <see cref="ReferencedNames"/> this deliberately EXCLUDES the plain-call form "Foo(", so it
     /// never follows the call edges that would reach another hero's handler through a shared dispatcher.
     /// Comment text is stripped so a name that survives only in a comment is not pulled.</summary>
-    /// <summary>Internal, not private: <see cref="AbilityAuditCommand"/> reuses this to find a
+    /// <summary>Internal, not private, <see cref="AbilityAuditCommand"/> reuses this to find a
     /// handler's own timer-callback assignments.</summary>
     internal static IEnumerable<string> CallbackNames(string body)
     {
@@ -1456,7 +1456,7 @@ internal static class ScriptPorter
     }
 
     /// <summary>Identifiers used as a function reference in a snippet ("Foo(" or "function Foo").</summary>
-    /// <summary>Internal, not private: <see cref="AbilityAuditCommand"/> reuses this together
+    /// <summary>Internal, not private, <see cref="AbilityAuditCommand"/> reuses this together
     /// with <see cref="ForwardClosure"/> to walk one ability's own reachable code.</summary>
     internal static IEnumerable<string> ReferencedNames(string code)
     {
@@ -1471,7 +1471,7 @@ internal static class ScriptPorter
     private static MapFileEntry? ScriptEntry(MapDocument doc) =>
         doc.GetFile("war3map.j") ?? doc.GetFile("scripts\\war3map.j");
 
-    /// <summary>Internal, not private: <see cref="AbilityAuditCommand"/> reuses this to read a
+    /// <summary>Internal, not private, <see cref="AbilityAuditCommand"/> reuses this to read a
     /// carried function's raw (trim-marker-visible) body.</summary>
     internal static string BodyText(string[] lines, JassFunction f)
     {
@@ -1518,7 +1518,7 @@ internal static class ScriptPorter
     /// runs strictly after that pass, catching what it cannot see (a local is never a "carried
     /// symbol", it does not appear in <c>srcFns</c>/<c>carriedGlobals</c> at all).
     ///
-    /// Renamed per function: a local is function scoped, so two different carried functions that
+    /// Renamed per function, a local is function scoped, so two different carried functions that
     /// each need the same fresh name never conflict with EACH OTHER, only with <paramref
     /// name="taken"/>, which this also adds every fresh name to, so a later function's own
     /// collision never picks a name an earlier function's rename already claimed.
@@ -1569,13 +1569,13 @@ internal static class ScriptPorter
         }
         else if (portedGlobals.Length > 0)
         {
-            // No globals block in target: prepend one.
+            // No globals block in target, prepend one.
             text = $"globals\n{portedGlobals}endglobals\n" + text;
             notes.Add("target had no globals block, one was created for the ported globals.");
             endGlobals = FindLine(text, "endglobals");
         }
 
-        // Functions go right after endglobals (so target code can call them; JASS is top-down).
+        // Functions go right after endglobals (so target code can call them. JASS is top-down).
         int after = endGlobals >= 0 ? text.IndexOf('\n', endGlobals) + 1 : 0;
         text = text.Insert(after, block);
         return text.Replace("\n", nl);
@@ -1622,7 +1622,7 @@ internal static class ScriptPorter
         int at = -1;
         for (int i = main.StartLine; i < main.EndLine - 1 && i < lines.Count; i++)
             if (Regex.IsMatch(lines[i], @"\bcall\s+InitCustomTriggers\s*\(")) { at = i; break; }
-        if (at < 0) at = main.EndLine - 1; // no InitCustomTriggers call found: just before endfunction
+        if (at < 0) at = main.EndLine - 1; // no InitCustomTriggers call found, just before endfunction
 
         lines.Insert(at, $"    call {functionName}() // {marker}");
         hooked = true;

@@ -10,8 +10,8 @@ namespace Wc3.Commands;
 /// were capacity).
 ///
 /// Transcribed from StormLib's reference implementation. One detail is easy to get wrong and
-/// silently yields plausible-looking noise instead of an error: each crypt-table word is built
-/// from the LOW 16 bits of two successive seeds, <c>(s1 &amp; 0xFFFF) &lt;&lt; 16 | (s2 &amp; 0xFFFF)</c>,
+/// silently yields plausible-looking noise instead of an error, each crypt-table word is built
+/// from the LOW 16 bits of two successive seeds, <c>(s1 &amp. 0xFFFF) &lt;&lt. 16 | (s2 &amp. 0xFFFF)</c>,
 /// NOT from the high bits. A hand-rolled version that shifted right produced flag counts near
 /// half the table for every mutually-exclusive flag, which is the signature of decrypting to
 /// random data. <see cref="SelfCheck"/> exists so that failure can never pass silently again.
@@ -42,7 +42,7 @@ internal static class MpqCrypto
     }
 
     /// <summary>
-    /// <paramref name="hashType"/> selects the sub-table: 0 table-offset, 1 name-A, 2 name-B,
+    /// <paramref name="hashType"/> selects the sub-table, 0 table-offset, 1 name-A, 2 name-B,
     /// 3 file-key. Names are upper-cased and backslash-normalised, as the format requires.
     /// </summary>
     public static uint HashString(string text, int hashType)
@@ -57,7 +57,7 @@ internal static class MpqCrypto
         return seed1;
     }
 
-    /// <summary>Decrypts whole 4-byte words in place; a trailing partial word is left alone.</summary>
+    /// <summary>Decrypts whole 4-byte words in place. A trailing partial word is left alone.</summary>
     public static void DecryptInPlace(byte[] data, uint key)
     {
         uint key2 = 0xEEEEEEEE;

@@ -20,8 +20,8 @@ public sealed record HeroExportResult(
 /// which is the <c>import</c> verb of the format.
 ///
 /// The critical decision here is WHAT NOT TO CARRY. The porter's failure was pulling in whatever
-/// a script closure could reach - on one hero that was 61 extra objects and thousands of foreign
-/// functions belonging to other heroes - and then trimming the calls it could not resolve, which
+/// a script closure could reach, on one hero that was 61 extra objects and thousands of foreign
+/// functions belonging to other heroes, and then trimming the calls it could not resolve, which
 /// is what produced uninitialized locals and non-terminating loops. So this exports the hero's
 /// REAL dependencies (edges through actual object fields) and REPORTS the closure carry as review
 /// notes instead of silently including it. A human decides.
@@ -105,7 +105,7 @@ public static class HeroExportCommand
     /// <summary>
     /// Declarations from the source's <c>globals</c> block that the carried functions actually
     /// reference, returned verbatim so a type or initialiser is never re-derived. Only what is used
-    /// is carried: copying the whole block would drag in thousands of unrelated declarations, which
+    /// is carried, copying the whole block would drag in thousands of unrelated declarations, which
     /// is the same over-carry mistake in a different place.
     /// </summary>
     private static List<string> GlobalsUsedBy(string[] lines, HashSet<string> functions,
@@ -143,7 +143,7 @@ public static class HeroExportCommand
         }
 
         // A carried global's INITIALISER can name another global, so closing only over function
-        // bodies leaves those dangling: 'integer A= B' carried without B fails with "Undeclared
+        // bodies leaves those dangling, 'integer A= B' carried without B fails with "Undeclared
         // variable B". Iterate until the set stops growing.
         bool grew = true;
         while (grew)
@@ -155,7 +155,7 @@ public static class HeroExportCommand
                         grew = true;
         }
 
-        // Preserve the source's declaration order: a constant may initialise from an earlier one.
+        // Preserve the source's declaration order, a constant may initialise from an earlier one.
         return declOf.Where(kv => used.Contains(kv.Key)).Select(kv => kv.Value)
             .OrderBy(line => Array.IndexOf(lines, line)).ToList();
     }
@@ -182,15 +182,15 @@ public static class HeroExportCommand
 
     /// <summary>
     /// Transitive callees of the seed set. Matches a name followed by '(' as well as
-    /// 'function X': JASS uses the <c>call</c> keyword ONLY for statement-level calls, so a call
+    /// 'function X', JASS uses the <c>call</c> keyword ONLY for statement-level calls, so a call
     /// inside an expression like <c>if IsValid(u) then</c> carries no keyword. Keying on
     /// <c>call</c> alone misses most references, which is exactly how an earlier pass lost live
-    /// code. Over-matching costs a few extra functions; under-matching breaks the script.
+    /// code. Over-matching costs a few extra functions. Under-matching breaks the script.
     /// </summary>
     /// <summary>
     /// A class that is a SIBLING of the exported unit rather than something it depends on. The
     /// convention in these maps is one class per character, so a name ending in "Spells" is
-    /// another character's kit; reaching it means the walk passed through the shared dispatcher,
+    /// another character's kit. Reaching it means the walk passed through the shared dispatcher,
     /// which is the thing to declare instead (see the roster-registration requirement).
     /// </summary>
     private static bool IsPeerClass(string wurstClass) =>
@@ -207,7 +207,7 @@ public static class HeroExportCommand
     /// the caller. So a hero that constructs a CallbackSingle carries the allocator counters even
     /// though the class itself was excluded, and the instance ids she issues are indices into HER
     /// arrays. Binding her <c>dispatch_CallbackSingle_start</c> to the target's would then pass the
-    /// target an id it never issued, and the target would read its own typeId array at that index:
+    /// target an id it never issued, and the target would read its own typeId array at that index,
     /// a wrong dispatch or none, with no compile error and no runtime message. Measured on Shadow
     /// Nanaya, CallbackSingle carried 4 such globals and ShopUI 12, while HashMap, Table,
     /// CallbackPeriodic, ForForceCallback and ShopButton carried none.
@@ -252,12 +252,12 @@ public static class HeroExportCommand
     /// utility call leads into the generated class dispatcher and from there to everything the map
     /// ever compiled. That volume is what a target cannot absorb.
     ///
-    /// Wurst's output is namespaced, so the seam is in the naming rather than in the call graph:
+    /// Wurst's output is namespaced, so the seam is in the naming rather than in the call graph,
     /// the hero's own class is discoverable from the seeds, and any OTHER class is a separate
     /// concern to be declared as a requirement instead of swallowed. Hand-written JASS has no such
     /// marker and is still followed normally.
     ///
-    /// Matching a name followed by '(' as well as 'function X' is deliberate: JASS uses the
+    /// Matching a name followed by '(' as well as 'function X' is deliberate, JASS uses the
     /// <c>call</c> keyword ONLY for statement-level calls, so a call inside an expression carries
     /// no keyword, and keying on <c>call</c> alone loses most references.
     /// </remarks>
@@ -268,7 +268,7 @@ public static class HeroExportCommand
         sawPeer = false;
         var seedList = seed.Where(spans.ContainsKey).ToList();
 
-        // Classes the hero's own functions belong to; everything else is somebody else's system.
+        // Classes the hero's own functions belong to. Everything else is somebody else's system.
         var ownClasses = new HashSet<string>(StringComparer.Ordinal);
         foreach (var name in seedList)
         {
@@ -297,14 +297,14 @@ public static class HeroExportCommand
                         var cls = wm.Groups[1].Value;
                         // A PEER, not a dependency. 20 of 28 excluded classes were other heroes'
                         // spell classes (AlucardSpells, AsNodtSpells, ...), and Nanaya does not
-                        // call Alucard's spells: all hero classes route through one shared Wurst
+                        // call Alucard's spells, all hero classes route through one shared Wurst
                         // dispatcher, so reaching it makes every hero look like a neighbour. One
-                        // edge, hit 20 times. A peer is neither carried NOR declared - listing it
+                        // edge, hit 20 times. A peer is neither carried NOR declared, listing it
                         // as a requirement would ask a target to supply unrelated characters.
                         // Either way the DEFINITION is not carried, so the CALL must still resolve
                         // to something or the script will not compile. A peer is another character;
                         // an excluded class is the source map's infrastructure. Both get a stub, and
-                        // both are reported - a peer via shared-spell-dispatcher, infrastructure via
+                        // both are reported, a peer via shared-spell-dispatcher, infrastructure via
                         // its own wurst-class requirement. Stubbing only peers left the
                         // infrastructure calls dangling (dispatch_HashMap_..., dispatch_ShopUI_...),
                         // which is the identical mistake one set over.
@@ -342,7 +342,7 @@ public static class HeroExportCommand
         var realFiles = BundleStructure.RealFiles(bundle);
 
         // Carry each object's MAP-LEVEL fields, so the definition stands alone. Base-game values
-        // are deliberately excluded: they belong to the engine, not the hero, and baking them in
+        // are deliberately excluded, they belong to the engine, not the hero, and baking them in
         // would make a definition wrong the moment a patch changes a default.
         var objects = new List<DefinitionObject>();
         foreach (var o in bundle.Objects.Where(o => realObjects.Contains(o.Rawcode)))
@@ -389,7 +389,7 @@ public static class HeroExportCommand
         if (bundle.Functions.Count > 0 && doc.GetFile("war3map.j") is { } js)
         {
             // Latin-1, so a carried line arrives byte for byte. Latin-1 maps every byte 0..255 to
-            // the same code point and back, which UTF-8 does not: a script that is really UTF-8
+            // the same code point and back, which UTF-8 does not, a script that is really UTF-8
             // decodes to code points above U+00FF, and everything downstream that has to write raw
             // bytes again (pjass's input, the target's war3map.j) then replaces each with '?'. A
             // script that is NOT valid UTF-8 loses those bytes to U+FFFD outright. Either way the
@@ -399,9 +399,9 @@ public static class HeroExportCommand
             var lines = text.Split('\n');
 
             // Carry the hero's functions AND everything they call, transitively. Carrying only the
-            // seed set produced 50 "undeclared function" errors: the opposite failure to the
+            // seed set produced 50 "undeclared function" errors, the opposite failure to the
             // porter's over-carry, but just as fatal, since a script that does not compile means a
-            // hosted map has no player slots. Over-including here is cheap; under-including is not.
+            // hosted map has no player slots. Over-including here is cheap. Under-including is not.
             _scriptLines = lines;
             var spans = IndexFunctions(lines);
             var wanted = Closure(spans, bundle.Functions.Select(f => f.Name), excludedClassNames,
@@ -422,13 +422,13 @@ public static class HeroExportCommand
                 entryPoints.Add(name);
             }
             // Globals the carried code reads. A function without its globals is as broken as a
-            // function without its callees, and fails the same way: the script will not compile.
+            // function without its callees, and fails the same way, the script will not compile.
             var rawGlobals = GlobalsUsedBy(lines, wanted, spans);
 
             // Namespace every carried symbol. Rawcodes are remapped on install and assets are
             // hash-checked, but script symbols had no collision handling, which produced
             // "Symbol s already defined as global variable" the moment globals started being
-            // carried: the source declares 's', the target has a local 's'. Prefixing per hero
+            // carried, the source declares 's', the target has a local 's'. Prefixing per hero
             // means a carried symbol cannot collide on ANY target, which is the same fix already
             // applied to the other two namespaces.
             var rename = BuildNamespace(bundle.RootRawcode, wanted.Concat(peerCallTargets), rawGlobals);
@@ -438,11 +438,11 @@ public static class HeroExportCommand
 
             // Excluding a class removed its DEFINITIONS but not the CALLS to it, so the emitted
             // script failed with "Undeclared function s__AlucardSpells___...". That is the porter's
-            // trimming mistake reached from the other direction: never leave a reference without
+            // trimming mistake reached from the other direction, never leave a reference without
             // something to resolve it. Emit a no-op stub per called entry point, and RECORD each
             // one, because a stub is a placeholder and only the record makes it replaceable. The
             // stubs were previously namespaced and unrecorded, so a target that implements HashMap
-            // itself could never be reached: the carried code called a private empty function that
+            // itself could never be reached, the carried code called a private empty function that
             // returned 0. Install now binds what it safely can and reports the rest.
             var globalNames = GlobalNames(rawGlobals);
             if (peerCallTargets.Count > 0)

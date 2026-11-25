@@ -61,9 +61,9 @@ public static class ObjExporter
 
     /// <summary>
     /// One material per distinct geoset TextureId (unresolved -1 excluded), named
-    /// tex&lt;id&gt; to match <see cref="ToObj"/>'s usemtl lines. When
+    /// tex&lt;id&gt. To match <see cref="ToObj"/>'s usemtl lines. When
     /// <paramref name="textureFileByTexId"/> maps an id to a file name, the
-    /// material gets a map_Kd; otherwise it stays a plain grey diffuse.
+    /// material gets a map_Kd. Otherwise it stays a plain grey diffuse.
     /// </summary>
     public static string ToMtl(Model3D model, IReadOnlyDictionary<int, string> textureFileByTexId)
     {

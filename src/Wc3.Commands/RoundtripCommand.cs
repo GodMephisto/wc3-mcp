@@ -4,8 +4,8 @@ namespace Wc3.Commands;
 
 public static class RoundtripCommand
 {
-    // MPQ bookkeeping files handled specially by MpqArchiveBuilder on save:
-    // (listfile) and (attributes) are regenerated; (signature) is not carried
+    // MPQ bookkeeping files handled specially by MpqArchiveBuilder on save,
+    // (listfile) and (attributes) are regenerated. (signature) is not carried
     // over (the rebuilt map is unsigned). They are archive metadata, not map
     // data, so they are excluded from the fidelity verdict, but any that were
     // present in the original and dropped/changed are surfaced as notes.
@@ -27,7 +27,7 @@ public static class RoundtripCommand
             .Select(e => $"{e.Name}:{e.Change}"));
 
         // Special files present in the original but dropped or rewritten on
-        // save. Reported for transparency; they never flip the verdict.
+        // save. Reported for transparency. They never flip the verdict.
         var excludedNotes = diff.Entries
             .Where(e => MpqSpecialFiles.Contains(e.Name))
             .Where(e => e.Change is "removed" or "modified")

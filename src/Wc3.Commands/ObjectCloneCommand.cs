@@ -46,7 +46,7 @@ public static class ObjectCloneCommand
             return new(false, $"{kindName} {rawcode} not found in map");
 
         // Clone every layer that holds the object. A Reforged map can split one object across
-        // war3map.* and war3mapSkin.* (measured: a unit with 16 fields in the map file and 7 in the
+        // war3map.* and war3mapSkin.* (measured, a unit with 16 fields in the map file and 7 in the
         // skin file, name, model and icon among the skin half). Cloning only the map layer dropped
         // that half, so the clone inherited the base unit's name, model and icon rather than the
         // source's. GetOrCreateModel for an absent skin file returns an empty model whose FindGroup

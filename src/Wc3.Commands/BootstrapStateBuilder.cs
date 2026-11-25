@@ -8,7 +8,7 @@ namespace Wc3.Commands;
 /// Finds every carried global a ported script reads but assigns nowhere in the merged output, and
 /// builds a small function that constructs the ones that can be constructed safely, by type.
 ///
-/// Why this exists: every headline bug found while porting Anime WOS2's Asta had the exact same
+/// Why this exists, every headline bug found while porting Anime WOS2's Asta had the exact same
 /// shape, a global the carried code reads and nothing ever assigns, sitting at its type default
 /// with no error and no warning. <c>gg_rct_Base</c> and <c>gg_rct_Cage</c> (CreateRegions, the
 /// function that would set them, was never carried, the whole map's region list is not this
@@ -19,7 +19,7 @@ namespace Wc3.Commands;
 /// null, so every timed part of a spell silently did nothing while its instant part worked. See
 /// <see cref="ScriptPorter"/> for where this is spliced in (opt-in, behind --bootstrap-state).
 ///
-/// Only handle types with a universal, argument-free constructor are ever built here: timer,
+/// Only handle types with a universal, argument-free constructor are ever built here, timer,
 /// group, hashtable, trigger, rect, force. A rect is built EMPTY (<c>Rect(0., 0., 0., 0.)</c>),
 /// never a guess at the source's real region, because for a GATE an empty rect can never falsely
 /// block (the worst case is a handler that used the rect to pick a location now reading (0,0), not
@@ -77,7 +77,7 @@ internal static class BootstrapStateBuilder
         return result.OrderBy(c => c.Name, StringComparer.Ordinal).ToList();
     }
 
-    /// <summary>The bootstrap function's raw text: one "set NAME = ctor()" per constructible
+    /// <summary>The bootstrap function's raw text, one "set NAME = ctor()" per constructible
     /// candidate (<see cref="Candidate.Constructor"/> non-null), in the order given. Null when
     /// there is nothing to construct, every candidate needs a type this cannot safely build, so the
     /// caller has nothing to splice in.</summary>

@@ -1,7 +1,7 @@
 namespace Wc3.GameData;
 
 /// <summary>
-/// Object Editor "Profile" data: INI-like TXT files ([rawcode] sections with Key=Value
+/// Object Editor "Profile" data, INI-like TXT files ([rawcode] sections with Key=Value
 /// lines) holding the fields whose metadata "slk" column says "Profile". Names,
 /// tooltips and art references live here rather than in the SLKs. Non-localized values
 /// sit under units\*func.txt and localized text in the enus locale's units\*strings.txt

@@ -594,7 +594,7 @@ public static class AuditCommand
     /// a map whose buffs live in Units\AbilityBuffData.slk collected 21 phantom dangling-buff
     /// errors and would have had those 21 real ability fields rewritten to a different buff by
     /// repair audit-errors. Only the object tables are read, never a *MetaData.slk, whose leading
-    /// column is a field id and would wrongly whitelist arbitrary rawcodes.
+    /// column is a field id and would wrongly allowlist arbitrary rawcodes.
     /// </summary>
     internal static HashSet<string> MapDefinedRawcodes(MapDocument doc)
     {

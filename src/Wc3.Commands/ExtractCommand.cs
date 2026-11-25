@@ -4,7 +4,7 @@ using Wc3.Model;
 namespace Wc3.Commands;
 
 /// <summary>
-/// Which internal files to extract. Exactly one selection mode applies:
+/// Which internal files to extract. Exactly one selection mode applies,
 /// All, an exact internal name, or one or more glob patterns.
 /// </summary>
 public sealed record ExtractSelector

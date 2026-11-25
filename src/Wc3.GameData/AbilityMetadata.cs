@@ -4,8 +4,8 @@ public sealed record AbilityFieldMeta(string Code, string SlkName, string Column
 
 /// <summary>
 /// Maps 4-char ability field codes (the same ids used by war3map.w3a deltas, e.g. "aher")
-/// to where the base value lives. Confirmed shape of abilitymetadata.slk (same as units):
-/// row key = "ID" column = the field code; "field" = the column name inside the data SLK;
+/// to where the base value lives. Confirmed shape of abilitymetadata.slk (same as units),
+/// row key = "ID" column = the field code. "field" = the column name inside the data SLK.
 /// "slk" = which data file holds it (AbilityData, or "Profile" for TXT profile files);
 /// "displayName" = a WESTRING key. Leveled fields (repeat >= 1) store per-level values in
 /// numbered columns (e.g. Cool -> cool1..cool4). The join in ObjectDataStore expands them

@@ -3,7 +3,7 @@ namespace Wc3.Commands;
 
 public static class RenderCommand
 {
-    /// <summary>Returns PNG bytes of a top-down terrain render; the CLI writes the file.</summary>
+    /// <summary>Returns PNG bytes of a top-down terrain render. The CLI writes the file.</summary>
     public static byte[] Execute(Wc3.Model.MapDocument doc) =>
         Wc3.Render.TerrainRenderer.RenderTerrainPng(doc);
 }

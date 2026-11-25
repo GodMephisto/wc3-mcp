@@ -24,7 +24,7 @@ public sealed record Reforged3RepairResult(
 
 /// <summary>
 /// Repairs legacy SLK-mode maps rejected or misread by Warcraft III 3.0.0 build 24268.
-/// The transformations are based on devoltz and Arakunido's public-domain repair guide:
+/// The transformations are based on devoltz and Arakunido's public-domain repair guide,
 /// model paths move from obsolete SLK file columns to merged skin profiles, numeric and
 /// button-position values are normalized, unmatched FDF comment terminators are removed,
 /// and missing ability level 5/6 columns inherit level 4 values.

@@ -1,16 +1,16 @@
 namespace Wc3.Commands;
 
 /// <summary>
-/// Pure matching + ranking for searchable dropdowns: Studio's SearchableComboBox,
+/// Pure matching + ranking for searchable dropdowns, Studio's SearchableComboBox,
 /// the object editor's list search, and any other front-end that filters
-/// "Name (id)" style choices. No UI types here - Wc3.Commands stays
+/// "Name (id)" style choices. No UI types here, Wc3.Commands stays
 /// front-end-agnostic (Principle #3).
 /// </summary>
 public static class DropdownFilter
 {
     /// <summary>
     /// Case-insensitive substring match on the display name OR the id. The query
-    /// is trimmed first; an empty (or whitespace-only, or null) query matches
+    /// is trimmed first. An empty (or whitespace-only, or null) query matches
     /// everything. Null name/id never match a non-empty query.
     /// </summary>
     public static bool Matches(string? query, string? name, string? id)
@@ -22,9 +22,9 @@ public static class DropdownFilter
     }
 
     /// <summary>
-    /// Sort key for filtered results - lower ranks first; sort stably so ties keep
+    /// Sort key for filtered results, lower ranks first. Sort stably so ties keep
     /// the caller's list order. Exact-id beats exact-name beats name-prefix beats
-    /// id-prefix beats plain substring hits (name before id); no match at all is
+    /// id-prefix beats plain substring hits (name before id). No match at all is
     /// <see cref="int.MaxValue"/>. An empty query ranks everything 0, so ordering
     /// by rank leaves an unfiltered list untouched.
     /// </summary>

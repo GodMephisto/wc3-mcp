@@ -136,7 +136,7 @@ public static class ScriptLeaksCommand
 
     /// <summary>
     /// Analyzes a script string directly, for a front end that holds unsaved editor text. The
-    /// document overload reads the map's stored script; this one scans exactly what is passed.
+    /// document overload reads the map's stored script. This one scans exactly what is passed.
     /// </summary>
     public static ScriptLeaksResult Analyze(string script) => Analyze(script, null);
 

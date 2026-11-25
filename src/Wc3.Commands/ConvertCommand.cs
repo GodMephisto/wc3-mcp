@@ -6,17 +6,17 @@ using Wc3.Render;
 namespace Wc3.Commands;
 
 /// <summary>
-/// A model exported to OBJ: the .obj text, the .mtl text it references (as
+/// A model exported to OBJ, the .obj text, the .mtl text it references (as
 /// "&lt;model basename&gt;.mtl"), and the referenced textures converted to PNG,
 /// keyed by the file name the MTL's map_Kd lines use. Pure data, the
 /// front-end decides where (and whether) files land on disk.
 /// </summary>
 public sealed record ModelExport(string Obj, string Mtl, IReadOnlyDictionary<string, byte[]> Textures);
 
-/// <summary>Format conversions: images (blp/dds/png/jpg/bmp/tga/gif) and model→OBJ.</summary>
+/// <summary>Format conversions, images (blp/dds/png/jpg/bmp/tga/gif) and model→OBJ.</summary>
 public static class ConvertCommand
 {
-    /// <summary>Converts image bytes between formats; extensions pick the codecs.</summary>
+    /// <summary>Converts image bytes between formats. Extensions pick the codecs.</summary>
     public static byte[] ConvertImage(byte[] input, string fromExt, string toExt) =>
         TextureConvert.Convert(input, fromExt, toExt);
 
@@ -48,7 +48,7 @@ public static class ConvertCommand
     /// <summary>
     /// Exports standalone model bytes (a .mdx/.mdl on disk) to OBJ + MTL. With no
     /// map to pull textures from, materials reference "&lt;texture basename&gt;.png"
-    /// so separately converted textures line up; the Textures dictionary is empty.
+    /// so separately converted textures line up. The Textures dictionary is empty.
     /// </summary>
     public static ModelExport ExportModelToObj(byte[] modelBytes, string fileName, string? mtlName = null)
     {
@@ -94,7 +94,7 @@ public static class ConvertCommand
 
         // The OBJ's mtllib must name the MTL the caller will actually write beside it. A caller
         // that writes the MTL from its own output path (so the pair sits at "<out>.obj" and
-        // "<out>.mtl") passes that stem here; otherwise the OBJ points at "<model basename>.mtl"
+        // "<out>.mtl") passes that stem here. Otherwise the OBJ points at "<model basename>.mtl"
         // and no renderer can find the materials.
         var obj = ObjExporter.ToObj(model, (mtlName ?? baseName) + ".mtl");
         var mtl = ObjExporter.ToMtl(model, fileByTexId);

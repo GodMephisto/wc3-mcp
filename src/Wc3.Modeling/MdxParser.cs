@@ -8,11 +8,11 @@ namespace Wc3.Modeling;
 /// <summary>
 /// Reader for the binary MDX format ("MDLX" chunked). Extracts per-geoset
 /// positions/normals/uvs/triangles plus the material→texture mapping a static
-/// render needs, and, best effort, the animation data a posed render needs:
+/// render needs, and, best effort, the animation data a posed render needs,
 /// sequences (SEQS), the bone/helper hierarchy with keyframe tracks
 /// (BONE/HELP + KGTR/KGRT/KGSC), pivots (PIVT) and per-vertex bone attachments
 /// (GNDX/MTGC/MATS, or the v900+ SKIN weights). Animation parsing is strictly
-/// non-fatal: any inconsistency drops the skeleton and the model still loads as
+/// non-fatal, any inconsistency drops the skeleton and the model still loads as
 /// static geometry. Particles, ribbons, cameras etc. are skipped via chunk sizes.
 /// Handles classic v800 and the Reforged v900/v1000 layout differences
 /// (shader name, LOD name, TANG/SKIN).
@@ -89,7 +89,7 @@ internal static class MdxParser
             int[]? skinBones = null;
             float[]? skinWeights = null;
             if (skeleton is not null)
-                (skinBones, skinWeights) = BuildSkin(g); // never throws; null on inconsistency
+                (skinBones, skinWeights) = BuildSkin(g); // never throws. Null on inconsistency
             geosets.Add(new Geoset(g.Vertices, g.Normals, g.Uvs, g.Indices, textureId, skinBones, skinWeights, filter));
         }
         return new Model3D(geosets, textures, skeleton);
@@ -103,7 +103,7 @@ internal static class MdxParser
         string Name, int ObjectId, int ParentId,
         AnimTrack<Vector3>? Translation, AnimTrack<Quaternion>? Rotation, AnimTrack<Vector3>? Scaling);
 
-    /// <summary>SEQS: fixed 132-byte records (char[80] name, u32 start, u32 end, moveSpeed, flags, rarity, syncPoint, extent).</summary>
+    /// <summary>SEQS, fixed 132-byte records (char[80] name, u32 start, u32 end, moveSpeed, flags, rarity, syncPoint, extent).</summary>
     private static void ParseSeqs(byte[] b, int pos, int end, List<ModelSequence> sequences)
     {
         while (pos + 132 <= end)
@@ -116,7 +116,7 @@ internal static class MdxParser
         }
     }
 
-    /// <summary>PIVT: float3 per node, indexed by objectId.</summary>
+    /// <summary>PIVT, float3 per node, indexed by objectId.</summary>
     private static void ParsePivots(byte[] b, int pos, int end, List<Vector3> pivots)
     {
         while (pos + 12 <= end)
@@ -127,7 +127,7 @@ internal static class MdxParser
     }
 
     /// <summary>
-    /// BONE/HELP: repeated generic node structs, inclusiveSize, char[80] name,
+    /// BONE/HELP, repeated generic node structs, inclusiveSize, char[80] name,
     /// u32 objectId, i32 parentId, u32 flags, then KG** tracks up to inclusiveSize.
     /// BONE trails each node with u32 geosetId + u32 geosetAnimId
     /// (<paramref name="trailingBytes"/> = 8), which we skip.
@@ -156,7 +156,7 @@ internal static class MdxParser
                     ? ReadTrack(b, ref p, nodeEnd, floatsPerValue: tag == "KGRT" ? 4 : 3)
                     : null;
                 if (track is null)
-                    break; // unknown/overrunning sub-chunk: its size is unknowable, stop tracks, node still usable
+                    break; // unknown/overrunning sub-chunk, its size is unknowable, stop tracks, node still usable
 
                 switch (tag)
                 {
@@ -174,9 +174,9 @@ internal static class MdxParser
     private sealed record RawTrack(int[] Frames, float[][] Values, int GlobalSequenceId);
 
     /// <summary>
-    /// KG** track: tag, u32 numKeys, u32 interpolation (0 none, 1 linear, 2 hermite,
-    /// 3 bezier), i32 globalSeqId, then per key: i32 frame + value floats
-    /// (+ inTan/outTan of the same width when interpolation &gt; 1, read past, unused:
+    /// KG** track, tag, u32 numKeys, u32 interpolation (0 none, 1 linear, 2 hermite,
+    /// 3 bezier), i32 globalSeqId, then per key, i32 frame + value floats
+    /// (+ inTan/outTan of the same width when interpolation &gt. 1, read past, unused,
     /// the poser approximates everything linearly). Null when the track overruns.
     /// </summary>
     private static RawTrack? ReadTrack(byte[] b, ref int p, int limit, int floatsPerValue)
@@ -223,8 +223,8 @@ internal static class MdxParser
 
     /// <summary>
     /// Normalizes a geoset's bone attachments to 4 weighted slots per vertex.
-    /// Prefers v900+ SKIN (true blend weights: 4 node ids + 4 byte weights per
-    /// vertex); classic GNDX/MTGC/MATS matrix groups become a rigid average over
+    /// Prefers v900+ SKIN (true blend weights, 4 node ids + 4 byte weights per
+    /// vertex). Classic GNDX/MTGC/MATS matrix groups become a rigid average over
     /// the group's first ≤4 bones (classic MDX stores no per-vertex weights).
     /// Returns (null, null) when the data is absent or inconsistent, bind pose.
     /// </summary>
@@ -282,7 +282,7 @@ internal static class MdxParser
         return (null, null);
     }
 
-    /// <summary>TEXS: fixed 268-byte entries (u32 replaceableId, char[260] path, u32 flags).</summary>
+    /// <summary>TEXS, fixed 268-byte entries (u32 replaceableId, char[260] path, u32 flags).</summary>
     private static void ParseTexs(byte[] b, int pos, int end, List<string> textures)
     {
         while (pos + 268 <= end)
@@ -295,9 +295,9 @@ internal static class MdxParser
     }
 
     /// <summary>
-    /// MTLS: per-material inclusiveSize records; we only want each material's base
+    /// MTLS, per-material inclusiveSize records. We only want each material's base
     /// (first) layer, its texture id and filter mode. Layer 0 is the surface the
-    /// game draws first; overlay layers (team glow etc.) don't decide the geoset's
+    /// game draws first. Overlay layers (team glow etc.) don't decide the geoset's
     /// blend mode.
     /// </summary>
     private static void ParseMtls(byte[] b, int pos, int end, List<(int TextureId, FilterMode Filter)> materials)
@@ -319,7 +319,7 @@ internal static class MdxParser
             {
                 uint layerCount = ReadU32(b, p + 4);
                 int lp = p + 8;
-                // Layer: inclusiveSize, filterMode, shadingFlags, textureId, ...
+                // Layer, inclusiveSize, filterMode, shadingFlags, textureId, ...
                 if (layerCount > 0 && lp + 16 <= matEnd)
                 {
                     filter = ToFilterMode(ReadU32(b, lp + 4));
@@ -331,7 +331,7 @@ internal static class MdxParser
         }
     }
 
-    /// <summary>MDX filter modes are u32 0-6; anything else (corrupt/future) degrades to opaque.</summary>
+    /// <summary>MDX filter modes are u32 0-6. Anything else (corrupt/future) degrades to opaque.</summary>
     private static FilterMode ToFilterMode(uint value)
         => value <= (uint)FilterMode.Modulate2x ? (FilterMode)value : FilterMode.None;
 
@@ -367,7 +367,7 @@ internal static class MdxParser
             {
                 case "VRTX": vertices = ReadFloats(b, data, count * 3, gEnd); p = data + count * 12; break;
                 case "NRMS": normals = ReadFloats(b, data, count * 3, gEnd); p = data + count * 12; break;
-                case "PTYP": p = data + count * 4; break; // primitive types (4 = triangles; WC3 only uses triangles)
+                case "PTYP": p = data + count * 4; break; // primitive types (4 = triangles. WC3 only uses triangles)
                 case "PCNT": p = data + count * 4; break;
                 case "PVTX":
                     if (data + count * 2 > gEnd) throw new InvalidDataException("Corrupt geoset: PVTX overruns.");
@@ -391,8 +391,8 @@ internal static class MdxParser
                     // v900+ lod + char[80] name, extents) to reach the next tagged chunk.
                     p = SkipUntaggedGeosetSection(b, p, gEnd, version);
                     break;
-                case "TANG": p = data + count * 16; break; // v900+: float[4] per vertex
-                case "SKIN": // v900+: per-vertex 4 bone ids + 4 byte weights
+                case "TANG": p = data + count * 16; break; // v900+, float[4] per vertex
+                case "SKIN": // v900+, per-vertex 4 bone ids + 4 byte weights
                     if (data + count <= gEnd) skinBytes = b[data..(data + count)];
                     p = data + count;
                     break;
@@ -429,7 +429,7 @@ internal static class MdxParser
     {
         int q = p + 12; // materialId, selectionGroup, selectionFlags
         if (version >= 900) q += 84; // u32 lod + char[80] lod name
-        q += 28; // extent: radius + min[3] + max[3]
+        q += 28; // extent, radius + min[3] + max[3]
         if (q + 4 <= gEnd)
         {
             int seqExtents = checked((int)ReadU32(b, q));
@@ -438,7 +438,7 @@ internal static class MdxParser
         if (q + 4 <= gEnd && ReadTag(b, q) is "UVAS" or "TANG" or "SKIN")
             return q;
 
-        // Fallback: scan for the next known tag within the geoset.
+        // Fallback, scan for the next known tag within the geoset.
         for (int i = p; i + 4 <= gEnd; i++)
         {
             if (ReadTag(b, i) is "UVAS" or "TANG" or "SKIN")
@@ -456,7 +456,7 @@ internal static class MdxParser
         return result;
     }
 
-    /// <summary>Defensive u32→int array read for animation data: null (not throw) on overrun.</summary>
+    /// <summary>Defensive u32→int array read for animation data, null (not throw) on overrun.</summary>
     private static int[]? TryReadInts(byte[] b, int pos, int count, int limit)
     {
         if (count < 0 || pos + (long)count * 4 > limit) return null;

@@ -141,7 +141,7 @@ public static class RuntimeReadinessCommand
         }
 
         // 3. A global that appears, unassigned, somewhere in the script text this hero's port
-        //    would carry. Not scoped to udg_: gg_rct_* (a region CreateRegions never carried) and a
+        //    would carry. Not scoped to udg_, gg_rct_* (a region CreateRegions never carried) and a
         //    hand-written system's own timer/group/hashtable globals broke exactly this way on a
         //    real map, and nothing but the name distinguishes them from a udg_ one. Scoped to the
         //    hero's OWN dependency closure, which cuts a whole-map scan down a great deal, but a

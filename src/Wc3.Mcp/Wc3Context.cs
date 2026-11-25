@@ -1,4 +1,4 @@
-﻿// src/Wc3.Mcp/Wc3Context.cs
+// src/Wc3.Mcp/Wc3Context.cs
 using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Text;

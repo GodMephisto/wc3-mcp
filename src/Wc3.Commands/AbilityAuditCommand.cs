@@ -41,11 +41,11 @@ public sealed record AbilityAuditResult(string Hero, string? Name, int OwnerId, 
 /// its follow-up loop never started, its damage call was trimmed, or a global it read was never
 /// assigned. This walks each ability's own runtime chain (never the whole hero's carried closure,
 /// which routinely includes shared framework other abilities reach too) and reports PASS or the exact
-/// broken link for eight checks: <see cref="AbilityCheck.Dispatch"/>, <see cref="AbilityCheck.Handler"/>,
+/// broken link for eight checks, <see cref="AbilityCheck.Dispatch"/>, <see cref="AbilityCheck.Handler"/>,
 /// <see cref="AbilityCheck.Loop"/>, <see cref="AbilityCheck.Damage"/>, <see cref="AbilityCheck.PauseBalance"/>,
 /// <see cref="AbilityCheck.TimerCallbacks"/>, <see cref="AbilityCheck.State"/>, <see cref="AbilityCheck.Effects"/>.
 ///
-/// Reuses rather than re-parses: the ability set and its dispatch verdict come straight from
+/// Reuses rather than re-parses, the ability set and its dispatch verdict come straight from
 /// <see cref="HeroWiringAudit"/> (extended here with <see cref="WiringStatus.MultipleLiveDispatchers"/>,
 /// two independently live triggers for the same ability, exactly how the --synth-dispatch double
 /// registration bug would have been caught automatically). The Shape A/B "never assigned" state check
@@ -106,7 +106,7 @@ public static class AbilityAuditCommand
     {
         var checks = new List<AbilityCheckResult>
         {
-            // 1. Dispatch: HeroWiringAudit's own verdict, unmodified. Ok is the only PASS, every other
+            // 1. Dispatch, HeroWiringAudit's own verdict, unmodified. Ok is the only PASS, every other
             //    status (including the new MultipleLiveDispatchers) is a real broken or doubled link.
             new(AbilityCheck.Dispatch,
                 a.Status == WiringStatus.Ok ? CheckVerdict.Pass : CheckVerdict.Fail,
@@ -137,7 +137,7 @@ public static class AbilityAuditCommand
     }
 
     /// <summary>Every ability branch the ported script's dispatcher(s) name, however they carried
-    /// forward: <see cref="SynthDispatchBuilder.ExtractHeroCastBranches"/> for a plain port (still
+    /// forward, <see cref="SynthDispatchBuilder.ExtractHeroCastBranches"/> for a plain port (still
     /// carrying the source's hero-guarded shared dispatcher), plus every <c>wc3ctl_SynthCast_*</c>
     /// dispatch function for a --synth-dispatch one (bare, already scoped to one hero, so no guard
     /// search applies). First writer wins on a rawcode collision between the two, which only matters
@@ -327,7 +327,7 @@ public static class AbilityAuditCommand
             return new(AbilityCheck.State, CheckVerdict.Pass, "no unassigned global read by this ability's own code");
 
         // Names only, not RuntimeReadinessCommand's full per-global essay (repeated per ability, that
-        // reads as noise): run 'audit readiness' for the full Shape A/B reasoning behind each one.
+        // reads as noise), run 'audit readiness' for the full Shape A/B reasoning behind each one.
         return new(AbilityCheck.State, CheckVerdict.Fail,
             $"{mine.Count} unassigned global(s) reachable from this ability's own code: "
             + string.Join(", ", mine.Select(f => f.Global)));
@@ -408,7 +408,7 @@ public static class AbilityAuditCommand
             .Where(l => l.StartsWith(JassScriptCheck.TrimMarker, StringComparison.Ordinal))
             .Any(l => pattern.IsMatch(l[JassScriptCheck.TrimMarker.Length..]));
 
-    /// <summary>The ported script parsed once per hero: every declared function's RAW body (trim
+    /// <summary>The ported script parsed once per hero, every declared function's RAW body (trim
     /// markers still visible, unlike <see cref="HeroWiringAudit"/>'s own comment-stripped view, this
     /// tool needs to SEE what was trimmed, not just skip past it).</summary>
     private sealed class ScriptView

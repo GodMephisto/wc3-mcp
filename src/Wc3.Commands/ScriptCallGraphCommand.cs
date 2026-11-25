@@ -14,7 +14,7 @@ public sealed record ScriptCallGraphResult(
 
 /// <summary>
 /// The call edges between functions a script declares, as data. The CLI renders them as a text
-/// adjacency list or as Graphviz DOT; an MCP client gets the edge list.
+/// adjacency list or as Graphviz DOT. An MCP client gets the edge list.
 ///
 /// Only edges between functions this script declares are included, so a native call or a call
 /// through a local code value is not an edge. This is the same extraction the unused function

@@ -72,7 +72,7 @@ public static class TargetBuildSettings
     }
 
     /// <summary>
-    /// Get the current target build, resolving through the precedence chain:
+    /// Get the current target build, resolving through the precedence chain,
     /// option (explicit --target) > environment (WC3_TARGET_BUILD) > settings
     /// file > default (installed game build or newest schema).
     /// </summary>
@@ -90,16 +90,16 @@ public static class TargetBuildSettings
         TargetBuildResult Result(string build, TargetSource source) =>
             new(build, source, SectionsFor(build, schemasDir));
 
-        // Tier 1: explicit option.
+        // Tier 1, explicit option.
         if (option is not null && option.Length > 0)
             return Result(option, TargetSource.Option);
 
-        // Tier 2: environment variable.
+        // Tier 2, environment variable.
         var envBuild = Environment.GetEnvironmentVariable("WC3_TARGET_BUILD");
         if (envBuild is not null && envBuild.Length > 0)
             return Result(envBuild, TargetSource.Environment);
 
-        // Tier 3: settings file.
+        // Tier 3, settings file.
         try
         {
             string path = FilePath;

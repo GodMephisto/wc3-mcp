@@ -6,7 +6,7 @@ namespace Wc3.Commands;
 /// <summary>
 /// Samples a thread's CURRENT instruction pointer and attributes it to a loaded module.
 ///
-/// This replaces attribution by thread START address, which is useless: Windows puts every
+/// This replaces attribution by thread START address, which is useless, Windows puts every
 /// thread's entry stub in ntdll, so every thread reports ntdll no matter what it is executing.
 /// Knowing a hung game is spinning without knowing WHERE is only half an answer, so this reads
 /// RIP directly.
@@ -22,7 +22,7 @@ internal static class ThreadIpSampler
     private const int ThreadGetContext = 0x0008;
     private const int ThreadQueryInformation = 0x0040;
 
-    // AMD64 CONTEXT: 1232 bytes, 16-byte aligned, with RIP at 0xF8. CONTEXT_CONTROL asks for
+    // AMD64 CONTEXT, 1232 bytes, 16-byte aligned, with RIP at 0xF8. CONTEXT_CONTROL asks for
     // just the control registers, which is all RIP needs.
     private const int ContextSize = 1232;
     private const int ContextAlignment = 16;

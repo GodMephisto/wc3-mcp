@@ -6,7 +6,7 @@ using Wc3.Model;
 namespace Wc3.Commands;
 
 /// <summary>One player slot from war3map.w3i. Name is display-resolved (TRIGSTR_ refs
-/// via war3map.wts); Color always comes from <see cref="PlayerColors"/> by slot id , 
+/// via war3map.wts). Color always comes from <see cref="PlayerColors"/> by slot id ,
 /// the w3i model this War3Net version parses carries no per-player custom color.</summary>
 public sealed record PlayerInfo(
     int Id,
@@ -78,7 +78,7 @@ public static class PlayerForceCommand
             SharedAdvUnitControl: f.Flags.HasFlag(ForceFlags.ShareAdvancedUnitControl))).ToList();
     }
 
-    /// <summary>Moves a player into the force at <paramref name="forceIndex"/>: its bit
+    /// <summary>Moves a player into the force at <paramref name="forceIndex"/>, its bit
     /// is cleared from every other force's player mask (a player belongs to exactly one
     /// force, as in the World Editor) and set on the target's.</summary>
     public static PlayerForceEditResult SetPlayerForce(MapDocument doc, int playerId, int forceIndex)
@@ -179,6 +179,6 @@ public static class PlayerForceCommand
     private static void WriteBack(MapDocument doc, MapInfo info)
     {
         var entry = doc.AddOrReplaceRawFile(MapInfoCommand.FileName, MapInfoCommand.Serialize(info));
-        entry.Model = info; // raw bytes win on Save; keep in-memory readers on the mutated model
+        entry.Model = info; // raw bytes win on Save. Keep in-memory readers on the mutated model
     }
 }

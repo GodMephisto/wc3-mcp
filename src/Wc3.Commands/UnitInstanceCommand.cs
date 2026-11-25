@@ -5,7 +5,7 @@ using Wc3.Model;
 
 namespace Wc3.Commands;
 
-/// <summary>One placed unit from war3mapUnits.doo. Scale is per-axis; HpPercent /
+/// <summary>One placed unit from war3mapUnits.doo. Scale is per-axis. HpPercent /
 /// ManaPercent are the World Editor's percent overrides where -1 means "use the
 /// object's default". Name is the map's object-data name delta for the type when one
 /// exists ("Start Location" for sloc), else null, base-game names need a game-data
@@ -33,7 +33,7 @@ public sealed record UnitEditResult(bool Ok, string Message);
 /// <summary>
 /// Read/edit access to the units already placed on the map (war3mapUnits.doo), the
 /// way the World Editor's unit-properties dialog exposes them. Reads walk the parsed
-/// War3Net <see cref="MapUnits"/> model; edits mutate the matching
+/// War3Net <see cref="MapUnits"/> model. Edits mutate the matching
 /// <see cref="UnitData"/> in place and re-register the model via
 /// <see cref="MapDocument.AddOrReplaceModelFile"/> (exactly the PlacementCommand
 /// write path), so the file re-serializes on the next Save.

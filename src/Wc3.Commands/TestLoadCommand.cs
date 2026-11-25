@@ -334,7 +334,7 @@ public static class TestLoadCommand
             p.Refresh();
             var h = p.MainWindowHandle;
             if (h == IntPtr.Zero) return;
-            // Post to the game window. Never call SetForegroundWindow or keybd_event here: those
+            // Post to the game window. Never call SetForegroundWindow or keybd_event here, those
             // take focus away from whatever the user is doing, which made an unattended run
             // impossible to work through.
             PostMessage(h, 0x0100, (IntPtr)0x20, IntPtr.Zero);

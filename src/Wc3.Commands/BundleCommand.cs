@@ -10,15 +10,15 @@ namespace Wc3.Commands;
 
 /// <summary>
 /// Computes the full dependency closure of one object (rooted at any of the seven
-/// Object Editor kinds): every object it references (abilities, buffs, items,
+/// Object Editor kinds), every object it references (abilities, buffs, items,
 /// upgrades, ...), every asset file (models, textures, icons, sounds) and every
 /// trigger string, so a later wave can graph the result and port it into another
-/// map. Breadth-first reference crawl over merged object fields: 4-char tokens
+/// map. Breadth-first reference crawl over merged object fields, 4-char tokens
 /// that resolve as objects become nodes, path-like tokens become file deps, and
 /// map-imported models contribute their textures. With game data available, only
 /// fields whose metadata TYPE is an object-reference type (unitCode, abilList, ...)
 /// may add object nodes, a value that merely looks like a rawcode elsewhere is a
-/// false positive; without game data the crawl stays permissive (any 4-char token
+/// false positive. Without game data the crawl stays permissive (any 4-char token
 /// is a candidate). Only map-defined (custom) objects are recursed, base-game
 /// objects are recorded as leaf nodes since they already exist in any target map.
 /// </summary>
@@ -50,7 +50,7 @@ public static class BundleCommand
             : ResolveObject(doc, rootKind, rootRawcode, null, new[] { diagnostic });
     }
 
-    /// <summary>Core with an optional game-data context (null = map deltas only:
+    /// <summary>Core with an optional game-data context (null = map deltas only,
     /// base-game references cannot resolve and are silently skipped).</summary>
     internal static UnitBundle ResolveObject(
         MapDocument doc, ObjectKind rootKind, string rootRawcode, GameDataContext? ctx,
@@ -60,7 +60,7 @@ public static class BundleCommand
         var strings = MapStrings.From(doc);
 
         // Per-kind rawcode ids the map itself defines/modifies, the "custom to
-        // this map" test (custom objects need porting; base ones exist anywhere).
+        // this map" test (custom objects need porting. Base ones exist anywhere).
         var mapIds = new Dictionary<ObjectKind, HashSet<int>>();
         foreach (var kind in ObjectKinds.All)
             mapIds[kind] = ObjectKinds.MergedEntries(doc, ObjectKinds.Info(kind)).Select(e => e.Id).ToHashSet();
@@ -80,7 +80,7 @@ public static class BundleCommand
         var refFieldCache = new Dictionary<(ObjectKind Kind, string Code), bool>();
         bool IsReferenceField(ObjectKind kind, string fieldCode)
         {
-            // No game data → field types are unknowable; keep the historical permissive
+            // No game data → field types are unknowable. Keep the historical permissive
             // crawl (any 4-char token is a candidate) rather than regress that path.
             if (ctx is null) return true;
             if (refFieldCache.TryGetValue((kind, fieldCode), out var known)) return known;
@@ -118,7 +118,7 @@ public static class BundleCommand
             bool custom = IsCustom(hit.Kind, token);
             nodes[token] = new BundleNode(token, hit.Kind, hit.Merged.Name, custom);
             AddEdge(from, token, via);
-            // Base-game objects are leaves: whatever THEY reference is also base.
+            // Base-game objects are leaves, whatever THEY reference is also base.
             if (custom) queue.Enqueue((token, hit.Merged));
         }
 
@@ -183,7 +183,7 @@ public static class BundleCommand
                 }
             }
 
-            // Cross-references are 4-char rawcodes or comma-separated lists of them , 
+            // Cross-references are 4-char rawcodes or comma-separated lists of them ,
             // but only in fields whose metadata type says they hold object references;
             // asset references are file-path strings (variation fields may list several).
             // The field code rides on every edge as its Via (the WHY of the inclusion).
@@ -198,7 +198,7 @@ public static class BundleCommand
             }
         }
 
-        // Root: the caller-declared kind (the crawl below stays kind-agnostic).
+        // Root, the caller-declared kind (the crawl below stays kind-agnostic).
         var kindWord = rootKind.ToString().ToLowerInvariant();
         var root = ObjectGetCommand.Execute(doc, rootKind, rootRawcode, ctx, Array.Empty<string>());
         if (!root.Found)
@@ -228,7 +228,7 @@ public static class BundleCommand
 
         if (capped) diagnostics.Add($"node cap ({MaxNodes}) reached, dependency closure truncated");
 
-        // Script closure: the war3map.j functions that implement the bundle's custom
+        // Script closure, the war3map.j functions that implement the bundle's custom
         // skills. Seeded by every rawcode being ported (root + custom objects), those
         // appear in JASS as 'XXXX' literals in spell-handler conditions and the like.
         var seedRawcodes = nodes.Values.Where(n => n.CustomToMap).Select(n => n.Rawcode)
@@ -288,8 +288,8 @@ public static class BundleCommand
     private static readonly Regex Identifier = new(@"[A-Za-z_][A-Za-z0-9_]*", RegexOptions.Compiled);
 
     /// <summary>A double-quoted JASS string literal (captures the inner text). Used to pull
-    /// asset paths out of spell handlers - AddSpecialEffect("war3mapImported\\x.mdx") and the
-    /// like - so trigger-driven skill models get carried by the port.</summary>
+    /// asset paths out of spell handlers, AddSpecialEffect("war3mapImported\\x.mdx") and the
+    /// like, so trigger-driven skill models get carried by the port.</summary>
     private static readonly Regex StringLiteral = new("\"([^\"]*)\"", RegexOptions.Compiled);
 
     /// <summary>A single-quoted four-character rawcode literal, e.g. 'H001'. Used to read the
@@ -311,7 +311,7 @@ public static class BundleCommand
         + @"|CreateNUnitsAtLocFacingLocBJ|UnitAddAbility|UnitAddAbilityBJ)\s*\(",
         RegexOptions.Compiled);
 
-    /// <summary>A global declaration with an initializer: "[constant] type Name = ...".</summary>
+    /// <summary>A global declaration with an initializer, "[constant] type Name = ...".</summary>
     private static readonly Regex GlobalInitializer =
         new(@"^\s*(?:constant\s+)?[A-Za-z_][A-Za-z0-9_]*\s+([A-Za-z_][A-Za-z0-9_]*)\s*=", RegexOptions.Compiled);
 
@@ -322,7 +322,7 @@ public static class BundleCommand
     }
 
     /// <summary>
-    /// JASS call-graph closure seeded by rawcode literals: every war3map.j function whose
+    /// JASS call-graph closure seeded by rawcode literals, every war3map.j function whose
     /// body mentions '&lt;seed rawcode&gt;', directly, or through a global initialized
     /// with one (integer Raiden_ID= 'H000' makes any Raiden_ID reference a hit), plus
     /// everything those functions transitively call. Best-effort text analysis on top of
@@ -331,9 +331,9 @@ public static class BundleCommand
     /// inside either still matches (over-inclusion, never under-inclusion). Lua maps
     /// are not analyzed.
     ///
-    /// Dispatch scoping: these maps route every hero's spellcast through one shared function
-    /// shaped as "if GetUnitTypeId(c) == Raiden_ID then ...Raiden calls... endif; if ... ==
-    /// Natsu_ID then ...Natsu calls... endif; ...". A call that appears ONLY inside a branch
+    /// Dispatch scoping, these maps route every hero's spellcast through one shared function
+    /// shaped as "if GetUnitTypeId(c) == Raiden_ID then ...Raiden calls... Endif. If ... ==
+    /// Natsu_ID then ...Natsu calls... Endif. ...". A call that appears ONLY inside a branch
     /// guarded by another object's rawcode (<paramref name="allCustomObjectIds"/> minus the
     /// ported set) is that other hero's, not ours, so it is not followed. Branches guarded by
     /// our own rawcodes, and unguarded calls, are followed normally. Without this, one shared
@@ -364,7 +364,7 @@ public static class BundleCommand
         var byName = new Dictionary<string, JassFunction>(StringComparer.Ordinal);
         foreach (var f in index) byName.TryAdd(f.Name, f);
 
-        // Rawcode aliases: maps commonly stash spell ids in globals and compare against
+        // Rawcode aliases, maps commonly stash spell ids in globals and compare against
         // those, so a global whose initializer carries a seed literal (any line outside
         // every function body, e.g. "integer RaidenQ_ID= 'A000'") makes its name count
         // as a reference to that rawcode wherever a function mentions it.
@@ -374,7 +374,7 @@ public static class BundleCommand
                 inFunction[i] = true;
 
         // ourIds = the rawcodes being ported (root + custom closure objects). A dispatch
-        // branch guarded by one of these is ours to follow; one guarded by any OTHER custom
+        // branch guarded by one of these is ours to follow. One guarded by any OTHER custom
         // object (allCustomObjectIds minus these) belongs to a different hero.
         var ourIds = seedRawcodes.Where(rc => rc.Length == 4)
             .Select(rc => rc.FromRawcode()).ToHashSet();
@@ -396,7 +396,7 @@ public static class BundleCommand
             }
         }
 
-        // True when an if/elseif condition dispatches on a foreign hero: it names a custom
+        // True when an if/elseif condition dispatches on a foreign hero, it names a custom
         // object rawcode (literal or *_ID alias) that is NOT one of ours. A condition that
         // also names one of ours, or names no object at all, is not foreign.
         bool IsForeignGuard(string condition)
@@ -424,11 +424,11 @@ public static class BundleCommand
         // A call counts when the identifier names another indexed function and is either invoked
         // ("Foo(") or passed by reference ("function Foo", TriggerAddAction/TimerStart/Condition
         // and friends). Calls that appear ONLY inside a foreign-hero dispatch branch are dropped
-        // (guardStack tracks the open if/elseif branches; a call is followed only when no active
+        // (guardStack tracks the open if/elseif branches. A call is followed only when no active
         // branch is foreign). Alias mentions, which drive SEEDING, are collected regardless of
         // guard so the dispatcher itself is still recognised as referencing our hero.
         // Carry a hero's script-added abilities (e.g. a Q dash-back added by UnitAddAbility, never on
-        // the unit's ability list) by the arena's naming convention: each ability id sits in a global
+        // the unit's ability list) by the arena's naming convention, each ability id sits in a global
         // named after the hero (DarkShiki_ID, DarkShikiQ_ID, DarkShikiQ2_ID, ...). From the root's own
         // id-global take the hero stem, then carry every custom sibling id-global's object. Scoped to
         // the hero's own naming group, so it never pulls another hero's abilities (a closure-wide
@@ -547,7 +547,7 @@ public static class BundleCommand
             spawnRefs[f.Name] = spawns;
         }
 
-        // Seeds: functions referencing any ported rawcode, as a literal or via an alias.
+        // Seeds, functions referencing any ported rawcode, as a literal or via an alias.
         var reasons = new Dictionary<string, string>(StringComparer.Ordinal);
         var queue = new Queue<string>();
         bool capped = false;
@@ -562,7 +562,7 @@ public static class BundleCommand
             queue.Enqueue(fn.Name);
         }
 
-        // BFS over caller→callee; the reason records the first discoverer.
+        // BFS over caller→callee. The reason records the first discoverer.
         while (queue.Count > 0 && !capped)
         {
             var caller = queue.Dequeue();
@@ -625,7 +625,7 @@ public static class BundleCommand
                     + "few of their spawned units may be absent (prune noise, or add them by hand)");
         }
 
-        // Custom skills are usually trigger-driven: the visual effect models live as string
+        // Custom skills are usually trigger-driven, the visual effect models live as string
         // literals inside the spell handlers (AddSpecialEffect("war3mapImported\\x.mdx"), dummy
         // unit model swaps, ...), NOT in the ability object fields. Scan every closure function
         // body for asset-path literals so those models/textures/sounds port along with the skill.
@@ -751,7 +751,7 @@ public static class BundleCommand
             if (allAliases.TryGetValue(id.Value, out var rc)) yield return rc;
     }
 
-    /// <summary>True when the matched identifier is a "function Foo" code reference , 
+    /// <summary>True when the matched identifier is a "function Foo" code reference ,
     /// the "function" keyword immediately precedes it with only whitespace between.</summary>
     private static bool IsFunctionReference(string body, Match? prev, Match m)
     {
@@ -761,9 +761,9 @@ public static class BundleCommand
         return true;
     }
 
-    /// <summary>Metadata type tokens whose values are object rawcodes: a known object
+    /// <summary>Metadata type tokens whose values are object rawcodes, a known object
     /// stem + "Code" (single) or "List" (comma-separated). Non-object lists like
-    /// "targetList"/"stringList" stay out, the stem whitelist (the same one the
+    /// "targetList"/"stringList" stay out, the stem allowlist (the same one the
     /// Studio object editor uses) keeps this conservative.</summary>
     private static bool IsObjectReferenceType(string type)
     {

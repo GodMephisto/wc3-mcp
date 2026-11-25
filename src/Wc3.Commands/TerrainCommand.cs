@@ -9,11 +9,11 @@ namespace Wc3.Commands;
 /// (Width+1)×(Height+1) grid of corner tiles (<c>env.TerrainTiles</c>, row-major from the
 /// map's south-west corner, index = y*(Width+1) + x, the same convention
 /// <see cref="Wc3.Render.TerrainRenderer"/> reads). Each tile's <c>Height</c> is its
-/// ground elevation excluding cliff level; <b>raise</b>/<b>lower</b> shift it, <b>set</b>
+/// ground elevation excluding cliff level. <b>raise</b>/<b>lower</b> shift it, <b>set</b>
 /// assigns an absolute value, <b>flatten</b> levels a region to its own mean, and
 /// <b>smooth</b> averages each tile toward its neighbours.
 ///
-/// Deforms operate on raw tile <c>Height</c> so there is no unit ambiguity: callers pass
+/// Deforms operate on raw tile <c>Height</c> so there is no unit ambiguity, callers pass
 /// amounts in the same units the tiles already store (use <see cref="Stats"/> to inspect
 /// the live range before brushing). Built primarily so automated tests can raise a known
 /// region and assert the load/edit/save round-trip, but it is a general API.
@@ -30,7 +30,7 @@ public static partial class TerrainCommand
 
     /// <summary>How a brush changes each affected tile's integer <c>CliffLevel</c>, the
     /// discrete plateau layer Warcraft III renders vertical cliff faces between (added to
-    /// <c>Height</c> for elevation; a blank map's base layer is 0).</summary>
+    /// <c>Height</c> for elevation. A blank map's base layer is 0).</summary>
     public enum CliffOp { Raise, Lower, Set }
 
     public sealed record DeformResult(bool Ok, string Message, int TilesChanged = 0);
@@ -45,7 +45,7 @@ public static partial class TerrainCommand
     /// <summary>
     /// Deforms every tile within <paramref name="radius"/> corners of
     /// (<paramref name="centerX"/>, <paramref name="centerY"/>). Square uses a (2r+1)²
-    /// footprint; Circle keeps tiles whose centre is within the radius. Tiles outside the
+    /// footprint. Circle keeps tiles whose centre is within the radius. Tiles outside the
     /// grid are skipped. <paramref name="amount"/> is the step for Raise/Lower and the
     /// target for Set (ignored by Flatten/Smooth). Returns the number of tiles changed.
     /// </summary>
@@ -78,7 +78,7 @@ public static partial class TerrainCommand
 
     /// <summary>
     /// Deforms every tile in the inclusive axis-aligned rectangle [x0,x1]×[y0,y1]
-    /// (corner coordinates; corners may be given in any order). Tiles outside the grid are
+    /// (corner coordinates. Corners may be given in any order). Tiles outside the grid are
     /// skipped. A rectangle spanning the whole grid is a full-map deform.
     /// </summary>
     public static DeformResult DeformRect(
@@ -102,7 +102,7 @@ public static partial class TerrainCommand
     /// <paramref name="radius"/> corners of (<paramref name="centerX"/>,
     /// <paramref name="centerY"/>), using the same footprint rules as <see cref="Deform"/>
     /// (Square = (2r+1)², Circle = tiles whose centre is within the radius). The index is an
-    /// offset into the map's ground tile-type list (<c>env.TerrainTypes</c>); it is validated
+    /// offset into the map's ground tile-type list (<c>env.TerrainTypes</c>). It is validated
     /// against that list's length. <paramref name="variation"/>, when non-null, also sets each
     /// tile's texture variation. Returns the number of tiles actually changed.
     /// </summary>
@@ -135,7 +135,7 @@ public static partial class TerrainCommand
 
     /// <summary>
     /// Paints ground <paramref name="textureIndex"/> onto every tile in the inclusive
-    /// axis-aligned rectangle [x0,x1]×[y0,y1] (corners in any order; a full-grid rectangle
+    /// axis-aligned rectangle [x0,x1]×[y0,y1] (corners in any order. A full-grid rectangle
     /// repaints the whole map). See <see cref="Paint"/> for index/variation semantics.
     /// </summary>
     public static PaintResult PaintRect(
@@ -363,7 +363,7 @@ public static partial class TerrainCommand
     /// <paramref name="radius"/> of (<paramref name="centerX"/>,<paramref name="centerY"/>),
     /// using the same footprint rules as <see cref="Deform"/> (Square = (2r+1)², Circle =
     /// tiles whose centre is within the radius). Cliff levels are the discrete plateau
-    /// layers Warcraft III renders vertical faces between; the result is floored at 0 (the
+    /// layers Warcraft III renders vertical faces between. The result is floored at 0 (the
     /// format's base layer). <paramref name="level"/> is the absolute layer for
     /// <see cref="CliffOp.Set"/> and the shift magnitude for raise/lower, and must be &gt;= 0.
     /// Returns the number of tiles actually changed.
@@ -396,7 +396,7 @@ public static partial class TerrainCommand
     }
 
     /// <summary>
-    /// Cliff-level variant of <see cref="DeformRect"/>: applies <paramref name="op"/> over
+    /// Cliff-level variant of <see cref="DeformRect"/>, applies <paramref name="op"/> over
     /// the inclusive rectangle [x0,x1]×[y0,y1] (corners in any order). See <see cref="Cliff"/>.
     /// </summary>
     public static DeformResult CliffRect(
@@ -449,7 +449,7 @@ public static partial class TerrainCommand
     }
 
     /// <summary>
-    /// Rectangle variant of <see cref="Ramp"/>: sets or clears <c>IsRamp</c> over the
+    /// Rectangle variant of <see cref="Ramp"/>, sets or clears <c>IsRamp</c> over the
     /// inclusive rectangle [x0,x1]×[y0,y1] (corners in any order).
     /// </summary>
     public static DeformResult RampRect(

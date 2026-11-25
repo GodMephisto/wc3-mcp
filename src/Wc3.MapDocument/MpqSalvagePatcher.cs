@@ -300,7 +300,7 @@ internal static class MpqSalvagePatcher
             rel += (uint)payload.Length;
         }
 
-        // Lay the archive out the same way _write does: prefix, header placeholder, payloads,
+        // Lay the archive out the same way _write does, prefix, header placeholder, payloads,
         // the untouched hash table, then a fresh block table.
         long hashSizeBytes = (long)header.HashTableSize * TableRowSize;
         long blockSizeBytes = (long)rows * TableRowSize;

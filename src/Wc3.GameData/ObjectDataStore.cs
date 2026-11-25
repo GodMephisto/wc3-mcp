@@ -1,7 +1,7 @@
 namespace Wc3.GameData;
 
 /// <summary>
-/// Generic base-object resolver: joins one Object Editor type's metadata SLK with its
+/// Generic base-object resolver, joins one Object Editor type's metadata SLK with its
 /// data SLK(s) to map rawcode -> field-code -> default value. The per-type factories
 /// encode the CASC paths and table-name -> file conventions confirmed against the live
 /// install. Fields whose slk is "Profile" live in TXT profile files and resolve from an
@@ -16,9 +16,9 @@ public sealed class ObjectDataStore
     private readonly Dictionary<string, SlkTable> _slks; // slk table name -> parsed table
     private readonly ProfileTxtStore _profile;
     // When set and the first code is missing, its value copies from the second code.
-    // Buffs use this: WE shows Bufftip as the name when EditorName is absent.
+    // Buffs use this, WE shows Bufftip as the name when EditorName is absent.
     private readonly (string Code, string FallbackCode)? _nameFallback;
-    // Data-SLK column holding the object's level count (abilities: "levels"). Caps the
+    // Data-SLK column holding the object's level count (abilities, "levels"). Caps the
     // leveled-field expansion so padded copies beyond the real levels stay hidden.
     private readonly string? _levelColumn;
 
@@ -45,8 +45,8 @@ public sealed class ObjectDataStore
     /// <summary>
     /// Reads and joins the metadata SLK at <paramref name="metadataPath"/> with its data
     /// SLKs. Data tables come from <paramref name="slkNames"/> when given, otherwise from
-    /// the metadata's distinct "slk" values; <paramref name="slkPath"/> maps a table name
-    /// to its CASC path (null = skip). Missing data SLKs are skipped; a missing metadata
+    /// the metadata's distinct "slk" values. <paramref name="slkPath"/> maps a table name
+    /// to its CASC path (null = skip). Missing data SLKs are skipped. A missing metadata
     /// SLK throws.
     /// </summary>
     public static ObjectDataStore Build(
@@ -78,7 +78,7 @@ public sealed class ObjectDataStore
         return new ObjectDataStore(meta, slks, profile, nameFallback, levelColumn);
     }
 
-    /// <summary>Field-code -> base value for the given object; false if no field resolves.</summary>
+    /// <summary>Field-code -> base value for the given object. False if no field resolves.</summary>
     public bool TryGet(string rawcode, out IReadOnlyDictionary<string, string> fieldsByCode)
     {
         var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -136,7 +136,7 @@ public sealed class ObjectDataStore
     }
 
     /// <summary>
-    /// Metadata scoping: a non-empty useSpecific list restricts the field to the listed
+    /// Metadata scoping, a non-empty useSpecific list restricts the field to the listed
     /// rawcodes (every ability data field carries one, e.g. Hbz1 applies to AHbz and its
     /// creep variants only, so Blizzard's dataa columns never surface under another
     /// ability's data codes) and notSpecific excludes the listed rawcodes. Generic
@@ -182,7 +182,7 @@ public sealed class ObjectDataStore
         // 90, 90, 90, 90 in 2.0.4 but 90, 90, 90, 60 in 3.0.0, so Area4 now carries a value
         // that is NOT a copy. Dropping it hid a real change from every caller, including a
         // custom ability that declares more levels than its base and therefore reaches it.
-        // Padding is still dropped; a trailing column that DIFFERS is surfaced.
+        // Padding is still dropped. A trailing column that DIFFERS is surfaced.
         for (int level = levels + 1; level <= fm.Repeat; level++)
         {
             if (!row.TryGetValue(column + level, out var v) || v.Length == 0) continue;
@@ -210,23 +210,23 @@ public sealed class ObjectDataStore
                 yield return v;
     }
 
-    /// <summary>Default table-name -> CASC path convention: lowercased + ".slk" under units\.</summary>
+    /// <summary>Default table-name -> CASC path convention, lowercased + ".slk" under units\.</summary>
     public static string UnitsDirSlk(string name) => UnitsDir + name.ToLowerInvariant() + ".slk";
 
     // Per-type factories. Paths, data-table names, and rawcode key columns confirmed
-    // against the live install:
-    //   items:         unitmetadata.slk (item fields share it; slk "ItemData")
+    // against the live install,
+    //   items,         unitmetadata.slk (item fields share it. Slk "ItemData")
     //                    + units\itemdata.slk              (key column "itemID")
-    //   destructables: units\destructablemetadata.slk ("DestructableData")
+    //   destructables, units\destructablemetadata.slk ("DestructableData")
     //                    + units\destructabledata.slk      (key "DestructableID")
-    //   doodads:       doodads\doodadmetadata.slk ("DoodadData")
+    //   doodads,       doodads\doodadmetadata.slk ("DoodadData")
     //                    + doodads\doodads.slk             (key "doodID")
-    //   buffs:         units\abilitybuffmetadata.slk ("AbilityBuffData")
+    //   buffs,         units\abilitybuffmetadata.slk ("AbilityBuffData")
     //                    + units\abilitybuffdata.slk       (key "alias")
-    //   upgrades:      units\upgrademetadata.slk ("UpgradeData")
+    //   upgrades,      units\upgrademetadata.slk ("UpgradeData")
     //                    + units\upgradedata.slk           (key "upgradeID")
 
-    /// <summary>Item fields live in unitmetadata.slk; only the ItemData table is loaded so
+    /// <summary>Item fields live in unitmetadata.slk. Only the ItemData table is loaded so
     /// the store stays item-only (unit tables belong to BaseUnitStore).</summary>
     public static ObjectDataStore BuildItems(IGameDataSource src) => BuildItems(src, null);
 
@@ -236,7 +236,7 @@ public sealed class ObjectDataStore
     public static ObjectDataStore BuildDestructables(IGameDataSource src) =>
         Build(src, UnitsDir + "destructablemetadata.slk", UnitsDirSlk);
 
-    /// <summary>Doodads live under doodads\; the "DoodadData" table's file is doodads.slk
+    /// <summary>Doodads live under doodads\. The "DoodadData" table's file is doodads.slk
     /// (not the lowercased table name).</summary>
     public static ObjectDataStore BuildDoodads(IGameDataSource src) =>
         Build(src, DoodadsDir + "doodadmetadata.slk",

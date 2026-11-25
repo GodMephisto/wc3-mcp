@@ -20,7 +20,7 @@ public sealed record TriggerModel(
 public sealed record TriggerCategoryInfo(int Id, string Name, string Kind);
 
 /// <summary>One trigger (GUI, comment or custom-text). <see cref="Functions"/> is the
-/// event/condition/action tree for GUI triggers; <see cref="CustomText"/> carries the
+/// event/condition/action tree for GUI triggers. <see cref="CustomText"/> carries the
 /// war3map.wct script body when <see cref="IsCustomText"/>.</summary>
 public sealed record TriggerInfo(
     int Id,
@@ -50,7 +50,7 @@ public sealed record TriggerVariableInfo(string Name, string Type, bool IsArray,
 
 /// <summary>
 /// Read-only projection of the map's triggers into plain POCOs, the model a trigger
-/// editor UI consumes. Sources: war3map.wtg (tree + variables, War3Net
+/// editor UI consumes. Sources, war3map.wtg (tree + variables, War3Net
 /// <see cref="MapTriggers"/>), war3map.wct (custom-text bodies,
 /// <see cref="MapCustomTextTriggers"/>) and war3map.w3i (script language). Unlike
 /// <see cref="TriggerCommand"/> (flat item listing + flag edits) this walks the full ECA
@@ -62,7 +62,7 @@ public static class TriggerReadCommand
     public const string CustomTextFileName = "war3map.wct";
 
     /// <summary>Guards the ECA recursion (parameters can nest sub-functions which carry
-    /// parameters again). Real wtg trees are a handful of levels deep; anything past this
+    /// parameters again). Real wtg trees are a handful of levels deep. Anything past this
     /// is rendered as a truncated stub instead of recursing further.</summary>
     private const int MaxDepth = 24;
 
@@ -153,7 +153,7 @@ public static class TriggerReadCommand
             f.ChildFunctions.Select(c => ToFunctionInfo(c, depth + 1)).ToList());
     }
 
-    /// <summary>Best-effort compact rendering of one wtg parameter: presets and variables
+    /// <summary>Best-effort compact rendering of one wtg parameter, presets and variables
     /// by raw name (with <c>[index]</c> for array reads), nested function calls as
     /// <c>Name(args)</c>, string literals quoted unless they read as a number (the wtg
     /// stores numeric literals with the String parameter type too).</summary>

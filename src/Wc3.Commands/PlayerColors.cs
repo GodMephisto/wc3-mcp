@@ -11,11 +11,11 @@ namespace Wc3.Commands;
 public sealed record PlayerColorRgb(byte R, byte G, byte B);
 
 /// <summary>
-/// The Reforged 28-slot player-color table: ids 0..23 are the playable slots
+/// The Reforged 28-slot player-color table, ids 0..23 are the playable slots
 /// (TeamColor00..TeamColor23, classic 12 plus the twelve added in patch 1.29),
 /// ids 24..27 are the neutral slots (24 Neutral Hostile, 25 Neutral Victim,
 /// 26 Neutral Extra, 27 Neutral Passive, the JASS PLAYER_NEUTRAL_* ids).
-/// The game tints all four neutral slots with the black team color; we give them
+/// The game tints all four neutral slots with the black team color. We give them
 /// slightly separated near-black shades so UI swatches stay distinguishable
 /// (approximation, the neutrals have no distinct canonical colors).
 /// </summary>
@@ -24,7 +24,7 @@ public static class PlayerColors
     /// <summary>Total slots (24 playable + 4 neutral).</summary>
     public const int SlotCount = 28;
 
-    /// <summary>Highest playable slot id (0-based); 24..27 are the neutral slots.</summary>
+    /// <summary>Highest playable slot id (0-based). 24..27 are the neutral slots.</summary>
     public const int MaxPlayableId = 23;
 
     public const int NeutralHostileId = 24;

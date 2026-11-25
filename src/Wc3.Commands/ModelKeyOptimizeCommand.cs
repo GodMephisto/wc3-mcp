@@ -104,7 +104,7 @@ public static class ModelKeyOptimizeCommand
         if (kept == frames)
             return false;
 
-        // A track always keeps at least its first key; a lone key is already minimal.
+        // A track always keeps at least its first key. A lone key is already minimal.
         if (kept == 0)
             return false;
 

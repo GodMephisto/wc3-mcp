@@ -6,14 +6,14 @@ namespace Wc3.Modeling;
 /// <summary>
 /// Evaluates a model's skeleton at one frame and bakes the result into new geoset
 /// vertex/normal arrays (CPU skinning). Deliberately approximate where the format
-/// allows it: linear interpolation stands in for hermite/bezier tracks, and classic
+/// allows it, linear interpolation stands in for hermite/bezier tracks, and classic
 /// matrix-group skinning is a rigid average over the group's bones (classic MDX
 /// stores no per-vertex weights). Every unexpected condition, missing bones,
 /// parent cycles, zero weights, degrades toward bind pose rather than throwing.
 /// </summary>
 internal static class ModelPoser
 {
-    private const int MaxParentDepth = 512; // cycle guard; real skeletons are < 100 deep
+    private const int MaxParentDepth = 512; // cycle guard. Real skeletons are < 100 deep
 
     /// <summary>
     /// Poses <paramref name="model"/> at the first frame of the chosen sequence.
@@ -46,12 +46,12 @@ internal static class ModelPoser
         if (!anyPosed)
             return model;
 
-        // The output's geometry is already posed; dropping the skeleton makes the
+        // The output's geometry is already posed. Dropping the skeleton makes the
         // result stable (posing a posed model is a no-op, never a double-apply).
         return new Model3D(geosets, model.Textures);
     }
 
-    /// <summary>Exact name match first, then any prefixed variant (e.g. "Stand - 2"), then the first sequence.</summary>
+    /// <summary>Exact name match first, then any prefixed variant (e.g. "Stand, 2"), then the first sequence.</summary>
     private static ModelSequence? PickSequence(IReadOnlyList<ModelSequence> sequences, string? name)
     {
         name = string.IsNullOrWhiteSpace(name) ? "Stand" : name;
@@ -123,7 +123,7 @@ internal static class ModelPoser
     }
 
     /// <summary>
-    /// The node's world matrix at the frame: local pivot transform composed up the
+    /// The node's world matrix at the frame, local pivot transform composed up the
     /// parent chain (memoized). Unknown node ids and over-deep chains (cycles)
     /// resolve to identity, which leaves affected vertices in bind pose.
     /// </summary>
@@ -149,14 +149,14 @@ internal static class ModelPoser
     }
 
     /// <summary>
-    /// Local transform: rotate/scale about the node's pivot, then translate.
-    /// Row-vector composition (System.Numerics), so the leftmost factor applies first:
+    /// Local transform, rotate/scale about the node's pivot, then translate.
+    /// Row-vector composition (System.Numerics), so the leftmost factor applies first,
     /// v' = v · T(-pivot) · S · R · T(pivot + translation).
     /// </summary>
     private static Matrix4x4 LocalOf(ModelNode node, ModelSequence sequence, int frame)
     {
         if (node.Translation is null && node.Rotation is null && node.Scaling is null)
-            return Matrix4x4.Identity; // untracked node: pure pass-through regardless of pivot
+            return Matrix4x4.Identity; // untracked node, pure pass-through regardless of pivot
 
         var translation = Sample(node.Translation, sequence, frame, Vector3.Zero, Vector3.Lerp);
         var rotation = Sample(node.Rotation, sequence, frame, Quaternion.Identity, Quaternion.Slerp);
@@ -170,7 +170,7 @@ internal static class ModelPoser
 
     /// <summary>
     /// Samples a track at a frame, restricted to keys inside the sequence interval
-    /// (MDX keys live on a global timeline; other sequences' keys must not bleed in).
+    /// (MDX keys live on a global timeline. Other sequences' keys must not bleed in).
     /// Clamps to the nearest in-interval key at the edges and interpolates linearly
     /// between the bracketing pair, a deliberate simplification of hermite/bezier.
     /// Global-sequence tracks (independent looping timelines) sample their start.

@@ -122,14 +122,14 @@ public static class PjassGate
                 .Select(l => l.Trim())
                 .Where(l => l.Length > 0 && l.Contains(scriptPath, StringComparison.OrdinalIgnoreCase))
                 .Select(l => l.Replace(scriptPath, "war3map.j", StringComparison.OrdinalIgnoreCase))
-                // pjass also prints a per-file "Parse successful: N lines" line, which names the
+                // pjass also prints a per-file "Parse successful, N lines" line, which names the
                 // script and would otherwise read as a diagnostic about it.
                 .Where(l => !l.StartsWith("Parse ", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             // "Variable x is uninitialized" is FATAL, not advisory. It was classified as advisory
-            // here on the belief that shipped maps are full of them. That belief is false: GGGA's
-            // own 206,845-line script reports zero. The cost of getting this wrong was severe - a
+            // here on the belief that shipped maps are full of them. That belief is false, GGGA's
+            // own 206,845-line script reports zero. The cost of getting this wrong was severe, a
             // ported map whose script could not compile passed `validate` clean, `script repair`
             // consulted this gate and answered "nothing to repair", and the only symptom the user
             // ever saw was being kicked from their own lobby, because a script that does not

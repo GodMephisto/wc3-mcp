@@ -71,7 +71,7 @@ public static class SoundConvert
     /// Reads <paramref name="path"/> (any audio AudioFileReader can open), optionally folds it to
     /// mono, resamples it to <paramref name="targetRate"/> and returns 16-bit PCM WAV bytes. The
     /// <paramref name="before"/> info describes the source file, <paramref name="after"/> the WAV
-    /// produced. Kept for the mono-or-keep callers; it forwards to <see cref="ToOptimized"/>.
+    /// produced. Kept for the mono-or-keep callers. It forwards to <see cref="ToOptimized"/>.
     /// </summary>
     public static byte[] ToOptimizedWav(
         string path, int targetRate, bool mono, out SoundInfo before, out SoundInfo after)

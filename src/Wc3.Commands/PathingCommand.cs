@@ -21,7 +21,7 @@ public sealed record PathingValidateResult(
 /// terrain tile). A <b>set</b> bit marks that capability as <i>restricted</i> for the
 /// cell, e.g. Walk set = ground units cannot walk, Build set = cannot build, Water
 /// set = the cell is water. This operates on the raw flags so there is no
-/// inverted-semantics ambiguity: callers name the exact <see cref="PathingType"/>
+/// inverted-semantics ambiguity, callers name the exact <see cref="PathingType"/>
 /// bits to Set / Clear / Toggle.
 ///
 /// Cells are addressed in pathing-cell coordinates with index = y*Width + x, matching
@@ -45,7 +45,7 @@ public static class PathingCommand
     /// <summary>
     /// Paints <paramref name="flags"/> onto every cell within <paramref name="radius"/>
     /// cells of (<paramref name="centerX"/>, <paramref name="centerY"/>). Square uses a
-    /// (2r+1)² footprint; Circle keeps cells whose center is within the radius. Cells
+    /// (2r+1)² footprint. Circle keeps cells whose center is within the radius. Cells
     /// outside the map bounds are skipped. Returns the number of cells actually changed.
     /// </summary>
     public static PaintResult Paint(
@@ -77,7 +77,7 @@ public static class PathingCommand
 
     /// <summary>
     /// Paints <paramref name="flags"/> onto every cell in the inclusive axis-aligned
-    /// rectangle [x0,x1]×[y0,y1] (pathing-cell coordinates; corners may be given in any
+    /// rectangle [x0,x1]×[y0,y1] (pathing-cell coordinates. Corners may be given in any
     /// order). Cells outside the map bounds are skipped. A rectangle spanning the whole
     /// grid is a full-map fill.
     /// </summary>

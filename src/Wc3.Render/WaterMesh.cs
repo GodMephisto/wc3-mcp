@@ -15,7 +15,7 @@ namespace Wc3.Render;
 /// </summary>
 public readonly record struct WaterMesh(float[] Vertices, uint[] Indices)
 {
-    /// <summary>Floats per vertex: px, py, pz.</summary>
+    /// <summary>Floats per vertex, px, py, pz.</summary>
     public const int Stride = 3;
 }
 
@@ -27,11 +27,11 @@ public static class WaterMeshBuilder
 
     /// <summary>
     /// World-Z offset that lands a corner's normalized water level on the terrain
-    /// mesh's datum. Two parts combine: the terrain mesh computes ground Z as
-    /// (Height + CliffLevel) * 128, skipping the w3e spec's "(layer - 2)" cliff
+    /// mesh's datum. Two parts combine, the terrain mesh computes ground Z as
+    /// (Height + CliffLevel) * 128, skipping the w3e spec's "(layer, 2)" cliff
     /// normalization (which lifts its datum two steps above the game's), and the
     /// game seats the water table 89.6 world units below the stored level (the
-    /// spec's water-level formula). Net shift: 2 * 128 - 89.6.
+    /// spec's water-level formula). Net shift, 2 * 128, 89.6.
     /// </summary>
     public const float WaterZOffset = 2f * StepWorld - 89.6f;
 
@@ -57,7 +57,7 @@ public static class WaterMeshBuilder
         float originX = -(int)env.Width * (TileWorld / 2f);
         float originY = -(int)env.Height * (TileWorld / 2f);
 
-        // Size the buffers exactly: one quad per cell whose SW corner is water.
+        // Size the buffers exactly, one quad per cell whose SW corner is water.
         int waterCells = 0;
         for (int j = 0; j < h - 1; j++)
             for (int i = 0; i < w - 1; i++)
@@ -98,7 +98,7 @@ public static class WaterMeshBuilder
                 Emit(verts, ref vp, x0, y1, zc);
                 Emit(verts, ref vp, x1, y1, zd);
 
-                // Same winding as the terrain mesh: (SW,SE,NE) and (SW,NE,NW), CCW from +Z.
+                // Same winding as the terrain mesh, (SW,SE,NE) and (SW,NE,NW), CCW from +Z.
                 idxs[ip++] = baseV + 0; idxs[ip++] = baseV + 1; idxs[ip++] = baseV + 3;
                 idxs[ip++] = baseV + 0; idxs[ip++] = baseV + 3; idxs[ip++] = baseV + 2;
                 baseV += 4;

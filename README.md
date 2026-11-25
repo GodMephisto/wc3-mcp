@@ -25,7 +25,7 @@ Open PowerShell and run
 
 ```powershell
 irm https://raw.githubusercontent.com/GodMephisto/wc3-mcp/main/install.ps1 | iex
-```
+```text
 
 That downloads the latest release, checks its SHA-256, unpacks it into
 `%LOCALAPPDATA%\Programs\wc3-mcp`, adds that folder to your PATH and sets up
@@ -38,7 +38,7 @@ any folder you like, then from that folder run
 
 ```powershell
 .\wc3-mcp.exe install --all
-```
+```text
 
 The setup records wherever the exe actually is, so any folder works. It also adds
 that folder to your user PATH once, so from then on plain `wc3-mcp` works in any
@@ -60,7 +60,7 @@ For the full corpus and semantic search, install the local index. From your AI a
 
 ```powershell
 wc3ctl rag install
-```
+```text
 
 It fetches two files, once, and verifies each against a pinned digest. The embedding model `BAAI/bge-small-en-v1.5`, about 130 MB, and the corpus, about 61 MB from this repo's `dataset-v1` release. It then builds a local vector index and a graph. No database, no service, no key, and it is set low on CPU by default. After that `docs_search` is semantic and the graph tools `graph_neighbors`, `graph_hubs` and `graph_path` are live. `wc3ctl rag status` reports what is installed.
 
@@ -70,14 +70,14 @@ These need `wc3-mcp` on your PATH, which the one-line install and the first
 `wc3-mcp.exe install` both arrange. Until then, run them as `.\wc3-mcp.exe ...`
 from the folder the exe is in.
 
-```
+```text
 wc3-mcp install --all            set up every supported app found on this PC
 wc3-mcp install cursor vscode    set up only the apps named
 wc3-mcp uninstall --all          remove it again
 wc3-mcp config <app>             print the settings to paste by hand
 wc3-mcp clients                  list supported apps and whether each is set up
 wc3-mcp doctor                   check the install, the game folder and the apps
-```
+```text
 
 | App | Name to use | Where it is written |
 |---|---|---|
@@ -97,7 +97,7 @@ file stays as it was, and the file is copied to `NAME.wc3-mcp.bak` first. A file
 with comments in it (common in Zed and VS Code) is never rewritten, because that
 would delete the comments. The settings to paste are printed instead.
 
-### Any other MCP app
+### # Any other MCP app
 
 It is a standard stdio MCP server. Point your app at `wc3-mcp.exe` with no
 arguments. `wc3-mcp config cursor` prints a ready-made JSON entry with the real
@@ -126,7 +126,7 @@ cd wc3-mcp
 dotnet test --filter "Category!=Corpus&Category!=GameData&Category!=Doctor"
 dotnet publish src/Wc3.Mcp/Wc3.Mcp.csproj -c Release --self-contained -r win-x64 -o dist-mcp
 .\dist-mcp\wc3-mcp.exe install --all
-```
+```text
 
 The apps then start the exe inside your clone's `dist-mcp` folder, and that
 folder is what goes on your PATH, so keep the clone where it is or rerun the last
@@ -164,11 +164,11 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | bench_schema_coverage | read-only | Measure what object data a schemas corpus carries. One row per schema folder names the build, its era and whether the object data is real (the folder holds i... |
 | bundle_diff | read-only | Compare two dependency bundles (the JSON written by 'bundle unit -o') by their object and asset members, listing what each adds, removes or renames. |
 | bundle_merge | writes | Merge two dependency bundles into one, written as JSON at out_path. Refuses when the same rawcode is defined differently in the two bundles (a different kind... |
-| bundle_unit | read-only | Resolve everything a unit depends on - the porting preview: referenced objects (with custom-to-map flags), asset files, trigger strings, dependency edges and... |
+| bundle_unit | read-only | Resolve everything a unit depends on, the porting preview, referenced objects (with custom-to-map flags), asset files, trigger strings, dependency edges and... |
 | camera_add | writes | Add a camera at a target position and save the edited map to out_path. The input map is NEVER modified in place. Rejects a blank or duplicate name. |
-| camera_list | read-only | List the map's cameras (war3map.w3c): each camera's name, target position, rotation, angle of attack, distance and field of view. |
+| camera_list | read-only | List the map's cameras (war3map.w3c), each camera's name, target position, rotation, angle of attack, distance and field of view. |
 | camera_remove | writes | Remove a camera and save the edited map to out_path. The input map is NEVER modified in place. |
-| camera_set | writes | Set a field on a camera and save the edited map to out_path. The input map is NEVER modified in place. Editable fields: Name\|TargetX\|TargetY\|ZOffset\|Rotation... |
+| camera_set | writes | Set a field on a camera and save the edited map to out_path. The input map is NEVER modified in place. Editable fields, Name\|TargetX\|TargetY\|ZOffset\|Rotation... |
 | camera_tour | writes | Add N cameras interpolated between two existing cameras as a smooth tour path, and save the edited map to out_path. Every float field is blended linearly and... |
 | changelog | read-only | Generate release notes from git log between two refs, grouped by Conventional Commit type (feat, fix, perf, docs, chore and the rest), a heading per group wi... |
 | ci_all | read-only | Run lint, validate and, when target is given, compat in one pass. Returns one summary line per gate and the overall pass or fail with an exit code (0 pass, 1... |
@@ -182,15 +182,15 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | diff | read-only | Compare two maps and report which internal files were added, removed or changed. The direct way to see what an edit actually did to a map, and to check that... |
 | doctor_check | read-only | Will this map run on Reforged 3.0, and if not, why. A verdict plus findings, each with a code, a severity (blocker, warning, info), the affected files or mod... |
 | doctor_compare | read-only | What differs between two versions of a map, file by file (added, removed, changed) with names recovered on protected archives, plus object, script and string... |
-| doctor_fix | writes | Repair a COPY of a map for Reforged 3.0 with the doctor's Fix map: protection, fake file tables, scrambled ids, data the 3.0 engine refuses, broken SLK table... |
+| doctor_fix | writes | Repair a COPY of a map for Reforged 3.0 with the doctor's Fix map, protection, fake file tables, scrambled ids, data the 3.0 engine refuses, broken SLK table... |
 | doctor_inspect | read-only | Read-only doctor reports on one map. diag is what protects the map and what the World Editor needs, including whether it runs in SLK mode and the fix steps t... |
-| doctor_schema | read-only | The installed doctor's own --json contract, read at run time: every command, its options, the fix steps and extras it accepts, and the keys each result carries... |
+| doctor_schema | read-only | The installed doctor's own --json contract, read at run time, every command, its options, the fix steps and extras it accepts, and the keys each result carries... |
 | editor_catalog_get | read-only | Show one World Editor catalog's entries, each with its stored key (the token a map file actually carries), its resolved display name and every payload field.... |
 | editor_catalog_list | read-only | List the World Editor's catalog names from UI\WorldEditData.txt with entry counts (TileSets, SkyModels, LoadingScreens, SoundChannels, MapSizes, the brush pa... |
 | file_get_text | read-only | Read one internal file decoded as UTF-8, with any leading BOM stripped. Use it for the override text files, war3mapSkin.txt and friends, that carry a map's s... |
 | file_list | read-only | List the archive's internal entries with their CURRENT size, which reflects a pending replacement rather than the stale original. Name is null for an unnamed... |
 | file_set | writes | Replace an internal file's bytes verbatim from a disk file and save the edited map to out_path. The input map is NEVER modified in place. Bytes are staged un... |
-| force_list | read-only | List the map's forces/teams (war3map.w3i): each force's index, name, member player ids and alliance/sharing flags. |
+| force_list | read-only | List the map's forces/teams (war3map.w3i), each force's index, name, member player ids and alliance/sharing flags. |
 | force_rename | writes | Rename a force (team) in war3map.w3i and save the edited map to out_path. The input map is NEVER modified in place. |
 | force_set_flags | writes | Set a force's alliance/sharing flags and save the edited map to out_path. The input map is NEVER modified in place. |
 | force_set_players | writes | Add or remove a player from a force (team) in war3map.w3i and save the edited map to out_path. Pass exactly one of add or remove. Adding clears the player fr... |
@@ -205,7 +205,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | gamedata_schema_diff | read-only | Compare two schema folders (produced by gamedata schema) and report added, removed and changed object fields, trigger functions, script types and natives, an... |
 | gamedata_sources | read-only | Return the dataset's provenance index. For every schema folder it reports the build, its era, the sections present, the SHA-256 of each section file, and the... |
 | hero_install | writes | Install a hero definition into a map and save the result to out_path. Remaps rawcodes that would collide, writes the hero's assets, and reports what the targ... |
-| hero_lint | read-only | Validate a hero definition folder before installing it: assets present and hash-matched, objects installable, declared script functions present, no dangling... |
+| hero_lint | read-only | Validate a hero definition folder before installing it, assets present and hash-matched, objects installable, declared script functions present, no dangling... |
 | hero_roster | read-only | List the playable heroes a map registers, with each hero's rawcode, display name, the string tags from its registration call (typically a role and a portrait... |
 | imports_list | read-only | List the map's import table (war3map.imp) against what the archive actually holds, so a table entry with no file behind it and a file absent from the table b... |
 | leak_ab | read-only | Diff two wc3watch sessions and report whether the handle and memory slope fell, each measured from its own forced garbage collection. The usual shape is one... |
@@ -219,15 +219,15 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | library_report | writes | Write one Markdown report over a folder of maps, a summary line, a per-map table and the aggregated findings, to out_path. The report is built from the same... |
 | library_scan | read-only | Open every map in a folder through the loader and report per map its size in bytes, the build it targets if known, whether it loads, its archive entry count... |
 | library_validate | read-only | Run the load validation over every map in a folder and list the ones that fail, with the reason. A map that cannot be opened counts as invalid. Opens one map... |
-| lint | read-only | Pre-flight the map: does its script compile, does war3map.imp agree with what the archive holds, do referenced asset paths resolve, and is every entry a load... |
+| lint | read-only | Pre-flight the map, does its script compile, does war3map.imp agree with what the archive holds, do referenced asset paths resolve, and is every entry a load... |
 | lint_baseline | writes | Write the map's current lint findings to a baseline JSON file. A later gate, the CLI 'lint <map> --baseline <file>', then fails only on a finding this file d... |
 | list_files | read-only | List the map archive's internal files, each with its name (null = unnamed/protected entry), size in bytes, whether wc3ctl knows/parses the format, and for un... |
 | map_compat | read-only | Check a Warcraft III map against a target build (a schema folder path or build name). Reports compile-time incompatibilities (missing natives, globals, types... |
-| map_info | read-only | Show a Warcraft III map's metadata: name, author, player count, playable dimensions and load diagnostics. |
-| map_info_get | read-only | Read the map's editable scenario fields (war3map.w3i): name, author, description, recommended players, tileset, environment, fog and the map-option flags. Ri... |
-| map_info_set | writes | Set a scenario field and save the edited map to out_path. The input map is NEVER modified in place. Editable fields: MapName\|Author\|Description\|RecommendedPl... |
+| map_info | read-only | Show a Warcraft III map's metadata, name, author, player count, playable dimensions and load diagnostics. |
+| map_info_get | read-only | Read the map's editable scenario fields (war3map.w3i), name, author, description, recommended players, tileset, environment, fog and the map-option flags. Ri... |
+| map_info_set | writes | Set a scenario field and save the edited map to out_path. The input map is NEVER modified in place. Editable fields, MapName\|Author\|Description\|RecommendedPl... |
 | map_optimize | writes | Shrink every imported model and texture inside a map in one pass and write a new map to out_path with only those files replaced, everything else byte for byt... |
-| map_overview | read-only | One call per map: metadata (name, author, player count, dimensions), every archive file, the custom or modified object counts by Object Editor kind, and the... |
+| map_overview | read-only | One call per map, metadata (name, author, player count, dimensions), every archive file, the custom or modified object counts by Object Editor kind, and the... |
 | mcp_audit_annotations | read-only | Audit the MCP tool surface itself. Reports every tool whose annotations disagree with its name (a mutating name marked read-only) and every tool that declare... |
 | mcp_export_verify | read-only | Verify that a wc3-mcp checkout holds the same server source scripts/export-wc3-mcp.py would export from this repository, reporting every file that differs wi... |
 | model_audit | read-only | Audit a .mdx or .mdl model for the resource waste and draw-nothing problems an optimiser can remove, and report what it holds. Finds duplicate textures, geos... |
@@ -251,41 +251,41 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | object_deprecated | read-only | List object fields the target build's schema does not define but the map still sets, meaning the edit is ignored on that build. Read-only. The target is a sc... |
 | object_export | read-only | Export the objects of one kind (base game data overlaid by the map's deltas) to a CSV file at out_path, one row per object, one column per field code, with a... |
 | object_field_options | read-only | The legal values for one object-data field, taken from what the base game data actually uses for it. Ask this BEFORE object_set on an enumerated field, so th... |
-| object_form | read-only | Get an object as an editable FORM rather than a flat field dump: fields grouped and ordered the way the World Editor groups them (Art, Combat, Stats, ...), f... |
+| object_form | read-only | Get an object as an editable FORM rather than a flat field dump, fields grouped and ordered the way the World Editor groups them (Art, Combat, Stats, ...), f... |
 | object_get | read-only | Get an object's merged fields (base game data overlaid by the map's deltas), each labeled 'base' or 'map', with field names resolved. Omit kind to auto-detec... |
 | object_import | writes | Import a CSV of one kind back into the map, adding objects the map does not define and updating those it does, then save the edited copy to out_path. The inp... |
-| object_list | read-only | List the map's custom/modified objects of one Object Editor kind: rawcode, base rawcode (null = created from scratch) and resolved name. Pass brief true to g... |
+| object_list | read-only | List the map's custom/modified objects of one Object Editor kind, rawcode, base rawcode (null = created from scratch) and resolved name. Pass brief true to g... |
 | object_migrate | writes | Rewrite a map's object data to a target build's field set, dropping every field the target does not define, and save the edited copy to out_path. The input m... |
 | object_new | writes | Create a new custom object derived from a base rawcode (a fresh unused rawcode is allocated) and save the edited map to out_path. The input map is NEVER modi... |
-| object_noop_fields | read-only | List object fields whose map value equals the base game value, so the edit changes nothing. Read-only. Needs a game_dir for the base values; without one the... |
+| object_noop_fields | read-only | List object fields whose map value equals the base game value, so the edit changes nothing. Read-only. Needs a game_dir for the base values. Without one the... |
 | object_rawcode_suggest | read-only | Propose free four-character rawcodes for one Object Editor kind that collide with neither the map's objects nor the base game data. Read-only. Without a game... |
 | object_rename | writes | Rename an object rawcode and save the edited copy to out_path. The input map is NEVER modified in place. With rewrite_refs true, every object-data field valu... |
 | object_search | read-only | Full-text search across every custom or modified object's field values, in both the base game data and the map's own deltas. Read-only. Reports the kind, raw... |
 | object_set | writes | Set a field on an object of one Object Editor kind and save the edited map to out_path (only that kind's war3map.* file is re-serialized). The input map is N... |
-| palette_doodad | read-only | List the doodad types placeable on a map - the palette to consult before place_doodad. Unions the base-game doodad catalog (installed GameData) with the map'... |
+| palette_doodad | read-only | List the doodad types placeable on a map, the palette to consult before place_doodad. Unions the base-game doodad catalog (installed GameData) with the map'... |
 | pathing_export_png | writes | Render a map's war3map.wpm pathing grid to a colour-coded PNG at out_path, one pixel per pathing cell with a legend strip of the pathing flags. Read-only, th... |
 | pathing_import_png | writes | Set the pathing flags from a colour-coded PNG and save the edited map to out_path. Each cell's flags are replaced by the value its pixel decodes to. The imag... |
-| pathing_paint | writes | Paint pathing bits over a circular or square brush and save the edited map to out_path. The input map is NEVER modified in place. Flags (comma-separated): Wa... |
+| pathing_paint | writes | Paint pathing bits over a circular or square brush and save the edited map to out_path. The input map is NEVER modified in place. Flags (comma-separated), Wa... |
 | pathing_validate | read-only | Flag pathing problems in a map's war3map.wpm. It reports a pocket of unpathable tiles fully enclosed by pathable ones, a start location sitting on an unpatha... |
-| place_doodad | writes | Place a doodad instance at (x, y) on the map's doodad layer (war3map.doo) and save the edited map to out_path. The input map is NEVER modified in place - out... |
+| place_doodad | writes | Place a doodad instance at (x, y) on the map's doodad layer (war3map.doo) and save the edited map to out_path. The input map is NEVER modified in place, out... |
 | place_grid | writes | Place a regular rows x cols grid of copies of one unit or doodad type and save the edited copy to out_path. The grid is centred on the map origin. The input... |
 | place_item | writes | Place a preplaced item of the given type at world (x, y) and save the edited map to out_path. Items share war3mapUnits.doo with units (WC3 spawns a ground it... |
-| place_region | writes | Define a rectangular region on the map's region layer (war3map.w3r) and save the edited map to out_path. The input map is NEVER modified in place - out_path... |
+| place_region | writes | Define a rectangular region on the map's region layer (war3map.w3r) and save the edited map to out_path. The input map is NEVER modified in place, out_path... |
 | place_scatter | writes | Place N copies of a unit type at deterministic random positions and save the edited copy to out_path. Positions are uniform inside a named region or across t... |
 | place_start_location | writes | Place or move a player's start location at world (x, y) and save the edited map to out_path. The input map is NEVER modified in place. A start location is st... |
 | place_unit | writes | Place a unit of the given type, owned by a player, at world (x, y) and save the edited map to out_path. The input map is NEVER modified in place. Returns the... |
-| placed_doodad_get | read-only | Show one placed doodad's full state by creation number: type, position, rotation, scale, variation and life percentage. |
+| placed_doodad_get | read-only | Show one placed doodad's full state by creation number, type, position, rotation, scale, variation and life percentage. |
 | placed_doodad_remove | writes | Remove a doodad already placed on the map and save the edited copy to out_path. The input map is NEVER modified in place. |
 | placed_doodad_set | writes | Set one field on a doodad already placed on the map and save the edited copy to out_path. The input map is NEVER modified in place. A position field takes 'x... |
 | placed_doodads_list | read-only | List every doodad and destructable already PLACED on the map (war3map.doo), each with the creation number needed to edit or remove it, plus its type rawcode,... |
 | placed_fix_refs | writes | Drop (or, with to_rawcode, rewrite) placements that reference a missing rawcode and save the edited copy to out_path, reporting each change. Refuses when not... |
 | placed_missing_refs | read-only | List placements whose rawcode is defined neither in the map's object data nor in the base game data. Without a game_dir only the map's object data can be con... |
 | placed_stats | read-only | Count the units and doodads already placed on the map, grouped by rawcode and by kind, with each type's resolved name where one is available. Read-only. |
-| placed_unit_get | read-only | Show one placed unit's full state by creation number: type, owner, position, facing, scale, hero level and attributes, hit points and mana percentages, gold... |
+| placed_unit_get | read-only | Show one placed unit's full state by creation number, type, owner, position, facing, scale, hero level and attributes, hit points and mana percentages, gold... |
 | placed_unit_remove | writes | Remove a unit already placed on the map and save the edited copy to out_path. The input map is NEVER modified in place. |
 | placed_unit_set | writes | Set one field on a unit already placed on the map and save the edited copy to out_path. The input map is NEVER modified in place. A position field takes 'x,y... |
 | placed_units_list | read-only | List every unit already PLACED on the map (war3mapUnits.doo), each with the creation number needed to edit or remove it, plus its type rawcode, owner, positi... |
-| player_list | read-only | List the map's player slots (war3map.w3i): each player's id, name, color, race, controller and whether its start position is fixed. |
+| player_list | read-only | List the map's player slots (war3map.w3i), each player's id, name, color, race, controller and whether its start position is fixed. |
 | player_set_color | writes | Set a player's team color and save the edited map to out_path. war3map.w3i has no per-player color field, so this rewrites the SetPlayerColor call the map sc... |
 | player_set_force | writes | Move a player into a force (team) and save the edited map to out_path. The input map is NEVER modified in place. |
 | player_set_name | writes | Set a player's display name (war3map.w3i) and save the edited map to out_path. The input map is NEVER modified in place. |
@@ -301,7 +301,7 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | region_remove | writes | Remove a region by name and save the edited map to out_path. The input map is NEVER modified in place. |
 | region_to_rect | read-only | Resolve one named region to the four corner values a JASS trigger's Rect call needs (left, bottom, right, top), with a ready-to-copy Rect(...) line. Read-only. |
 | region_validate | read-only | Flag overlapping regions, zero-area regions and regions that fall outside the playable bounds in a map's war3map.w3r. Regions sharing only an edge do not ove... |
-| render_model | writes | Render an object's model (map-imported .mdx/.mdl) to a PNG written at out_path. Returns the saved path and byte size; small images also come back inline as M... |
+| render_model | writes | Render an object's model (map-imported .mdx/.mdl) to a PNG written at out_path. Returns the saved path and byte size. Small images also come back inline as M... |
 | repair_generated | writes | Repair a map that wc3ctl itself generated, whose preplaced-hero helper block is too narrow for the heroes installed into it, and save the repaired map to out... |
 | repair_game_files | writes | Write a copy of the map without the files game_file_shadows reports. The archive is rebuilt from disk so every other entry is carried over byte for byte, and t... |
 | repair_reforged3 | writes | Repair a legacy SLK map for Warcraft III 3.0 and save it to out_path. Model paths move out of the obsolete file column into merged skin profiles, numeric cells... |
@@ -328,32 +328,32 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | script_lua_leaks | read-only | Find handle leaks in a Lua map script. Lua collects the wrapper but the engine still owns the handle, so a creator dropped as a statement, a creator on a per... |
 | script_lua_to_jass | writes | Best effort conversion of a Lua map back to JASS, saved to out_path. The JASS to Lua conversion is not reversible in general, so only the constructs that map... |
 | script_modernize | writes | Rewrite deprecated or renamed natives in the map script to the target build's spelling where a known mapping exists, and save the map to out_path. A rewrite... |
-| script_null_locals | read-only | Find the classic JASS handle leak: a local of a handle type (location, group, force, effect, timer, trigger, text tag, lightning) that the function destroys... |
+| script_null_locals | read-only | Find the classic JASS handle leak, a local of a handle type (location, group, force, effect, timer, trigger, text tag, lightning) that the function destroys... |
 | script_reachable | read-only | List the functions reachable from the map script's entry points, main and the InitTrig functions, and the dead functions nothing reaches, each with its decla... |
-| script_references | read-only | Find every use of a name in the map's compiled script: direct calls, and the places it is passed as a code value (Condition, Filter, TriggerAddAction). The s... |
+| script_references | read-only | Find every use of a name in the map's compiled script, direct calls, and the places it is passed as a code value (Condition, Filter, TriggerAddAction). The s... |
 | script_semantic_diff | read-only | Compare two map scripts line by line after normalizing whitespace, dropping comments and ignoring pure renames of local variables, and report the real change... |
 | script_to_lua | writes | Convert a JASS map to a Lua map and save it to out_path. The script becomes war3map.lua, which keeps the JASS rules Lua lacks (32 bit integer wrap, integer d... |
 | script_unused_functions | read-only | Find the functions a map's war3map.j declares that no other function calls and nothing else reaches, excluding the engine's entry points (main, config, InitC... |
 | script_unused_globals | read-only | Find the globals a map's war3map.j declares and never reads, the variable half of dead code. A global that is only ever assigned and never appears on the rig... |
-| search | read-only | Search the map's contents for a string, ignoring case: archive file names, script lines (with the line number), string-table entries, and object data (custom... |
+| search | read-only | Search the map's contents for a string, ignoring case, archive file names, script lines (with the line number), string-table entries, and object data (custom... |
 | sound_add | writes | Add a new sound definition (keyed by name) to the map's sound catalog and save the edited map to out_path. The input map is NEVER modified in place. |
-| sound_list | read-only | List the map's sound catalog (war3map.w3s): each definition's name, file path, channel, flags, volume, pitch, priority and min/max distance. |
+| sound_list | read-only | List the map's sound catalog (war3map.w3s), each definition's name, file path, channel, flags, volume, pitch, priority and min/max distance. |
 | sound_optimize | writes | Shrink a sound file by decoding it, resampling to a target rate (default 22050 Hz), optionally setting the channel count and encoding it. The format comes fr... |
 | sound_remove | writes | Remove a sound definition from the map's sound catalog and save the edited map to out_path. The input map is NEVER modified in place. |
-| sound_set | writes | Set a field on a sound definition and save the edited map to out_path. The input map is NEVER modified in place. Editable fields: Name\|File\|Eax\|Volume\|Pitch\|... |
+| sound_set | writes | Set a field on a sound definition and save the edited map to out_path. The input map is NEVER modified in place. Editable fields, Name\|File\|Eax\|Volume\|Pitch\|... |
 | strings_diff | read-only | Compare two maps' string tables (war3map.wts) and report entries added, removed and changed. Entries are matched by id, so a text change on the same key read... |
 | strings_find | read-only | Find war3map.wts entries whose text contains the given text, case-insensitive, each with its id. Read-only. An empty query matches every entry. |
 | strings_list | read-only | List the map's string table (war3map.wts). Every TRIGSTR_ reference in object data and in scripts resolves through here, so this is how to read what a toolti... |
 | strings_missing | read-only | List the TRIGSTR_ keys the map script and the GUI trigger tree reference that have no war3map.wts entry behind them. A missing key shows the literal token TR... |
 | strings_set | writes | Set one war3map.wts entry's text, or add the entry when the id is absent, and save the edited map to out_path. The file's own encoding and line endings are p... |
 | strings_unused | read-only | List the war3map.wts entries no object-data field, map-info field, GUI trigger or script line references, each with its text. Read-only. An unreferenced entr... |
-| target_get | read-only | View the current target build setting: which build maps are checked against when compat or lint omit --target, where it comes from (option, environment, sett... |
+| target_get | read-only | View the current target build setting, which build maps are checked against when compat or lint omit --target, where it comes from (option, environment, sett... |
 | target_list | read-only | List all available builds in the schemas directory, with their sections. Use --full_only to skip scripts-only builds. |
 | target_set | writes | Set the target build that compat and lint use when --target is omitted. Validates the build exists in the schemas folder. |
-| terrain_audit | read-only | Audit a map's terrain (war3map.w3e) for its size and its measurable waste: grid and tile counts, distinct ground and cliff textures in use, cliff/ramp/water/... |
+| terrain_audit | read-only | Audit a map's terrain (war3map.w3e) for its size and its measurable waste, grid and tile counts, distinct ground and cliff textures in use, cliff/ramp/water/... |
 | terrain_blight | writes | Set or clear the blight (corrupted ground) flag over a brush, saving the edited map to out_path. The input map is NEVER modified in place. |
 | terrain_cliff | writes | Raise/lower/set the cliff (stepped-terrain) level over a brush, saving the edited map to out_path. The input map is NEVER modified in place. |
-| terrain_corner_get | read-only | Show one terrain corner's full state: ground height, cliff level, water, ground and cliff texture indexes with variations, and the ramp, blight, boundary and... |
+| terrain_corner_get | read-only | Show one terrain corner's full state, ground height, cliff level, water, ground and cliff texture indexes with variations, and the ramp, blight, boundary and... |
 | terrain_corner_set | writes | Set one field on ONE terrain corner and save the edited copy to out_path. The input map is NEVER modified in place. For area work prefer terrain_deform, terr... |
 | terrain_deform | writes | Raise/lower/set/flatten/smooth ground height over a circular or square brush, saving the edited map to out_path. The input map is NEVER modified in place. |
 | terrain_export_heightmap | writes | Export a map's terrain heights as a 16-bit grayscale PNG of the (Width+1) by (Height+1) corner grid, one pixel per corner, to out_path. Read-only, the map is... |
@@ -363,16 +363,16 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | terrain_optimize | writes | Shrink a map's war3map.w3e by dropping the declared ground and cliff tile types the terrain never references and remapping every corner's ground and cliff te... |
 | terrain_paint | writes | Paint a ground texture over a brush, saving the edited map to out_path. texture_index selects a slot in the map's tileset table. The input map is NEVER modif... |
 | terrain_ramp | writes | Toggle the ramp (sloped cliff transition) flag over a brush, saving the edited map to out_path. The input map is NEVER modified in place. |
-| terrain_smooth | writes | Smooth the whole map: each pass replaces every corner height with the mean of itself and its in-grid four neighbours, saving the edited map to out_path. The... |
-| terrain_stats | read-only | Summarize a map's terrain (war3map.w3e): tile count, min/mean/max ground height and min/max cliff level. Read-only. |
+| terrain_smooth | writes | Smooth the whole map, each pass replaces every corner height with the mean of itself and its in-grid four neighbours, saving the edited map to out_path. The... |
+| terrain_stats | read-only | Summarize a map's terrain (war3map.w3e), tile count, min/mean/max ground height and min/max cliff level. Read-only. |
 | terrain_water | writes | Set/raise/lower/remove water over a brush, saving the edited map to out_path. The input map is NEVER modified in place. |
 | texture_audit | read-only | Read every texture header in a map and report the ones the engine mishandles, grouped by kind. Checks the BLP signature, that a BLP1 or BLP2 header fits inside... |
 | texture_atlas | writes | Pack two or more .blp, .dds or standard image textures into one power-of-two atlas and write it at out_path in the first input's format. Every input is decod... |
 | texture_optimize | writes | Shrink a .blp, .dds or standard image texture to fit a maximum side, preserving aspect ratio, and write it at out_path in the same format. The input is never... |
 | trigger_add | writes | Add a trigger to a category in the map's GUI trigger tree and save the edited map to out_path. The new trigger is created enabled and initially on, matching... |
-| trigger_add_category | writes | Add a category to the map's GUI trigger tree and save the edited map to out_path. A category is a folder in the trigger tree, so this is always safe: categor... |
-| trigger_add_eca | writes | Add an event, condition or action to a GUI trigger and save the edited map to out_path. Parameters are given in the order the function declares them; any lef... |
-| trigger_catalog_describe | read-only | Show full detail for one GUI-trigger function by name (e.g. 'DoNothing'): kind, game version, return type, argument types, display name, parameters layout an... |
+| trigger_add_category | writes | Add a category to the map's GUI trigger tree and save the edited map to out_path. A category is a folder in the trigger tree, so this is always safe, categor... |
+| trigger_add_eca | writes | Add an event, condition or action to a GUI trigger and save the edited map to out_path. Parameters are given in the order the function declares them. Any lef... |
+| trigger_catalog_describe | read-only | Show full detail for one GUI-trigger function by name (e.g. 'DoNothing'), kind, game version, return type, argument types, display name, parameters layout an... |
 | trigger_catalog_list | read-only | List GUI-trigger functions from the World-Editor catalog (UI\TriggerData.txt), optionally filtered by kind and/or a name/display-name search. The catalog is... |
 | trigger_dead | read-only | Find triggers that cannot do anything, listing each reason. Triggers with no action, and triggers whose events never fire, which is an event depending on a v... |
 | trigger_diff | read-only | Compare two maps' GUI trigger trees and report triggers added, removed and renamed, plus event, condition or action changes within a trigger shared by both m... |
@@ -392,10 +392,10 @@ Exact SDK and package versions are in [REQUIREMENTS.md](REQUIREMENTS.md).
 | trigger_var_list | read-only | List the map's global variables (the .wtg Variables list), each with its name, type, array flag, declared size and initial value. Read-only. |
 | trigger_var_remove | writes | Remove a global variable from the map's wtg by name and save the edited map to out_path. Any trigger that referenced the variable is left pointing at nothing... |
 | trigger_var_set | writes | Update an existing global variable in the map's wtg by name and save the edited map to out_path. Any argument left off keeps its current value, so one field... |
-| triggers_read | read-only | Read the map's GUI trigger tree (war3map.wtg) plus the custom-text bodies (war3map.wct) and the script language: every category, every trigger with its event... |
-| uabi_profile | read-only | Measure unit ability lists (uabi) across many maps at once, one row per map: unit types, references, distinct ids, hero and item abilities in normal lists, i... |
+| triggers_read | read-only | Read the map's GUI trigger tree (war3map.wtg) plus the custom-text bodies (war3map.wct) and the script language, every category, every trigger with its event... |
+| uabi_profile | read-only | Measure unit ability lists (uabi) across many maps at once, one row per map, unit types, references, distinct ids, hero and item abilities in normal lists, i... |
 | unit_abilities | read-only | Every ability a unit has, each tagged with where it comes from. ObjectNormal and ObjectHero are the unit type's own lists (uabi, uhab). Spellbook is inside a... |
-| validate | read-only | Check the map for structural problems: missing or empty files, entries that fail to load, and a script that cannot compile. Narrower than lint and a good fir... |
+| validate | read-only | Check the map for structural problems, missing or empty files, entries that fail to load, and a script that cannot compile. Narrower than lint and a good fir... |
 | validate_strict | read-only | A stricter validate. Runs the default checks and adds three that are too strict to be a default, a map with no (listfile), a script that declares no entry po... |
 | version_info | read-only | Report the product version, the git short hash and UTC build time stamped into this build, and the name and version of the MCP server it carries. Read-only. |
 ## Safety
@@ -433,7 +433,7 @@ Built on
 | MCP C# SDK (ModelContextProtocol) | Model Context Protocol project |
 | Microsoft.Extensions.Hosting | Microsoft, .NET Foundation |
 
-Used directly: Luashine/jass-history (inventory change study), pjass (JASS syntax
+Used directly, Luashine/jass-history (inventory change study), pjass (JASS syntax
 checking), devoltz and Arakunido (SLK repair guide), and the Hive Workshop
 community (command line arguments).
 

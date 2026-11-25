@@ -211,7 +211,7 @@ public static class ModelOptimizeCommand
     {
         var seg = geoset.Segments.FirstOrDefault(s => s.Tag == "UVAS");
         if (seg is null || seg.Payload.Length < 8) return;
-        // UVAS payload: count(4) then one UVBS per set, each "UVBS" + count + floats. The tag is
+        // UVAS payload, count(4) then one UVBS per set, each "UVBS" + count + floats. The tag is
         // part of the set and must be rewritten, not dropped, or the reader stops at the count and
         // the model loses every UV. Every set is reduced, so all sets stay sized to the new vertex
         // count (the reader keeps the first, but a stale set would corrupt a multi-UV model).

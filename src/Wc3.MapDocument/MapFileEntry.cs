@@ -3,7 +3,7 @@ namespace Wc3.Model;
 
 public sealed class MapFileEntry
 {
-    // FileName/IsKnown are settable, not init-only: MapDocument.HarvestAssetNames names an
+    // FileName/IsKnown are settable, not init-only, MapDocument.HarvestAssetNames names an
     // entry after construction, when a second-pass probe resolves a name Load could not.
     public required string? FileName { get; set; }     // null => unnamed (protected map)
     public required int BlockIndex { get; init; }
@@ -95,7 +95,7 @@ public sealed class MapFileEntry
     /// Bytes past the end of what this file's parser consumed, preserved so that rebuilding the
     /// file from its model does not truncate it.
     ///
-    /// Empty for almost every file. Not empty for the ones that matter: an object table ending in
+    /// Empty for almost every file. Not empty for the ones that matter, an object table ending in
     /// a trailing int32 zero that War3Net's writer omits, or a war3mapUnits.doo ending in a stray
     /// newline. Without this, editing one unit in such a map shortens the file by four bytes that
     /// nobody asked to remove. See MapFormatRegistry.ParsedModel.
@@ -127,7 +127,7 @@ public sealed class MapFileEntry
     /// (taking precedence over any <see cref="Model"/> serialization). Used to add
     /// imported assets, replace the script text, or inject a file whose format has
     /// no byte-faithful model writer. <see cref="RawBytes"/> stays the immutable
-    /// original bytes; this is the pending replacement.
+    /// original bytes. This is the pending replacement.
     /// </summary>
     public byte[]? OverrideBytes { get; set; }
 

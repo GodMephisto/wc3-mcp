@@ -22,7 +22,7 @@ public sealed record LintResult(IReadOnlyList<LintCheck> Checks)
 /// <summary>
 /// Pre-flight checks on a map, aimed squarely at the failures that a green build, a passing
 /// test and a clean <c>validate</c> all missed while a user was repeatedly unable to host or
-/// load the map. Each rule here exists because its absence cost real debugging time:
+/// load the map. Each rule here exists because its absence cost real debugging time,
 /// <list type="bullet">
 /// <item>A script that could not compile passed <c>validate</c>, because pjass's
 /// uninitialized-variable errors were classified as advisory. The user's only symptom was
@@ -88,7 +88,7 @@ public static class LintCommand
     /// map there agrees with its own rule, which is what makes a disagreement worth reporting
     /// rather than a false alarm waiting to happen.
     ///
-    /// A Warning rather than an Error: a mismatch makes the trigger panel untrustworthy and makes
+    /// A Warning rather than an Error, a mismatch makes the trigger panel untrustworthy and makes
     /// removing a trigger unsafe, but it does not stop the map loading, and a map that arrived
     /// this way is not made worse by being opened.
     /// </summary>
@@ -245,7 +245,7 @@ public static class LintCommand
         var missing = new List<string>();
         foreach (System.Text.RegularExpressions.Match m in ScriptStringLiteral.Matches(text))
         {
-            // Unescape first: these maps write one real separator as a doubled backslash, and
+            // Unescape first, these maps write one real separator as a doubled backslash, and
             // comparing the raw literal against stored names is how a present file was once
             // reported absent (see AssetPathCandidates.Unescape).
             var raw = AssetPathCandidates.Unescape(m.Groups[1].Value);

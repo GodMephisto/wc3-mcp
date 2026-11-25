@@ -8,7 +8,7 @@ namespace Wc3.Render;
 /// <summary>
 /// Bilinear world-height sampler over a map's <c>war3map.w3e</c> tilepoint grid, plus a
 /// ray-march ground pick against it. Height math is kept in lockstep with
-/// <see cref="TerrainMeshBuilder"/> and <see cref="TerrainRenderer.PickTerrain"/>:
+/// <see cref="TerrainMeshBuilder"/> and <see cref="TerrainRenderer.PickTerrain"/>,
 /// z = (Height + CliffLevel) * 128 on a grid centred on the world origin, so samples
 /// land exactly on the GL terrain mesh.
 /// </summary>

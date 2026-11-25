@@ -20,7 +20,7 @@ public enum ObjectLayer { Map, Skin }
 ///
 /// Nothing in the file format states the split, so it is measured instead of assumed. Every field
 /// code is counted in both layers across every object of the kind, and the layer holding more of
-/// them wins. On a real Reforged map the margin is not close: of 2207 units in one map, 1551 put the
+/// them wins. On a real Reforged map the margin is not close, of 2207 units in one map, 1551 put the
 /// model field in the skin layer and one put it in the base layer, and that one was an object this
 /// tool had installed. The vote is therefore robust to a handful of objects that break the pattern,
 /// and to this tool's own earlier mistakes being present in the map it is learning from.

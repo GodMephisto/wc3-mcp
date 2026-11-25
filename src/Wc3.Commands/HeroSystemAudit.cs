@@ -29,7 +29,7 @@ public sealed record HeroSystem(string Function, int Line, int HeroCount,
 ///
 /// This exists because the kit ladder is not the only one, and reporting only it understated the
 /// work sevenfold. Instrumenting GGGA in the running game settled where a ported hero does and does
-/// not break: she passes every pick-screen gate, the commit is accepted, the seat finalizes,
+/// not break, she passes every pick-screen gate, the commit is accepted, the seat finalizes,
 /// CreateUnit produces her unit, and she arrives alive, visible, owned and selected, indistinguish-
 /// able from a native hero at every measured point but one. Nothing in the SPAWN path is wrong.
 /// What is wrong is that the map wires heroes into several separate hand-written tables (the kit,
@@ -38,13 +38,13 @@ public sealed record HeroSystem(string Function, int Line, int HeroCount,
 ///
 /// The detection rule is roster MEMBERSHIP, not the <c>== 'XXXX'</c> comparison shape that
 /// <see cref="ContractCommand"/> looks for, because half of these tables are not comparison
-/// ladders: they are <c>SaveTriggerHandle(hash, 0, 'H006', trg)</c> rows, <c>set Arr[11]='H006'</c>
+/// ladders, they are <c>SaveTriggerHandle(hash, 0, 'H006', trg)</c> rows, <c>set Arr[11]='H006'</c>
 /// slots and <c>Register(... 'H006' ...)</c> calls. Counting how many of the target's OWN roster
 /// rawcodes a function names catches every shape at once.
 ///
 /// Membership alone is far too loose. On GGGA, 3371 functions name five or more roster heroes,
 /// because a single hero's damage trigger legitimately tests seventeen others. The discriminator is
-/// SCALE relative to the roster: a table that hand-lists a fifth of every hero in the map is a
+/// SCALE relative to the roster, a table that hand-lists a fifth of every hero in the map is a
 /// per-hero system, and a function naming a handful is gameplay logic about those heroes. That one
 /// threshold takes GGGA's 3371 candidates down to seven, all of them real, with no arbitrary
 /// control hero to choose and nothing map-specific hardcoded.
@@ -53,7 +53,7 @@ public static class HeroSystemAudit
 {
     /// <summary>
     /// The share of the roster a function must name before it counts as a per-hero table. A fifth
-    /// is measured, not guessed: on GGGA the real tables sit at 53%, 52%, 46%, 35%, 23%, 22% and
+    /// is measured, not guessed, on GGGA the real tables sit at 53%, 52%, 46%, 35%, 23%, 22% and
     /// 21% of the roster and the densest piece of ordinary gameplay logic sits at 15%, so the cut
     /// falls in a real gap rather than through the middle of anything.
     /// </summary>
@@ -80,7 +80,7 @@ public static class HeroSystemAudit
         // carried, and a generated map keeps retired lines commented out rather than deleting them,
         // so counting those charged a hero to a table whose live code never mentions her. On GGGA
         // that reported WS_Init_WorkingSourceGeneratedMapState on nothing but strings like
-        // "// WS_REBORN_REMOVED_LEGACY_PICK_DUMMY: set u=CreateUnit(p, 'H006', ...)".
+        // "// WS_REBORN_REMOVED_LEGACY_PICK_DUMMY, set u=CreateUnit(p, 'H006', ...)".
         var lines = JassComments.Strip(script.Split('\n'));
         var found = new List<HeroSystem>();
         foreach (var fn in JassFunctionIndex.Parse(script))

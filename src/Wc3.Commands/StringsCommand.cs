@@ -6,17 +6,17 @@ using Wc3.Model;
 namespace Wc3.Commands;
 
 /// <summary>
-/// One war3map.wts entry: <c>STRING &lt;Id&gt;</c> with the block body as <see cref="Text"/>.
+/// One war3map.wts entry, <c>STRING &lt;Id&gt;</c> with the block body as <see cref="Text"/>.
 /// Text keeps the body's own line terminators as authored but excludes the final terminator
-/// that precedes the closing <c>}</c>; an empty block yields "".
+/// that precedes the closing <c>}</c>. An empty block yields "".
 /// </summary>
 public sealed record WtsEntry(int Id, string Text);
 
-/// <summary>war3map.wts listing; <see cref="FileName"/> is null when the map has no wts file.</summary>
+/// <summary>war3map.wts listing. <see cref="FileName"/> is null when the map has no wts file.</summary>
 public sealed record StringsListResult(string? FileName, IReadOnlyList<WtsEntry> Entries);
 
 /// <summary>
-/// Reads/edits the map's trigger-string table (war3map.wts) as TEXT, byte-faithfully:
+/// Reads/edits the map's trigger-string table (war3map.wts) as TEXT, byte-faithfully,
 /// <see cref="SetEntry"/> splices only the target entry's body and leaves every other
 /// character of the file untouched (headers, braces, comments, blank lines, other entries).
 /// War3Net's TriggerStrings model stays parse-only here, re-serializing it would rewrite
@@ -30,14 +30,14 @@ public static class StringsCommand
 {
     public const string WtsFileName = "war3map.wts";
 
-    /// <summary>Body span of one entry: [BodyStart, BodyEnd) covers the raw body characters
-    /// including the terminator before the '}' line; BodyEnd is the '}' line's start.</summary>
+    /// <summary>Body span of one entry, [BodyStart, BodyEnd) covers the raw body characters
+    /// including the terminator before the '}' line. BodyEnd is the '}' line's start.</summary>
     private readonly record struct EntrySpan(int Id, int BodyStart, int BodyEnd);
 
     /// <summary>
-    /// Parses wts text into entries. Lenient: a header without a following '{' line, or a
+    /// Parses wts text into entries. Lenient, a header without a following '{' line, or a
     /// block never closed by a '}' line, is skipped rather than throwing (real maps carry
-    /// oddities). '{' / '}' must sit on their own lines, as WorldEdit writes them; optional
+    /// oddities). '{' / '}' must sit on their own lines, as WorldEdit writes them. Optional
     /// "//" comment lines between the header and '{' are tolerated.
     /// </summary>
     public static IReadOnlyList<WtsEntry> Parse(string wtsSource)
@@ -55,11 +55,11 @@ public static class StringsCommand
 
     /// <summary>
     /// Returns <paramref name="wtsSource"/> with ONLY the body of entry <paramref name="id"/>
-    /// replaced by <paramref name="newText"/>; every character outside that body is preserved
+    /// replaced by <paramref name="newText"/>. Every character outside that body is preserved
     /// verbatim. newText's line breaks are normalized to the entry's own terminator style
     /// (CRLF/LF, detected from the existing body, else from the '{' line) and a single
-    /// trailing terminator is appended; empty text produces an empty block. Round-trip
-    /// property: SetEntry(src, id, Get(src, id).Text) == src.
+    /// trailing terminator is appended. Empty text produces an empty block. Round-trip
+    /// property, SetEntry(src, id, Get(src, id).Text) == src.
     /// Throws <see cref="KeyNotFoundException"/> when the id is absent.
     /// </summary>
     public static string SetEntry(string wtsSource, int id, string newText)
@@ -74,7 +74,7 @@ public static class StringsCommand
         var terminator =
             rawBody.EndsWith("\r\n", StringComparison.Ordinal) ? "\r\n" :
             rawBody.EndsWith("\n", StringComparison.Ordinal) ? "\n" :
-            // Empty block: mirror the terminator of the '{' line just before the body.
+            // Empty block, mirror the terminator of the '{' line just before the body.
             span.BodyStart >= 2 && wtsSource[span.BodyStart - 2] == '\r' ? "\r\n" : "\n";
 
         var newBody = newText.Length == 0
@@ -154,7 +154,7 @@ public static class StringsCommand
     /// <summary>
     /// Applies <see cref="SetEntry"/> to the document's war3map.wts and stores the result
     /// via <see cref="MapDocument.AddOrReplaceRawFile"/> (written verbatim on Save). Edits
-    /// stack: each call re-reads the pending override, so successive Sets all survive.
+    /// stack, each call re-reads the pending override, so successive Sets all survive.
     /// </summary>
     public static void Set(MapDocument doc, int id, string newText)
     {
@@ -180,7 +180,7 @@ public static class StringsCommand
         doc.AddOrReplaceRawFile(WtsFileName, Encoding.Latin1.GetBytes(updated));
     }
 
-    /// <summary>Current text of the entry for READING: the pending raw override when one exists,
+    /// <summary>Current text of the entry for READING, the pending raw override when one exists,
     /// else the original bytes, decoded as UTF-8 because that is what the file is and what makes
     /// the strings display correctly. The write path deliberately does NOT use this, see
     /// <see cref="Set"/>.</summary>
@@ -211,7 +211,7 @@ public static class StringsCommand
                 foundOpen = line == "{";
                 break;
             }
-            // No '{': resume scanning AT the unexpected line (it may be the next header).
+            // No '{', resume scanning AT the unexpected line (it may be the next header).
             if (!foundOpen) { pos = cursor; continue; }
 
             // Body runs until the first line that is exactly "}".
@@ -233,7 +233,7 @@ public static class StringsCommand
         return spans;
     }
 
-    /// <summary>Reads the line starting at <paramref name="start"/>; returns the next line's
+    /// <summary>Reads the line starting at <paramref name="start"/>. Returns the next line's
     /// start offset (or src.Length). <paramref name="content"/> excludes the '\n' / "\r\n"
     /// terminator but is otherwise verbatim.</summary>
     private static int NextLine(string src, int start, out string content)
@@ -265,7 +265,7 @@ public static class StringsCommand
         var raw = src[span.BodyStart..span.BodyEnd];
         if (raw.EndsWith("\r\n", StringComparison.Ordinal)) return raw[..^2];
         if (raw.EndsWith("\n", StringComparison.Ordinal)) return raw[..^1];
-        return raw;   // empty block: '{' line directly followed by the '}' line
+        return raw;   // empty block, '{' line directly followed by the '}' line
     }
 
     /// <summary>Rewrites \r\n, \n, and lone \r line breaks to <paramref name="terminator"/> so

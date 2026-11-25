@@ -135,7 +135,7 @@ public static class MapOptimizeCommand
             var ext = Path.GetExtension(name);
             if (ModelExtensions.Contains(ext))
             {
-                // ratio 1 is the textures-only mode: a model is never rewritten, so no decimation
+                // ratio 1 is the textures-only mode, a model is never rewritten, so no decimation
                 // and no structural change can reach the game. Decimation is opt-in by naming a
                 // ratio below 1.
                 if (!decimate) continue;

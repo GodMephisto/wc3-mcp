@@ -25,16 +25,16 @@ public sealed record StripResult(
 /// points plus every function invoked by name at runtime.
 ///
 /// This is the alternative to the porter's line-by-line trimming, which is what actually breaks
-/// ported maps: commenting out an unresolvable call leaves a local declared and never assigned
+/// ported maps, commenting out an unresolvable call leaves a local declared and never assigned
 /// (so the script does not compile and a hosted map shows no player slots), or strips an
 /// iterator's advance so <c>exitwhen not X_hasNext(it)</c> can never change and the loop spins
-/// forever. Both were measured on a real port: 8 compile errors and 38 non-terminating loops that
+/// forever. Both were measured on a real port, 8 compile errors and 38 non-terminating loops that
 /// the source map does not have.
 ///
 /// Deleting a whole unreachable function cannot produce either failure, because nothing that
 /// remains refers to it. The safety of the pass rests entirely on the root set being complete,
 /// which is why string-dispatched names are collected first (see <see cref="ScriptRootsCommand"/>)
-/// and why this is deliberately conservative: globals are never touched, and any function named
+/// and why this is deliberately conservative, globals are never touched, and any function named
 /// anywhere in a string literal is kept whether or not it looks reachable.
 /// </summary>
 public static class ScriptStripCommand
@@ -54,8 +54,8 @@ public static class ScriptStripCommand
         new(@"^function\s+([A-Za-z_][A-Za-z0-9_]*)", RegexOptions.Compiled);
     private static readonly Regex EndFunction = new(@"^endfunction", RegexOptions.Compiled);
     /// <summary>
-    /// Any reference that can reach a function: a name followed by '(' , or 'function X' for a
-    /// function pointer. JASS uses the <c>call</c> keyword ONLY for statement-level calls; a call
+    /// Any reference that can reach a function, a name followed by '(' , or 'function X' for a
+    /// function pointer. JASS uses the <c>call</c> keyword ONLY for statement-level calls. A call
     /// inside an expression, <c>if IsValid(u) then</c>, carries no keyword at all.
     /// Requiring <c>call</c> here was a genuine semantics error that made this pass delete live
     /// code and took a script from 8 compile errors to 50. For a pass that DELETES, over-matching
@@ -82,7 +82,7 @@ public static class ScriptStripCommand
         var lines = text.Split('\n');
 
         // Function spans. Everything outside them (globals, comments, the header) is preserved
-        // verbatim: stripping a global is far riskier than stripping a function, and functions are
+        // verbatim, stripping a global is far riskier than stripping a function, and functions are
         // where the bulk of a bloated script lives anyway.
         var spans = new List<(string name, int start, int end)>();
         string? open = null; int openAt = 0;
@@ -112,7 +112,7 @@ public static class ScriptStripCommand
 
         // References that live OUTSIDE any function body, chiefly the globals block, e.g.
         // 'code onCast = function Foo'. Omitting these was a real bug in the first version of this
-        // pass: it scanned only reachable function bodies, so a function referenced solely from a
+        // pass, it scanned only reachable function bodies, so a function referenced solely from a
         // global initialiser looked dead and was deleted, taking a compiling script from 8 errors
         // to 50. Any pass that deletes code has to see EVERY reference, not most of them.
         var insideFunction = new bool[lines.Length];
@@ -128,7 +128,7 @@ public static class ScriptStripCommand
 
         var roots = new HashSet<string>(StringComparer.Ordinal);
         roots.UnionWith(referencedOutside);
-        // Exact match only. A prefix rule here was a real mistake: "InitTrig_" as a root pattern
+        // Exact match only. A prefix rule here was a real mistake, "InitTrig_" as a root pattern
         // kept 397 of them, every other hero's trigger initialiser, each dragging in its own
         // closure. An InitTrig_ function is live only if something actually calls it, and a port
         // that trimmed InitCustomTriggers to one line calls almost none of them.

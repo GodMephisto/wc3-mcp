@@ -109,7 +109,7 @@ internal static class AssetReferences
     /// Every texture path an imported model names in its own texture chunk. A texture reached only
     /// from a model is live even though no object-data field and no script literal names it, so a
     /// reference set without these would tell asset_unused to delete a texture a model still draws.
-    /// An .mdx is read by walking its chunk list to TEXS; an .mdl is read from its Bitmap blocks.
+    /// An .mdx is read by walking its chunk list to TEXS. An .mdl is read from its Bitmap blocks.
     /// </summary>
     public static IEnumerable<string> ModelTextureValues(MapDocument doc)
     {

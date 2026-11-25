@@ -25,7 +25,7 @@ internal static class RawcodeAllocator
     internal static int Allocate(string original, HashSet<int> used)
     {
         // Preserve the leading category char (editor convention), vary the last three
-        // over [0-9A-Za-z] until a free code is found; fall back to varying all four.
+        // over [0-9A-Za-z] until a free code is found. Fall back to varying all four.
         const string alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         char c0 = original.Length == 4 ? original[0] : 'X';
         foreach (var a in alphabet)

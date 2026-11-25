@@ -7,7 +7,7 @@ namespace Wc3.Commands;
 public sealed record ObjectKindCount(string Kind, int Count);
 
 /// <summary>
-/// The one-call map summary: metadata, every archive file, the custom object count per kind and
+/// The one-call map summary, metadata, every archive file, the custom object count per kind and
 /// the load diagnostics. Diagnostics repeats <see cref="MapInfoResult.Diagnostics"/> so the
 /// overview stands on its own.
 /// </summary>

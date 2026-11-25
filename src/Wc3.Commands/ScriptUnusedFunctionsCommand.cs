@@ -19,7 +19,7 @@ public sealed record ScriptUnusedFunctionsResult(
 /// A function is used when another function calls it or names it as a <c>code</c> value, when an
 /// <c>InitTrig_*</c> function references it, or when a string literal passed to
 /// <c>ExecuteFunc</c> names it. The engine's own entry points are never reported, whatever calls
-/// them, since the game invokes them directly: <c>main</c>, <c>config</c>,
+/// them, since the game invokes them directly, <c>main</c>, <c>config</c>,
 /// <c>InitCustomTriggers</c> and the map initialization functions are all excluded.
 ///
 /// A function that only calls itself is reported, because the wording is "no OTHER function calls

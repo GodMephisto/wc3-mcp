@@ -11,7 +11,7 @@ namespace Wc3.Commands;
 /// hero arena commonly compiles down to) and turns it into the calls a fresh, self-contained
 /// dispatcher needs, verbatim.
 ///
-/// Why this exists: the shared dispatcher a hero's own cast logic lives inside is written to
+/// Why this exists, the shared dispatcher a hero's own cast logic lives inside is written to
 /// satisfy every gate the SOURCE map wired around it, a placed-hero registration array, a map rect
 /// that stays null off the source map, a cooldown hashtable. Carrying that dispatcher whole
 /// carries every one of those gates too, and a ported hero fails every one of them at once. The
@@ -24,7 +24,7 @@ namespace Wc3.Commands;
 /// </summary>
 internal static class SynthDispatchBuilder
 {
-    /// <summary>One ability the hero's own branch dispatches: its rawcode, and the exact
+    /// <summary>One ability the hero's own branch dispatches, its rawcode, and the exact
     /// "call Foo(...)" statement(s) that branch runs, copied byte-for-byte (arguments untouched)
     /// from the source. <see cref="Callees"/> are the function names those calls invoke, fed back
     /// into the porter's carry set so a combo ability granted only through a shared runtime helper
@@ -44,7 +44,7 @@ internal static class SynthDispatchBuilder
     /// and de-duplicated by ability rawcode (first occurrence wins). Null when the script has no
     /// such guard for this hero at all (an unsupported dispatch shape, or the hero casts through
     /// something other than a shared id-comparison dispatcher), the caller must not synthesize
-    /// anything in that case, not guess. An empty (non-null) result never happens; a guard with
+    /// anything in that case, not guess. An empty (non-null) result never happens. A guard with
     /// zero resolvable ability branches is treated the same as "no guard found".
     /// </summary>
     public static IReadOnlyList<CastBranch>? ExtractHeroCastBranches(string sourceJass, string heroRawcode)
@@ -150,7 +150,7 @@ internal static class SynthDispatchBuilder
     public static string BuildGlobalDeclaration(string triggerGlobal) => "trigger " + triggerGlobal;
 
     /// <summary>Builds the raw (pre-rename, pre-rawcode-remap) text of the synthesized cast
-    /// dispatcher: a fresh function testing <c>GetSpellAbilityId()</c> against each branch's
+    /// dispatcher, a fresh function testing <c>GetSpellAbilityId()</c> against each branch's
     /// literal rawcode and running its call(s) verbatim, plus a companion init function that
     /// assigns <paramref name="triggerGlobal"/> its own trigger and registers it for every
     /// player's spell-effect event (an any-unit registration, so it needs no per-player wiring and
@@ -194,7 +194,7 @@ internal static class SynthDispatchBuilder
     }
 
     /// <summary>A safe JASS identifier fragment out of a rawcode, a human-readable port label
-    /// ("Asta (H028)"), or anything else: non alphanumeric bytes become underscores, then any run
+    /// ("Asta (H028)"), or anything else, non alphanumeric bytes become underscores, then any run
     /// of underscores is trimmed off BOTH ends (an embedded one, "Asta__H028", is left alone, only
     /// a boundary one is a problem), and a leading digit (or an empty result) gets an "x" prefix,
     /// a letter, never an underscore.
@@ -328,7 +328,7 @@ internal static class SynthDispatchBuilder
         return false;
     }
 
-    /// <summary>Every ability sub-branch inside a hero's own guard body: every depth-0 if/elseif
+    /// <summary>Every ability sub-branch inside a hero's own guard body, every depth-0 if/elseif
     /// chain whose OWN condition resolves an ability rawcode, merged and de-duplicated. Depth-0
     /// here means relative to the branch body (an "if" nested one level deeper, inside an ability's
     /// own branch, is not split further, its calls are read as part of that ability's body by
@@ -495,7 +495,7 @@ internal static class SynthDispatchBuilder
 
     // ---- generic if/elseif/else/endif splitting ----------------------------------------------
 
-    /// <summary>One sibling branch of an if/elseif/.../else/endif chain: the condition text of its
+    /// <summary>One sibling branch of an if/elseif/.../else/endif chain, the condition text of its
     /// own "if"/"elseif" line (empty for a trailing "else"), that line's index, and the [BodyStart,
     /// BodyEnd) range of lines up to the next sibling (or the chain's own "endif"), at the SAME
     /// nesting depth. A nested if/endif pair inside a branch is left whole, part of that branch's

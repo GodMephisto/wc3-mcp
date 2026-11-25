@@ -13,7 +13,7 @@ public sealed record TriggerCatalogEntry(
     IReadOnlyList<string> ArgumentTypes,
     string? Category);
 
-/// <summary>Result of a catalog <c>list</c> query: the source it came from and the matches.</summary>
+/// <summary>Result of a catalog <c>list</c> query, the source it came from and the matches.</summary>
 public sealed record TriggerCatalogListResult(
     string Source,
     int Total,
@@ -35,7 +35,7 @@ public sealed record TriggerCatalogDetail(
 /// <summary>
 /// Read-only queries over the World-Editor GUI-trigger catalog (<c>UI\TriggerData.txt</c>).
 /// The catalog is loaded either from an explicit file or from the installed game's CASC
-/// storage; both routes feed the shared <see cref="TriggerDataParser"/>.
+/// storage. Both routes feed the shared <see cref="TriggerDataParser"/>.
 /// </summary>
 public static class TriggerCatalogCommand
 {

@@ -5,7 +5,7 @@ using War3Net.Build.Environment;
 namespace Wc3.Render;
 
 /// <summary>
-/// Resolves WC3 ground tiles to decoded RGBA tile textures from the base-game CASC:
+/// Resolves WC3 ground tiles to decoded RGBA tile textures from the base-game CASC,
 /// tileId (4CC, e.g. "Lgrs") -> Terrain.slk row (dir/file) -> DDS/BLP -> RGBA cropped to a cell.
 /// Never throws. Yields null when a tile is unavailable so callers fall back to flat colours.
 /// </summary>
@@ -94,7 +94,7 @@ public sealed class TerrainArtCatalog
     /// </summary>
     public TextureImage? Resolve(string tileId, Wc3.Model.MapDocument? map)
     {
-        // Map-scoped key: use a distinct cache entry per map so that map A's
+        // Map-scoped key, use a distinct cache entry per map so that map A's
         // override does not leak into map B's resolution.
         string key = map is null ? tileId : $"map:{map.GetHashCode():X8}:{tileId}";
         if (_cache.TryGetValue(key, out var cached)) return cached;
@@ -131,7 +131,7 @@ public sealed class TerrainArtCatalog
             }
         }
 
-        // Base game CASC (Reforged ships .dds; older/classic installs .blp).
+        // Base game CASC (Reforged ships .dds. Older/classic installs .blp).
         foreach (var (ext, isDds) in new[] { (".dds", true), (".blp", false) })
         {
             var path = ("war3.w3mod:" + rel + ext).ToLowerInvariant();
@@ -161,8 +161,8 @@ public sealed class TerrainArtCatalog
 
     /// <summary>
     /// Builds a contiguous RGBA layer array (<c>layerCount * cell * cell * 4</c>) for a map's
-    /// terrain types: real tile textures where available, flat terrain-type colours as fallback.
-    /// Opens the base-game CASC internally (cached); if unavailable, every layer is a flat colour.
+    /// terrain types, real tile textures where available, flat terrain-type colours as fallback.
+    /// Opens the base-game CASC internally (cached). If unavailable, every layer is a flat colour.
     /// </summary>
     public static byte[] BuildLayersForMap(Wc3.Model.MapDocument doc, out int layerCount, out int cell)
     {

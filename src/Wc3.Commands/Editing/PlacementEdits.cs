@@ -9,7 +9,7 @@ namespace Wc3.Commands.Editing;
 /// Places a doodad (war3map.doo). The first <see cref="Apply"/> delegates to
 /// <see cref="PlacementCommand.PlaceDoodad"/> so the World-Editor default fields
 /// live in one place, then captures the created <see cref="DoodadData"/>.
-/// <see cref="Revert"/> removes that exact instance; a later Apply (redo) re-adds
+/// <see cref="Revert"/> removes that exact instance. A later Apply (redo) re-adds
 /// the very same instance, so the CreationNumber, and any trigger reference keyed
 /// off it, is stable across undo/redo.
 /// </summary>
@@ -81,7 +81,7 @@ public abstract class MapUnitsEdit : IMapEdit
 
     public abstract string Describe { get; }
 
-    /// <summary>Places the entry for the first time; returns the command outcome.</summary>
+    /// <summary>Places the entry for the first time. Returns the command outcome.</summary>
     protected abstract (bool Ok, string Message, int CreationNumber) PlaceFirst(MapDocument doc);
 
     public void Apply(MapDocument doc)
@@ -144,7 +144,7 @@ public sealed class PlaceUnitEdit : MapUnitsEdit
 
 /// <summary>
 /// Places a preplaced item (a <see cref="UnitData"/> in war3mapUnits.doo owned by the item
-/// slot). Same undo/redo mechanics as <see cref="PlaceUnitEdit"/>; differs only in the
+/// slot). Same undo/redo mechanics as <see cref="PlaceUnitEdit"/>. Differs only in the
 /// initial placement call, which pins the owner to <see cref="PlacementCommand.ItemOwnerId"/>.
 /// </summary>
 public sealed class PlaceItemEdit : MapUnitsEdit

@@ -43,7 +43,7 @@ public sealed record GameBuildName(
             isBeta = true;
             s = s[betaPrefix.Length..];
 
-            // Extract category: "ROC" or "TFT" from e.g. "ROC-v1.00" or "TFT-v1.07".
+            // Extract category, "ROC" or "TFT" from e.g. "ROC-v1.00" or "TFT-v1.07".
             int dash = s.IndexOf('-');
             if (dash > 0)
             {
@@ -52,7 +52,7 @@ public sealed record GameBuildName(
         }
         else
         {
-            // Non-beta: extract prefix (TFT, ROC, Reforged) before the first '-v'.
+            // Non-beta, extract prefix (TFT, ROC, Reforged) before the first '-v'.
             string marker = "-v";
             int vDash = s.IndexOf(marker, StringComparison.Ordinal);
             if (vDash > 0)
@@ -62,7 +62,7 @@ public sealed record GameBuildName(
             }
         }
 
-        // Extract version: first dotted number sequence from remaining string.
+        // Extract version, first dotted number sequence from remaining string.
         string versionPart = s;
         Match vm = Regex.Match(s, @"\d+(?:\.\d+)*");
         string? letterSuffix = null;
@@ -92,12 +92,12 @@ public sealed record GameBuildName(
         int verEnd = vm.Success ? vm.Length : 0;
         string line = verEnd < s.Length ? s[verEnd..] : string.Empty;
 
-        // Detect test builds: "-w3t", "-w3b", or "-w3-" followed by a hash.
+        // Detect test builds, "-w3t", "-w3b", or "-w3-" followed by a hash.
         bool isTest = line.IndexOf("-w3t", StringComparison.Ordinal) >= 0
                    || line.IndexOf("-w3b", StringComparison.Ordinal) >= 0
                    || line.IndexOf("-w3-", StringComparison.Ordinal) >= 0;
 
-        // Detect locale: "-ru", "-zhtw" etc. at the end.
+        // Detect locale, "-ru", "-zhtw" etc. at the end.
         string? locale = null;
         foreach (var loc in new[] { "-zhtw", "-ru" })
         {
@@ -115,7 +115,7 @@ public sealed record GameBuildName(
     /// Compare two build names by version-aware ordering rules.
     /// Returns -1, 0, or +1.
     ///
-    /// Ordering:
+    /// Ordering,
     /// 1. Beta-ROC versions come before ROC-v1.00.
     /// 2. Beta-TFT versions slot between ROC-v1.06 and TFT-v1.07.
     /// 3. Main releases (TFT, ROC, Reforged) sort by version.
@@ -159,7 +159,7 @@ public sealed record GameBuildName(
         int lineCmp = string.Compare(a.Line, b.Line, StringComparison.Ordinal);
         if (lineCmp != 0) return lineCmp;
 
-        // Same version, same type, same locale, same line:
+        // Same version, same type, same locale, same line,
         // bare (no prefix) sorts after named (has prefix).
         if (a.Prefix != b.Prefix)
         {
@@ -171,7 +171,7 @@ public sealed record GameBuildName(
 
     /// <summary>
     /// Determine the "category" or slot of a build for inter-category ordering.
-    /// Categories (ascending): Beta-ROC, ROC, Beta-TFT, TFT, Reforged, Bare.
+    /// Categories (ascending), Beta-ROC, ROC, Beta-TFT, TFT, Reforged, Bare.
     /// </summary>
     private static int CompareCategory(GameBuildName a, GameBuildName b)
     {
@@ -187,7 +187,7 @@ public sealed record GameBuildName(
     /// Return a category ordinal for inter-category ordering.
     /// 0 = Beta-ROC, 1 = ROC, 2 = Beta-TFT, 3 = TFT, 4 = Reforged, 5 = Bare.
     /// Unknown prefixes fall into the closest matching category.
-    /// For bare (non-beta) names, determine the category from the version:
+    /// For bare (non-beta) names, determine the category from the version,
     /// below 1.07 is ROC, 1.07 through 1.31 is TFT, 1.32 and above is Reforged.
     /// Bare names always sort after named builds (add 1 to their category tier).
     /// </summary>
@@ -202,7 +202,7 @@ public sealed record GameBuildName(
                 _ => 5,
             };
         }
-        // Named prefix: use the prefix directly.
+        // Named prefix, use the prefix directly.
         if (b.Prefix is not null)
         {
             return b.Prefix.ToLowerInvariant() switch
@@ -213,7 +213,7 @@ public sealed record GameBuildName(
                 _ => 5,
             };
         }
-        // Bare name: determine category tier from version.
+        // Bare name, determine category tier from version.
         // Below 1.07 → ROC (1). 1.07 through 1.31 → TFT (3). 1.32+ → Reforged (4).
         // Then use the version to sort within the tier.
         // Bare names sort after named builds of the same version (no prefix > has prefix).
@@ -224,8 +224,8 @@ public sealed record GameBuildName(
         }
         if (v.Major == 1 && v.Minor < 32)
         {
-            return 3;  // TFT era: 1.07 through 1.31.x
+            return 3;  // TFT era, 1.07 through 1.31.x
         }
-        return 4;  // Reforged era: 1.32+, 2.x, 3.x, ...
+        return 4;  // Reforged era, 1.32+, 2.x, 3.x, ...
     }
 }

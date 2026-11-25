@@ -13,7 +13,7 @@ public sealed record ScriptVerifyResult(
 
 /// <summary>
 /// Static verifier for a compiled JASS script. It models the one engine behaviour a per-function
-/// grep cannot: reachability. A state change with a restore, PauseUnit, EnableUserControl,
+/// grep cannot, reachability. A state change with a restore, PauseUnit, EnableUserControl,
 /// SetUnitTimeScale(0), UnitRemoveAbility, CreateGroup, Location, is correct exactly when its
 /// restore is reachable from the function that starts it, following direct calls AND
 /// TimerStart(..., function X) callback edges. That is why a channel ability with the pause in
@@ -38,13 +38,13 @@ public static class ScriptVerifyCommand
         foreach (var f in functions)
         {
             // Analyse live code only. A commented-out SetPlayerAbilityAvailable or
-            // UnitRemoveAbility is not a defect; SusanoMadaraCast's hide and its partner are both
+            // UnitRemoveAbility is not a defect. SusanoMadaraCast's hide and its partner are both
             // commented, which is why ability-hide and ability-strip each read 40 before this.
             var slice = ScriptCommand.SliceFunction(source, lineStarts, f.StartLine, f.EndLine);
             bodies[f.Name] = string.Join('\n'.ToString(), ScriptAnalysis.CodeLines(slice, false));
         }
 
-        // edges: direct calls to other functions, and timer callbacks
+        // edges, direct calls to other functions, and timer callbacks
         var edges = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         var timers = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (var (name, body) in bodies)
@@ -103,7 +103,7 @@ public static class ScriptVerifyCommand
                 shownAbilities.Add(m.Groups[1].Value);
         }
 
-        // REA: resolve each hidden or removed ability against the map's own object data. An
+        // REA, resolve each hidden or removed ability against the map's own object data. An
         // ability on a hero's uabi list is a real hero ability, and losing it is a real defect.
         // One that is on no uabi is a temporary or dummy ability and its removal is choreography.
         var heroAbilities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -156,7 +156,7 @@ public static class ScriptVerifyCommand
                 Flag("location-leak", name, $"{locs} Location, no RemoveLocation reachable");
 
             // ability removed and never re-added. Only a real ability, a rawcode that is not a
-            // buff, counts: UnitRemoveAbility(u,'B039') clears a debuff and needs no add, which
+            // buff, counts, UnitRemoveAbility(u,'B039') clears a debuff and needs no add, which
             // is why this rule reported 505 when it did not distinguish the two.
             var localDummies = new HashSet<string>(StringComparer.Ordinal);
             foreach (Match m in Regex.Matches(body, @"local unit (\w+)\s*=\s*CreateUnit"))
@@ -178,10 +178,10 @@ public static class ScriptVerifyCommand
                 var pat = @"SetPlayerAbilityAvailable\(\s*" + Regex.Escape(m.Groups[1].Value)
                           + @"\s*,\s*" + Regex.Escape(m.Groups[2].Value) + @"\s*,\s*true\s*\)";
                 if (shownAbilities.Contains(m.Groups[2].Value)) continue;
-                // Morph teardown: the show for a hidden ability lives in the ability's own
+                // Morph teardown, the show for a hidden ability lives in the ability's own
                 // Stop/End/Off/Deactivate function, which is not called from the cast. Pair by the
                 // longest shared name stem, per the community morph pattern.
-                // Morph teardown: the show for a hidden ability lives in the ability's own
+                // Morph teardown, the show for a hidden ability lives in the ability's own
                 // Stop/End/Off/Deactivate function, not in the cast, so reachability misses it.
                 // Pair by shared name prefix, which is how these functions are named
                 // (SusanoMadaraCast hides, SusanoMadaraDeactivate shows).

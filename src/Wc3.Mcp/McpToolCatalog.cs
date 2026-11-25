@@ -266,7 +266,7 @@ public static class McpToolAudit
 {
     /// <summary>
     /// Tool names that discard content a caller cannot get back, so they must declare
-    /// <c>destructiveHint</c> true. Kept deliberately precise: each name is a tool whose only
+    /// <c>destructiveHint</c> true. Kept deliberately precise, each name is a tool whose only
     /// effect is to remove something, and <c>mpq_strip_bookkeeping</c> is absent because the
     /// bookkeeping entries it drops are regenerated (SAF-03).
     /// </summary>

@@ -5,7 +5,7 @@ namespace Wc3.Commands;
 public static class ZoomMath
 {
     /// <summary>
-    /// Zoom-to-cursor: multiplies <paramref name="zoom"/> by <paramref name="zoomFactor"/> (clamped to
+    /// Zoom-to-cursor, multiplies <paramref name="zoom"/> by <paramref name="zoomFactor"/> (clamped to
     /// [<paramref name="minZoom"/>, <paramref name="maxZoom"/>]) and adjusts the offsets so the content
     /// point currently under the cursor stays under the cursor.
     ///
@@ -13,12 +13,12 @@ public static class ZoomMath
     /// layout pixels (TerrainView sizes its Image to <c>bitmapPixelSize * zoom</c>), and
     /// <paramref name="offsetX"/>/<paramref name="offsetY"/> are ScrollViewer <b>scroll offsets</b>, the
     /// layout-pixel distance the viewport has been scrolled right/down. A content point <c>p</c> is visible
-    /// at viewport position <c>p * zoom - offset</c>, so the content point under the cursor is
+    /// at viewport position <c>p * zoom, offset</c>, so the content point under the cursor is
     /// <c>(offset + cursor) / zoom</c> and the invariant-preserving new offset is
-    /// <c>newOffset = (offset + cursor) * (newZoom / zoom) - cursor</c>.</para>
+    /// <c>newOffset = (offset + cursor) * (newZoom / zoom), cursor</c>.</para>
     ///
     /// <para>This is the standard translate-transform formula
-    /// <c>newOffset = cursor - (cursor - oldOffset) * (newZoom / oldZoom)</c> with the offset sign flipped
+    /// <c>newOffset = cursor, (cursor, oldOffset) * (newZoom / oldZoom)</c> with the offset sign flipped
     /// (a scroll offset is the negated translation). If the clamped zoom equals the current zoom the
     /// offsets are returned unchanged.</para>
     ///
@@ -26,10 +26,10 @@ public static class ZoomMath
     /// </summary>
     /// <param name="offsetX">Current horizontal scroll offset in layout pixels.</param>
     /// <param name="offsetY">Current vertical scroll offset in layout pixels.</param>
-    /// <param name="zoom">Current zoom (layout pixels per content pixel); must be positive.</param>
+    /// <param name="zoom">Current zoom (layout pixels per content pixel). Must be positive.</param>
     /// <param name="cursorX">Cursor X relative to the viewport, in layout pixels.</param>
     /// <param name="cursorY">Cursor Y relative to the viewport, in layout pixels.</param>
-    /// <param name="zoomFactor">Multiplier applied to <paramref name="zoom"/>; must be positive.</param>
+    /// <param name="zoomFactor">Multiplier applied to <paramref name="zoom"/>. Must be positive.</param>
     /// <param name="minZoom">Inclusive lower zoom bound.</param>
     /// <param name="maxZoom">Inclusive upper zoom bound.</param>
     /// <returns>The adjusted scroll offsets and the clamped new zoom.</returns>

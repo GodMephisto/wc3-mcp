@@ -47,7 +47,7 @@ public static class CameraCommand
     };
 
     /// <summary>Lists every camera in document order.</summary>
-    // A map with no war3map.w3c simply has no cameras - return an empty list rather than
+    // A map with no war3map.w3c simply has no cameras, return an empty list rather than
     // throwing, so listing works everywhere (add creates the file on first use).
     public static IReadOnlyList<CameraFields> List(MapDocument doc) =>
         doc.GetFile(FileName)?.Model is MapCameras c
@@ -227,7 +227,7 @@ public static class CameraCommand
     private static CameraOpResult Persist(MapDocument doc, MapCameras cameras, string message)
     {
         var entry = doc.AddOrReplaceRawFile(FileName, Serialize(cameras));
-        // AddOrReplaceRawFile drops the parsed model (raw payload wins on Save); restore it
+        // AddOrReplaceRawFile drops the parsed model (raw payload wins on Save). Restore it
         // so in-memory readers keep seeing the mutation. The override bytes were serialized
         // from this very model, so the two stay consistent.
         entry.Model = cameras;

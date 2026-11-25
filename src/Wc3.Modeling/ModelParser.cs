@@ -32,7 +32,7 @@ public static class ModelParser
 
     private static string DecodeText(byte[] bytes)
     {
-        // MDL is ASCII in practice; UTF-8 handles it and any stray high bytes.
+        // MDL is ASCII in practice. UTF-8 handles it and any stray high bytes.
         var text = Encoding.UTF8.GetString(bytes);
         return text.Length > 0 && text[0] == '﻿' ? text[1..] : text; // strip BOM
     }

@@ -503,7 +503,7 @@ public static class TargetCompatCommand
         var targetParsed = Gbn.Parse(target);
         string? targetLocale = targetParsed.Locale;
 
-        // Parse and filter: keep only builds strictly newer than the target.
+        // Parse and filter, keep only builds strictly newer than the target.
         var newer = builds
             .Select(b => (Raw: b, Parsed: Gbn.Parse(b)))
             .Where(pair => Gbn.Compare(pair.Parsed, targetParsed) > 0)
@@ -517,7 +517,7 @@ public static class TargetCompatCommand
             ? newer
             : newer.Where(pair => pair.Parsed.Locale == targetLocale);
         if (targetLocale is not null && !candidates.Any())
-            candidates = newer; // fallback: ignore locale
+            candidates = newer; // fallback, ignore locale
 
         var sorted = candidates.ToList();
 
@@ -651,19 +651,19 @@ public static class TargetCompatCommand
                 // Build detail text.
                 if (addedIn is not null && firstSeen is not null)
                 {
-                    // Both: "added in A (first seen in F), not in T, used N times"
+                    // Both, "added in A (first seen in F), not in T, used N times"
                     detail = "added in " + addedIn
                         + " (first seen in " + firstSeen + ")"
                         + ", not in " + targetSchema.Build + countText;
                 }
                 else if (addedIn is not null)
                 {
-                    // Only A: "added in A, not in T, used N times"
+                    // Only A, "added in A, not in T, used N times"
                     detail = "added in " + addedIn + ", not in " + targetSchema.Build + countText;
                 }
                 else if (firstSeen is not null)
                 {
-                    // Only F: "only in test builds, first seen in F, not in T, used N times"
+                    // Only F, "only in test builds, first seen in F, not in T, used N times"
                     detail = "only in test builds, first seen in " + firstSeen
                         + ", not in " + targetSchema.Build + countText;
                 }
@@ -864,7 +864,7 @@ public static class TargetCompatCommand
 
     /// <summary>
     /// Infer the kind of an identifier by looking it up in the union index.
-    /// Priority: native > global > type > function (a name can be in multiple).
+    /// Priority, native > global > type > function (a name can be in multiple).
     /// </summary>
     private static string InferKind(string name,
         HashSet<string> allNatives,

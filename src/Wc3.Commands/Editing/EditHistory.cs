@@ -5,9 +5,9 @@ namespace Wc3.Commands.Editing;
 
 /// <summary>
 /// Undo/redo journal for interactive map editing. Holds two stacks of
-/// <see cref="IMapEdit"/>: the <i>done</i> stack (undoable) and the <i>undone</i>
+/// <see cref="IMapEdit"/>, the <i>done</i> stack (undoable) and the <i>undone</i>
 /// stack (redoable). Applying a fresh edit clears the redo stack, matching the
-/// linear-history convention every editor uses. The journal owns no document , 
+/// linear-history convention every editor uses. The journal owns no document ,
 /// each call names the <see cref="MapDocument"/> to mutate, so one history can
 /// be reset by pointing a session at a new map without reallocating.
 /// </summary>

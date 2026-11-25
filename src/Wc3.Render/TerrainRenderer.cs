@@ -8,7 +8,7 @@ namespace Wc3.Render;
 
 public static class TerrainRenderer
 {
-    // Keep output viewable without being huge: integer nearest-neighbor upscale
+    // Keep output viewable without being huge, integer nearest-neighbor upscale
     // until the longer side would exceed this.
     private const int MaxSide = 1024;
 
@@ -24,7 +24,7 @@ public static class TerrainRenderer
         if (doc.GetFile("war3map.w3e")?.Model is not MapEnvironment env)
             throw new InvalidDataException("no terrain (war3map.w3e) in map");
 
-        // Width/Height count tiles; the tilepoint grid has one more point per axis.
+        // Width/Height count tiles. The tilepoint grid has one more point per axis.
         int w = (int)env.Width + 1;
         int h = (int)env.Height + 1;
         var tiles = env.TerrainTiles;
@@ -37,7 +37,7 @@ public static class TerrainRenderer
         var typeColors = BuildTypeColors(doc, env);
         var fallback = new Rgba32(96, 108, 84); // muted grass-green
 
-        // TerrainTile.Height excludes cliff level; one cliff step equals 1.0 in
+        // TerrainTile.Height excludes cliff level. One cliff step equals 1.0 in
         // War3Net's normalized height units. Combine them for elevation shading.
         var elevation = new float[tiles.Count];
         float min = float.MaxValue, max = float.MinValue;
@@ -78,11 +78,11 @@ public static class TerrainRenderer
                 else
                     c = fallback;
 
-                // Elevation shading: darker in valleys, brighter on peaks.
+                // Elevation shading, darker in valleys, brighter on peaks.
                 float n = range > 0 ? (elevation[idx] - min) / range : 0.5f;
                 float shade = 0.65f + 0.55f * n;
 
-                // Cliff outline: darken a tile whose east/south neighbor sits at a
+                // Cliff outline, darken a tile whose east/south neighbor sits at a
                 // different cliff level, so cliff faces read as crisp edges.
                 int cl = tile.CliffLevel;
                 bool edge =
@@ -92,7 +92,7 @@ public static class TerrainRenderer
 
                 c = Scale(c, shade);
 
-                // Water: blend toward blue; deeper ground under the water is darker.
+                // Water, blend toward blue. Deeper ground under the water is darker.
                 if (tile.IsWater)
                 {
                     var deep = new Rgba32(28, 52, 104);
@@ -101,7 +101,7 @@ public static class TerrainRenderer
                     c = Lerp(c, water, 0.68f);
                 }
 
-                // Blight: cracked reddish earth overlay.
+                // Blight, cracked reddish earth overlay.
                 if (tile.IsBlighted)
                     c = Lerp(c, new Rgba32(104, 66, 54), 0.7f);
 
@@ -118,8 +118,8 @@ public static class TerrainRenderer
     /// Renders the terrain heightmap in 3D perspective (WC3 Z-up), the
     /// "rendered in game" look versus the flat top-down <see cref="RenderTerrainPng"/>
     /// minimap. The tilepoint grid becomes a directional-lit, per-terrain-type
-    /// coloured mesh at real ground+cliff heights; water tiles get a translucent
-    /// plane. Orbit camera: <paramref name="yawDegrees"/> spins around Z (up),
+    /// coloured mesh at real ground+cliff heights. Water tiles get a translucent
+    /// plane. Orbit camera, <paramref name="yawDegrees"/> spins around Z (up),
     /// <paramref name="pitchDegrees"/> tilts down, <paramref name="zoom"/> scales
     /// camera distance (larger = closer). Pure software rasterizer, no GPU.
     /// </summary>
@@ -147,7 +147,7 @@ public static class TerrainRenderer
         float originY = -(int)env.Height * (TileWorld / 2f);
 
         // Tilepoint vertices in world space (Z-up). Height + CliffLevel is in
-        // cliff-step units; one step is 128 world units tall.
+        // cliff-step units. One step is 128 world units tall.
         int n = w * h;
         var verts = new Vector3[n];
         float minZ = float.MaxValue, maxZ = float.MinValue;
@@ -164,7 +164,7 @@ public static class TerrainRenderer
             }
         float waterZ = waterCount > 0 ? (float)(waterSum / waterCount) + 0.35f * StepWorld : minZ;
 
-        // Orbit camera around the scene centre; distance derived from bounds / zoom.
+        // Orbit camera around the scene centre. Distance derived from bounds / zoom.
         var center = new Vector3(0f, 0f, (minZ + maxZ) * 0.5f);
         float span = MathF.Max(w * TileWorld, h * TileWorld);
         float radius = MathF.Max(span, maxZ - minZ) * 0.5f + TileWorld;
@@ -203,7 +203,7 @@ public static class TerrainRenderer
                     pw[j * w + i] = Project(new Vector3(originX + i * TileWorld, originY + j * TileWorld, waterZ));
         }
 
-        // Terrain pass: two triangles per cell, flat-shaded by face normal.
+        // Terrain pass, two triangles per cell, flat-shaded by face normal.
         for (int j = 0; j < h - 1; j++)
             for (int i = 0; i < w - 1; i++)
             {
@@ -215,7 +215,7 @@ public static class TerrainRenderer
                 Raster(pv[b], pv[c], pv[d], Shade(baseCol, FaceShade(verts[b], verts[c], verts[d])), 1f, true);
             }
 
-        // Water pass: translucent plane over water tiles (z-tested, no z-write).
+        // Water pass, translucent plane over water tiles (z-tested, no z-write).
         if (pw is not null)
         {
             var wcol = new Rgba32((byte)48, (byte)96, (byte)168, (byte)255);
@@ -299,7 +299,7 @@ public static class TerrainRenderer
     }
 
     /// <summary>
-    /// Inverts the <see cref="RenderPerspectivePng"/> camera: given a pixel in the
+    /// Inverts the <see cref="RenderPerspectivePng"/> camera, given a pixel in the
     /// rendered 3D image, casts a ray from the eye through that pixel and marches it
     /// against the terrain heightmap, returning the world (x,y) it strikes. Kept in
     /// lockstep with the render loop's camera math so picks match what is drawn.
@@ -357,7 +357,7 @@ public static class TerrainRenderer
         var up = Vector3.Cross(right, forward);
         float focal = 0.5f * H / MathF.Tan(0.5f * (48f * MathF.PI / 180f));
 
-        // World-space ray through the pixel: the algebraic inverse of Project().
+        // World-space ray through the pixel, the algebraic inverse of Project().
         float a = (px - W * 0.5f) / focal;
         float b = (H * 0.5f - py) / focal;
         var dir = Vector3.Normalize(forward + a * right + b * up);
@@ -448,9 +448,9 @@ public static class TerrainRenderer
         int w = (int)env.Width + 1;
         int h = (int)env.Height + 1;
         int scale = Math.Max(1, MaxSide / Math.Max(w, h));
-        // World coords of tilepoint (0,0): WC3 centers the tile grid on the origin,
+        // World coords of tilepoint (0,0), WC3 centers the tile grid on the origin,
         // so the SW corner point sits at -(tiles*128)/2 on each axis. (Standard for
-        // World-Editor maps; the 3D viewport pass can refine from the stored offset.)
+        // World-Editor maps. The 3D viewport pass can refine from the stored offset.)
         float originX = -(int)env.Width * (TerrainTransform.TileWorld / 2f);
         float originY = -(int)env.Height * (TerrainTransform.TileWorld / 2f);
         return new TerrainTransform(w * scale, h * scale, scale, w, h, originX, originY);
@@ -459,7 +459,7 @@ public static class TerrainRenderer
     /// <summary>
     /// Maps a ground <see cref="TerrainType"/> to a representative color by
     /// inspecting its enum name (e.g. "L_GrassCliff" → green). Names carry a
-    /// tileset-letter prefix and a descriptive suffix; we match the suffix.
+    /// tileset-letter prefix and a descriptive suffix. We match the suffix.
     /// </summary>
     /// <summary>What a tile outside the playable area is drawn as. The game shows void there.</summary>
     internal static readonly Rgba32 VoidColor = new(10, 10, 12, 255);
@@ -507,7 +507,7 @@ public static class TerrainRenderer
         string name = type.ToString();
         bool Has(string s) => name.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0;
 
-        // Order matters: check more specific terms before generic ones.
+        // Order matters, check more specific terms before generic ones.
         if (Has("Lava")) return new Rgba32(150, 52, 30);
         if (Has("Abyss")) return new Rgba32(26, 22, 32);
         if (Has("Snow") || Has("Ice")) return new Rgba32(228, 232, 242);

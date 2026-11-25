@@ -7,7 +7,7 @@ namespace Wc3.Commands;
 public static class ObjectGetCommand
 {
     /// <summary>
-    /// Kind-agnostic pipeline (backward compatible): probes every Object Editor kind's
+    /// Kind-agnostic pipeline (backward compatible), probes every Object Editor kind's
     /// map deltas, then every base store, first hit wins. Use the kind-aware overload
     /// to disambiguate rawcodes shared across kinds.
     /// </summary>
@@ -19,9 +19,9 @@ public static class ObjectGetCommand
     }
 
     /// <summary>
-    /// Full pipeline for one kind: map deltas from war3map.* ⊕ war3mapSkin.* (skin wins
+    /// Full pipeline for one kind, map deltas from war3map.* ⊕ war3mapSkin.* (skin wins
     /// per-field) ⊕ base game data. When the install/CASC is unavailable the result
-    /// degrades to deltas-only plus a diagnostic (field names fall back to codes; the
+    /// degrades to deltas-only plus a diagnostic (field names fall back to codes. The
     /// object name only resolves from a map delta).
     /// </summary>
     public static MergedObjectResult Execute(MapDocument doc, ObjectKind kind, string rawcode, string? gameDirOverride)
@@ -50,7 +50,7 @@ public static class ObjectGetCommand
         return Merge(rawcode, null, definedInMap: false, name: null, none, none, code => code, pre);
     }
 
-    /// <summary>Kind-agnostic core: map deltas of any kind, then any base store.</summary>
+    /// <summary>Kind-agnostic core, map deltas of any kind, then any base store.</summary>
     internal static MergedObjectResult Execute(
         MapDocument doc, string rawcode, GameDataContext? ctx, IReadOnlyList<string> preDiagnostics)
     {
@@ -84,7 +84,7 @@ public static class ObjectGetCommand
             if (entry is not null) return MergeEntry(doc, kind, rawcode, entry, ctx, preDiagnostics);
         }
 
-        // Not in the map: may still be a plain standard object of this kind.
+        // Not in the map, may still be a plain standard object of this kind.
         if (ctx is not null && ObjectKinds.TryGetBaseFields(ctx, kind, rawcode, out var baseFields))
             return MergeStandard(kind, rawcode, baseFields, ctx, preDiagnostics);
 
@@ -92,12 +92,12 @@ public static class ObjectGetCommand
         return Merge(rawcode, null, definedInMap: false, name: null, none, none, code => code, preDiagnostics);
     }
 
-    /// <summary>A map-defined object: base fields (when a base resolves) ⊕ map/skin deltas.</summary>
+    /// <summary>A map-defined object, base fields (when a base resolves) ⊕ map/skin deltas.</summary>
     private static MergedObjectResult MergeEntry(
         MapDocument doc, ObjectKind kind, string rawcode, MapObjectEntry entry,
         GameDataContext? ctx, IReadOnlyList<string> diagnostics)
     {
-        // A modified standard object is its own base; a from-scratch custom
+        // A modified standard object is its own base. A from-scratch custom
         // object (OldId=0) has none, never rawcode-ify the zero id.
         string? baseRawcode = entry.OldId == 0 ? null : entry.OldId.ToRawcode();
 
@@ -108,8 +108,8 @@ public static class ObjectGetCommand
             && ObjectKinds.TryGetBaseFields(ctx, kind, baseRawcode, out var resolved))
             baseFields = resolved;
 
-        // Object name: the map's name-field delta wins (TRIGSTR_ refs resolved via
-        // war3map.wts); otherwise the base object's name when the kind has one.
+        // Object name, the map's name-field delta wins (TRIGSTR_ refs resolved via
+        // war3map.wts). Otherwise the base object's name when the kind has one.
         var strings = MapStrings.From(doc);
         string? name = ObjectKinds.DeltaName(deltaFields, ObjectKinds.Info(kind), strings)
             ?? ObjectKinds.BaseName(ctx, kind, baseRawcode);
@@ -120,7 +120,7 @@ public static class ObjectGetCommand
             ObjectKinds.FieldNameLookup(ctx, kind), diagnostics, strings.Resolve);
     }
 
-    /// <summary>A standard object untouched by the map: base fields only.</summary>
+    /// <summary>A standard object untouched by the map, base fields only.</summary>
     private static MergedObjectResult MergeStandard(
         ObjectKind kind, string rawcode, IReadOnlyDictionary<string, string> baseFields,
         GameDataContext ctx, IReadOnlyList<string> diagnostics)
@@ -130,7 +130,7 @@ public static class ObjectGetCommand
     }
 
     /// <summary>
-    /// Pure merge: base fields overlaid by map deltas, each labeled with its source.
+    /// Pure merge, base fields overlaid by map deltas, each labeled with its source.
     /// A rawcode counts as Found when the map defines it (even with zero resolvable
     /// fields) or when any field resolved. Fields sort by display name, then bare
     /// code, then numeric level (leveled ability keys like "Ncl4:10").
@@ -149,7 +149,7 @@ public static class ObjectGetCommand
             return string.IsNullOrEmpty(fieldName) ? code : fieldName;
         }
 
-        // Display value = TRIGSTR_ resolved (when a resolver is supplied); raw stays in Value.
+        // Display value = TRIGSTR_ resolved (when a resolver is supplied). Raw stays in Value.
         string Disp(string v) => resolveDisplay is null ? v : resolveDisplay(v);
 
         var merged = new Dictionary<string, MergedField>(StringComparer.OrdinalIgnoreCase);

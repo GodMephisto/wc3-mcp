@@ -327,7 +327,7 @@ public static class HeroWiringAudit
                 if (kv.Key.StartsWith("spb1", StringComparison.OrdinalIgnoreCase))
                     AddList(kv.Value);
 
-        // Runtime grants: UnitAddAbility(u, 'A1R6') or UnitAddAbility(u, SomeQ2_ID).
+        // Runtime grants, UnitAddAbility(u, 'A1R6') or UnitAddAbility(u, SomeQ2_ID).
         foreach (Match m in Regex.Matches(ctx.CodeText,
             @"UnitAddAbility\s*\([^,]+,\s*(?:'([^']{4})'|([A-Za-z_][A-Za-z0-9_]*))\s*\)"))
         {
@@ -633,7 +633,7 @@ public static class HeroWiringAudit
                 return (otherSpellEvent, otherSpellEvent, otherSpellEvent ? "spell event" : "none");
             }
 
-            // Our generated block registers with a literal Player(N); the arena's own registrations
+            // Our generated block registers with a literal Player(N). The arena's own registrations
             // use a runtime expression, which we cannot resolve, so treat those as not proven.
             bool covered = perPlayer.Cast<Match>().Any(m =>
                 Regex.IsMatch(m.Groups[1].Value, @"\bPlayer\s*\(\s*" + OwnerId + @"\s*\)"));
@@ -644,7 +644,7 @@ public static class HeroWiringAudit
         /// trigger's own spell event registers, the suffix of EVENT_(PLAYER_)UNIT_SPELL_&lt;verb&gt;.
         /// Null when no such event is registered at all. Two triggers on the SAME verb for the same
         /// ability genuinely run its payload twice (deliverable 1's real double registration, both on
-        /// EFFECT); a CHANNEL trigger and an EFFECT trigger legitimately coexist for one ability, one
+        /// EFFECT). A CHANNEL trigger and an EFFECT trigger legitimately coexist for one ability, one
         /// validates the cast when it starts, the other applies it when it resolves, and the two must
         /// never be confused for a duplicate (see <see cref="WiringStatus.MultipleLiveDispatchers"/>'s
         /// only caller for the real map this was measured against).</summary>

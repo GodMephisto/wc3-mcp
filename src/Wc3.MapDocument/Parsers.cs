@@ -16,7 +16,7 @@ public static class DefaultParsers
         RegisterAll();
     }
 
-    // Test hook: the registry is process-global, so a test that swaps in a fake
+    // Test hook, the registry is process-global, so a test that swaps in a fake
     // parser must restore the real ones to keep the suite order-independent.
     internal static void Reregister() => RegisterAll();
 
@@ -43,7 +43,7 @@ public static class DefaultParsers
         Wire("war3map.w3h", r => r.ReadBuffObjectData());
         Wire("war3map.w3q", r => r.ReadUpgradeObjectData());
 
-        // Reforged skin layer: identical binary formats under war3mapSkin.*.
+        // Reforged skin layer, identical binary formats under war3mapSkin.*.
         Wire("war3mapSkin.w3u", r => r.ReadUnitObjectData());
         Wire("war3mapSkin.w3a", r => r.ReadAbilityObjectData());
         Wire("war3mapSkin.w3t", r => r.ReadItemObjectData());
@@ -52,7 +52,7 @@ public static class DefaultParsers
         Wire("war3mapSkin.w3h", r => r.ReadBuffObjectData());
         Wire("war3mapSkin.w3q", r => r.ReadUpgradeObjectData());
 
-        // wts is a text format; War3Net parses it via StreamReaderExtensions.
+        // wts is a text format. War3Net parses it via StreamReaderExtensions.
         MapFormatRegistry.Register("war3map.wts", raw =>
         {
             ValidateWts(raw);
@@ -102,7 +102,7 @@ public static class DefaultParsers
     ///
     /// The wtg format stores a trigger function's parameters but NOT how many there are, so the
     /// count comes from the table on read. Without it, a GUI trigger carrying any function at all
-    /// cannot be parsed: the reader runs off the end of the stream looking for the terminator of a
+    /// cannot be parsed, the reader runs off the end of the stream looking for the terminator of a
     /// string that was never there. Measured, writing one action and reading it back with the
     /// plain overload fails with exactly that.
     ///
@@ -113,7 +113,7 @@ public static class DefaultParsers
     ///
     /// War3Net ships the stock table as TriggerDataSource.Default, so this needs no game install and no
     /// reference from this project to Wc3.GameData. A map built against a CUSTOM TriggerData can
-    /// still defeat it, which is why the plain overload remains as a fallback: this is never worse
+    /// still defeat it, which is why the plain overload remains as a fallback, this is never worse
     /// than what it replaced, and is better wherever functions exist.
     /// </summary>
     private static object ReadTriggers(byte[] raw)
