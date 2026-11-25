@@ -35,7 +35,7 @@ public class ScriptSliceTests
     [Fact]
     public void ComputeLineStarts_Crlf_CountsLfPosition()
     {
-        // '\n' is at index 2 in "a\r\nb"; the next line starts at 3.
+        // '\n' is at index 2 in "a\r\nb". The next line starts at 3.
         Assert.Equal(new[] { 0, 3 }, ScriptCommand.ComputeLineStarts("a\r\nb"));
     }
 

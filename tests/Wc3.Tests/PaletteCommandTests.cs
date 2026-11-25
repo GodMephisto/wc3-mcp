@@ -6,7 +6,7 @@ namespace Wc3.Tests;
 
 public class PaletteCommandTests
 {
-    // ---- map-only path (ctx = null): hermetic, needs no WC3 install ----
+    // ---- map-only path (ctx = null), hermetic, needs no WC3 install ----
 
     [Fact]
     public void DoodadPalette_BlankMap_MapOnly_IsEmpty()
@@ -62,7 +62,7 @@ public class PaletteCommandTests
         Assert.All(res.Entries, e => Assert.Equal("map-custom", e.Source));
     }
 
-    // ---- base-catalog path: runs only when a WC3 install is present (soft no-op otherwise) ----
+    // ---- base-catalog path, runs only when a WC3 install is present (soft no-op otherwise) ----
 
     [Fact]
     public void DoodadPalette_WithInstall_IncludesBaseCatalog()
@@ -77,7 +77,7 @@ public class PaletteCommandTests
         Assert.All(res.Entries, e => Assert.Equal(4, e.Rawcode.Length)); // rawcodes are 4 chars
     }
 
-    // ---- unit palette: same union semantics over the unit catalog (ObjectKind.Unit) ----
+    // ---- unit palette, same union semantics over the unit catalog (ObjectKind.Unit) ----
 
     [Fact]
     public void UnitPalette_BlankMap_MapOnly_IsEmpty()

@@ -126,7 +126,7 @@ public class ProtectedMapNameRecoveryTests
 
         // A data artifact, not a code change, so it does not touch anything under
         // src/Wc3.MapDocument. Written unconditionally so the file this test's own report
-        // describes always exists next to it; whether it is worth wiring in is the
+        // describes always exists next to it. Whether it is worth wiring in is the
         // measurement's job, not this test's.
         string dictPath = Path.Combine(Path.GetTempPath(), "wc3ctl-cross-map-dictionary.txt");
         File.WriteAllLines(dictPath, dictionary);

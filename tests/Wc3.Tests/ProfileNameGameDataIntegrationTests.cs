@@ -8,7 +8,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Verifies the Profile TXT wiring against the live install through the normal
-/// command path: standard items, abilities, buffs and upgrades resolve human names
+/// command path, standard items, abilities, buffs and upgrades resolve human names
 /// (previously bare rawcodes, since their name fields live in profile TXTs rather
 /// than SLKs). Expected strings confirmed against the install's enus profile files.
 /// </summary>
@@ -63,7 +63,7 @@ public class ProfileNameGameDataIntegrationTests
     public void Object_list_resolves_item_base_name_from_profile()
     {
         if (!Directory.Exists(Install)) return;
-        // A modified standard item with no name delta: the list's name must come
+        // A modified standard item with no name delta, the list's name must come
         // from the base game's profile data.
         var w3t = new ItemObjectData(ObjectDataFormatVersion.v2);
         var item = new SimpleObjectModification { OldId = "ratf".FromRawcode() };

@@ -13,13 +13,13 @@ namespace Wc3.Tests;
 /// written, measured rather than assumed. Three sessions' worth of evidence says a format rule
 /// taken from one map, or from a model's property names, is wrong about as often as it is right.
 ///
-/// Four questions:
+/// Four questions,
 ///   1. What does a real TriggerFunction look like, field by field, including its parameters?
 ///   2. What parameter TYPES actually occur in real maps, and how is each one populated? A
 ///      parameter can be a literal, a preset, a variable, or a nested function call, and building
 ///      the wrong shape produces a trigger the World Editor cannot open.
 ///   3. Does the wtg writer survive a function being ADDED? Trigger items needed their count
-///      dictionary maintained by hand; functions may have the same trap.
+///      dictionary maintained by hand. Functions may have the same trap.
 ///   4. Do the parameter COUNTS have to match what TriggerData.txt declares for the function?
 /// </summary>
 public class EcaShapeProbe
@@ -152,7 +152,7 @@ public class EcaShapeProbe
     {
         // The question that gates the whole feature. Adding a trigger ITEM needed its count
         // dictionary maintained by hand or the writer emitted a header disagreeing with the body.
-        // Functions may carry the same trap, and it would look identical: fine here, broken in
+        // Functions may carry the same trap, and it would look identical, fine here, broken in
         // the World Editor.
         string? path = Maps().FirstOrDefault(p =>
         {

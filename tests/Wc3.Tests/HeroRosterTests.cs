@@ -16,7 +16,7 @@ namespace Wc3.Tests;
 /// trigger of their own.
 ///
 /// The load-bearing assertion here is which registration call gets chosen. Picking the call
-/// with the most distinct rawcodes is wrong and wrong NARROWLY, which is the dangerous kind:
+/// with the most distinct rawcodes is wrong and wrong NARROWLY, which is the dangerous kind,
 /// on this map the native SetUnitAbilityLevelSwapped carries 172 rawcodes against RPB_AddHero's
 /// 170 and would win by two, while none of its 172 is a unit at all.
 /// </summary>

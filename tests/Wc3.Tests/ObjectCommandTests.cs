@@ -11,7 +11,7 @@ public class ObjectCommandTests
     [Fact]
     public void Merges_base_and_delta_with_source_labels()
     {
-        // No real map needed for the merge core: exercise the pure Merge with fakes.
+        // No real map needed for the merge core, exercise the pure Merge with fakes.
         var baseFields = new Dictionary<string, string> { ["unam"] = "Footman", ["uhpm"] = "420" };
         var result = ObjectGetCommand.Merge(
             rawcode: "H001", baseRawcode: "hfoo", definedInMap: true, name: "Super Footman",
@@ -27,14 +27,14 @@ public class ObjectCommandTests
         Assert.Equal("999", hp.Value);
         Assert.Equal("map", hp.Source);
         Assert.Equal("base", result.Fields.Single(f => f.Code == "unam").Source);
-        // Base-only field retained; output ordered by display name.
+        // Base-only field retained. Output ordered by display name.
         Assert.Equal(new[] { "Hit Points", "Name" }, result.Fields.Select(f => f.Name).ToArray());
     }
 
     [Fact]
     public void Map_defined_unit_with_zero_fields_is_still_found()
     {
-        // Base-less custom unit with no mods and no base data: presence in the
+        // Base-less custom unit with no mods and no base data, presence in the
         // map's w3u alone must yield Found=true.
         var result = ObjectGetCommand.Merge(
             rawcode: "H001", baseRawcode: null, definedInMap: true, name: null,
@@ -66,7 +66,7 @@ public class ObjectCommandTests
     [Fact]
     public void Leveled_ability_delta_keys_order_numerically_within_a_field()
     {
-        // Ability deltas key per-level values as "code:N"; same display name for
+        // Ability deltas key per-level values as "code:N". Same display name for
         // every level, so ordering must fall through to the numeric level (10 > 2).
         var result = ObjectGetCommand.Merge(
             rawcode: "A000", baseRawcode: "ANcl", definedInMap: true, name: "Custom Spell",
@@ -88,7 +88,7 @@ public class ObjectCommandTests
     [Fact]
     public void Ability_deltas_resolve_from_w3a_with_leveled_keys_and_anam_name()
     {
-        // Hermetic full pipeline (ctx=null → deltas-only): a synthetic map whose w3a
+        // Hermetic full pipeline (ctx=null → deltas-only), a synthetic map whose w3a
         // defines A000 (base ANcl) with a non-leveled anam and a level-2 aran.
         var w3a = new AbilityObjectData(ObjectDataFormatVersion.v2);
         var ability = new LevelObjectModification { OldId = "ANcl".FromRawcode(), NewId = "A000".FromRawcode() };

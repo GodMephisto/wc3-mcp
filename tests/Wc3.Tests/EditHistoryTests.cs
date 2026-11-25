@@ -12,7 +12,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Exercises the interactive undo/redo journal (<see cref="EditHistory"/>) and
 /// the placement edits that wrap <see cref="PlacementCommand"/>. The headline
-/// guarantee is byte-faithful reversibility: undo restores the exact prior
+/// guarantee is byte-faithful reversibility, undo restores the exact prior
 /// document, and redo reproduces the exact post-edit document.
 /// </summary>
 public class EditHistoryTests
@@ -29,7 +29,7 @@ public class EditHistoryTests
     private static MapEnvironment Env(MapDocument doc) =>
         (MapEnvironment)doc.GetFile(TerrainCommand.TerrainFile)!.Model!;
 
-    // Mirrors TerrainView.CommitSculptStroke: diff the grid against a pre-stroke snapshot
+    // Mirrors TerrainView.CommitSculptStroke, diff the grid against a pre-stroke snapshot
     // and record ONE edit for whatever the stroke changed.
     private static TerrainSculptEdit BuildSculptEdit(
         TerrainSculptEdit.TileState[] before, MapDocument doc)
@@ -59,7 +59,7 @@ public class EditHistoryTests
         var doc = BlankMap.Create(new BlankMapOptions { TileEdge = 8 });
         var hist = new EditHistory();
 
-        // A stroke: snapshot, raise a patch, then record the diff as one edit (the stroke
+        // A stroke, snapshot, raise a patch, then record the diff as one edit (the stroke
         // already ran, so Do's Apply is an idempotent no-op).
         var before = Snapshot(doc);
         var r = TerrainCommand.Deform(doc, 4, 4, radius: 2, TerrainCommand.HeightOp.Raise, amount: 3f);
@@ -287,9 +287,9 @@ public class EditHistoryTests
         Assert.Equal(4, fired);
 
         int before = fired;
-        Assert.False(hist.Undo(doc)); // no-op: must not fire
-        Assert.False(hist.Redo(doc)); // no-op: must not fire
-        hist.Clear();                 // already empty: must not fire
+        Assert.False(hist.Undo(doc)); // no-op, must not fire
+        Assert.False(hist.Redo(doc)); // no-op, must not fire
+        hist.Clear();                 // already empty, must not fire
         Assert.Equal(before, fired);
     }
 

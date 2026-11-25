@@ -355,10 +355,7 @@ class Lock:
                     # A dead process leaves its lock behind. The expiry is what
                     # lets a second writer take it, and the token says who did.
                     self.stole = True
-                    try:
-                        self.path.unlink()
-                    except FileNotFoundError:
-                        pass
+                    self.path.unlink(missing_ok=True)
                     continue
                 if time.monotonic() >= deadline:
                     raise LockBusy(
@@ -394,10 +391,7 @@ class Lock:
         held = self.read()
         if held.get("token") != self.token:
             return
-        try:
-            self.path.unlink()
-        except FileNotFoundError:
-            pass
+        self.path.unlink(missing_ok=True)
 
 
 def append_record(folder: Path, record: dict, seconds: float = 60.0, wait: float = 30.0) -> Path:
@@ -482,6 +476,7 @@ def run_corpus(
                 encoding="utf-8",
                 errors="replace",
                 timeout=limit,
+                check=False,
                 creationflags=NO_WINDOW,
             )
             elapsed = time.perf_counter() - started
@@ -619,8 +614,9 @@ def selftest() -> int:
         try:
             try:
                 Lock(state / "run.lock", 60).acquire(wait=0.2)
-            except LockBusy:
-                pass
+            except LockBusy as exc:
+                if str(os.getpid()) not in str(exc):
+                    failures.append(f"the busy lock did not name its holder, {exc}")
             else:
                 failures.append("a held lock was taken by a second writer")
             if lock.read().get("owner") != os.getpid():

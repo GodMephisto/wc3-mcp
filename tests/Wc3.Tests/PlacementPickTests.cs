@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Wc3.Tests;
 
-/// <summary>Placement-scene metadata the Studio viewport needs beyond raw geometry:
+/// <summary>Placement-scene metadata the Studio viewport needs beyond raw geometry,
 /// per-instance identity (owner, creation number) for pick/tint, per-mesh local AABBs
 /// for ray-pick, and per-section blend/team-color flags for the shader.</summary>
 public class PlacementPickTests
@@ -141,7 +141,7 @@ public class PlacementPickTests
         Assert.Equal(FilterMode.None, section.FilterMode);
     }
 
-    /// <summary>One right triangle rising from the local origin: corners
+    /// <summary>One right triangle rising from the local origin, corners
     /// (0,0,0) (32,0,0) (0,0,64), UVs (0,0) (1,0) (0,1).</summary>
     private static Geoset TriangleGeoset(int textureId = -1, FilterMode filterMode = FilterMode.None) => new(
         Vertices: new float[] { 0f, 0f, 0f, 32f, 0f, 0f, 0f, 0f, 64f },

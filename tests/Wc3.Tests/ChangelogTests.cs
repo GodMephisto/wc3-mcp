@@ -7,7 +7,7 @@ using Xunit;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Guards the changelog layout of the wc3ctl repository: one file per release under
+/// Guards the changelog layout of the wc3ctl repository, one file per release under
 /// <c>changelog/</c>, with <c>CHANGELOG.md</c> showing the latest. The version this build carries
 /// must have its own file, so bumping the version without adding one fails here rather than at
 /// review time or, worse, at a release that ships with no notes for it.

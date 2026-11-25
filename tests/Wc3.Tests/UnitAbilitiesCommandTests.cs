@@ -18,7 +18,7 @@ namespace Wc3.Tests;
 public class UnitAbilitiesCommandTests
 {
     // ------------------------------------------------------------------------
-    // Tests 1-9: ScriptIndex.Build pure string tests, no map needed.
+    // Tests 1-9, ScriptIndex.Build pure string tests, no map needed.
     // ------------------------------------------------------------------------
 
     [Fact]
@@ -202,7 +202,7 @@ public class UnitAbilitiesCommandTests
     }
 
     // ------------------------------------------------------------------------
-    // Tests 10-12: LevelledValues using hand-crafted MergedObjectResult.
+    // Tests 10-12, LevelledValues using hand-crafted MergedObjectResult.
     // ------------------------------------------------------------------------
 
     private static MergedObjectResult MakeAbility(
@@ -264,7 +264,7 @@ public class UnitAbilitiesCommandTests
     }
 
     // ------------------------------------------------------------------------
-    // Tests 13-17: Synthetic map tests.
+    // Tests 13-17, Synthetic map tests.
     // ------------------------------------------------------------------------
 
     private static MapDocument BuildHeroMap(string script = "", int dummyCount = 0,
@@ -446,7 +446,7 @@ public class UnitAbilitiesCommandTests
 
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
         var hero = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = "H000".FromRawcode() };
-        // No uhab here: A005 only comes from script, proving Source = Script.
+        // No uhab here, A005 only comes from script, proving Source = Script.
         w3u.NewUnits.Add(hero);
 
         var w3a = new AbilityObjectData(ObjectDataFormatVersion.v2);
@@ -500,7 +500,7 @@ public class UnitAbilitiesCommandTests
     }
 
     // ------------------------------------------------------------------------
-    // Test 18: Corpus test, skipped cleanly when the map is absent.
+    // Test 18, Corpus test, skipped cleanly when the map is absent.
     // ------------------------------------------------------------------------
 
     [Fact]

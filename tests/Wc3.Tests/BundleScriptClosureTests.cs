@@ -8,7 +8,7 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Hermetic coverage for the JASS script closure inside the unit bundle:
+/// Hermetic coverage for the JASS script closure inside the unit bundle,
 /// rawcode-literal seeding, global-alias seeding, transitive call collection
 /// (both "Foo(" invocations and "function Foo" references), line-comment
 /// immunity, exclusion of unrelated functions, and the empty-list-plus-
@@ -40,7 +40,7 @@ public class BundleScriptClosureTests
 
         var bundle = ResolveH000WithAbility(jass);
 
-        // Ordered by StartLine; the seed's reason names the literal, the callees
+        // Ordered by StartLine. The seed's reason names the literal, the callees
         // name their discoverer, including the "function Timer_Cb" reference form.
         Assert.Equal(new[]
         {
@@ -104,7 +104,7 @@ public class BundleScriptClosureTests
     [Fact]
     public void Foreign_hero_dispatch_branch_is_not_followed()
     {
-        // The shared spellcast dispatcher pattern: our hero H000's branch calls RaidenSpell,
+        // The shared spellcast dispatcher pattern, our hero H000's branch calls RaidenSpell,
         // another custom hero H001's branch calls NatsuSpell. Seeding on H000 pulls in the
         // dispatcher (it names 'H000') and RaidenSpell, but NOT NatsuSpell, which lives only
         // inside a branch guarded by a foreign hero id.
@@ -315,7 +315,7 @@ public class BundleScriptClosureTests
         return BundleCommand.ResolveUnit(doc, "H000", ctx: null, preDiagnostics: Array.Empty<string>());
     }
 
-    /// <summary>H000 (custom hero, uabi=A000) + A000 (custom ability) + the given script , 
+    /// <summary>H000 (custom hero, uabi=A000) + A000 (custom ability) + the given script ,
     /// the seed rawcodes the closure sees are therefore H000 and A000.</summary>
     private static UnitBundle ResolveH000WithAbility(string jass)
     {

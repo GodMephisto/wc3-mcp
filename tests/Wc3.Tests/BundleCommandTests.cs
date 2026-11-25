@@ -11,7 +11,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Hermetic coverage (ctx=null → map deltas only) for the unit dependency
-/// resolver: object-ref recursion across kinds, custom flagging, asset-file
+/// resolver, object-ref recursion across kinds, custom flagging, asset-file
 /// capture with model→texture expansion, TRIGSTR resolution, cycle and
 /// false-positive-token handling.
 /// </summary>
@@ -60,7 +60,7 @@ public class BundleCommandTests
         Assert.Equal("H000", bundle.RootRawcode);
         Assert.Equal("Dark Paladin", bundle.RootName);
 
-        // Nodes sorted by kind then rawcode; every one is map-defined → custom.
+        // Nodes sorted by kind then rawcode. Every one is map-defined → custom.
         Assert.Equal(new[]
         {
             new BundleNode("H000", ObjectKind.Unit, "Dark Paladin", CustomToMap: true),
@@ -68,7 +68,7 @@ public class BundleCommandTests
             new BundleNode("B000", ObjectKind.Buff, "Dark Buff", CustomToMap: true),
         }, bundle.Objects);
 
-        // The model import is in the map; its texture is referenced but not imported.
+        // The model import is in the map. Its texture is referenced but not imported.
         Assert.Equal(new[]
         {
             new BundleFile(@"Textures\Hero.blp", "texture", PresentInMap: false),
@@ -90,7 +90,7 @@ public class BundleCommandTests
     [Fact]
     public void Ability_root_closure_captures_buff_model_and_texture()
     {
-        // ResolveObject seeded at an ABILITY: A000 --abuf:1--> B000 (buff), plus an
+        // ResolveObject seeded at an ABILITY, A000 --abuf:1--> B000 (buff), plus an
         // aeat effect-art model import whose MDX names one texture. Same crawl as
         // the unit path, just rooted at a different kind.
         var w3a = new AbilityObjectData(ObjectDataFormatVersion.v2);
@@ -224,7 +224,7 @@ public class BundleCommandTests
     public void Modified_standard_unit_counts_as_custom_root()
     {
         // A base-list entry (NewId=0) modifies the standard Hpal, the map defines
-        // deltas for it, so porting must carry it: CustomToMap and recursed.
+        // deltas for it, so porting must carry it, CustomToMap and recursed.
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
         var unit = new SimpleObjectModification { OldId = "Hpal".FromRawcode(), NewId = 0 };
         unit.Modifications.Add(new SimpleObjectDataModification
@@ -253,7 +253,7 @@ public class BundleCommandTests
     [Fact]
     public void Extensionless_model_ref_captures_the_model_file_and_its_textures()
     {
-        // Real-map convention (e.g. Nanaya Shiki H05Y): the unit's model field stores an
+        // Real-map convention (e.g. Nanaya Shiki H05Y), the unit's model field stores an
         // EXTENSIONLESS path, the game appends .mdx/.mdl at load, while the import is
         // keyed WITH the extension. The resolver must still treat it as a model so the
         // model file AND its textures are captured, not dropped as an unknown "other" file.
@@ -286,7 +286,7 @@ public class BundleCommandTests
     [Fact]
     public void Mdl_reference_to_an_mdx_import_captures_the_textures()
     {
-        // Regression guard: the field references ".mdl" but the binary is stored as ".mdx"
+        // Regression guard, the field references ".mdl" but the binary is stored as ".mdx"
         // (a routine cross-extension mismatch). FindModelEntry swaps the extension, so
         // presence AND texture-following must keep working through the full AddFileRef path.
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
@@ -314,7 +314,7 @@ public class BundleCommandTests
     public void Extensionless_icon_reference_is_found_and_categorized_icon()
     {
         // A unit whose icon field stores the command-button path with NO extension (the game
-        // appends .blp at load); the file is imported as ...BTNRaiden.blp. The bundle must find
+        // appends .blp at load). The file is imported as ...BTNRaiden.blp. The bundle must find
         // it and mark it present, else the port drops the custom icon and the unit shows the
         // black-and-green missing box.
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
@@ -356,7 +356,7 @@ public class BundleCommandTests
         return ms.ToArray();
     }
 
-    /// <summary>Minimal parseable MDX: MDLX magic + VERS + a TEXS chunk (no geometry).</summary>
+    /// <summary>Minimal parseable MDX, MDLX magic + VERS + a TEXS chunk (no geometry).</summary>
     private static byte[] TexsOnlyMdx(params string[] texturePaths)
     {
         using var ms = new MemoryStream();

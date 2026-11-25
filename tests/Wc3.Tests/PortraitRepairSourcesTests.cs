@@ -88,7 +88,7 @@ public class PortraitRepairSourcesTests
     [Fact]
     public void A_skin_profile_unit_model_with_a_camera_is_found()
     {
-        // The blindness under test: this model is declared only in Units\UnitSkin.txt, never in
+        // The blindness under test, this model is declared only in Units\UnitSkin.txt, never in
         // war3map.w3u, so the object-data-only scan returned 0.
         var doc = MapWithSkin(@"war3mapImported\hero.mdx", Model(800, camera: true));
 

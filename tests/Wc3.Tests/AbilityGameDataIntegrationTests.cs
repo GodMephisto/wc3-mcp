@@ -15,7 +15,7 @@ public class AbilityGameDataIntegrationTests
             var store = BaseAbilityStore.Build(src!);
             Assert.True(store.TryGetAbility("AHbz", out var fields), "Blizzard AHbz should resolve");
             Assert.NotEmpty(fields);
-            // Recognizable values: aher = is hero ability, arac = race.
+            // Recognizable values, aher = is hero ability, arac = race.
             Assert.Equal("1", fields["aher"]);
             Assert.Equal("human", fields["arac"]);
         }
@@ -49,7 +49,7 @@ public class AbilityGameDataIntegrationTests
             Assert.True(fields.ContainsKey("acdn:3"), "acdn:3 should resolve");
             Assert.False(fields.ContainsKey("acdn:4"), "acdn:4 is SLK padding beyond levels=3");
 
-            // useSpecific scoping: Storm Bolt's data field must not leak into Blizzard
+            // useSpecific scoping, Storm Bolt's data field must not leak into Blizzard
             // even though both read the same lettered data columns.
             Assert.False(fields.ContainsKey("Htb1"), "Htb1 is scoped to AHtb by useSpecific");
         }

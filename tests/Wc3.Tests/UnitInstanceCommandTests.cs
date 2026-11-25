@@ -88,7 +88,9 @@ public class UnitInstanceCommandTests
         Assert.True(UnitInstanceCommand.SetManaPercent(doc, cn, 25).Ok);
         Assert.True(UnitInstanceCommand.SetScale(doc, cn, 2f, 2.5f, 3f).Ok);
         Assert.True(UnitInstanceCommand.SetFacing(doc, cn, 3.14f).Ok);
-        Assert.True(UnitInstanceCommand.SetGold(doc, cn, 12500).Ok);
+        // The amount set here and read back below, so the round trip is what the assertion pins.
+        const int GoldAmount = 12500;
+        Assert.True(UnitInstanceCommand.SetGold(doc, cn, GoldAmount).Ok);
 
         var info = UnitInstanceCommand.Get(doc, cn)!;
         Assert.Equal(5, info.HeroLevel);
@@ -96,7 +98,7 @@ public class UnitInstanceCommandTests
         Assert.Equal(25, info.ManaPercent);
         Assert.Equal((2f, 2.5f, 3f), info.Scale);
         Assert.Equal(3.14f, info.Rotation);
-        Assert.Equal(12500, info.GoldAmount);
+        Assert.Equal(GoldAmount, info.GoldAmount);
 
         // The other placed unit is untouched.
         var sloc = UnitInstanceCommand.Get(doc, slocCn)!;

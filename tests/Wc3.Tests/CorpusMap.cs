@@ -66,7 +66,7 @@ internal static class CorpusMap
 
     /// <summary>
     /// A map is usable as the corpus when it carries the three things the Corpus tests actually
-    /// reach for: terrain, unit object data, and at least one imported model. Stated here rather
+    /// reach for, terrain, unit object data, and at least one imported model. Stated here rather
     /// than assumed, so a map that cannot exercise the suite is never selected.
     /// </summary>
     private static bool IsUsable(string path)

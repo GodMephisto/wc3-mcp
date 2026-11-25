@@ -9,9 +9,9 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Classic-tileset doodad models (Ruins_Flower, Lords_Rock, AshenRock, ...) live in CASC
-/// with a per-variation filename suffix and no bare file: dfil says
+/// with a per-variation filename suffix and no bare file, dfil says
 /// "Doodads\Ruins\Plants\Ruins_Flower\Ruins_Flower" but the storage only has
-/// ruins_flower0.mdx..ruins_flower4.mdx under the plain war3.w3mod: layer (verified by
+/// ruins_flower0.mdx..ruins_flower4.mdx under the plain war3.w3mod, layer (verified by
 /// enumerating the CASC listfile). These tests pin the enumeration discovery, the
 /// variation-0 resolution through <see cref="RenderModelCommand.Prepare"/>, and the
 /// aggregate resolve rate over every doodad/destructable type placed in a real map.
@@ -61,7 +61,7 @@ public class ClassicDoodadResolveTests
     }
 
     /// <summary>
-    /// Aggregate: every doodad/destructable type placed in the GGGA corpus map either
+    /// Aggregate, every doodad/destructable type placed in the GGGA corpus map either
     /// resolves a model through Prepare or has no model path at all (a handful of types
     /// have an empty dfil/bfil, nothing to draw is correct for those, not a bug).
     /// Before the variation-0 fallback this map measured 103/125 with 18 Prepare failures.

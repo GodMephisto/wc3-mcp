@@ -23,7 +23,7 @@ public class ImageExportFormatTests
     private readonly ITestOutputHelper _out;
     public ImageExportFormatTests(ITestOutputHelper output) => _out = output;
 
-    /// <summary>A minimal but real DDS: the magic, a 124 byte header declaring an uncompressed
+    /// <summary>A minimal but real DDS, the magic, a 124 byte header declaring an uncompressed
     /// 1x1 32-bit BGRA surface, and one pixel.</summary>
     private static byte[] OnePixelDds()
     {

@@ -9,7 +9,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// The 3D perspective terrain renderer (the "rendered in game" view) must produce a
-/// valid, non-degenerate PNG: correct dimensions, PNG signature, actual lit terrain
+/// valid, non-degenerate PNG, correct dimensions, PNG signature, actual lit terrain
 /// pixels (not pure sky), and a genuine perspective camera, tilting the pitch must
 /// change the projection (a flat 2D blit would be pitch-invariant).
 /// </summary>

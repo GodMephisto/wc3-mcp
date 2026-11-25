@@ -36,7 +36,7 @@ public class RoundtripTests
     [Fact]
     public void Unnamed_entries_roundtrip_byte_identical()
     {
-        // A protected map: entries present in the archive but missing from the
+        // A protected map, entries present in the archive but missing from the
         // listfile, so they reopen with FileName == null.
         var unnamedPayloads = new List<byte[]>
         {
@@ -50,7 +50,7 @@ public class RoundtripTests
 
         var original = MapDocument.Load(bytes);
 
-        // Fixture sanity: the unnamed entries must be present AND readable , 
+        // Fixture sanity, the unnamed entries must be present AND readable ,
         // an empty-placeholder entry would make the comparison below vacuous.
         var origUnnamed = UnnamedContents(original);
         Assert.Equal(AsMultiset(unnamedPayloads), AsMultiset(origUnnamed));

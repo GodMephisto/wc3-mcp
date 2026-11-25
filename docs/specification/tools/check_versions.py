@@ -85,6 +85,7 @@ def newest_tag(repo: Path, git: str) -> str | None:
             capture_output=True,
             text=True,
             timeout=60,
+            check=False,  # the return code is raised below, with the stderr
         )
     except (OSError, subprocess.SubprocessError) as exc:
         raise VersionError(f"git could not be run at {git}, {exc}") from exc

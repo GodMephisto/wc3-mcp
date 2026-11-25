@@ -10,3 +10,21 @@ dist-mcp.old/
 # Third-party reference docs shipped so the agent can read them, written by
 # Hive Workshop authors, not by this repository.
 src/Wc3.Mcp/context/
+
+# Vendored licence text. The licence clause "subject to the following
+# conditions" is quoted from Apache and Mozilla and must not be reworded.
+THIRD-PARTY-NOTICES.md
+
+# Agent work logs and captured diffs. A progress report records what ran on a
+# day, and rewriting its words would falsify the record.
+.superpowers/
+.loop/
+
+# The skill documents ship in two places, docs/ and context/, and the pair must stay
+# byte for byte identical. Their prose belongs to the shipped skill.
+src/Wc3.Mcp/docs/skills/
+
+# Release notes are parsed by the changelog tool and written by a release, so
+# their headings and dashes are part of the format, not prose to restyle.
+CHANGELOG.md
+changelog/

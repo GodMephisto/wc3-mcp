@@ -135,7 +135,7 @@ public class PreplacedUnitsScriptTests
         // Fired by a 0-second timer from CreateAllUnits.
         Assert.Contains("call TimerStart(CreateTimer(), 0., false, function wc3ctl_WirePlacedHeroSpells)", j);
 
-        // The ordering guard: CreateAllUnits' own body must not register any spell event inline.
+        // The ordering guard, CreateAllUnits' own body must not register any spell event inline.
         int cau = j.IndexOf("function CreateAllUnits takes nothing", StringComparison.Ordinal);
         int cauEnd = j.IndexOf("endfunction", cau, StringComparison.Ordinal);
         string cauBody = j.Substring(cau, cauEnd - cau);
@@ -304,7 +304,7 @@ public class PreplacedUnitsScriptTests
     {
         // A PLAIN port (no --synth-dispatch) hooks every carried InitTrig_* not already called by
         // another carried aggregator straight into InitCustomTriggers, marking the call it inserts
-        // "// wc3ctl ported: ...", see ScriptPorter.HookInit. That includes a carried
+        // "// wc3ctl ported, ...", see ScriptPorter.HookInit. That includes a carried
         // InitTrig_LvlUpCheck just as readily as any other, so measured on a real port this made a
         // hero's OWN carried, merely-lazy, level-up-gated mechanism look "already reachable" in a
         // freshly ported BLANK target, wrongly suppressing the very registration a placed hero needs
@@ -419,7 +419,7 @@ public class PreplacedUnitsScriptTests
     [Fact]
     public void A_block_from_a_newer_generator_is_left_alone_instead_of_downgraded()
     {
-        // The regression that cost real debugging time: an older build regenerated a newer block and
+        // The regression that cost real debugging time, an older build regenerated a newer block and
         // silently stripped its spell wiring, leaving a map that compiles and hosts but whose heroes
         // are mute. A newer block must survive an older generator untouched.
         var doc = BlankMap.Create();
@@ -507,7 +507,7 @@ public class PreplacedUnitsScriptTests
         Assert.DoesNotContain("call MakeDoer", block);
     }
 
-    // A level up handler shaped like Anime_WOS2's real Trig_LvlUpCheck_Actions: the caster and its
+    // A level up handler shaped like Anime_WOS2's real Trig_LvlUpCheck_Actions, the caster and its
     // type id are read into locals ONCE near the top, and every hero's own branch compares that
     // local against its id constant rather than calling GetUnitTypeId again inline. This is exactly
     // the shape the hero guard matcher had to be relaxed for (see SynthDispatchLevelUpGrantTests

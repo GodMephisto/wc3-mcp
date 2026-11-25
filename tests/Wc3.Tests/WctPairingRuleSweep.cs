@@ -19,7 +19,7 @@ namespace Wc3.Tests;
 /// of the branch instead. So this checks the structural prediction on EVERY readable map, without
 /// relying on the name heuristic that scored the earlier probe.
 ///
-/// The prediction is exact and falsifiable:
+/// The prediction is exact and falsifiable,
 ///   sub-version absent  =>  slots == definitions        (gui definitions hold empty slots)
 ///   sub-version present =>  slots == custom-text count  (gui definitions hold no slot at all)
 /// </summary>

@@ -9,7 +9,7 @@ namespace Wc3.Tests;
 /// EcaShapeProbe reported that not one of 37 maps carries a single GUI trigger function. That is
 /// not credible as a fact about the maps, so it is probably a fact about the reader.
 ///
-/// TriggerReadCommandTests already hints at why, in a comment: "serialized function bodies need
+/// TriggerReadCommandTests already hints at why, in a comment, "serialized function bodies need
 /// TriggerData-consistent parameter counts to parse back". The wtg format stores a function's
 /// parameters without storing how many there are, so a reader that does not know the World
 /// Editor's function table cannot tell where one function's parameters end and the next begins.

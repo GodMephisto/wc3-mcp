@@ -34,14 +34,14 @@ public class TerrainImportResolutionTests
         // Skip when game data (CASC) is not available
         if (!Wc3.GameData.GameData.TryOpen(null, out var ctx, out _)) return;
 
-        // Step 1: create a valid 128x128 .blp file (the cell size)
+        // Step 1, create a valid 128x128 .blp file (the cell size)
         const int size = TerrainArtCatalog.Cell;
         var blp = CreateQuadBlp(size);
 
-        // Step 2: build a blank map that has terrain types
+        // Step 2, build a blank map that has terrain types
         var doc = BlankMap.Create();
 
-        // Step 3: find what path Terrain.slk assigns to the first terrain type
+        // Step 3, find what path Terrain.slk assigns to the first terrain type
         var cat = TerrainArtCatalog.Open(ctx!, doc);
         Assert.True(cat.HasCatalog, "Terrain.slk missing");
 
@@ -56,10 +56,10 @@ public class TerrainImportResolutionTests
         // Get the relative path Terrain.slk assigns to this tile
         string rel = cat.TilePath(tileId)!;
 
-        // Step 4: add the .blp to the map at that path
+        // Step 4, add the .blp to the map at that path
         doc.AddOrReplaceRawFile(rel + ".blp", blp);
 
-        // Step 5: resolve via a catalog that was opened with the map
+        // Step 5, resolve via a catalog that was opened with the map
         var mapCat = TerrainArtCatalog.Open(ctx!, doc);
         var img = mapCat.Resolve(tileId);
 

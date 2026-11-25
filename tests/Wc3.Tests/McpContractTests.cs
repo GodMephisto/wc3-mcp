@@ -1,5 +1,5 @@
 // tests/Wc3.Tests/McpContractTests.cs
-// Contract facts that are not protocol plumbing: the log level the server runs at (ENV-05).
+// Contract facts that are not protocol plumbing, the log level the server runs at (ENV-05).
 // The initialize capabilities are measured from the published exe by tools/measure_surface.py,
 // because the pinned SDK derives them from the registered collections and ignores the options.
 using System.Reflection;

@@ -9,7 +9,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Pins the Reforged (object-data format version 3) per-object modification set prefix.
 ///
-/// The regression these guard against: an object added to a version 3 war3map.w3u/w3a/w3h
+/// The regression these guard against, an object added to a version 3 war3map.w3u/w3a/w3h
 /// was written with setCount 0 instead of the one-set prefix { 1, 0 } every other object in
 /// the same file carries, so the game resumed parsing the next object from the middle of the
 /// added one's data and Warcraft III crashed before main() ran. Nothing caught it for two
@@ -53,7 +53,7 @@ public class ObjectDataSetPrefixTests
         Assert.True(result.Ok, result.Message);
 
         // Give the new object a field too. An empty group is only 12 bytes, so a missing
-        // prefix would merely leave a short tail; a group WITH modifications is the shape
+        // prefix would merely leave a short tail. A group WITH modifications is the shape
         // that made the game resume parsing from the middle of this object's data.
         var set = ObjectSetCommand.Execute(doc, kind, result.NewRawcode!, "unam", "Added");
         Assert.True(set.Ok, set.Message);
@@ -73,7 +73,7 @@ public class ObjectDataSetPrefixTests
     }
 
     /// <summary>
-    /// Fidelity: re-serializing version 3 object data that nobody touched must reproduce the
+    /// Fidelity, re-serializing version 3 object data that nobody touched must reproduce the
     /// original bytes. Seeding the set prefix must not disturb a group that already has one,
     /// otherwise every save would rewrite untouched object data.
     /// </summary>
@@ -144,7 +144,7 @@ public class ObjectDataSetPrefixTests
 
     // ---- fixtures -------------------------------------------------------------
 
-    /// <summary>A believable "already saved by the World Editor" version 3 payload: one
+    /// <summary>A believable "already saved by the World Editor" version 3 payload, one
     /// in-place modification of a base object and one custom object derived from it.</summary>
     private static byte[] ExistingV3File(string file, string baseCode) =>
         Probe.Write(3, file, ExistingObjects(baseCode, file));

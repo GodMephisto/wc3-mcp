@@ -37,7 +37,7 @@ public class PlacementSceneTests
         Assert.Equal(1, scene.DoodadCount);
         Assert.Equal(3, scene.Instances.Count);
 
-        // Two unit TYPES without models share ONE unit box mesh; the doodad gets the other.
+        // Two unit TYPES without models share ONE unit box mesh. The doodad gets the other.
         Assert.Equal(2, scene.Meshes.Count);
         Assert.Contains(scene.Meshes, m => m.Key == PlacementScene.UnitBoxKey);
         Assert.Contains(scene.Meshes, m => m.Key == PlacementScene.DoodadBoxKey);
@@ -92,7 +92,7 @@ public class PlacementSceneTests
         Assert.Equal(2, scene.Instances.Count);
         Assert.All(scene.Instances, i => Assert.Equal("unit:hfoo", i.MeshKey));
 
-        // Mesh vertices stay in model space; the instance transform carries the position.
+        // Mesh vertices stay in model space. The instance transform carries the position.
         Assert.Equal(0f, mesh.Vertices[0], 3);
         Assert.Equal(0f, mesh.Vertices[1], 3);
         var heights = TerrainHeightField.TryCreate(doc);
@@ -156,7 +156,7 @@ public class PlacementSceneTests
         var doc = BlankMap.Create();
         Assert.True(PlacementCommand.PlaceDoodad(doc, "LTlt", x: 0f, y: 0f).Ok);
 
-        // A glow plane like GeneralHeroGlow: one geoset referencing a ReplaceableId
+        // A glow plane like GeneralHeroGlow, one geoset referencing a ReplaceableId
         // (team-color) texture, none decoded, nothing we can draw but a white quad, so skip.
         var geoset = new Wc3.Modeling.Geoset(
             Vertices: new float[] { 0f, 0f, 0f, 32f, 0f, 0f, 0f, 0f, 64f },
@@ -214,7 +214,7 @@ public class PlacementSceneTests
         var scene = PlacementScene.Build(doc);
         var world = Assert.Single(scene.Instances).World;
 
-        // Row-vector CreateRotationZ(π/2): M11 = cos ≈ 0, M12 = sin ≈ 1.
+        // Row-vector CreateRotationZ(π/2), M11 = cos ≈ 0, M12 = sin ≈ 1.
         Assert.Equal(0f, world.M11, 3);
         Assert.Equal(1f, world.M12, 3);
     }
@@ -254,7 +254,7 @@ public class PlacementSceneTests
         var heights = TerrainHeightField.TryCreate(doc);
         Assert.NotNull(heights);
 
-        // A blank map is flat: any two samples agree.
+        // A blank map is flat, any two samples agree.
         Assert.Equal(heights!.Sample(0f, 0f), heights.Sample(500f, -700f), 3);
         Assert.Equal(heights.MinZ, heights.MaxZ, 3);
 
@@ -299,13 +299,13 @@ public class PlacementSceneTests
         var scene = PlacementScene.Build(doc);
         Assert.Equal(units, scene.UnitCount);
         Assert.Equal(doodads, scene.DoodadCount);
-        // No resolver: every non-start-location placement gets a box instance.
+        // No resolver, every non-start-location placement gets a box instance.
         Assert.Equal(units - startLocs + doodads, scene.Instances.Count);
         if (units + doodads > 0)
             Assert.NotEmpty(scene.Meshes);
     }
 
-    /// <summary>A minimal model: one right triangle rising from the local origin, with
+    /// <summary>A minimal model, one right triangle rising from the local origin, with
     /// simple corner UVs (0,0) (1,0) (0,1).</summary>
     private static Wc3.Modeling.Model3D SingleTriangleModel(int textureId = -1)
     {

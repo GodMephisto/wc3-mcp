@@ -8,7 +8,7 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// TRIGSTR_ display resolution: the merged field grid must show the wts-resolved text,
+/// TRIGSTR_ display resolution, the merged field grid must show the wts-resolved text,
 /// while the raw TRIGSTR_ reference stays in Value so editing/write-back never clobbers
 /// the string table. (Complements PortCommand, which INLINES strings for cross-map ports.)
 /// </summary>
@@ -21,7 +21,7 @@ public class ObjectGetDisplayTests
         var unit = new SimpleObjectModification { OldId = "hfoo".FromRawcode(), NewId = "U000".FromRawcode() };
         unit.Modifications.Add(Str("unam", "TRIGSTR_100"));
         unit.Modifications.Add(Str("utip", "TRIGSTR_101"));
-        unit.Modifications.Add(Str("uabi", "A000,A001")); // non-TRIGSTR value: Display == Value
+        unit.Modifications.Add(Str("uabi", "A000,A001")); // non-TRIGSTR value, Display == Value
         w3u.NewUnits.Add(unit);
 
         var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>

@@ -1,5 +1,5 @@
 // tests/Wc3.Tests/ScriptSpawnCarryTests.cs
-// Coverage for the script-spawn / grant object carry in BundleCommand: a unit a carried handler
+// Coverage for the script-spawn / grant object carry in BundleCommand, a unit a carried handler
 // spawns (CreateUnit and kin) or an ability it grants (UnitAddAbility) joins the bundle, a spawn in
 // another hero's dispatch branch does not, and the guarded assigner carry pulls in the one setup
 // function that populates a per-player unit array a carried handler reads.

@@ -10,7 +10,7 @@ namespace Wc3.Tests;
 ///
 /// A war3map.j is a byte stream with no declared encoding, and real maps carry bytes that are not
 /// valid UTF-8 (one 246 MB map on hand has about 52,000 of them, author names and localised
-/// strings). Decoding those as UTF-8 turns each into U+FFFD, and the damage is silent: nothing
+/// strings). Decoding those as UTF-8 turns each into U+FFFD, and the damage is silent, nothing
 /// throws, nothing logs, and a later text scan is simply looking at content the map does not
 /// contain. This exact family of bug bit three separate places in this project, and in two of them
 /// the symptom pointed somewhere else entirely (a lint check failing on untouched maps, and an
@@ -59,7 +59,7 @@ public class ScriptEncodingTests
     public void EveryByteValueSurvivesTheRoundTrip()
     {
         // All 256 byte values, because a decode that is lossy for any one of them is lossy for a
-        // real map: this is what "byte-faithful" has to mean at the text layer.
+        // real map, this is what "byte-faithful" has to mean at the text layer.
         var raw = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
         Assert.Equal(raw, Encoding.Latin1.GetBytes(Encoding.Latin1.GetString(raw)));
     }

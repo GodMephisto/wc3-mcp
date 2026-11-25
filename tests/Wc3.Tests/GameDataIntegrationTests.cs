@@ -49,7 +49,7 @@ public class GameDataIntegrationTests
             var store = BaseUnitStore.Build(src!);
             Assert.True(store.TryGetUnit("hfoo", out var fields), "Footman hfoo should resolve");
             Assert.NotEmpty(fields);
-            // Recognizable values: uhpm = max HP (positive int), uabi = default ability list.
+            // Recognizable values, uhpm = max HP (positive int), uabi = default ability list.
             Assert.True(int.TryParse(fields["uhpm"], out var hp) && hp > 0, $"uhpm should be a positive int, got '{fields.GetValueOrDefault("uhpm")}'");
             Assert.Contains("Adef", fields["uabi"]);
         }

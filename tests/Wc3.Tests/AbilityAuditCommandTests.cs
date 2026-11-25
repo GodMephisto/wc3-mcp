@@ -1,7 +1,7 @@
 // tests/Wc3.Tests/AbilityAuditCommandTests.cs
 // Hermetic coverage for each of the eight per-ability checks. HeroWiringAuditTests already covers
 // the dispatch-chain machinery this reuses in depth (including MultipleLiveDispatchers, the
-// double-registration shape), these focus on the checks AbilityAuditCommand itself adds: handler
+// double-registration shape), these focus on the checks AbilityAuditCommand itself adds, handler
 // gutted, loop never started, damage, pause balance, timer callbacks, state, and effects.
 using System.Text;
 using War3Net.Build.Extensions;
@@ -50,7 +50,7 @@ public class AbilityAuditCommandTests
     [Fact]
     public void Loop_TimerStart_trimmed_reports_FAIL()
     {
-        // The exact shape that broke Q2/W2/R2/T2 in the real corpus: TimerStart's own line trimmed
+        // The exact shape that broke Q2/W2/R2/T2 in the real corpus, TimerStart's own line trimmed
         // because the closure never carried its callback.
         // ScriptPorter's own Trim prepends the marker at column 0, the original line's indentation
         // (and everything else) follows it unchanged, so a real trimmed line never has whitespace
@@ -275,7 +275,7 @@ public class AbilityAuditCommandTests
     [Fact]
     public void A_passive_ability_is_marked_NotApplicable_across_every_check()
     {
-        // A1R5-shaped self aura: no script presence, no dispatch, exactly the "not this tool's
+        // A1R5-shaped self aura, no script presence, no dispatch, exactly the "not this tool's
         // concern" case HeroWiringAudit itself already treats as informational, not broken.
         const string jass = "function main takes nothing returns nothing\nendfunction\n";
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
@@ -344,7 +344,7 @@ public class AbilityAuditCommandTests
 
     // ---- synthetic map construction --------------------------------------------
 
-    /// <summary>The scaffolding every check-specific test shares: a bare (--synth-dispatch shaped)
+    /// <summary>The scaffolding every check-specific test shares, a bare (--synth-dispatch shaped)
     /// dispatcher for ability A0DL wired to a real, live, once-built trigger, calling AstaQ_Start,
     /// whose body is the one thing each test varies.</summary>
     private static string Scaffold(string handlerBody, string extraFunctions = "") =>

@@ -10,6 +10,12 @@ namespace Wc3.Tests;
 /// .wav is read back to prove the rate, channel count and byte size it reports. No corpus files.</summary>
 public class SoundOptimizeCommandTests
 {
+    /// <summary>The rate a Reforged source file carries, so every fixture starts there.</summary>
+    private const int SourceRateHz = 44100;
+
+    /// <summary>The rate a Reforged target file carries, the rate the command resamples to.</summary>
+    private const int TargetRateHz = 22050;
+
     /// <summary>A real .wav on disk, a 440 Hz tone of the given rate, channels and length.</summary>
     private static string NewWav(int rate, int channels, int milliseconds)
     {
@@ -35,16 +41,16 @@ public class SoundOptimizeCommandTests
         {
             var r = SoundOptimizeCommand.ExecutePath(src, 22050, mono: true, outPath);
 
-            Assert.Equal(44100, r.SampleRateBefore);
+            Assert.Equal(SourceRateHz, r.SampleRateBefore);
             Assert.Equal(2, r.ChannelsBefore);
             Assert.Equal(new FileInfo(src).Length, r.BytesBefore);
-            Assert.Equal(22050, r.SampleRateAfter);
+            Assert.Equal(TargetRateHz, r.SampleRateAfter);
             Assert.Equal(1, r.ChannelsAfter);
             Assert.Equal(new FileInfo(outPath).Length, r.BytesAfter);
 
             // The output must be a real, readable 16-bit PCM .wav at the new rate.
             using var read = new WaveFileReader(outPath);
-            Assert.Equal(22050, read.WaveFormat.SampleRate);
+            Assert.Equal(TargetRateHz, read.WaveFormat.SampleRate);
             Assert.Equal(1, read.WaveFormat.Channels);
             Assert.Equal(16, read.WaveFormat.BitsPerSample);
             Assert.True(read.Length > 0);
@@ -65,7 +71,7 @@ public class SoundOptimizeCommandTests
         {
             var r = SoundOptimizeCommand.ExecutePath(src, 22050, mono: false, outPath);
 
-            Assert.Equal(22050, r.SampleRateAfter);
+            Assert.Equal(TargetRateHz, r.SampleRateAfter);
             Assert.Equal(2, r.ChannelsAfter);
 
             using var read = new WaveFileReader(outPath);
@@ -87,11 +93,11 @@ public class SoundOptimizeCommandTests
         {
             var r = SoundOptimizeCommand.ExecutePath(src, 22050, mono: false, outPath);
 
-            Assert.Equal(22050, r.SampleRateAfter);
+            Assert.Equal(TargetRateHz, r.SampleRateAfter);
             Assert.Equal(1, r.ChannelsAfter);
 
             using var read = new WaveFileReader(outPath);
-            Assert.Equal(22050, read.WaveFormat.SampleRate);
+            Assert.Equal(TargetRateHz, read.WaveFormat.SampleRate);
         }
         finally
         {
@@ -178,7 +184,7 @@ public class SoundOptimizeCommandTests
                 Assert.True(id3 || frame, "the output does not look like an mp3");
 
                 using var read = new AudioFileReader(outPath);
-                Assert.Equal(22050, read.WaveFormat.SampleRate);
+                Assert.Equal(TargetRateHz, read.WaveFormat.SampleRate);
                 Assert.Equal(2, read.WaveFormat.Channels);
             }
             else
@@ -191,7 +197,7 @@ public class SoundOptimizeCommandTests
                 fallback = r.Path;
                 Assert.True(File.Exists(r.Path));
                 using var read = new WaveFileReader(r.Path);
-                Assert.Equal(22050, read.WaveFormat.SampleRate);
+                Assert.Equal(TargetRateHz, read.WaveFormat.SampleRate);
             }
         }
         finally
@@ -216,7 +222,7 @@ public class SoundOptimizeCommandTests
 
             using var read = new WaveFileReader(outPath);
             Assert.Equal(2, read.WaveFormat.Channels);
-            Assert.Equal(22050, read.WaveFormat.SampleRate);
+            Assert.Equal(TargetRateHz, read.WaveFormat.SampleRate);
         }
         finally
         {

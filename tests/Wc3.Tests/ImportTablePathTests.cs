@@ -54,7 +54,7 @@ public class ImportTablePathTests
     // ---- the parse, against a real .imp laid out by hand ----
 
     /// <summary>
-    /// A war3map.imp: uint32 version, uint32 count, then per entry a flag byte and a
+    /// A war3map.imp, uint32 version, uint32 count, then per entry a flag byte and a
     /// NUL-terminated path. The flag byte is the part the hand-rolled scan swallowed.
     /// </summary>
     private static byte[] ImpTable(params (byte Flag, string Path)[] entries)

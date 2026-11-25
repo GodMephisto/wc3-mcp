@@ -14,7 +14,7 @@ namespace Wc3.Tests;
 /// to the wrong trigger and produces no symptom at all until a human reads a script.
 ///
 /// A check that never fires is worthless and a check that fires on healthy maps is worse, so this
-/// pins both ends: it stays quiet on a well-formed map of each format, it fires on a map whose
+/// pins both ends, it stays quiet on a well-formed map of each format, it fires on a map whose
 /// halves genuinely disagree, and (in the corpus test) it stays quiet across the whole library.
 /// </summary>
 public class TriggerBodiesLintTests
@@ -77,7 +77,7 @@ public class TriggerBodiesLintTests
     [Fact]
     public void Quiet_on_a_well_formed_sub_version_map()
     {
-        // Sub-version: only custom-text triggers own a slot, so 3 text triggers need 3 slots
+        // Sub-version, only custom-text triggers own a slot, so 3 text triggers need 3 slots
         // however many GUI triggers sit among them.
         var check = Check(Map(subVersion: true, guiCount: 4, textCount: 3, slots: 3));
         Assert.Equal(LintSeverity.Ok, check.Severity);
@@ -86,7 +86,7 @@ public class TriggerBodiesLintTests
     [Fact]
     public void Quiet_on_a_well_formed_classic_map()
     {
-        // No sub-version: every definition owns a slot, so 4 GUI plus 3 text needs 7.
+        // No sub-version, every definition owns a slot, so 4 GUI plus 3 text needs 7.
         var check = Check(Map(subVersion: false, guiCount: 4, textCount: 3, slots: 7));
         Assert.Equal(LintSeverity.Ok, check.Severity);
     }
@@ -107,7 +107,7 @@ public class TriggerBodiesLintTests
     [Fact]
     public void Fires_when_applying_the_wrong_branch_of_the_rule()
     {
-        // The exact shape the old reader assumed: a sub-version map laid out classic-style, with
+        // The exact shape the old reader assumed, a sub-version map laid out classic-style, with
         // an empty slot for each GUI trigger. Before the rule was measured this looked correct.
         var check = Check(Map(subVersion: true, guiCount: 4, textCount: 3, slots: 7));
         Assert.Equal(LintSeverity.Warning, check.Severity);

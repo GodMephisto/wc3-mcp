@@ -40,7 +40,7 @@ public class GameBuildNameTests
         Assert.True(byName.ContainsKey("TFT-v1.07-ru"),
             "TFT-v1.07-ru not found");
 
-        // Beta-ROC ordering: Beta-ROC-v1.00 should come first among Beta builds.
+        // Beta-ROC ordering, Beta-ROC-v1.00 should come first among Beta builds.
         int betaRocFirst = parsed.FindIndex(p => p.Raw == "Beta-ROC-v1.00");
         Assert.True(betaRocFirst >= 0, "Beta-ROC-v1.00 not found");
 
@@ -74,10 +74,10 @@ public class GameBuildNameTests
         // ROC-v1.00-ru before TFT-v1.07-ru.
         AssertBefore(byName, "ROC-v1.00-ru", "TFT-v1.07-ru");
 
-        // Locale variants: same version sorted by locale (English first).
+        // Locale variants, same version sorted by locale (English first).
         AssertBefore(byName, "TFT-v1.28.2.7395", "TFT-v1.28.0.7205-zhtw");
 
-        // Letter suffix: TFT-v1.24a-ru should sort after TFT-v1.24.x releases.
+        // Letter suffix, TFT-v1.24a-ru should sort after TFT-v1.24.x releases.
         int tft124a = byName.ContainsKey("TFT-v1.24a-ru")
             ? parsed.FindIndex(p => p.Raw == "TFT-v1.24a-ru") : -1;
         int tft124b = byName.ContainsKey("TFT-v1.24b-ru")
@@ -216,7 +216,7 @@ public class GameBuildNameTests
         if (!File.Exists(indexFile)) return new();
 
         var content = File.ReadAllText(indexFile);
-        // Simple extraction: "build": "..."
+        // Simple extraction, "build", "..."
         var names = new List<string>();
         for (int i = 0; i < content.Length; i++)
         {
@@ -243,7 +243,7 @@ public class GameBuildNameTests
     }
 
     /// <summary>
-    /// Task 13e: bare version sorts between named builds of the same tier.
+    /// Task 13e, bare version sorts between named builds of the same tier.
     /// 1.30.4.11274 (TFT tier) should sort after TFT-v1.30.3.11235 and
     /// before TFT-v1.31.0.11889-w3t.
     /// 3.0.0.24268 (Reforged tier) should sort after Reforged-v2.0.4.23745-w3-9a94ff7.

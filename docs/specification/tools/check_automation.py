@@ -72,6 +72,7 @@ def run_one(script: Path, requirement: str, timeout: int) -> dict:
             capture_output=True,
             text=True,
             timeout=timeout,
+            check=False,  # the exit status is the measurement
             cwd=str(script.parent),
         )
     except subprocess.TimeoutExpired:

@@ -17,7 +17,7 @@ namespace Wc3.Tests;
 /// Through save and reload rather than in memory, because the object-data writer and reader are
 /// separate code and a round trip is where a type or a level index gets lost.
 ///
-/// The result: every kind round-trips, including all three storage types and both shapes. The
+/// The result, every kind round-trips, including all three storage types and both shapes. The
 /// first version of this test reported ability and upgrade per-level fields as mismatched, and it
 /// was the test that was wrong. A leveled modification is keyed by level, so its read-back Code is
 /// "acdn:1", while the merged result also carries a bare "acdn" row holding the base value.

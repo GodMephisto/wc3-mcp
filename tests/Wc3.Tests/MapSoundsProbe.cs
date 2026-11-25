@@ -1,7 +1,7 @@
 // tests/Wc3.Tests/MapSoundsProbe.cs
-// TEMPORARY reflection probe: dump the War3Net MapSounds API shape so we can
+// TEMPORARY reflection probe, dump the War3Net MapSounds API shape so we can
 // wire war3map.w3s editing (SoundCommand) against confirmed signatures.
-// Namespace-agnostic: resolves types by simple name off the War3Net.Build
+// Namespace-agnostic, resolves types by simple name off the War3Net.Build
 // assembly (already referenced by Parsers.cs via ReadMapSounds), so it never
 // hard-codes a namespace that might not exist.
 // Delete after the sound-definition design rests on confirmed ground truth.
@@ -37,7 +37,7 @@ public class MapSoundsProbe
             DumpType(soundsType, sb);
         }
 
-        // The sound-definition element type: any type in the same namespace whose
+        // The sound-definition element type, any type in the same namespace whose
         // simple name mentions "Sound" but isn't the container itself.
         if (soundsType is not null)
         {

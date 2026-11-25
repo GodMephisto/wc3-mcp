@@ -25,7 +25,7 @@ public class ObjectTypesGameDataIntegrationTests
         if (Open(ObjectDataStore.BuildItems) is not { } store) return;
         Assert.True(store.TryGet("ratf", out var fields), "Claws of Attack ratf should resolve");
         Assert.NotEmpty(fields);
-        // Recognizable values: ilev = item level, icla = item class.
+        // Recognizable values, ilev = item level, icla = item class.
         Assert.Equal("7", fields["ilev"]);
         Assert.Equal("Artifact", fields["icla"]);
     }
@@ -37,7 +37,7 @@ public class ObjectTypesGameDataIntegrationTests
         if (Open(ObjectDataStore.BuildDestructables) is not { } store) return;
         Assert.True(store.TryGet("ATtr", out var fields), "Ashenvale Tree Wall ATtr should resolve");
         Assert.NotEmpty(fields);
-        // Recognizable values: bhps = hit points, btar = targeted-as type.
+        // Recognizable values, bhps = hit points, btar = targeted-as type.
         Assert.Equal("50", fields["bhps"]);
         Assert.Equal("tree", fields["btar"]);
     }
@@ -49,7 +49,7 @@ public class ObjectTypesGameDataIntegrationTests
         if (Open(ObjectDataStore.BuildDoodads) is not { } store) return;
         Assert.True(store.TryGet("AOhs", out var fields), "Hollow Stump AOhs should resolve");
         Assert.NotEmpty(fields);
-        // Recognizable value: dcat = doodad category (E = Environment).
+        // Recognizable value, dcat = doodad category (E = Environment).
         Assert.Equal("E", fields["dcat"]);
     }
 
@@ -60,7 +60,7 @@ public class ObjectTypesGameDataIntegrationTests
         if (Open(ObjectDataStore.BuildBuffs) is not { } store) return;
         Assert.True(store.TryGet("BSTN", out var fields), "Stun buff BSTN should resolve");
         Assert.NotEmpty(fields);
-        // Only two buff fields are SLK-backed (the rest are Profile): frac = race.
+        // Only two buff fields are SLK-backed (the rest are Profile), frac = race.
         Assert.Equal("other", fields["frac"]);
     }
 
@@ -71,7 +71,7 @@ public class ObjectTypesGameDataIntegrationTests
         if (Open(ObjectDataStore.BuildUpgrades) is not { } store) return;
         Assert.True(store.TryGet("Rhme", out var fields), "Human melee upgrade Rhme should resolve");
         Assert.NotEmpty(fields);
-        // Recognizable values: grac = race, glvl = max level.
+        // Recognizable values, grac = race, glvl = max level.
         Assert.Equal("human", fields["grac"]);
         Assert.Equal("3", fields["glvl"]);
     }

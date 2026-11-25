@@ -55,7 +55,7 @@ public class ScriptReachableTests
     public void A_function_only_reached_by_a_string_literal_is_dead_here()
     {
         // The pass roots only at main and InitTrig*, so a string-dispatched name is dead here.
-        // script roots is the tool that finds these; this test pins that the two differ.
+        // script roots is the tool that finds these. This test pins that the two differ.
         var r = Run(string.Join("\n",
             "function main takes nothing returns nothing",
             "    call ExecuteFunc(\"Hidden\")",

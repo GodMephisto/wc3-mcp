@@ -127,7 +127,7 @@ public class ObjectSetCommandTests
     }
 
     /// <summary>
-    /// The safety gate on a real map: one field edit must change war3map.w3u and
+    /// The safety gate on a real map, one field edit must change war3map.w3u and
     /// NOTHING else, every other internal file (named or unnamed) stays
     /// byte-identical, proving an edit cannot corrupt the rest of the map.
     /// </summary>
@@ -142,7 +142,7 @@ public class ObjectSetCommandTests
         var doc = MapDocument.Load(path);
         var w3u = (UnitObjectData)doc.GetFile("war3map.w3u")!.Model!;
 
-        // Pick a real custom unit and an Int field it already has; bump the value.
+        // Pick a real custom unit and an Int field it already has. Bump the value.
         var (unit, mod) = w3u.NewUnits
             .SelectMany(u => u.Modifications
                 .Where(m => m.Type == ObjectDataType.Int)

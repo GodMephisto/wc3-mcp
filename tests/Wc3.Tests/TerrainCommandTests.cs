@@ -49,7 +49,7 @@ public class TerrainCommandTests
         Assert.True(r.Ok, r.Message);
 
         var env = Reload(doc);
-        Assert.Equal(6f, env.TerrainTiles[Idx(4, 4)].Height);   // 10 - 4
+        Assert.Equal(6f, env.TerrainTiles[Idx(4, 4)].Height);   // 10, 4
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class TerrainCommandTests
     {
         // The ground-height field is a 16-bit ushort (raw = height*512 + 8192), so a value past
         // MaxGroundHeight (~112) wrapped modulo 65536 and stored a wrong height while the brush
-        // still reported the tile changed. Measured: raise 128 stored 0, raise 200 stored 72.
+        // still reported the tile changed. Measured, raise 128 stored 0, raise 200 stored 72.
         var doc = BlankTerrain();
         var r = TerrainCommand.Deform(doc, 4, 4, 0, TerrainCommand.HeightOp.Set, 200f,
             TerrainCommand.BrushShape.Square);
@@ -108,7 +108,7 @@ public class TerrainCommandTests
     public void A_paint_variation_past_the_nibble_is_refused_cleanly()
     {
         // The variation field is a nibble. A value past 15 used to store and then throw
-        // ArgumentOutOfRangeException on save; it now refuses with a clear message.
+        // ArgumentOutOfRangeException on save. It now refuses with a clear message.
         var doc = BlankTerrain();
         var r = TerrainCommand.Paint(doc, 4, 4, 1, 0, variation: 20);
         Assert.False(r.Ok);
@@ -229,7 +229,7 @@ public class TerrainCommandTests
         Assert.True(s.Ok, s.Message);
         Assert.Equal(W * W, s.TileCount);
         var baseline = Baseline();
-        Assert.Equal(baseline, s.MinHeight);   // flat grid: min == max == mean == baseline
+        Assert.Equal(baseline, s.MinHeight);   // flat grid, min == max == mean == baseline
         Assert.Equal(baseline, s.MaxHeight);
         Assert.Equal(baseline, s.MeanHeight);
         Assert.Equal(0, s.MinCliff);
@@ -255,7 +255,7 @@ public class TerrainCommandTests
 
     // Seed EXACTLY `groundTypes` ground types (clearing the blank map's default Lordaeron
     // palette first) so paint validation, which mirrors the renderer's index-into-TerrainTypes
-    // semantics, has a known count; the enum values are arbitrary (any valid TerrainType passes
+    // semantics, has a known count. The enum values are arbitrary (any valid TerrainType passes
     // validation and the tile stores a plain byte index).
     private static MapDocument SeededTerrain(int groundTypes = 4)
     {
@@ -408,7 +408,7 @@ public class TerrainCommandTests
         Assert.True(r.Ok, r.Message);
 
         var env = Reload(doc);
-        Assert.Equal(0, env.TerrainTiles[Idx(4, 4)].CliffLevel);  // 3 - 5 floored to 0, not -2
+        Assert.Equal(0, env.TerrainTiles[Idx(4, 4)].CliffLevel);  // 3, 5 floored to 0, not -2
         Assert.Equal(3, env.TerrainTiles[Idx(0, 0)].CliffLevel);  // outside the brush
     }
 

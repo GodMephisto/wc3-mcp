@@ -419,7 +419,7 @@ public sealed class McpSmokeObjectsTests : McpSmokeBase
 
         var got = await Call("object_get", Args(("map", migrated), ("rawcode", "u000"), ("kind", "unit")));
         var fields = Prop(got, "fields").EnumerateArray();
-        // The map delta is gone; a base-game value for the same code may still show with source "base".
+        // The map delta is gone. A base-game value for the same code may still show with source "base".
         Assert.DoesNotContain(fields, f =>
             string.Equals(Prop(f, "code").GetString(), "uhpm", StringComparison.OrdinalIgnoreCase)
             && string.Equals(Prop(f, "source").GetString(), "map", StringComparison.OrdinalIgnoreCase));

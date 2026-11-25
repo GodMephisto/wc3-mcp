@@ -5,7 +5,7 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Real-map coverage for the multi-kind object commands: the Anime map carries
+/// Real-map coverage for the multi-kind object commands, the Anime map carries
 /// custom item (w3t) and ability (w3a) object data, so listing those kinds must
 /// return real entries and their fields must merge. Skips when the map is absent.
 /// </summary>
@@ -17,8 +17,8 @@ public class ObjectKindsCorpusTests
     [Trait("Category", "Corpus")]
     public void Anime_map_lists_units_despite_null_wts_entries()
     {
-        // Regression: this map's war3map.wts parses one entry (key 0) with a null
-        // value; unit unam deltas referencing it made MapStrings.Resolve throw.
+        // Regression, this map's war3map.wts parses one entry (key 0) with a null
+        // value. Unit unam deltas referencing it made MapStrings.Resolve throw.
         if (!File.Exists(MapPath)) return;
         var doc = MapDocument.Load(MapPath);
         var units = ObjectListCommand.Execute(doc, ObjectKind.Unit, gameDirOverride: null);

@@ -368,7 +368,7 @@ public class TriggerAddRemoveTests
     [Fact]
     public void An_id_shared_by_several_items_is_refused_by_every_mutator()
     {
-        // Measured on RATankD_516.2: 606 triggers, every one with id 0. Silently editing the first
+        // Measured on RATankD_516.2, 606 triggers, every one with id 0. Silently editing the first
         // match would rename or disable the wrong trigger with no way to tell.
         var doc = Map(Tree(false, Gui("A", 0, -1), Gui("B", 0, -1)));
 

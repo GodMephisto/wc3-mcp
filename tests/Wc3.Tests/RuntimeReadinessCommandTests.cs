@@ -17,7 +17,7 @@ namespace Wc3.Tests;
 /// </summary>
 public class RuntimeReadinessCommandTests
 {
-    // ---- gating: no GUI content means nothing to check -----------------------
+    // ---- gating, no GUI content means nothing to check -----------------------
 
     [Fact]
     public void A_script_with_no_globals_and_no_gui_triggers_reports_nothing()
@@ -31,7 +31,7 @@ public class RuntimeReadinessCommandTests
         Assert.True(result.Ready);
     }
 
-    // ---- rule 1: InitGlobals ---------------------------------------------------
+    // ---- rule 1, InitGlobals ---------------------------------------------------
 
     [Fact]
     public void GlobalInitMissing_fires_when_InitGlobals_is_not_defined_at_all()
@@ -106,7 +106,7 @@ endfunction
         Assert.Single(result.Findings, f => f.Issue == ReadinessIssue.RunInitializationTriggersMissing);
     }
 
-    // ---- rule 2: RunInitializationTriggers -------------------------------------
+    // ---- rule 2, RunInitializationTriggers -------------------------------------
 
     [Fact]
     public void RunInitializationTriggersMissing_stays_quiet_once_it_is_defined_and_called()
@@ -139,7 +139,7 @@ endfunction
         Assert.True(result.Ready);
     }
 
-    // ---- rule 3: a global read by this hero's own closure, never assigned -----
+    // ---- rule 3, a global read by this hero's own closure, never assigned -----
 
     [Fact]
     public void GlobalNeverAssigned_fires_for_a_global_this_heros_closure_reads_and_nothing_assigns()
@@ -228,7 +228,7 @@ endfunction
     [Fact]
     public void GlobalNeverAssigned_fires_for_a_non_udg_global_too()
     {
-        // The general shape found on a real map: gg_rct_Base is not a udg_ variable at all (it is
+        // The general shape found on a real map, gg_rct_Base is not a udg_ variable at all (it is
         // the World Editor's own name for a placed region), CreateRegions (the function that would
         // set it) is not carried, and a gate reading GetRectMinX(gg_rct_Base) as (0,0) on a null
         // rect silently blocked every cast. Rule 3 used to only look at udg_ names and would have
@@ -255,7 +255,7 @@ endfunction
     [Fact]
     public void GlobalNeverAssigned_stays_quiet_for_a_non_udg_global_assigned_elsewhere()
     {
-        // Same shape as GearTimer05 on a real map: a hand-written system's own timer, assigned in
+        // Same shape as GearTimer05 on a real map, a hand-written system's own timer, assigned in
         // its own Init function rather than the conventional InitGlobals. main calls Init, so the
         // assignment is LIVE, not merely present in the text, see
         // GlobalNeverAssigned_fires_when_the_assigning_function_is_never_called for the other half,

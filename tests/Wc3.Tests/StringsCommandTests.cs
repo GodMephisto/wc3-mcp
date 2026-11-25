@@ -5,12 +5,12 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Pure-logic tests for StringsCommand.Parse/Get/SetEntry, the war3map.wts text splicing
-/// that StringImportView relies on. Byte-faithfulness is the core contract: SetEntry must
+/// that StringImportView relies on. Byte-faithfulness is the core contract, SetEntry must
 /// touch ONLY the target entry's body and leave every other character verbatim.
 /// </summary>
 public class StringsCommandTests
 {
-    // WorldEdit-style CRLF file: single-line, multi-line, and empty bodies,
+    // WorldEdit-style CRLF file, single-line, multi-line, and empty bodies,
     // plus a blank line between entries.
     private const string Crlf =
         "STRING 1\r\n{\r\nFirst\r\n}\r\n\r\n" +
@@ -97,7 +97,7 @@ public class StringsCommandTests
         var result = StringsCommand.SetEntry(Crlf, 7, "Replaced");
 
         // Full-string equality against a hand-built expectation IS the byte-faithfulness
-        // assertion: every character outside STRING 7's body must be verbatim.
+        // assertion, every character outside STRING 7's body must be verbatim.
         Assert.Equal(
             "STRING 1\r\n{\r\nFirst\r\n}\r\n\r\n" +
             "STRING 7\r\n{\r\nReplaced\r\n}\r\n\r\n" +
@@ -176,7 +176,7 @@ public class StringsCommandTests
     {
         var result = StringsCommand.UpsertEntry(Crlf, 99, "Fresh");
 
-        // Every existing character survives verbatim; the new block matches CRLF.
+        // Every existing character survives verbatim. The new block matches CRLF.
         Assert.Equal(
             Crlf + "STRING 99\r\n{\r\nFresh\r\n}\r\n",
             result);

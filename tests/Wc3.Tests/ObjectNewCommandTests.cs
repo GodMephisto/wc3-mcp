@@ -45,7 +45,7 @@ public class ObjectNewCommandTests
         var r = ObjectNewCommand.Execute(doc, ObjectKind.Unit, "H000");
 
         Assert.True(r.Ok, r.Message);
-        // H000 and H001 are taken; the allocator preserves the base's leading char.
+        // H000 and H001 are taken. The allocator preserves the base's leading char.
         Assert.Equal("H002", r.NewRawcode);
 
         var w3u = (UnitObjectData)MapDocument.Load(doc.SaveToBytes()).GetFile("war3map.w3u")!.Model!;
@@ -108,7 +108,7 @@ public class ObjectNewCommandTests
         Assert.NotNull(w3t);
         Assert.Equal("afac".FromRawcode(), w3t!.NewItems.Single().OldId);
 
-        // Everything that existed before is byte-identical; only w3t is new.
+        // Everything that existed before is byte-identical. Only w3t is new.
         var before = ContentFilesByName(original);
         var after = ContentFilesByName(rebuilt);
         Assert.Equal(before.Keys.Append("war3map.w3t").OrderBy(k => k), after.Keys.OrderBy(k => k));
@@ -120,7 +120,7 @@ public class ObjectNewCommandTests
     public void Fresh_code_never_equals_the_base_even_when_the_base_is_not_in_the_map()
     {
         var doc = MapDocument.Load(Sample());
-        // "h000" is unused by the map; without the guard the allocator's first
+        // "h000" is unused by the map. Without the guard the allocator's first
         // candidate for base 'h' would be h000 itself.
         var r = ObjectNewCommand.Execute(doc, ObjectKind.Unit, "h000");
         Assert.True(r.Ok, r.Message);

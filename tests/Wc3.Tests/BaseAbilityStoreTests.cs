@@ -13,8 +13,8 @@ public class BaseAbilityStoreTests
 
     private static byte[] A(string s) => System.Text.Encoding.ASCII.GetBytes(s);
 
-    // Real shape: metadata row key = 4-char code; "field" = data-SLK column; "slk" = data SLK
-    // name; repeat > 0 = leveled numbered columns; data > 0 = the ability data-column letter;
+    // Real shape, metadata row key = 4-char code. "field" = data-SLK column. "slk" = data SLK
+    // name. Repeat > 0 = leveled numbered columns. Data > 0 = the ability data-column letter.
     // useSpecific scopes a field to the listed rawcodes and notSpecific excludes them.
     private const string Meta =
         "ID;PWXL;N;E\r\n" +
@@ -25,7 +25,7 @@ public class BaseAbilityStoreTests
         "C;X1;Y5;K\"Hbz2\"\r\nC;X2;K\"Data\"\r\nC;X3;K\"AbilityData\"\r\nC;X4;K\"WESTRING_AEVAL_DATA\"\r\nC;X5;K4\r\nC;X6;K2\r\nC;X7;K\"AHbz\"\r\n" +
         "C;X1;Y6;K\"xnot\"\r\nC;X2;K\"hero\"\r\nC;X3;K\"AbilityData\"\r\nC;X4;K\"WESTRING_AEVAL_XNOT\"\r\nC;X5;K0\r\nC;X6;K0\r\nC;X8;K\"Adef\"\r\nE\r\n";
 
-    // abilitydata.slk keyed by alias; AHbz is a 3-level hero ability whose 4th column set
+    // abilitydata.slk keyed by alias. AHbz is a 3-level hero ability whose 4th column set
     // is padding (the real files copy the last level), Adef is single-level.
     private const string Data =
         "ID;PWXL;N;E\r\n" +

@@ -143,7 +143,7 @@ public class PlayerForceCommandTests
         Assert.Equal(new[] { 0 }, forces[0].PlayerIds);      // player 1 left force 0
         Assert.Equal(new[] { 1, 2 }, forces[1].PlayerIds);   // ...and joined force 1
 
-        // The whole w3i re-serializes; a real save + reload must reparse the move.
+        // The whole w3i re-serializes. A real save + reload must reparse the move.
         var reloaded = MapDocument.Load(doc.SaveToBytes());
         var reloadedForces = PlayerForceCommand.GetForces(reloaded);
         Assert.Equal(new[] { 0 }, reloadedForces[0].PlayerIds);

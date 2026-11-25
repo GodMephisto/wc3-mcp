@@ -59,7 +59,7 @@ public class WctPairingProbe
         _out.WriteLine($"  definitions {defs.Count}, custom-text {custom.Count}, "
                      + $"gui {defs.Count - custom.Count}, wct slots {wct.CustomTextTriggers.Count}");
 
-        // Rule A, what the reader does today: index by ordinal over ALL definitions.
+        // Rule A, what the reader does today, index by ordinal over ALL definitions.
         int hitsA = 0, testedA = 0;
         int ordinal = 0;
         foreach (var d in defs)

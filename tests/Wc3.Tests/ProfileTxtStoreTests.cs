@@ -2,7 +2,7 @@ using Wc3.GameData;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Hermetic coverage for the Profile TXT layer: the INI-like parser itself, the
+/// Hermetic coverage for the Profile TXT layer, the INI-like parser itself, the
 /// element splitter, and the ObjectDataStore join that turns profile keys into
 /// field codes (index picks, per-level expansion, buff name fallback, and the
 /// SLK-catalog gate that keeps ability sections out of buff queries).
@@ -82,7 +82,7 @@ public class ProfileTxtStoreTests
         Assert.Equal(new[] { "plain" }, ProfileTxtStore.SplitElements("plain"));
     }
 
-    // Destructable-flavored metadata exercising every profile shape: a plain name,
+    // Destructable-flavored metadata exercising every profile shape, a plain name,
     // a per-level list (repeat=1), an x/y pair (index=1), and a modelList that must
     // keep its comma list whole. The SLK row makes ATtr part of the kind's catalog.
     private const string Meta =

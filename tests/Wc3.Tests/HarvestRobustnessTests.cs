@@ -30,7 +30,7 @@ public class HarvestRobustnessTests
     private readonly ITestOutputHelper _out;
     public HarvestRobustnessTests(ITestOutputHelper output) => _out = output;
 
-    /// <summary>A script holding exactly the shape that broke it: a very long, multi-line,
+    /// <summary>A script holding exactly the shape that broke it, a very long, multi-line,
     /// colour-coded UI string sitting beside a genuine asset path.</summary>
     private static string ScriptWithProse()
     {

@@ -8,7 +8,7 @@ namespace Wc3.Tests;
 public class ModelingTests
 {
     private const string TinyMdl = """
-        // Magos-style MDL snippet: one textured triangle.
+        // Magos-style MDL snippet, one textured triangle.
         Version {
             FormatVersion 800,
         }
@@ -112,7 +112,7 @@ public class ModelingTests
             () => ModelParser.Parse(new byte[] { 1, 2, 3, 4 }, "model.obj"));
     }
 
-    /// <summary>Builds a minimal v800 MDLX: VERS + TEXS + MTLS + GEOS with one triangle.</summary>
+    /// <summary>Builds a minimal v800 MDLX, VERS + TEXS + MTLS + GEOS with one triangle.</summary>
     private static byte[] BuildTinyMdx()
     {
         using var ms = new MemoryStream();
@@ -124,7 +124,7 @@ public class ModelingTests
         w.Write(4u);
         w.Write(800u);
 
-        // TEXS: one 268-byte entry
+        // TEXS, one 268-byte entry
         w.Write("TEXS"u8);
         w.Write(268u);
         w.Write(0u); // replaceableId
@@ -133,7 +133,7 @@ public class ModelingTests
         w.Write(new byte[260 - path.Length]);
         w.Write(0u); // flags
 
-        // MTLS: one material, one layer (layer = 28 bytes incl. its size field)
+        // MTLS, one material, one layer (layer = 28 bytes incl. its size field)
         var layerSize = 28u;
         var matSize = 4 + 4 + 4 + 8 + layerSize; // inclusiveSize, priorityPlane, flags, LAYS+count, layer
         w.Write("MTLS"u8);
@@ -151,7 +151,7 @@ public class ModelingTests
         w.Write(0u);             // coordId
         w.Write(1.0f);           // alpha
 
-        // GEOS: one geoset built in its own buffer so the inclusive size is exact.
+        // GEOS, one geoset built in its own buffer so the inclusive size is exact.
         using var gs = new MemoryStream();
         using var gw = new BinaryWriter(gs);
         gw.Write("VRTX"u8);

@@ -7,14 +7,14 @@ namespace Wc3.Tests;
 /// <summary>
 /// Icon-art resolution on palette entries (PaletteEntry.IconPath) and the IconPng
 /// decode hook. Hermetic tests cover the map-only path (a 'uico' delta wins with no
-/// install at all); the base-catalog path, icons from Reforged's units\unitskin.txt
+/// install at all). The base-catalog path, icons from Reforged's units\unitskin.txt
 /// via CASC, soft-skips without a WC3 install, like the other GameData tests.
 /// </summary>
 public class PaletteIconTests
 {
     private const string FootmanIcon = @"ReplaceableTextures\CommandButtons\BTNFootman.blp";
 
-    // ---- map-only path (ctx = null): hermetic, needs no WC3 install ----
+    // ---- map-only path (ctx = null), hermetic, needs no WC3 install ----
 
     [Fact]
     public void UnitPalette_MapOnly_UicoDelta_BecomesIconPath()
@@ -64,7 +64,7 @@ public class PaletteIconTests
         Assert.Null(PaletteCommand.IconPng(doc, "   ", ctx: null));
     }
 
-    // ---- base-catalog path: needs a WC3 install (soft no-op otherwise) ----
+    // ---- base-catalog path, needs a WC3 install (soft no-op otherwise) ----
 
     [Fact]
     [Trait("Category", "GameData")]
@@ -76,7 +76,7 @@ public class PaletteIconTests
         var res = PaletteCommand.UnitPalette(doc, ctx);
         Assert.True(res.Ok);
 
-        // Everyday units: Footman, Peasant, Grunt, all base rows with skin-profile art.
+        // Everyday units, Footman, Peasant, Grunt, all base rows with skin-profile art.
         foreach (var code in new[] { "hfoo", "hpea", "ogru" })
         {
             var entry = res.Entries.FirstOrDefault(e => e.Rawcode == code);
@@ -95,7 +95,7 @@ public class PaletteIconTests
         var doc = BlankMap.Create();
         var png = PaletteCommand.IconPng(doc, FootmanIcon, ctx);
         Assert.NotNull(png);
-        // PNG magic: 0x89 'P' 'N' 'G'.
+        // PNG magic, 0x89 'P' 'N' 'G'.
         Assert.True(png!.Length > 8);
         Assert.Equal(0x89, png[0]);
         Assert.Equal((byte)'P', png[1]);
@@ -103,7 +103,7 @@ public class PaletteIconTests
         Assert.Equal((byte)'G', png[3]);
     }
 
-    // ---- real map + install: end to end over a big custom-unit catalog ----
+    // ---- real map + install, end to end over a big custom-unit catalog ----
 
     [Fact]
     [Trait("Category", "Corpus")]

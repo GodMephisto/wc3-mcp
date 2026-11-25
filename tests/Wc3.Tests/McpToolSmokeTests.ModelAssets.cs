@@ -222,7 +222,9 @@ public sealed class McpSmokeModelAssetTests : McpSmokeBase
 
         Assert.True(File.Exists(outWav));
         Assert.Equal("wav", Prop(r, "format").GetString());
-        Assert.Equal(22050, Prop(r, "sampleRateAfter").GetInt32());
+        // The rate the resample asks for, which the response must report back.
+        const int TargetRateHz = 22050;
+        Assert.Equal(TargetRateHz, Prop(r, "sampleRateAfter").GetInt32());
         Assert.Equal(1, Prop(r, "channelsAfter").GetInt32());
         Assert.Equal(2, Prop(r, "channelsBefore").GetInt32());
     }

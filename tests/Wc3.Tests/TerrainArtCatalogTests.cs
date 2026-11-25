@@ -1,4 +1,4 @@
-﻿using Wc3.GameData;
+using Wc3.GameData;
 using Wc3.Modeling;
 using Wc3.Render;
 using Xunit;

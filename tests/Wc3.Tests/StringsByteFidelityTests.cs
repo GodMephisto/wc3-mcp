@@ -13,7 +13,7 @@ namespace Wc3.Tests;
 /// at the byte level, because the splice decoded the whole file as UTF-8 and re-encoded it, which
 /// is byte-identical only while every byte in the file is valid UTF-8.
 ///
-/// Measured across the map library, three maps are not: all three GGGA versions carry one
+/// Measured across the map library, three maps are not, all three GGGA versions carry one
 /// truncated multi-byte sequence each. On those, editing any one string rewrote that unrelated
 /// byte into the three bytes of U+FFFD, permanently, and nothing anywhere would have reported it.
 /// </summary>
@@ -22,14 +22,14 @@ public class StringsByteFidelityTests
     private readonly ITestOutputHelper _out;
     public StringsByteFidelityTests(ITestOutputHelper output) => _out = output;
 
-    /// <summary>A wts holding one byte that is not valid UTF-8, which is what the real maps have:
+    /// <summary>A wts holding one byte that is not valid UTF-8, which is what the real maps have,
     /// a lead byte with no continuation.</summary>
     private static MapDocument MapWithABadByte()
     {
         var head = Encoding.UTF8.GetBytes(
             "﻿STRING 1\r\n{\r\nplain ascii\r\n}\r\n\r\nSTRING 2\r\n{\r\n");
         var tail = Encoding.UTF8.GetBytes("\r\n}\r\n");
-        // 0xE3 starts a three-byte sequence; followed by ')' it can never be completed.
+        // 0xE3 starts a three-byte sequence. Followed by ')' it can never be completed.
         var broken = new byte[] { 0xE3, (byte)')' };
 
         var bytes = head.Concat(broken).Concat(tail).ToArray();

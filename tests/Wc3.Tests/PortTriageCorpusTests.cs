@@ -187,7 +187,7 @@ public class PortTriageCorpusTests
         _out.WriteLine("report: " + outPath);
 
         // Reporting is the deliverable, so a broken hero does not fail the run. Only the guarantee
-        // this work exists to enforce is asserted: a port never writes a script that cannot compile.
+        // this work exists to enforce is asserted, a port never writes a script that cannot compile.
         var shipped = failures.Where(f => !f.Kind.StartsWith("wiring:", StringComparison.Ordinal)
                                        && !f.Kind.StartsWith("port-refused", StringComparison.Ordinal)
                                        && !f.Kind.Contains("map-load", StringComparison.Ordinal)).ToList();

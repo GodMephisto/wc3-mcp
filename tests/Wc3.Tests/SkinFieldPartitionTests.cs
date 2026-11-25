@@ -19,9 +19,9 @@ public class SkinFieldPartitionTests
     private const string Art = "umdl";        // model file, a presentation field
 
     /// <summary>
-    /// A two-layer map in the shape a Reforged map has: gameplay fields on the units in
+    /// A two-layer map in the shape a Reforged map has, gameplay fields on the units in
     /// war3map.w3u, presentation fields on the same units in war3mapSkin.w3u. H000 is a custom
-    /// derived from Hpal; the numbered filler units establish the per-field majority the way a real
+    /// derived from Hpal. The numbered filler units establish the per-field majority the way a real
     /// map's thousand-odd objects do.
     /// </summary>
     private static byte[] TwoLayerMap(int fillerUnits = 6, bool includeSkin = true)
@@ -61,7 +61,7 @@ public class SkinFieldPartitionTests
         var partition = SkinFieldPartition.Learn(MapDocument.Load(TwoLayerMap()), ObjectKind.Unit);
 
         // Unknown to this map, so there is no evidence for the skin layer. The gameplay layer is
-        // the safe default: it is where a classic map keeps everything.
+        // the safe default, it is where a classic map keeps everything.
         Assert.Equal(ObjectLayer.Map, partition.LayerFor("uxyz"));
     }
 
@@ -86,7 +86,7 @@ public class SkinFieldPartitionTests
     [Fact]
     public void One_stray_object_does_not_outvote_the_map()
     {
-        // The stray is this tool's own earlier output: a single object with the art field in the
+        // The stray is this tool's own earlier output, a single object with the art field in the
         // gameplay layer. The majority has to hold, or the tool would learn its own mistake back.
         var map = new UnitObjectData(ObjectDataFormatVersion.v3);
         var skin = new UnitObjectData(ObjectDataFormatVersion.v3);
@@ -179,7 +179,7 @@ public class SkinFieldPartitionTests
     }
 
     /// <summary>The field's value in one specific layer, or null when that layer has no such
-    /// modification. Deliberately not the merged view: the point is which file it landed in.</summary>
+    /// modification. Deliberately not the merged view, the point is which file it landed in.</summary>
     private static string? Field(MapDocument doc, string file, string rawcode, string field)
     {
         if (doc.GetFile(file)?.Model is not UnitObjectData w3u) return null;

@@ -8,7 +8,7 @@ public class MapDocumentParseTests
     [Fact]
     public void Parser_that_throws_degrades_to_raw_with_diagnostic()
     {
-        // The registry is process-global; restore the real parsers afterwards
+        // The registry is process-global. Restore the real parsers afterwards
         // so other tests stay order-independent.
         try
         {

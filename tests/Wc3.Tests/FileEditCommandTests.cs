@@ -7,7 +7,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Hermetic coverage of FileEditCommand over an in-memory synthetic MPQ. The core
-/// contract under test: after a write, every read helper reflects the pending
+/// contract under test, after a write, every read helper reflects the pending
 /// OverrideBytes payload, never the stale (immutable) RawBytes original.
 /// </summary>
 public class FileEditCommandTests
@@ -51,7 +51,7 @@ public class FileEditCommandTests
 
         var result = FileEditCommand.AddOrReplace(doc, ScriptName, newBytes);
 
-        // Contract: an already-existing name is REPLACED (mirrors AddOrReplaceRawFile).
+        // Contract, an already-existing name is REPLACED (mirrors AddOrReplaceRawFile).
         Assert.True(result.Replaced);
         // Read-after-write returns the NEW payload (OverrideBytes path) while the
         // immutable original stays untouched, the classic stale-RawBytes trap.

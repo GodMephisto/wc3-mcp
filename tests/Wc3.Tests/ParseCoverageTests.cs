@@ -4,7 +4,7 @@ namespace Wc3.Tests;
 
 public class ParseCoverageTests
 {
-    // The real map lives outside the repo; skip cleanly if absent.
+    // The real map lives outside the repo. Skip cleanly if absent.
     private static readonly string CorpusMap = TestCorpus.Map(@"ggg_en_1.11r_slk.w3x");
 
     [Fact]
@@ -15,7 +15,7 @@ public class ParseCoverageTests
 
         var doc = MapDocument.Load(CorpusMap);
 
-        // Guard against a vacuous pass: a real map must surface known files.
+        // Guard against a vacuous pass, a real map must surface known files.
         Assert.NotEmpty(doc.Files.Where(f => f.IsKnown));
 
         foreach (var f in doc.Files.Where(f => f.IsKnown))

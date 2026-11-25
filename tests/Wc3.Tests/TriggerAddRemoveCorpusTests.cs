@@ -9,7 +9,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// The add and remove guards on a REAL map, because the synthetic ones use trees this code wrote
-/// itself. A map from the library brings the things a fixture cannot fake: a populated item-count
+/// itself. A map from the library brings the things a fixture cannot fake, a populated item-count
 /// header the writer emits, ids namespaced by item type with duplicates across types, and a
 /// hundred-odd custom-text bodies whose pairing must still hold afterwards.
 /// </summary>
@@ -129,7 +129,7 @@ public class TriggerAddRemoveCorpusTests
         var wtg = (MapTriggers)doc.GetFile("war3map.wtg")!.Model!;
         var slots = WctPairing.SlotIndices(wtg);
 
-        // The first custom-text trigger with a unique id and a body: removing it must be refused,
+        // The first custom-text trigger with a unique id and a body, removing it must be refused,
         // because a hundred bodies sit behind it.
         var victim = wtg.TriggerItems.OfType<TriggerDefinition>()
             .Where(d => slots[d] == 0)

@@ -13,7 +13,7 @@ namespace Wc3.Tests;
 /// This exists because of a hero that passed everything else. Shadow Nanaya was installed into
 /// GGGA, registered with the map's own roster call, shown under the right tab, and her unit was
 /// verified in game to be creatable. She was still unplayable, because she brought her home map's
-/// stat MODEL with her: strength 55, agility 72, intelligence 50 and a 100 point hit-point pool,
+/// stat MODEL with her, strength 55, agility 72, intelligence 50 and a 100 point hit-point pool,
 /// onto a map where every one of its 167 heroes pins those three attributes at 0 and states a flat
 /// pool of a few thousand instead. Nothing reported a problem, because nothing was looking at the
 /// numbers.
@@ -23,7 +23,7 @@ public class HeroStatConventionTests
     private const string RosterFunction = "AddHeroToRoster";
 
     /// <summary>
-    /// A target shaped like GGGA: heroes registered one per call with a role argument, all of them
+    /// A target shaped like GGGA, heroes registered one per call with a role argument, all of them
     /// stating zero attributes and a flat pool.
     /// </summary>
     private static (MapDocument Doc, RosterRegistry Roster) BuildTarget(
@@ -148,7 +148,7 @@ public class HeroStatConventionTests
         var (doc, roster) = BuildTarget();
         var made = ObjectNewCommand.Execute(doc, ObjectKind.Unit, "Hpal");
         var hero = made.NewRawcode!;
-        // The shape Nanaya arrived in: attribute-driven, with the pool her attributes inflated.
+        // The shape Nanaya arrived in, attribute-driven, with the pool her attributes inflated.
         foreach (var (field, value) in new[]
                  { ("ustr", "55"), ("uagi", "72"), ("uint", "50"), ("umpm", "100") })
             Assert.True(ObjectSetCommand.Execute(doc, ObjectKind.Unit, hero, field, value).Ok);

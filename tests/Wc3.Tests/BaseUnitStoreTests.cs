@@ -13,14 +13,14 @@ public class BaseUnitStoreTests
 
     private static byte[] A(string s) => System.Text.Encoding.ASCII.GetBytes(s);
 
-    // Real shape: metadata row key = 4-char code; "field" = data-SLK column; "slk" = data SLK name.
+    // Real shape, metadata row key = 4-char code. "field" = data-SLK column. "slk" = data SLK name.
     private const string Meta =
         "ID;PWXL;N;E\r\n" +
         "C;X1;Y1;K\"ID\"\r\nC;X2;K\"field\"\r\nC;X3;K\"slk\"\r\nC;X4;K\"displayName\"\r\n" +
         "C;X1;Y2;K\"uhpm\"\r\nC;X2;K\"HP\"\r\nC;X3;K\"UnitBalance\"\r\nC;X4;K\"WESTRING_UEVAL_UHPM\"\r\n" +
         "C;X1;Y3;K\"unam\"\r\nC;X2;K\"Name\"\r\nC;X3;K\"Profile\"\r\nC;X4;K\"WESTRING_UEVAL_UNAM\"\r\nE\r\n";
 
-    // unitbalance.slk keyed by unitBalanceID; hfoo has HP=420.
+    // unitbalance.slk keyed by unitBalanceID. Hfoo has HP=420.
     private const string Balance =
         "ID;PWXL;N;E\r\n" +
         "C;X1;Y1;K\"unitBalanceID\"\r\nC;X2;K\"HP\"\r\n" +

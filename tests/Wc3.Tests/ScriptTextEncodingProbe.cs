@@ -15,7 +15,7 @@ namespace Wc3.Tests;
 /// bytes, 86 percent of the file, while every string in the model compares EQUAL before and
 /// after, and the CRLF population is identical on both sides. Those two facts cannot both be
 /// innocent. A model-to-model comparison is blind to exactly one failure, a decode that is
-/// LOSSY but STABLE: bytes the decoder cannot interpret become U+FFFD, re-encoding U+FFFD
+/// LOSSY but STABLE, bytes the decoder cannot interpret become U+FFFD, re-encoding U+FFFD
 /// produces EF BF BD, and decoding that gives U+FFFD again. The round trip looks clean forever
 /// while the original bytes are gone.
 ///
@@ -79,7 +79,7 @@ public class ScriptTextEncodingProbe
         _out.WriteLine($"wtg: {wtg.TriggerItems.Count} item(s), {nameChars:N0} name char(s), "
                      + $"{nameBad:N0} U+FFFD in names, {descBad:N0} in descriptions");
 
-        // The decisive wtg measurement: serialize an UNTOUCHED model and compare bytes. This is
+        // The decisive wtg measurement, serialize an UNTOUCHED model and compare bytes. This is
         // the exact path TriggerCommand.Persist uses, so any loss here is loss the four shipped
         // trigger edits already cause.
         byte[] before = wtgEntry.CurrentBytes;

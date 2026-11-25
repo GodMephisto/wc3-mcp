@@ -21,11 +21,11 @@ namespace Wc3.Tests;
 ///   int32 customObjectCount,   then that many objects
 ///
 ///   object = int32 oldId, int32 newId,
-///            version 3 only: int32 setCount, then per set { int32 setFlags, int32 modCount, mods }
-///            version 1 and 2: int32 modCount, then mods
+///            version 3 only, int32 setCount, then per set { int32 setFlags, int32 modCount, mods }
+///            version 1 and 2, int32 modCount, then mods
 ///
 ///   mod    = int32 fieldId, int32 varType,
-///            extended kinds (w3a/w3q/w3d) only: int32 level or variation, int32 dataPointer,
+///            extended kinds (w3a/w3q/w3d) only, int32 level or variation, int32 dataPointer,
 ///            value (int32 / float / float / Latin-1 null-terminated string), int32 endMarker
 /// </summary>
 internal static class ObjectDataBinaryProbe
@@ -37,7 +37,7 @@ internal static class ObjectDataBinaryProbe
 
     internal sealed record Parsed(int Version, IReadOnlyList<Obj> Objects, int Consumed, int Length)
     {
-        /// <summary>Bytes the declared structure never accounted for. Must always be 0 , 
+        /// <summary>Bytes the declared structure never accounted for. Must always be 0 ,
         /// a real map's object data ends exactly where its object tables end.</summary>
         internal int Trailing => Length - Consumed;
     }

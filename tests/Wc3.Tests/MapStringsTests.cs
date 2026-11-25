@@ -75,7 +75,7 @@ public class MapStringsTests
     public void Null_valued_wts_entry_resolves_to_empty_not_throw()
     {
         // Real maps (e.g. Anime_WOS2) carry an empty STRING block, which War3Net
-        // parses to a TriggerString with a NULL Value; From must store "" so
+        // parses to a TriggerString with a NULL Value. From must store "" so
         // Resolve never dereferences null.
         var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
         {

@@ -41,8 +41,8 @@ public class TerrainRendererTests
         // ggg is a square 257x257-tilepoint map, so the render must be square too.
         Assert.Equal(width, height);
 
-        // Not grayscale: decode the render and require chromatic variety.
-        // A grayscale image has R==G==B for every pixel; a colored terrain
+        // Not grayscale, decode the render and require chromatic variety.
+        // A grayscale image has R==G==B for every pixel. A colored terrain
         // render (grass/water/dirt/cliffs) must have many pixels whose channels
         // differ, plus several distinct colors covering the ground types.
         using var img = Image.Load<Rgba32>(png);

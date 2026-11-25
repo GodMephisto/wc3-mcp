@@ -10,7 +10,7 @@ namespace Wc3.Tests;
 
 public class PortCommandTests
 {
-    // Source: custom hero H000 (hero ability A000, an imported icon, a TRIGSTR name)
+    // Source, custom hero H000 (hero ability A000, an imported icon, a TRIGSTR name)
     // + custom ability A000, a war3map.wts with STRING 100, and the imported icon file.
     private static MapDocument SourceMap()
     {
@@ -36,7 +36,7 @@ public class PortCommandTests
         }));
     }
 
-    // Target: already defines a DIFFERENT custom H000 (forces a rawcode remap) and has no w3a.
+    // Target, already defines a DIFFERENT custom H000 (forces a rawcode remap) and has no w3a.
     private static MapDocument TargetMap()
     {
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
@@ -102,7 +102,7 @@ public class PortCommandTests
     [Fact]
     public void Ports_an_extensionless_icon_by_resolving_the_stored_blp()
     {
-        // Source hero references its icon WITHOUT an extension; it is imported as ...BTN.blp.
+        // Source hero references its icon WITHOUT an extension. It is imported as ...BTN.blp.
         // The port must resolve and copy the .blp, else the ported hero shows the missing-icon
         // box. This is the "does not ruin the map" guarantee for extensionless icon refs.
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
@@ -168,7 +168,7 @@ public class PortCommandTests
     }
 
     /// <summary>
-    /// Real-map stress test: porting Raiden Ei into a second copy of the same map means
+    /// Real-map stress test, porting Raiden Ei into a second copy of the same map means
     /// EVERY custom rawcode collides, forcing a full remap. The hero + all its custom
     /// abilities must land in the target's object data under fresh codes, with the unit's
     /// ability list rewritten to the remapped ability codes.
@@ -220,7 +220,7 @@ public class PortCommandTests
     }
 
     /// <summary>
-    /// Regression: a unit whose model is REFERENCED as ".mdl" but STORED as ".mdx"
+    /// Regression, a unit whose model is REFERENCED as ".mdl" but STORED as ".mdx"
     /// (the normal WC3 convention) must still have its model binary copied into the
     /// target. The port's copy step used a plain path lookup that missed the
     /// .mdl→.mdx swap, so custom models were discovered-but-never-copied.
@@ -308,7 +308,7 @@ public class PortCommandTests
     {
         var source = SourceMap(); // H000 + A000
         // A war3map.w3u that is present but cannot be parsed (version 2 header claiming a
-        // 2-billion-entry table): MapDocument keeps the raw bytes and leaves Model null.
+        // 2-billion-entry table), MapDocument keeps the raw bytes and leaves Model null.
         byte[] garbage = { 0x02, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0x7F };
         var target = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
         {

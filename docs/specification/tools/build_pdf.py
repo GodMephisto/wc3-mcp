@@ -74,7 +74,7 @@ def prune_old(output: Path) -> None:
 CACHE = HERE / ".cache"
 MEASURE = HERE / "measure_surface.py"
 COUNTS = HERE / "check_counts.py"
-MERMAID_URL = "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"
+MERMAID_URL_VAR = "MERMAID_URL"
 MERMAID_SHA256 = "61b335a46df05a7ce1c98378f60e5f3e77a7fb608a1056997e8a649304a936d6"
 
 # Filled from the markdown by document_facts, so the cover, the page footer and the
@@ -103,9 +103,16 @@ def resolve_mermaid() -> Path:
     target = CACHE / "mermaid-10.9.1.min.js"
     if target.exists() and sha256(target) == MERMAID_SHA256:
         return target
+    url = os.environ.get(MERMAID_URL_VAR)
+    if not url:
+        raise SystemExit(
+            f"the pinned mermaid build is not in {CACHE}. Set {MERMAID_URL_VAR} to the url "
+            "of the mermaid 10.9.1 min.js release file. The bytes are checked against the "
+            f"pinned sha256 {MERMAID_SHA256}, so any mirror of that release will do"
+        )
     CACHE.mkdir(parents=True, exist_ok=True)
-    print("fetching", MERMAID_URL)
-    r = requests.get(MERMAID_URL, timeout=60)
+    print("fetching", url)
+    r = requests.get(url, timeout=60)
     r.raise_for_status()
     target.write_bytes(r.content)
     actual = sha256(target)
@@ -143,14 +150,17 @@ PORT = 9337
 
 
 def free_port(start: int) -> int:
+    """The first port that binds, or a failure that carries the last refusal."""
+    last_error = "nothing was tried"
     for p in range(start, start + 40):
         with socket.socket() as s:
             try:
                 s.bind(("127.0.0.1", p))
                 return p
-            except OSError:
+            except OSError as error:
+                last_error = str(error)
                 continue
-    raise SystemExit("no free port")
+    raise SystemExit(f"no free port in {start} to {start + 39}, the last bind said {last_error}")
 
 
 class Chrome:
@@ -215,7 +225,8 @@ class Tab:
                     raise RuntimeError(f"{method}: {msg['error']}")
                 return msg.get("result", {})
 
-    def eval(self, expr: str):
+    def expr_value(self, expr: str):
+        """The value the page computes for one expression, read back by value."""
         r = self.cmd(
             "Runtime.evaluate",
             expression=expr,
@@ -228,7 +239,7 @@ class Tab:
         self.cmd("Page.navigate", url=url)
         deadline = time.time() + 60
         while time.time() < deadline:
-            if self.eval("document.readyState") == "complete":
+            if self.expr_value("document.readyState") == "complete":
                 return
             time.sleep(0.2)
         raise RuntimeError("page did not load")
@@ -236,7 +247,7 @@ class Tab:
     def wait_ready(self, expect_diagrams: int) -> dict:
         deadline = time.time() + 180
         while time.time() < deadline:
-            state = self.eval(
+            state = self.expr_value(
                 """(() => ({
                   title: document.title,
                   svg: document.querySelectorAll('.mermaid svg').length,
@@ -770,14 +781,24 @@ def stamp(pdf: Path, out: Path, items, pages, theme: dict = DARK) -> None:
     doc.close()
 
 
-def check_surface() -> None:
-    """Refuse to print a document whose body numbers disagree with the exe."""
-    result = subprocess.run(
-        [sys.executable, str(MEASURE), "--json"],
+def run_guard(script: Path) -> subprocess.CompletedProcess:
+    """Run a guard script and return it whole.
+
+    The guard's exit code is its answer, 0 for agree and 2 for drift, so a
+    non-zero code must reach the caller rather than raise here.
+    """
+    return subprocess.run(
+        [sys.executable, str(script), "--json"],
         cwd=HERE,
         capture_output=True,
         text=True,
+        check=False,
     )
+
+
+def check_surface() -> None:
+    """Refuse to print a document whose body numbers disagree with the exe."""
+    result = run_guard(MEASURE)
     if result.returncode == 1:
         raise SystemExit(
             "the surface measurement could not run, so the PDF was not built.\n"
@@ -821,12 +842,7 @@ def check_surface() -> None:
 
 def check_counts() -> None:
     """Refuse to print a document whose own counts disagree with its data."""
-    result = subprocess.run(
-        [sys.executable, str(COUNTS), "--json"],
-        cwd=HERE,
-        capture_output=True,
-        text=True,
-    )
+    result = run_guard(COUNTS)
     if result.returncode == 1:
         raise SystemExit(
             "the count check could not run, so the PDF was not built.\n"

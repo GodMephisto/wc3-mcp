@@ -135,13 +135,17 @@ public sealed class ContentScaffoldCommandTests : IDisposable
         var result = Generate();
         byte[] wav = File.ReadAllBytes(Resolve(result, $"sfx.{Name}.impact"));
 
+        // A Reforged impact carries this rate and a short clip, which the header must agree with.
+        const int SampleRateHz = 44100;
+        const int ClipMilliseconds = 180;
+
         Assert.Equal("RIFF", Encoding.ASCII.GetString(wav, 0, 4));
         Assert.Equal("WAVE", Encoding.ASCII.GetString(wav, 8, 4));
         Assert.Equal("fmt ", Encoding.ASCII.GetString(wav, 12, 4));
         Assert.Equal(16, BinaryPrimitives.ReadInt32LittleEndian(wav.AsSpan(16, 4)));
         Assert.Equal(1, BinaryPrimitives.ReadInt16LittleEndian(wav.AsSpan(20, 2)));   // PCM
         Assert.Equal(1, BinaryPrimitives.ReadInt16LittleEndian(wav.AsSpan(22, 2)));   // mono
-        Assert.Equal(44100, BinaryPrimitives.ReadInt32LittleEndian(wav.AsSpan(24, 4)));
+        Assert.Equal(SampleRateHz, BinaryPrimitives.ReadInt32LittleEndian(wav.AsSpan(24, 4)));
         Assert.Equal(16, BinaryPrimitives.ReadInt16LittleEndian(wav.AsSpan(34, 2)));
 
         Assert.Equal("data", Encoding.ASCII.GetString(wav, 36, 4));
@@ -151,7 +155,7 @@ public sealed class ContentScaffoldCommandTests : IDisposable
 
         int blockAlign = BinaryPrimitives.ReadInt16LittleEndian(wav.AsSpan(32, 2));
         Assert.Equal(2, blockAlign);
-        Assert.Equal(7938, dataBytes / blockAlign); // 44100 Hz for 0.18 s
+        Assert.Equal(SampleRateHz * ClipMilliseconds / 1000, dataBytes / blockAlign);
     }
 
     [Fact]

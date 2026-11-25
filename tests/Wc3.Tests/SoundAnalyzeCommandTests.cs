@@ -5,10 +5,13 @@ namespace Wc3.Tests;
 
 public sealed class SoundAnalyzeCommandTests
 {
+    /// <summary>The rate the clip is written at, the rate a Reforged file carries.</summary>
+    private const int ClipRateHz = 44100;
+
     /// <summary>A WAV with 100 ms of silence, 300 ms of a -6 dB sine, then 100 ms of silence.</summary>
     private static string Clip(string ext = ".wav")
     {
-        const int rate = 44100;
+        int rate = ClipRateHz;
         int lead = rate / 10, tone = rate * 3 / 10, tail = rate / 10;
         int count = lead + tone + tail;
         string path = Path.Combine(Path.GetTempPath(), "wc3clip-" + Guid.NewGuid().ToString("N") + ext);
@@ -36,7 +39,7 @@ public sealed class SoundAnalyzeCommandTests
             var r = SoundAnalyzeCommand.Execute(path);
 
             Assert.Equal(0.5, r.Seconds, 2);
-            Assert.Equal(44100, r.SampleRate);
+            Assert.Equal(ClipRateHz, r.SampleRate);
             Assert.Equal(1, r.Channels);
             Assert.Equal(0.1, r.LeadingSilenceSeconds, 2);
             Assert.Equal(0.1, r.TrailingSilenceSeconds, 2);

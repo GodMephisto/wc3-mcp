@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/ModelPathTests.cs
+// tests/Wc3.Tests/ModelPathTests.cs
 using War3Net.Build.Extensions;
 using War3Net.Build.Object;
 using War3Net.Common.Extensions;

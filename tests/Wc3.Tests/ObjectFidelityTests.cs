@@ -10,7 +10,7 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Hermetic coverage for the object-data fidelity comparison: a faithful carry produces no loss, a
+/// Hermetic coverage for the object-data fidelity comparison, a faithful carry produces no loss, a
 /// dropped per-level value or dropped level counts as a loss, a weakened numeric value is a loss, a
 /// dropped numeric field is a loss, and the two legitimate port transformations (a remapped rawcode
 /// reference and a trigger string inlined to the same text) are not losses. Runs with no game data
@@ -112,7 +112,7 @@ public class ObjectFidelityTests
     [Fact]
     public void A_trigger_string_inlined_to_the_same_text_is_not_a_difference()
     {
-        // Source names the ability with a TRIGSTR_ reference resolving to "Fireball"; the port inlined
+        // Source names the ability with a TRIGSTR_ reference resolving to "Fireball". The port inlined
         // that to the literal "Fireball" in the target. Same text, so there must be no finding at all.
         var src = Map("A000", new[] { new Abil("A000", "ANcl", new AF("anam", 0, "TRIGSTR_005")) },
             Array.Empty<Buff>(), (5u, "Fireball"));

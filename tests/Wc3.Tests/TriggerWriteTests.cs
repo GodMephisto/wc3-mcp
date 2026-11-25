@@ -9,7 +9,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// The GUI trigger tree was readable and not writable, which made every script edit a one-way
-/// operation for anyone who still opens the map in the World Editor: the tree goes stale, and the
+/// operation for anyone who still opens the map in the World Editor, the tree goes stale, and the
 /// next editor save regenerates the script from it and discards the edit.
 ///
 /// These pin the write path. Byte-faithfulness is the whole question, because a writer that merely
@@ -48,7 +48,7 @@ public class TriggerWriteTests
         var model = doc.GetFile("war3map.wtg")!.Model!;
         Assert.IsType<MapTriggers>(model);
 
-        // Same model straight back out: a pure round-trip through the writer.
+        // Same model straight back out, a pure round-trip through the writer.
         doc.AddOrReplaceModelFile("war3map.wtg", model);
         var rebuilt = MapDocument.Load(doc.SaveToBytes());
 
@@ -70,7 +70,7 @@ public class TriggerWriteTests
         // 549,168 bytes in and 549,170 out, a two byte gain on a file nobody had touched. Shipping
         // that would grow war3map.wct a little on every save of an untouched map.
         //
-        // So the case was removed, and this test pins the removal: a dirty wct must throw rather
+        // So the case was removed, and this test pins the removal, a dirty wct must throw rather
         // than silently write something slightly wrong. A loud refusal beats quiet corruption, and
         // without a test the case would drift back in the next time someone notices the writer
         // exists.
@@ -90,7 +90,7 @@ public class TriggerWriteTests
     [Trait("Category", "Corpus")]
     public void The_tree_a_read_returns_survives_a_write_semantically()
     {
-        // Byte equality is the strong claim. This is the weaker one that still matters: even if
+        // Byte equality is the strong claim. This is the weaker one that still matters, even if
         // the bytes shift, the tree must come back with the same categories and triggers, or the
         // write is losing content rather than merely reordering it.
         if (!File.Exists(CorpusPath)) return;

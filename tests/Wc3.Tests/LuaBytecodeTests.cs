@@ -332,7 +332,9 @@ public class LuaBytecodeTests
         Assert.Equal("(0/0)", Literal(double.NaN));
         Assert.Equal("(-1/0)", Literal(double.NegativeInfinity));
         Assert.Equal("math.mininteger", Literal(long.MinValue));
-        Assert.Equal("0x80000000", Literal(2147483648L));
+        // The next value crosses int32 range, where Lua prints a hex constant instead.
+        const long BeyondInt32Range = 2147483648L;
+        Assert.Equal("0x80000000", Literal(BeyondInt32Range));
         Assert.Equal("(-5)", Literal(-5L));
         Assert.Equal("\"a\\\"\\\\\\n\\000\\255\"", Literal(new byte[] { 0x61, 0x22, 0x5C, 0x0A, 0, 0xFF }));
     }

@@ -28,7 +28,7 @@ public class DdsPreviewConvertTests
         BinaryPrimitives.WriteInt32LittleEndian(dds.AsSpan(76), 32);   // pixelformat size
         BinaryPrimitives.WriteUInt32LittleEndian(dds.AsSpan(80), 0x4); // DDPF_FOURCC
         Encoding.ASCII.GetBytes("DXT1").CopyTo(dds, 84);
-        // One BC1 block: c0 = red 565 (0xF800) > c1 = 0 selects 4-color mode,
+        // One BC1 block, c0 = red 565 (0xF800) > c1 = 0 selects 4-color mode,
         // all indices 0 so every texel is c0.
         dds[128] = 0x00;
         dds[129] = 0xF8;

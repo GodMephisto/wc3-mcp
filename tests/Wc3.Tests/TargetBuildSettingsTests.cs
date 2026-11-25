@@ -175,10 +175,10 @@ public class TargetBuildSettingsTests
     {
         TargetBuildSettings.ResetSettingsDir();
         // This test verifies the precedence chain by temporarily swapping two branches.
-        // Start: option overrides environment variable.
-        // Swap: remove the option, so environment variable is used instead.
-        // Verify: the build string changes.
-        // Restore: put the option back.
+        // Start, option overrides environment variable.
+        // Swap, remove the option, so environment variable is used instead.
+        // Verify, the build string changes.
+        // Restore, put the option back.
         var settingsDir = TempSettingsDir();
         try
         {
@@ -191,16 +191,16 @@ public class TargetBuildSettingsTests
 
             try
             {
-                // Normal: option wins.
+                // Normal, option wins.
                 var withOption = TargetBuildSettings.Get(option: "TFT-v1.30.1.10211");
                 Assert.Equal("TFT-v1.30.1.10211", withOption.Build);
 
-                // Swapped: no option, so env var wins.
+                // Swapped, no option, so env var wins.
                 var noOption = TargetBuildSettings.Get(option: null);
                 Assert.Equal("TFT-v1.30.3.10205", noOption.Build);
                 Assert.Equal(TargetSource.Environment, noOption.Source);
 
-                // Restore: option back.
+                // Restore, option back.
                 Assert.Equal("TFT-v1.30.1.10211", TargetBuildSettings.Get(option: "TFT-v1.30.1.10211").Build);
             }
             finally

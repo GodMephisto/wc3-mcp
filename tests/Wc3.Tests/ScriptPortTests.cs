@@ -10,7 +10,7 @@ namespace Wc3.Tests;
 
 public class ScriptPortTests
 {
-    // Source: hero H000 with hero-ability A000, and a war3map.j where a spell handler
+    // Source, hero H000 with hero-ability A000, and a war3map.j where a spell handler
     // and its InitTrig reference the ability rawcode via a global alias. An unrelated
     // function + global must NOT be carried.
     private const string SourceScript = @"globals
@@ -31,7 +31,7 @@ function UnrelatedFunc takes nothing returns nothing
 endfunction
 ";
 
-    // Target: already has a DIFFERENT Trig_RaidenQ_Actions (name collision → rename) and
+    // Target, already has a DIFFERENT Trig_RaidenQ_Actions (name collision → rename) and
     // an InitCustomTriggers (the init-hook target), plus its own globals block. It also
     // already defines H000 and A000 (rawcode collisions → remap + rawcode rewrite).
     private const string TargetScript = @"globals
@@ -95,7 +95,7 @@ endfunction
     [Fact]
     public void A_ported_script_always_compiles()
     {
-        // The whole point of the compile gate: whatever the port splices, the target's script must
+        // The whole point of the compile gate, whatever the port splices, the target's script must
         // still compile. One undeclared variable fails the entire war3map.j, so config() never runs
         // and the hosted map shows no player slots.
         var source = SourceMap();
@@ -118,7 +118,7 @@ endfunction
     [Fact]
     public void A_dropped_declaration_in_the_carried_source_is_repaired_not_shipped_broken()
     {
-        // Re-porting out of a map that was itself produced by an older port: its script already
+        // Re-porting out of a map that was itself produced by an older port, its script already
         // carries a fully commented-out local declaration. Carrying that verbatim would ship an
         // undeclared variable, so the gate must repair it and still write the script.
         const string alreadyTrimmed = @"globals
@@ -231,11 +231,11 @@ endfunction
         Assert.Contains("call InitTrig_RaidenQ()", initBody);
     }
 
-    // A hero whose real spell fires on a combo ability it only GRANTS at runtime: the learn
+    // A hero whose real spell fires on a combo ability it only GRANTS at runtime, the learn
     // handler adds 'A001', and a second trigger fires when 'A001' is cast. The data-driven closure
     // reaches the learn handler (it tests the hero's own ability 'A000') but cannot reach the combo
     // handler or its InitTrig, because nothing in the hero's data names 'A001'. The port must still
-    // carry the combo handler AND both InitTrig_* and wire them, or the spell is defined but dead , 
+    // carry the combo handler AND both InitTrig_* and wire them, or the spell is defined but dead ,
     // the exact break seen porting Nanaya Shiki (QShikiOne fires on 'A1BP', granted by the learn).
     private const string ComboSource = @"globals
     integer udg_Learn_ID= 'A000'
@@ -277,7 +277,7 @@ endfunction
         var result = PortCommand.PortUnit(source, bundle, target);
         var j = Encoding.UTF8.GetString(MapDocument.Load(target.SaveToBytes()).GetFile("war3map.j")!.RawBytes);
 
-        // The porter follows the runtime-granted rawcode: the combo handler and BOTH initializers
+        // The porter follows the runtime-granted rawcode, the combo handler and BOTH initializers
         // come across, and both are wired into InitCustomTriggers so the spell actually turns on.
         Assert.Contains("function ComboCast", j);
         Assert.Contains("function InitTrig_Learn", j);
@@ -298,7 +298,7 @@ endfunction
         }));
         var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
         var result = PortCommand.PortUnit(source, bundle, target);
-        // No throw; script info reports it was not ported.
+        // No throw. Script info reports it was not ported.
         Assert.True(result.Script is null || result.Script.Functions == 0);
         // Nothing was ported into war3map.j, so the durability warning must NOT appear.
         Assert.DoesNotContain(PortCommand.ScriptDurabilityWarning, result.Warnings);
@@ -320,7 +320,7 @@ endfunction
     {
         var source = SourceMap();
 
-        // Target war3map.j authored in a legacy codepage: a comment holds GBK bytes for a
+        // Target war3map.j authored in a legacy codepage, a comment holds GBK bytes for a
         // Chinese string that are not valid UTF8. A UTF8 decode/re-encode would replace them
         // with U+FFFD, corrupting the target's own untouched script.
         byte[] gbk = { 0xC4, 0xE3, 0xBA, 0xC3 }; // "你好" in GBK, invalid as UTF8
@@ -440,7 +440,7 @@ endfunction
     [Fact]
     public void A_carried_locals_name_that_collides_with_the_targets_own_global_is_renamed()
     {
-        // Real case found porting Anime Choice Arena's H0DA into GGGA: a carried handler declares
+        // Real case found porting Anime Choice Arena's H0DA into GGGA, a carried handler declares
         // "local integer array s", entirely fine on the SOURCE map, where nothing else is named
         // "s". JASS forbids a local sharing a name with ANY global, and the ordinary symbol rename
         // pass only ever renames a CARRIED symbol against a collision, a local is not one of those,
@@ -503,7 +503,7 @@ endfunction
     [Fact]
     public void A_carried_globals_name_that_collides_with_the_targets_own_buried_local_is_renamed()
     {
-        // The opposite direction, and the one the real corpus map actually hit: Anime Choice
+        // The opposite direction, and the one the real corpus map actually hit, Anime Choice
         // Arena's own "string s=null" (a shared tooltip helper's global) carried as-is into GGGA.
         // GGGA never declares a top-level "s" or "txt" itself, so the ordinary target-symbol scan
         // (function names + globals only) saw no collision, yet GGGA's own UNTOUCHED
@@ -539,7 +539,7 @@ endfunction
             ["war3map.j"] = Encoding.UTF8.GetBytes(srcJass),
         }));
 
-        // Target: an unrelated map with no top-level "s" at all, only a DIFFERENT, unrelated
+        // Target, an unrelated map with no top-level "s" at all, only a DIFFERENT, unrelated
         // function that happens to use "s" as its own local.
         const string targetJass =
             "function ShieldDeduction takes nothing returns nothing\n" +
@@ -873,7 +873,7 @@ endfunction
         Assert.True(JassScriptCheck.IsCompilable(JassScriptCheck.Check(j)));
     }
 
-    // The shape a shared hero arena dispatcher actually takes: a gate the source map wired around
+    // The shape a shared hero arena dispatcher actually takes, a gate the source map wired around
     // it (DisableMoveRoot), the hero's own "GetUnitTypeId(c) == Hero_ID" branch, and inside that an
     // ability id chain. HeroQ2 is a combo ability the hero grants at runtime (not on its own object
     // data), the same shape as Asta's Q2/W2 on the real corpus this was built against. The carried
@@ -923,7 +923,7 @@ endfunction
         var source = SourceMap(SynthDispatchSource);
         var target = TargetMap();
 
-        // Simulate the ordinary closure's blind spot directly: it carried the dispatcher and Q's
+        // Simulate the ordinary closure's blind spot directly, it carried the dispatcher and Q's
         // own handler, but never reached HeroQ2_Start (granted at runtime, not on the hero's own
         // ability list).
         var functions = CarriedExcept(SynthDispatchSource, "HeroQ2_Start");
@@ -978,7 +978,7 @@ endfunction
         var j = Encoding.Latin1.GetString(MapDocument.Load(target.SaveToBytes()).GetFile("war3map.j")!.RawBytes);
         Assert.DoesNotContain("wc3ctl_SynthCast_", j);
         Assert.DoesNotContain("gg_trg_wc3ctl_SynthCast_", j);
-        // Without the flag, the ordinary closure's blind spot is exactly that: the combo handler
+        // Without the flag, the ordinary closure's blind spot is exactly that, the combo handler
         // stays uncarried and its call stays trimmed, the pre-existing (unchanged) behavior.
         Assert.DoesNotContain("function HeroQ2_Start", j);
     }
@@ -986,7 +986,7 @@ endfunction
     [Fact]
     public void SynthDispatch_reports_and_does_not_guess_when_the_source_has_no_matching_dispatcher_shape()
     {
-        // A hero whose script never compares GetUnitTypeId against anything: an unsupported shape,
+        // A hero whose script never compares GetUnitTypeId against anything, an unsupported shape,
         // the flag must degrade gracefully (still port normally) rather than synthesize nonsense.
         const string noDispatcherSource = @"globals
     integer udg_HeroQ_ID= 'A000'
@@ -1037,7 +1037,7 @@ endfunction
     // ---- bootstrap-state -------------------------------------------------------------------
 
     // One of every safe-to-construct handle type, read by the hero's own closure and assigned
-    // nowhere, the general shape of the two real bugs this feature exists for: gg_rct_Base
+    // nowhere, the general shape of the two real bugs this feature exists for, gg_rct_Base
     // (CreateRegions never carried) and GearTimer05 (built only by a hand-written Init nothing
     // here reaches).
     private const string BootstrapStateSource = @"globals

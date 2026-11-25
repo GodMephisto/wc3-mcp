@@ -10,8 +10,8 @@ using Xunit.Abstractions;
 namespace Wc3.Tests;
 
 /// <summary>
-/// End-to-end placement rendering: with the shared <see cref="PlacementModelResolver"/> and
-/// a real CASC context, every placed widget in a real map must render as its actual model , 
+/// End-to-end placement rendering, with the shared <see cref="PlacementModelResolver"/> and
+/// a real CASC context, every placed widget in a real map must render as its actual model ,
 /// no orange/blue fallback boxes. The two ways a box appeared for a real map were (a) classic
 /// doodads with variation-suffixed model files (fixed by RenderModelCommand's variation-0
 /// candidate) and (b) custom doodads that inherit their art from a base object without an own
@@ -27,7 +27,7 @@ public class PlacementResolveTests
     private readonly ITestOutputHelper _output;
     public PlacementResolveTests(ITestOutputHelper output) => _output = output;
 
-    /// <summary>The exact resolver Studio's viewport uses: shared path resolution +
+    /// <summary>The exact resolver Studio's viewport uses, shared path resolution +
     /// Prepare into a posed, textured <see cref="PlacementModel"/> (null on any miss).</summary>
     private static Func<string, bool, PlacementModel?> Resolver(
         MapDocument doc, GameData.GameDataContext? ctx, string? gameDir) =>
@@ -61,9 +61,9 @@ public class PlacementResolveTests
             $"{rawcode} should inherit its base object's model, not resolve to nothing");
     }
 
-    /// <summary>The whole-map gate: build the placement scene exactly as the viewport does
+    /// <summary>The whole-map gate, build the placement scene exactly as the viewport does
     /// and assert NOT ONE instance falls back to a box. Every placed unit/doodad renders its
-    /// real model; model-less markers (start locations) and genuinely model-less widgets are
+    /// real model. Model-less markers (start locations) and genuinely model-less widgets are
     /// skipped. This is the "100%, no boxes" guarantee.</summary>
     [Fact]
     [Trait("Category", "Corpus")]
@@ -82,7 +82,7 @@ public class PlacementResolveTests
             i.MeshKey is PlacementScene.UnitBoxKey or PlacementScene.DoodadBoxKey);
 
         // A mesh whose every section is untextured renders as a solid gray/white shape, the
-        // "white box" symptom (e.g. GeneralHeroGlow's team-color glow plane). None should remain:
+        // "white box" symptom (e.g. GeneralHeroGlow's team-color glow plane). None should remain,
         // effect-only models are skipped, everything else is textured.
         var fullyUntextured = scene.Meshes
             .Where(m => m.Sections.Count > 0 && m.Sections.All(s => s.TextureSlot < 0))
@@ -101,6 +101,6 @@ public class PlacementResolveTests
 
         Assert.Empty(boxed);              // no fallback boxes
         Assert.Empty(fullyUntextured);    // no solid white/gray models
-        Assert.NotEmpty(scene.Instances); // sanity: the map really does place things
+        Assert.NotEmpty(scene.Instances); // sanity, the map really does place things
     }
 }

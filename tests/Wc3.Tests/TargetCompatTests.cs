@@ -141,7 +141,7 @@ public sealed class TargetCompatTests
             Directory.CreateDirectory(oldDir);
             GameSchemaCommand.Save(oldSchema, oldDir);
 
-            // First newer schema: declares ExtraNative.
+            // First newer schema, declares ExtraNative.
             var newerJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[]
@@ -164,7 +164,7 @@ public sealed class TargetCompatTests
             Directory.CreateDirectory(newerDir);
             GameSchemaCommand.Save(newerSchema, newerDir);
 
-            // Even newer schema: also declares ExtraNative (newer version).
+            // Even newer schema, also declares ExtraNative (newer version).
             var newestJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[]
@@ -645,7 +645,7 @@ public sealed class TargetCompatTests
     [Fact]
     public void UnknownIdentifierNotReported_SilentlySkipped()
     {
-        // Defect 1: identifiers that no schema declares are NEVER a finding.
+        // Defect 1, identifiers that no schema declares are NEVER a finding.
         // Keywords like "or", locals like "keyCode", map globals like "udg_PlayerName"
         // should not be flagged as "native" by a fallback.
         var temp = Path.Combine(Path.GetTempPath(), "wc3ctl-compat-unknown-test");
@@ -700,14 +700,14 @@ public sealed class TargetCompatTests
     [Fact]
     public void ArrayAccessStripsBracket_SingleFindingForIdentifier()
     {
-        // Defect 2: identifiers like udg_Name[16] should yield just udg_Name.
+        // Defect 2, identifiers like udg_Name[16] should yield just udg_Name.
         // udg_Name is unknown (no schema), so silently skipped.
         // ExtraNative is declared in a NEWER (non-target) schema, so reported as finding.
         var temp = Path.Combine(Path.GetTempPath(), "wc3ctl-compat-array-test");
         Directory.CreateDirectory(temp);
         try
         {
-            // Old (target) schema: only NewTargetNative.
+            // Old (target) schema, only NewTargetNative.
             var oldJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[]
@@ -729,7 +729,7 @@ public sealed class TargetCompatTests
             Directory.CreateDirectory(oldDir);
             GameSchemaCommand.Save(oldSchema, oldDir);
 
-            // Newer schema: declares ExtraNative (not in target).
+            // Newer schema, declares ExtraNative (not in target).
             var newJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[]
@@ -787,7 +787,7 @@ public sealed class TargetCompatTests
     [Fact]
     public void BareVersionBuildParsedCorrectly()
     {
-        // Defect 5: builds like 3.0.0.24268 (no dash) parse to numeric version,
+        // Defect 5, builds like 3.0.0.24268 (no dash) parse to numeric version,
         // and the highest numeric version wins.
         var temp = Path.Combine(Path.GetTempPath(), "wc3ctl-compat-barever-test");
         Directory.CreateDirectory(temp);
@@ -869,7 +869,7 @@ public sealed class TargetCompatTests
     [Fact]
     public void ReforgedBuildParsedAsNewest()
     {
-        // Defect 5 additional: Reforged-v3.0.0.24277-w3t-e38e03b should parse
+        // Defect 5 additional, Reforged-v3.0.0.24277-w3t-e38e03b should parse
         // and win as newest when compared to TFT builds.
         var temp = Path.Combine(Path.GetTempPath(), "wc3ctl-compat-reforged-test");
         Directory.CreateDirectory(temp);
@@ -938,7 +938,7 @@ public sealed class TargetCompatTests
             Assert.Single(errors);
             Assert.Equal("ExtraNative", errors[0].Name);
             // Reforged-v3.0.0.24277-w3t-e38e03b has -w3t suffix, so it is a test build.
-            // Single-test-build case: "only in test builds, first seen in F, not in T".
+            // Single-test-build case, "only in test builds, first seen in F, not in T".
             Assert.Contains("only in test builds, first seen in Reforged-v3.0.0.24277", errors[0].Detail);
         }
         finally
@@ -951,12 +951,12 @@ public sealed class TargetCompatTests
     [Fact]
     public void EarliestBuildNamedNotNewest()
     {
-        // Three schemas: target (no ExtraNative), middle (has it), newest (has it).
+        // Three schemas, target (no ExtraNative), middle (has it), newest (has it).
         // Detail should name the EARLIEST that is newer than target, not the newest.
         var temp = Path.Combine(Path.GetTempPath(), "wc3ctl-compat-earliest-test");
         try
         {
-            // Target build: does NOT declare ExtraNative.
+            // Target build, does NOT declare ExtraNative.
             var targetJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 Array.Empty<JassNativeDecl>(),
@@ -973,7 +973,7 @@ public sealed class TargetCompatTests
             Directory.CreateDirectory(targetDir);
             GameSchemaCommand.Save(targetSchema, targetDir);
 
-            // Middle build: declares ExtraNative.
+            // Middle build, declares ExtraNative.
             var middleJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[] { new JassNativeDecl("ExtraNative", Array.Empty<JassParameter>(), "string", false) },
@@ -989,7 +989,7 @@ public sealed class TargetCompatTests
             Directory.CreateDirectory(middleDir);
             GameSchemaCommand.Save(middleSchema, middleDir);
 
-            // Newest build: also declares ExtraNative.
+            // Newest build, also declares ExtraNative.
             var newestJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[] { new JassNativeDecl("ExtraNative", Array.Empty<JassParameter>(), "string", false) },
@@ -1078,7 +1078,7 @@ public sealed class TargetCompatTests
                 ["war3map.w3u"] = Serialize(w3u),
             });
 
-            // Helper: serialize a typed object data model.
+            // Helper, serialize a typed object data model.
             byte[] Serialize(UnitObjectData m)
             {
                 using var ms = new MemoryStream();
@@ -1110,7 +1110,7 @@ public sealed class TargetCompatTests
         Directory.CreateDirectory(temp);
         try
         {
-            // Target (old release): no framehandle.
+            // Target (old release), no framehandle.
             var oldJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[] { new JassNativeDecl("NewTargetNative", Array.Empty<JassParameter>(), "boolean", false) },
@@ -1129,7 +1129,7 @@ public sealed class TargetCompatTests
             Directory.CreateDirectory(oldDir);
             GameSchemaCommand.Save(oldSchema, oldDir);
 
-            // Test build: declares framehandle (test build).
+            // Test build, declares framehandle (test build).
             var testJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[]
@@ -1152,7 +1152,7 @@ public sealed class TargetCompatTests
             Directory.CreateDirectory(testDir);
             GameSchemaCommand.Save(testSchema, testDir);
 
-            // Release build: also declares framehandle (real release).
+            // Release build, also declares framehandle (real release).
             var releaseJass = new JassApi(
                 Array.Empty<JassTypeDecl>(),
                 new[]
@@ -1300,7 +1300,7 @@ public sealed class TargetCompatTests
 
         var (addedIn, firstSeen) = TargetCompatCommand.Introduced(builds, "TFT-v1.30.1.10211");
 
-        // The sabotage test: without the test exclusion, AddedIn would be TFT-v1.31.0.11889-w3t
+        // The sabotage test, without the test exclusion, AddedIn would be TFT-v1.31.0.11889-w3t
         // (a test build). Since Introduced correctly excludes test builds from AddedIn,
         // addedIn should be null, proving the test is meaningful.
         Assert.Null(addedIn);

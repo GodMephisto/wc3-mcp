@@ -7,8 +7,8 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Hermetic tests for ModelPreviewCommand. Synthetic in-memory meshes (the public
-/// Model3D/Geoset records) drive the internal render seam; the pure helpers
-/// (FlattenGeosets / ProjectOrthographic / ScaleToFit) are asserted directly; and
+/// Model3D/Geoset records) drive the internal render seam. The pure helpers
+/// (FlattenGeosets / ProjectOrthographic / ScaleToFit) are asserted directly. And
 /// the public byte[] entry point is exercised end-to-end with a minimal text-MDL
 /// document plus empty/garbage input. No real .mdx from disk is needed.
 /// </summary>
@@ -79,7 +79,7 @@ public class ModelPreviewTests
     [Fact]
     public void Synthetic_mesh_render_differs_from_placeholder()
     {
-        // Same size, one has geometry: the wireframe must actually draw something.
+        // Same size, one has geometry, the wireframe must actually draw something.
         var mesh = ModelPreviewCommand.RenderPreview(TwoTriangleModel(), 64, 64);
         var placeholder = ModelPreviewCommand.RenderPreview(Array.Empty<byte>(), 64, 64);
         Assert.NotEqual(placeholder, mesh);
@@ -128,7 +128,7 @@ public class ModelPreviewTests
         var png = ModelPreviewCommand.RenderPreview(Encoding.UTF8.GetBytes(QuadMdl), 64, 64);
         AssertPngSignature(png);
         Assert.Equal((64, 64), PngSize(png));
-        // Geometry parsed: not the placeholder.
+        // Geometry parsed, not the placeholder.
         Assert.NotEqual(ModelPreviewCommand.RenderPreview(Array.Empty<byte>(), 64, 64), png);
         // Determinism through the full parse+render path.
         Assert.Equal(png, ModelPreviewCommand.RenderPreview(Encoding.UTF8.GetBytes(QuadMdl), 64, 64));
@@ -206,8 +206,8 @@ public class ModelPreviewTests
     [Fact]
     public void ProjectOrthographic_matches_fixed_34_view()
     {
-        // Up axis (+Z): unaffected by yaw, scaled by cos(pitch) on screen-up.
-        // +X: yawed 45° into (cos45, sin45), then screen-up picks up -sin45·sin30.
+        // Up axis (+Z), unaffected by yaw, scaled by cos(pitch) on screen-up.
+        // +X, yawed 45° into (cos45, sin45), then screen-up picks up -sin45·sin30.
         var xy = ModelPreviewCommand.ProjectOrthographic(new float[]
         {
             0f, 0f, 0f,
@@ -237,11 +237,11 @@ public class ModelPreviewTests
     {
         var xy = new float[] { 0f, 0f, 10f, 5f };
         Assert.True(ModelPreviewCommand.ScaleToFit(xy, 100, 100, 0.05f));
-        // pad = 5, avail = 90; extents (10, 5) → uniform scale 9; center (5, 2.5) → (50, 50).
+        // pad = 5, avail = 90. Extents (10, 5) → uniform scale 9. Center (5, 2.5) → (50, 50).
         Assert.Equal(5f, xy[0], 3f);     // (0,0) → x = 50 + (0-5)·9
-        Assert.Equal(72.5f, xy[1], 3f);  //          y = 50 - (0-2.5)·9 (Y flipped)
+        Assert.Equal(72.5f, xy[1], 3f);  //          y = 50, (0-2.5)·9 (Y flipped)
         Assert.Equal(95f, xy[2], 3f);    // (10,5) → x = 50 + (10-5)·9
-        Assert.Equal(27.5f, xy[3], 3f);  //          y = 50 - (5-2.5)·9
+        Assert.Equal(27.5f, xy[3], 3f);  //          y = 50, (5-2.5)·9
     }
 
     [Fact]

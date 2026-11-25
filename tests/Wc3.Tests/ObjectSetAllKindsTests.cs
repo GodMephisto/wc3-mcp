@@ -8,17 +8,17 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// ObjectSetCommand across the non-unit kinds and the three modification shapes:
+/// ObjectSetCommand across the non-unit kinds and the three modification shapes,
 /// item/buff (Simple), ability (Level), doodad (Variation), the unit path keeps
 /// its own suite in ObjectSetCommandTests.
 /// </summary>
 public class ObjectSetAllKindsTests
 {
-    // A synthetic map with one custom object per shape family plus bystander files:
-    //   w3a: A000 (base AHbz)  anam@0 "Blizzard X", adur@1 3.5, adur@2 4.5
-    //   w3t: I000 (base afac)  igol 150
-    //   w3h: B000 (base Bblo)  ftip "Bloodlust X"
-    //   w3d: D000 (base YOtf)  dnam@var0 "Torch X", dvar@var2 7
+    // A synthetic map with one custom object per shape family plus bystander files,
+    //   w3a, A000 (base AHbz)  anam@0 "Blizzard X", adur@1 3.5, adur@2 4.5
+    //   w3t, I000 (base afac)  igol 150
+    //   w3h, B000 (base Bblo)  ftip "Bloodlust X"
+    //   w3d, D000 (base YOtf)  dnam@var0 "Torch X", dvar@var2 7
     private static byte[] Sample()
     {
         var w3a = new AbilityObjectData(ObjectDataFormatVersion.v2);
@@ -72,7 +72,7 @@ public class ObjectSetAllKindsTests
         var r = ObjectSetCommand.Execute(doc, ObjectKind.Ability, "A000", "adur:2", "9.25");
 
         Assert.True(r.Ok, r.Message);
-        Assert.Null(r.Warning); // existing modification: type preserved, no inference
+        Assert.Null(r.Warning); // existing modification, type preserved, no inference
 
         var abil = Ability(MapDocument.Load(doc.SaveToBytes()));
         Assert.Equal(9.25f, LevelMod(abil, "adur", 2).Value);
@@ -206,7 +206,7 @@ public class ObjectSetAllKindsTests
     [Fact]
     public void Skin_only_object_gets_its_group_mirrored_into_the_map_layer()
     {
-        // I001 exists only in the Reforged skin twin; the edit must create
+        // I001 exists only in the Reforged skin twin. The edit must create
         // war3map.w3t with the mirrored group and never rewrite the skin file.
         var skin = new ItemObjectData(ObjectDataFormatVersion.v2);
         var item = new SimpleObjectModification { OldId = "afac".FromRawcode(), NewId = "I001".FromRawcode() };

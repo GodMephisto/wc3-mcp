@@ -118,10 +118,14 @@ def declared_tools(markdown: Path | None) -> int | None:
     """The tool count the document states in section 3.1, when it can be read."""
     if markdown is None or not markdown.is_file():
         return None
+    text = markdown.read_text(encoding="utf-8")
     try:
-        text = markdown.read_text(encoding="utf-8")
         return first_int(row_text(section(text, "3.1"), "Tools", "3.1"), "Tools")
-    except MeasureError:
+    except MeasureError as exc:
+        print(
+            f"no Tools count could be read from section 3.1 of {markdown.name}, {exc}",
+            file=sys.stderr,
+        )
         return None
 
 
@@ -159,12 +163,19 @@ def probe_version(exe: Path, timeout: float) -> str:
             encoding="utf-8",
             errors="replace",
             timeout=timeout,
+            check=False,
             creationflags=NO_WINDOW,
         )
     except subprocess.TimeoutExpired as exc:
         raise VerifyError(f"{exe.name} did not answer --version within {timeout} seconds") from exc
     except OSError as exc:
         raise VerifyError(f"{exe.name} did not start, {exc}") from exc
+
+    if done.returncode != 0:
+        raise VerifyError(
+            f"{exe.name} exited {done.returncode} on --version, so the version it printed "
+            f"is not the one the artifact reports, it said {(done.stderr or '').strip()[:200]!r}"
+        )
 
     text = (done.stdout or "") + "\n" + (done.stderr or "")
     found = VERSION.search(text)

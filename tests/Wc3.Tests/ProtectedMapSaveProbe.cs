@@ -10,7 +10,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Two maps in the library cannot be saved at all. Both are protected, and the standing
 /// explanation is "65,534 of 65,536 hash slots stuffed", which is a symptom rather than a
-/// diagnosis: it says the table is full, not what the rebuild actually needs and cannot get.
+/// diagnosis, it says the table is full, not what the rebuild actually needs and cannot get.
 ///
 /// Before proposing an MPQ change, this establishes the facts. What exactly throws, from where,
 /// how full each table really is, whether the builder exposes any control over the table it
@@ -90,7 +90,7 @@ public class ProtectedMapSaveProbe
             int offset = Wc3.Model.MpqHeader.FindArchiveOffset(bytes);
             if (offset < 0) { _out.WriteLine("no MPQ header found"); return; }
 
-            // MPQ header v1: 'MPQ\x1A', headerSize, archiveSize, formatVersion, blockSize,
+            // MPQ header v1, 'MPQ\x1A', headerSize, archiveSize, formatVersion, blockSize,
             // hashTablePos, blockTablePos, hashTableSize, blockTableSize.
             int b = offset;
             uint headerSize = BitConverter.ToUInt32(bytes, b + 0x04);

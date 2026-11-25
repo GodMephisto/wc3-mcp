@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/McpToolSmokeTests.Analysis.cs
+// tests/Wc3.Tests/McpToolSmokeTests.Analysis.cs
 // Analysis tools. A richer map is built through MCP itself (a custom unit with a custom ability, a
 // second ability the script hands out, and a script with a leak), so each tool has something real
 // to find. Tools that read the Warcraft III install are tagged GameData.

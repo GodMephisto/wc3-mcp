@@ -167,7 +167,7 @@ public class NameRecoveryProbe
     [Theory]
     [InlineData("U9_PumpkinZ_v4.7d.w3x")]
     [InlineData("NCD S1 ENGv1b.w3x")]
-    [InlineData("Angel-samurai-Z-v338.w3x")]   // the control: harvest works here
+    [InlineData("Angel-samurai-Z-v338.w3x")]   // the control, harvest works here
     [Trait("Category", "Corpus")]
     public void Why_does_the_harvest_recover_nothing_on_this_map(string name)
     {

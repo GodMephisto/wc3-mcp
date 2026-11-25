@@ -10,7 +10,7 @@ namespace Wc3.Tests;
 
 public class SynthDispatchLevelUpGrantTests
 {
-    // The real shape Anime_WOS2's Trig_LvlUpCheck_Actions uses: the caster is read into a local
+    // The real shape Anime_WOS2's Trig_LvlUpCheck_Actions uses, the caster is read into a local
     // ONCE near the top of the function ("local unit c= GetTriggerUnit()"), its type id resolved
     // into ANOTHER local ("local integer id= GetUnitTypeId(c)"), and every hero's own branch
     // compares that local against its id constant rather than calling GetUnitTypeId again inline.
@@ -32,7 +32,7 @@ public class SynthDispatchLevelUpGrantTests
     [Fact]
     public void ExtractsAWrappingGuardsGrants_UsingTheRelaxedHeroBranchMatch()
     {
-        // Asta's own exact shape: a wrapping "if Asta_ID == id then" with two nested
+        // Asta's own exact shape, a wrapping "if Asta_ID == id then" with two nested
         // "if GetUnitAbilityLevel(...) == 0" grants inside it, one of which (the G branch) also
         // rides a second, ungated ability along for free (the sword).
         string jass = LevelUpHandlerHeader +
@@ -76,7 +76,7 @@ public class SynthDispatchLevelUpGrantTests
     [Fact]
     public void NeverLeaksAnotherHerosGrantFromTheSameSharedHandler()
     {
-        // The trap the job called out: the handler carries EVERY hero's branch in one function, so
+        // The trap the job called out, the handler carries EVERY hero's branch in one function, so
         // an unscoped scan for UnitAddAbility would hand Asta Natsu's passive too. Querying for
         // Natsu must return ONLY Natsu's own grant, never Asta's.
         string jass = LevelUpHandlerHeader +

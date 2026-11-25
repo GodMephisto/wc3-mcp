@@ -10,7 +10,7 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Hermetic coverage (ctx=null → deltas-only) for the multi-kind object commands:
+/// Hermetic coverage (ctx=null → deltas-only) for the multi-kind object commands,
 /// one test per modification shape (Simple via items, Level via upgrades, Variation
 /// via doodads), plus the war3mapSkin.* overlay and TRIGSTR name resolution.
 /// </summary>
@@ -43,7 +43,7 @@ public class ObjectKindsCommandTests
         var listed = ObjectListCommand.Execute(doc, ObjectKind.Item, ctx: null);
         Assert.Equal(new ObjectListItem("I000", "ratf", "Bandit Blade"), Assert.Single(listed.Items));
 
-        // Strict kind: the item rawcode is invisible through the unit lens…
+        // Strict kind, the item rawcode is invisible through the unit lens…
         Assert.False(ObjectGetCommand.Execute(doc, ObjectKind.Unit, "I000", ctx: null,
             preDiagnostics: Array.Empty<string>()).Found);
         // …but the kind-agnostic overload auto-detects it.
@@ -99,7 +99,7 @@ public class ObjectKindsCommandTests
     [Fact]
     public void Buff_and_destructable_simple_deltas_resolve()
     {
-        // A modified standard buff (base-list entry: NewId=0, its own base) and a
+        // A modified standard buff (base-list entry, NewId=0, its own base) and a
         // from-scratch custom destructable derived from a standard tree.
         var w3h = new BuffObjectData(ObjectDataFormatVersion.v2);
         var buff = new SimpleObjectModification { OldId = "BSTN".FromRawcode(), NewId = 0 };
@@ -160,7 +160,7 @@ public class ObjectKindsCommandTests
             ["war3mapSkin.w3u"] = Serialize(w => w.Write(skin)),
         }));
 
-        // Union by rawcode: the skin's uhpm wins per-field, the map-only unam survives.
+        // Union by rawcode, the skin's uhpm wins per-field, the map-only unam survives.
         var got = ObjectGetCommand.Execute(doc, ObjectKind.Unit, "H000", ctx: null, preDiagnostics: Array.Empty<string>());
         Assert.Equal("999", got.Fields.Single(f => f.Code == "uhpm").Value);
         Assert.Equal("Dark Paladin", got.Name);

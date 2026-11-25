@@ -5,7 +5,7 @@ namespace Wc3.Tests;
 
 public class TriggerDataCatalogTests
 {
-    // A synthetic TriggerData.txt exercising every section + the tricky bits: a comment line,
+    // A synthetic TriggerData.txt exercising every section + the tricky bits, a comment line,
     // a quoted script value containing a comma, a typed code with a base type, a Call with a
     // return type, an Event with a "nothing" (void) arg list, and meta lines (incl. one whose
     // name is a prefix of another, to prove exact-name association).
@@ -165,7 +165,7 @@ public class TriggerDataCatalogTests
         var text = System.Text.Encoding.UTF8.GetString(bytes);
         var cat = TriggerDataParser.Parse(text);
 
-        // The real file is large; assert we found a healthy population in each section and that
+        // The real file is large. Assert we found a healthy population in each section and that
         // some well-known entries resolve with the expected shape.
         Assert.True(cat.Categories.Count > 10);
         Assert.True(cat.Types.Count > 30);

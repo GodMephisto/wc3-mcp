@@ -7,7 +7,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Hermetic checks of the hand-rolled DDS decoder (Reforged repacks classic .blp
-/// textures as DDS, so base-game model previews depend on it): BC1 palette math in
+/// textures as DDS, so base-game model previews depend on it), BC1 palette math in
 /// both modes, BC3 interpolated alpha, and container sniffing.
 /// </summary>
 public class DdsDecoderTests
@@ -37,8 +37,8 @@ public class DdsDecoderTests
     [Fact]
     public void Bc1_four_color_mode_decodes_endpoints_and_interpolants()
     {
-        // One 4x4 block: c0 red > c1 blue → 4-color mode. Texels 0..3 use indices
-        // 0,1,2,3 (packed 0b11100100 = 0xE4); the rest index 0.
+        // One 4x4 block, c0 red > c1 blue → 4-color mode. Texels 0..3 use indices
+        // 0,1,2,3 (packed 0b11100100 = 0xE4). The rest index 0.
         var dds = Header("DXT1", 4, 4).Concat(new byte[]
         {
             0x00, 0xF8,   // c0 = red
@@ -58,7 +58,7 @@ public class DdsDecoderTests
     [Fact]
     public void Bc1_three_color_mode_makes_index3_transparent()
     {
-        // c0 <= c1 → 3-color + transparent mode; texel 0 uses index 3.
+        // c0 <= c1 → 3-color + transparent mode. Texel 0 uses index 3.
         var dds = Header("DXT1", 4, 4).Concat(new byte[]
         {
             0x1F, 0x00,   // c0 = blue (smaller)
@@ -74,8 +74,8 @@ public class DdsDecoderTests
     [Fact]
     public void Bc3_interpolates_alpha_and_decodes_color()
     {
-        // Alpha block: a0=255 > a1=0 → 7-step interpolation; texel 0 index 0 (255),
-        // texel 1 index 1 (0) → 3-bit indices 0b001_000 = 0x08. Color: all red.
+        // Alpha block, a0=255 > a1=0 → 7-step interpolation. Texel 0 index 0 (255),
+        // texel 1 index 1 (0) → 3-bit indices 0b001_000 = 0x08. Color, all red.
         var dds = Header("DXT5", 4, 4).Concat(new byte[]
         {
             255, 0,                    // a0, a1

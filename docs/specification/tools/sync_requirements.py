@@ -99,9 +99,12 @@ def lock_path(data: Path) -> Path:
 
 
 def read_lock(path: Path) -> dict | None:
+    """The lock a writer recorded. An absent or unparseable file reads as no lock."""
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except (OSError, ValueError) as exc:
+        if isinstance(exc, OSError) and not isinstance(exc, FileNotFoundError):
+            print(f"the lock at {path} could not be read, {exc}", file=sys.stderr)
         return None
     return document if isinstance(document, dict) else None
 
@@ -158,7 +161,11 @@ def acquire(data: Path) -> dict:
             graveyard = path.with_name(f"{path.name}.stale-{os.getpid()}-{token}")
             try:
                 os.replace(path, graveyard)
-            except FileNotFoundError:
+            except FileNotFoundError as exc:
+                print(
+                    f"another writer reclaimed {path} first, so this pass retries, {exc}",
+                    file=sys.stderr,
+                )
                 continue
             graveyard.unlink(missing_ok=True)
             continue
@@ -304,18 +311,24 @@ def selftest() -> int:
             failures.append("a met requirement lost its status")
 
         # A write over a file another writer moved is refused, and the other writer's
-        # bytes are the ones left on disk.
+        # bytes are the ones left on disk. That writer holds the lock while it reads
+        # and dumps, so the simulated second run is the same shape as a real one.
         fresh()
         md_before = spec.read_bytes()
         data_before = data.read_bytes()
-        moved = json.loads(data_before)
-        moved["requirements"][0]["status"] = "gap"
-        moved_bytes = (json.dumps(moved, indent=2) + "\n").encode("utf-8")
-        data.write_bytes(moved_bytes)
+        other = acquire(data)
+        try:
+            moved = json.loads(data_before)
+            moved["requirements"][0]["status"] = "gap"
+            moved_bytes = (json.dumps(moved, indent=2) + "\n").encode("utf-8")
+            data.write_bytes(moved_bytes)
+        finally:
+            release(data, other)
         try:
             commit(spec, data, md_before, data_before, md_before.decode("utf-8"), json.dumps(moved))
-        except SyncError:
-            pass
+        except SyncError as exc:
+            if str(data) not in str(exc):
+                failures.append(f"the refusal did not name the file that moved, {exc}")
         else:
             failures.append("a write over a file that moved under it was allowed")
         if data.read_bytes() != moved_bytes:
@@ -330,8 +343,9 @@ def selftest() -> int:
         blocker.mkdir()
         try:
             commit(spec, data, md_before, data_before, "anything", "{}\n")
-        except OSError:
-            pass
+        except OSError as exc:
+            if spec.name not in str(exc):
+                failures.append(f"the failed markdown write did not name the file, {exc}")
         else:
             failures.append("a markdown that could not be replaced was not reported")
         finally:
@@ -357,8 +371,9 @@ def selftest() -> int:
         lock_path(data).write_text(json.dumps(live), encoding="utf-8")
         try:
             acquire(data)
-        except SyncError:
-            pass
+        except SyncError as exc:
+            if str(os.getpid()) not in str(exc):
+                failures.append(f"the refusal did not name the holding pid, {exc}")
         else:
             failures.append("a lock held by a live writer was taken")
         if read_lock(lock_path(data)) != live:
@@ -438,7 +453,11 @@ def main(argv: list[str] | None = None) -> int:
     markdown = Path(args.markdown)
     data_path = Path(args.requirements)
 
-    record = acquire(data_path)
+    try:
+        record = acquire(data_path)
+    except SyncError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     try:
         result = sync(markdown, data_path)
     except SyncError as exc:

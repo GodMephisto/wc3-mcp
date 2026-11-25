@@ -21,7 +21,7 @@ namespace Wc3.Tests;
 /// turns anything it cannot interpret into U+FFFD and U+FFFD re-encodes to itself. A comparison
 /// of parsed models is blind to that by construction, so only a byte comparison finds it.
 ///
-/// And a rule measured on one map was wrong twice today: once about whether the writer emits its
+/// And a rule measured on one map was wrong twice today, once about whether the writer emits its
 /// item counts, once about how wct bodies pair to triggers. Both looked settled on the first map
 /// tried.
 ///
@@ -196,7 +196,7 @@ public class SerializerFidelitySweep
     }
 
     /// <summary>
-    /// The same sweep asked the other way: does DECODING lose bytes it cannot interpret? A model
+    /// The same sweep asked the other way, does DECODING lose bytes it cannot interpret? A model
     /// whose strings carry U+FFFD has already lost the original bytes, and every later write of
     /// that model bakes the loss in. Byte comparison catches this too, but only where the file is
     /// written, and this catches it wherever the text is merely read.

@@ -5,9 +5,9 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Base-game (CASC) model preview: units whose model was never imported into the map
+/// Base-game (CASC) model preview, units whose model was never imported into the map
 /// (a plain Footman) render from the install's game data. Install-dependent cases are
-/// GameData-gated; the no-install degradation stays hermetic.
+/// GameData-gated. The no-install degradation stays hermetic.
 /// </summary>
 public class BaseModelRenderTests
 {
@@ -24,7 +24,7 @@ public class BaseModelRenderTests
         if (!Directory.Exists(Install)) return;
         Assert.True(GameData.GameData.TryOpen(Install, out var ctx, out var diag), diag);
 
-        // Plain game path, the context addresses it under war3.w3mod: like the stores do.
+        // Plain game path, the context addresses it under war3.w3mod, like the stores do.
         Assert.True(ctx!.TryReadFile(@"units\human\footman\footman.mdx", out var bytes),
             "footman.mdx should be readable from CASC");
         Assert.True(bytes.Length > 1000, $"expected real model bytes, got {bytes.Length}");
@@ -52,7 +52,7 @@ public class BaseModelRenderTests
     public void Renders_a_base_model_by_explicit_path_from_casc()
     {
         if (!Directory.Exists(Install)) return;
-        // The umdl form maps use: extensionless, the .mdx candidate must be tried.
+        // The umdl form maps use, extensionless, the .mdx candidate must be tried.
         var png = RenderModelCommand.ExecutePath(
             EmptyMap(), @"units\human\footman\footman", Install);
         Assert.True(png.Length > 500);
@@ -65,7 +65,7 @@ public class BaseModelRenderTests
     {
         if (!Directory.Exists(Install)) return;
         Assert.True(GameData.GameData.TryOpen(Install, out var ctx, out var diag), diag);
-        // Model references say "Textures\Footman.blp"; Reforged stores footman.dds , 
+        // Model references say "Textures\Footman.blp". Reforged stores footman.dds ,
         // the renderer's candidate swap depends on the .dds being there and decodable.
         Assert.True(ctx!.TryReadFile(@"textures\footman.dds", out var dds));
         Assert.True(Wc3.Modeling.DdsDecoder.LooksLikeDds(dds));
@@ -77,7 +77,7 @@ public class BaseModelRenderTests
     [Fact]
     public void Without_an_install_a_non_imported_model_fails_with_a_clear_message()
     {
-        // Hermetic: a bad --game-dir degrades to map-only resolution, and the error
+        // Hermetic, a bad --game-dir degrades to map-only resolution, and the error
         // says why the base-game fallback was unavailable.
         var ex = Assert.Throws<InvalidDataException>(() =>
             RenderModelCommand.ExecutePath(EmptyMap(), @"units\human\footman\footman.mdx", "Z:\\no_such"));

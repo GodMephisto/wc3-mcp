@@ -105,7 +105,7 @@ public class PlacementCommandTests
         var second = PlacementCommand.PlaceStartLocation(doc, player: 0, x: 256f, y: 128f);
         Assert.True(second.Ok, second.Message);
 
-        // Same player -> moved in place: one unit total, its creation number preserved.
+        // Same player -> moved in place, one unit total, its creation number preserved.
         Assert.Equal(first.CreationNumber, second.CreationNumber);
 
         var units = doc.GetFile(PlacementCommand.UnitsFile)?.Model as MapUnits;

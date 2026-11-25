@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/AuditCommandTests.cs
+// tests/Wc3.Tests/AuditCommandTests.cs
 using System.Text;
 using War3Net.Build.Extensions;
 using War3Net.Build.Object;
@@ -77,7 +77,7 @@ public class AuditCommandTests
         return ms.ToArray();
     }
 
-    /// <summary>A minimal MDX: MDLX, a VERS chunk, and optionally a CAMS chunk.</summary>
+    /// <summary>A minimal MDX, MDLX, a VERS chunk, and optionally a CAMS chunk.</summary>
     private static byte[] Mdx(int version, bool camera)
     {
         using var ms = new MemoryStream();

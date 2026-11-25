@@ -1,5 +1,5 @@
 // tests/Wc3.Tests/McpServerTests.cs
-// Hermetic MCP protocol tests: the real server wiring (Wc3McpServer.CreateOptions,
+// Hermetic MCP protocol tests, the real server wiring (Wc3McpServer.CreateOptions,
 // exactly what the stdio exe serves) driven by the SDK's own client over in-memory
 // pipes, no processes, no network, no WC3 install.
 using System.IO.Pipelines;
@@ -13,7 +13,7 @@ namespace Wc3.Tests;
 
 public class McpServerTests
 {
-    // Ordinal-sorted: the test compares against tools.OrderBy(..., StringComparer.Ordinal).
+    // Ordinal-sorted, the test compares against tools.OrderBy(..., StringComparer.Ordinal).
     // Underscore (0x5F) sorts before lowercase letters, so families group naturally.
     private static readonly string[] ExpectedTools =
     {

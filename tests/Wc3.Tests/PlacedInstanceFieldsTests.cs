@@ -7,7 +7,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// The string-keyed door onto the placed-instance editors, which is what lets the CLI and the MCP
-/// reach them at all. The typed setters have their own tests; these cover the parsing, the
+/// reach them at all. The typed setters have their own tests. These cover the parsing, the
 /// single-axis behaviour and the failure messages, because a front end passes strings and a wrong
 /// parse here silently writes a wrong coordinate.
 /// </summary>

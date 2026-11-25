@@ -5,7 +5,7 @@ using Wc3.Modeling;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Real-data coverage: .mdx models pulled straight out of the Anime corpus map
+/// Real-data coverage, .mdx models pulled straight out of the Anime corpus map
 /// and .blp textures from the extracted samples directory. Both self-skip when
 /// the local data is absent.
 /// </summary>

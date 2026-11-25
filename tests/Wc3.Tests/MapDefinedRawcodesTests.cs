@@ -41,10 +41,10 @@ public class MapDefinedRawcodesTests
     }
 
     [Fact]
-    public void A_metadata_slk_field_id_is_not_whitelisted()
+    public void A_metadata_slk_field_id_is_not_allowlisted()
     {
         // UnitMetaData.slk's leading column is a field code, not an object id. Reading it would
-        // wrongly whitelist arbitrary rawcodes and hide genuine dangling references.
+        // wrongly allowlist arbitrary rawcodes and hide genuine dangling references.
         var doc = Map(new Dictionary<string, byte[]>
         {
             [@"Units\UnitMetaData.slk"] = Bytes("""

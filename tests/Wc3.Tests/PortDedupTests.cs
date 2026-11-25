@@ -9,14 +9,14 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Port idempotency: re-porting a unit into a target that already holds last
+/// Port idempotency, re-porting a unit into a target that already holds last
 /// time's port must recognize the collision as a prior port (exact content
 /// match) and reuse it, no duplicate objects under fresh rawcodes. Anything
 /// actually different remains a true collision and still remaps.
 /// </summary>
 public class PortDedupTests
 {
-    // Source mirrors PortCommandTests.SourceMap: custom hero H000 (custom ability
+    // Source mirrors PortCommandTests.SourceMap, custom hero H000 (custom ability
     // A000, an imported icon, a TRIGSTR name), dedup must match the prior port's
     // INLINED name against the source's raw TRIGSTR reference.
     private static MapDocument SourceMap()
@@ -43,7 +43,7 @@ public class PortDedupTests
         }));
     }
 
-    // Target with NO colliding codes: the first port lands under identity codes,
+    // Target with NO colliding codes, the first port lands under identity codes,
     // so the second port collides with the first port's own output.
     private static MapDocument EmptyTarget() =>
         MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
@@ -64,7 +64,7 @@ public class PortDedupTests
 
         var second = PortCommand.PortUnit(source, bundle, target);
 
-        // The collision was recognized as the prior port: reused, not remapped.
+        // The collision was recognized as the prior port, reused, not remapped.
         Assert.Equal("H000", second.RootPortedTo);
         Assert.Empty(second.Remaps);
         Assert.Empty(second.Objects); // nothing was (re-)injected
@@ -87,7 +87,7 @@ public class PortDedupTests
         var bundle = BundleCommand.ResolveUnit(source, "H000", gameDirOverride: null);
         PortCommand.PortUnit(source, bundle, target);
 
-        // The user edits the ported hero in the target: no longer the same object.
+        // The user edits the ported hero in the target, no longer the same object.
         var w3u = (UnitObjectData)target.GetFile("war3map.w3u")!.Model!;
         var hero = w3u.NewUnits.Single(u => u.NewId == "H000".FromRawcode());
         hero.Modifications.Single(m => m.Id == "unam".FromRawcode()).Value = "Edited Raiden";
@@ -95,14 +95,14 @@ public class PortDedupTests
 
         var second = PortCommand.PortUnit(source, bundle, target);
 
-        // Content differs → fresh code for the hero; the edited copy survives untouched.
+        // Content differs → fresh code for the hero. The edited copy survives untouched.
         Assert.NotEqual("H000", second.RootPortedTo);
         Assert.Contains(second.Remaps, r => r.From == "H000" && r.Kind == ObjectKind.Unit);
         var after = (UnitObjectData)target.GetFile("war3map.w3u")!.Model!;
         Assert.Equal(1, after.NewUnits.Count(u => u.NewId == "H000".FromRawcode()));
         Assert.Equal(1, after.NewUnits.Count(u => u.NewId == second.RootPortedTo!.FromRawcode()));
 
-        // The un-edited ability WAS identical → deduped: no remap, still exactly one A000.
+        // The un-edited ability WAS identical → deduped, no remap, still exactly one A000.
         Assert.DoesNotContain(second.Remaps, r => r.From == "A000");
         var w3a = (AbilityObjectData)target.GetFile("war3map.w3a")!.Model!;
         Assert.Equal(1, w3a.NewAbilities.Count(a => a.NewId == "A000".FromRawcode()));
@@ -125,7 +125,7 @@ public class PortDedupTests
         Assert.Equal("H000", preview.RootPortedTo);
         Assert.Empty(preview.Remaps);
         Assert.Empty(preview.Objects);
-        // Nothing was written: still exactly one H000 in the target.
+        // Nothing was written, still exactly one H000 in the target.
         var w3u = (UnitObjectData)target.GetFile("war3map.w3u")!.Model!;
         Assert.Equal(1, w3u.NewUnits.Count(u => u.NewId == "H000".FromRawcode()));
     }

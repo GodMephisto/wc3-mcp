@@ -6,7 +6,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Export carries a hero's cast dispatcher and cannot carry the TRIGGER that drove it, because a
-/// trigger is a runtime handle rather than a function in the closure. Measured on GGGA: the
+/// trigger is a runtime handle rather than a function in the closure. Measured on GGGA, the
 /// installed hero's dispatcher was declared, referenced by nothing, and every one of her
 /// spell-start functions was unreachable, so she spawned correctly and her abilities did nothing.
 /// </summary>

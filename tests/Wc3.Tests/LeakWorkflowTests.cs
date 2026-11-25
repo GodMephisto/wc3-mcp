@@ -1,5 +1,5 @@
 // tests/Wc3.Tests/LeakWorkflowTests.cs
-// Hermetic tests for the leak investigation workflow: the static list, the in-map harness, the join
+// Hermetic tests for the leak investigation workflow, the static list, the in-map harness, the join
 // to a synthetic wc3watch session, the A/B diff, and the detector benchmark. Everything is built in
 // memory or in a temp folder, no game and no WC3 install.
 using System.Globalization;

@@ -20,7 +20,7 @@ namespace Wc3.Tests;
 /// It stops being fine the moment wc3ctl WRITES a function. An action nobody can read back is
 /// worse than no action at all, because the map still saves and the loss shows up later.
 ///
-/// So: build a trigger carrying real functions, write it with the same writer TriggerCommand
+/// So, build a trigger carrying real functions, write it with the same writer TriggerCommand
 /// uses, and read it back through the parser wc3ctl actually wires. Whatever comes back is the
 /// answer.
 /// </summary>
@@ -80,7 +80,7 @@ public class EcaRoundTripProbe
         }
         _out.WriteLine($"serialized to {bytes.Length} bytes");
 
-        // Route 1: the parser wc3ctl actually wires, with no TriggerData.
+        // Route 1, the parser wc3ctl actually wires, with no TriggerData.
         try
         {
             using var ms = new MemoryStream(bytes);
@@ -101,7 +101,7 @@ public class EcaRoundTripProbe
             _out.WriteLine("  => authoring an ECA would produce a map wc3ctl can no longer read.");
         }
 
-        // Route 2: through MapDocument, which is what every front-end uses.
+        // Route 2, through MapDocument, which is what every front-end uses.
         try
         {
             var doc = BlankMap.Create();

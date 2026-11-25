@@ -48,7 +48,7 @@ public class MpqHashTableSizingTests
     [Fact]
     public void KeepsPowerOfTwoSizing()
     {
-        // MPQ requires a power-of-two table; a non-power-of-two size corrupts name lookup.
+        // MPQ requires a power-of-two table. A non-power-of-two size corrupts name lookup.
         var grown = MapDocument.GrownHashTableSize(8192, 8087);
         Assert.NotNull(grown);
         Assert.Equal(0, grown!.Value & (grown.Value - 1));

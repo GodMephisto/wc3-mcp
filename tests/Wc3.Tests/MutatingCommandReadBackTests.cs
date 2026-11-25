@@ -12,7 +12,7 @@ namespace Wc3.Tests;
 /// Set-then-read-back for the mutating commands that are NOT object data, through a real save and
 /// reload.
 ///
-/// Object set/read-back was swept and came back clean. Everything else that writes was untested:
+/// Object set/read-back was swept and came back clean. Everything else that writes was untested,
 /// the string table, map info, players and forces, placed unit and doodad edits, terrain height,
 /// terrain tiles, and the pathing mask. Each is a separate writer with its own file and its own
 /// reader, which is exactly the shape where a value gets lost between the two.
@@ -82,7 +82,7 @@ public class MutatingCommandReadBackTests
 
     /// <summary>
     /// Every editable map-info field, driven from the command's OWN list rather than a hardcoded
-    /// one. The contract asserted is the honest one: if the command ACCEPTS a value it must store
+    /// one. The contract asserted is the honest one, if the command ACCEPTS a value it must store
     /// it, and if it refuses it must say so rather than pretend.
     /// </summary>
     /// <remarks>

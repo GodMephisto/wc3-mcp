@@ -86,6 +86,7 @@ def head_commit(root: Path) -> str:
             capture_output=True,
             text=True,
             timeout=60,
+            check=False,
             creationflags=NO_WINDOW,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
@@ -108,6 +109,7 @@ def commit_for_tag(repo: Path, tag: str) -> str:
             capture_output=True,
             text=True,
             timeout=60,
+            check=False,
             creationflags=NO_WINDOW,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:

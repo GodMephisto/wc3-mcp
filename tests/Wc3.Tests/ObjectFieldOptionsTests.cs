@@ -8,14 +8,14 @@ namespace Wc3.Tests;
 /// The typed-editor option resolver derives a field's editor shape, type token, list-ness,
 /// and the enumerated option set, from live base data, so a picker can only ever write a
 /// token the game already uses (correct-by-construction). These lock the invariants the UI
-/// relies on: no context degrades to free text, scalar enums are distinct + sorted, and
+/// relies on, no context degrades to free text, scalar enums are distinct + sorted, and
 /// *List types are split on commas. Install-backed cases skip when the game is absent.
 /// </summary>
 public class ObjectFieldOptionsTests
 {
     private const string Install = @"C:\Warcraft III";
 
-    // Pure unit test (no install needed): a null context can resolve nothing, so the caller
+    // Pure unit test (no install needed), a null context can resolve nothing, so the caller
     // must be told to fall back to a plain text editor, empty options, not a crash.
     [Fact]
     public void Null_context_yields_free_text_fallback()
@@ -29,7 +29,7 @@ public class ObjectFieldOptionsTests
         Assert.Empty(options);
     }
 
-    // icla (item "Class") is an enumerated scalar (metadata type "itemClass", not a *List):
+    // icla (item "Class") is an enumerated scalar (metadata type "itemClass", not a *List),
     // the option set must be non-empty, comma-free, distinct, and sorted ordinal-ignore-case.
     [Fact]
     [Trait("Category", "GameData")]
@@ -52,7 +52,7 @@ public class ObjectFieldOptionsTests
         Assert.All(result.Options, o => Assert.False(string.IsNullOrEmpty(o.Label)));
     }
 
-    // btar (destructable "Targeted As") is a targetList: IsList must be reported true, and
+    // btar (destructable "Targeted As") is a targetList, IsList must be reported true, and
     // every returned option is a single token from the split, never a comma-joined value.
     [Fact]
     [Trait("Category", "GameData")]
@@ -65,7 +65,7 @@ public class ObjectFieldOptionsTests
         Assert.DoesNotContain(result.Options, o => o.Value.Contains(','));
     }
 
-    // A bogus field code has no metadata and no base values: the open still succeeds, so
+    // A bogus field code has no metadata and no base values, the open still succeeds, so
     // this is a graceful "free text" signal (empty options), not an error.
     [Fact]
     [Trait("Category", "GameData")]

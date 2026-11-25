@@ -10,9 +10,9 @@ using Xunit.Abstractions;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Skeletal animation coverage: hermetic tests drive the MDX animation chunks
+/// Skeletal animation coverage, hermetic tests drive the MDX animation chunks
 /// (SEQS/BONE/PIVT + KGRT + GNDX/MTGC/MATS) through a hand-built binary model
-/// and check the posed math exactly; corpus tests confirm real map models parse
+/// and check the posed math exactly. Corpus tests confirm real map models parse
 /// a skeleton and render their Stand pose.
 /// </summary>
 public class ModelAnimationTests(ITestOutputHelper output)
@@ -62,7 +62,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
         Assert.Null(posed.Skeleton); // posed output is static, re-posing must be a no-op
         Assert.Same(posed, posed.PosedAt());
 
-        // The bone's only key (at Stand's first frame) is a 90° rotation about Z:
+        // The bone's only key (at Stand's first frame) is a 90° rotation about Z,
         // (1,0,0)->(0,1,0), (2,0,0)->(0,2,0), (1,1,0)->(-1,1,0). Normals (0,0,1) stay put.
         var v = Assert.Single(posed.Geosets).Vertices;
         AssertVertex(v, 0, 0f, 1f, 0f);
@@ -174,7 +174,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
         }
 
         // skinnable < withSkeleton counts emitter-only models (no geosets) and geosets
-        // without matrix groups; posed < skinnable additionally covers models whose
+        // without matrix groups. Posed < skinnable additionally covers models whose
         // bones simply hold still at Stand's first frame, both are bind-pose renders.
         output.WriteLine(
             $"mdx files: {mdxFiles.Count}, parsed: {parsed}, renderable: {renderable}, " +
@@ -190,7 +190,7 @@ public class ModelAnimationTests(ITestOutputHelper output)
     }
 
     /// <summary>
-    /// A complete minimal animated MDX: one triangle geoset whose vertices all sit
+    /// A complete minimal animated MDX, one triangle geoset whose vertices all sit
     /// in matrix group 0 → bone 0, one root bone with a single KGRT key at frame 100
     /// (90° about Z, pivot at origin), and a "Stand" sequence spanning [100, 200].
     /// </summary>
@@ -222,15 +222,15 @@ public class ModelAnimationTests(ITestOutputHelper output)
 
         WriteTag(w, "BONE");
         w.Write(140);  // node (132) + geosetId + geosetAnimId
-        w.Write(132);  // node inclusiveSize: 96 header + 36 KGRT
+        w.Write(132);  // node inclusiveSize, 96 header + 36 KGRT
         WriteFixedString(w, "bone", 80);
         w.Write(0u);   // objectId
         w.Write(-1);   // parentId (root)
         w.Write(0u);   // flags
         WriteTag(w, "KGRT");
         w.Write(1);    // numKeys
-        w.Write(1);    // interpolation: linear
-        w.Write(-1);   // globalSeqId: none
+        w.Write(1);    // interpolation, linear
+        w.Write(-1);   // globalSeqId, none
         w.Write(100);  // frame
         w.Write(0f); w.Write(0f); w.Write(MathF.Sin(MathF.PI / 4)); w.Write(MathF.Cos(MathF.PI / 4));
         w.Write(0u);   // geosetId

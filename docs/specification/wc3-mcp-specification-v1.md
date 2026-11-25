@@ -112,9 +112,9 @@ The server also carries reference knowledge. It serves two Warcraft III referenc
 
 ```mermaid
 ---
-title: One call, from the client to the map and back
+title, One call, from the client to the map and back
 ---
-flowchart LR
+flowchart TD
   client["<b>AI client</b><br/>Claude, Cursor, Codex"]:::client
   server["<b>wc3-mcp</b><br/>stdio JSON-RPC"]:::server
   tools["<b>Tool method</b><br/>one per operation"]:::tool
@@ -143,7 +143,7 @@ flowchart LR
   classDef core fill:#1d1a33,stroke:#7a6bb5,color:#e2dcf5,stroke-width:1.4px
   classDef file fill:#0f1a28,stroke:#5b7a9c,color:#cddced,stroke-width:1.4px
   classDef data fill:#101c2a,stroke:#405a78,color:#b9cbe0,stroke-width:1.4px,stroke-dasharray:5 3
-```
+```text
 
 *Each arrow names the requirement behind it, here and in every diagram after it.*
 
@@ -229,7 +229,7 @@ The surface was captured by starting the Release build of `Wc3.Mcp` and sending 
 | Tools with no parameters | 5, which are `mcp_audit_annotations`, `leak_benchmark`, `rag_status`, `script_conversion_notes` and `version_info` |
 | Resources | 436, the two documents, 430 sections, `wc3://tools` and the three skills |
 | Prompts | 5 |
-| Protocol revision answered | Every revision the pin knows, echoed: 2024-11-05, 2025-03-26, 2025-06-18 and 2025-11-25. An unknown offer gets 2025-11-25 |
+| Protocol revision answered | Every revision the pin knows, echoed, 2024-11-05 to 2025-03-26, 2025-06-18 and 2025-11-25. An unknown offer gets 2025-11-25 |
 | SDK package | `ModelContextProtocol` 1.4.1 |
 | Server name and version in initialize | `wc3ctl` 0.4.13 |
 | Initialize instructions | 405 characters, the product and version, the target and its source, whether game data is there, the three safety rules and the quickstart hint |
@@ -373,17 +373,17 @@ The initialize reply is the whole first impression. It is reproduced here as the
 
 ```json
 {
-  "protocolVersion": "2024-11-05",
-  "capabilities": {
-    "logging": {},
-    "prompts": { "listChanged": true },
-    "resources": { "listChanged": true },
-    "tools": { "listChanged": true }
+  "protocolVersion", "2024-11-05",
+  "capabilities", {
+    "logging", {},
+    "prompts", { "listChanged", true },
+    "resources", { "listChanged", true },
+    "tools", { "listChanged", true }
   },
-  "serverInfo": { "name": "wc3ctl", "version": "0.4.13" },
-  "instructions": "wc3ctl 0.4.13, target Beta-ROC-v1.00 (settings), game data available (3.0.1.24371). Three rules. Read a map before you change it. A write never overwrites its input, it writes a sibling .edited copy or the out_path you name. Chain edits by passing the previous output as the next call's map. Call quickstart when the request names an outcome rather than a tool, and read wc3://tools for the whole surface."
+  "serverInfo", { "name", "wc3ctl", "version", "0.4.13" },
+  "instructions", "wc3ctl 0.4.13, target Beta-ROC-v1.00 (settings), game data available (3.0.1.24371). Three rules. Read a map before you change it. A write never overwrites its input, it writes a sibling .edited copy or the out_path you name. Chain edits by passing the previous output as the next call's map. Call quickstart when the request names an outcome rather than a tool, and read wc3://tools for the whole surface."
 }
-```
+```text
 
 The revision in that reply is the one the client offered, because the capture sent 2025-06-18. The same build answers 2025-11-25 to a client that offers it, and the start line names that newest revision.
 
@@ -394,12 +394,12 @@ The instructions now carry the product, the target and where it came from, wheth
 A write returns a JSON object, not prose. The shape varies by family, but every one names the file it wrote. Two examples, taken from the schemas the tools publish.
 
 ```json
-{ "savedTo": "C:\\maps\\MyMap.edited.w3x", "message": "set Name = ..." }
-```
+{ "savedTo", "C:\\maps\\MyMap.edited.w3x", "message", "set Name = ..." }
+```text
 
 ```json
-{ "savedTo": "C:\\maps\\MyMap.ported.w3x", "report": { "remaps": [], "objects": 12 } }
-```
+{ "savedTo", "C:\\maps\\MyMap.ported.w3x", "report", { "remaps", [], "objects", 12 } }
+```text
 
 There is no digest, no count of files rewritten and no output schema. A caller cannot tell from the result whether the output is really the file it intended, nor whether the edit touched one internal file or forty (SAF-06, RES-02).
 
@@ -541,7 +541,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | TRN-03 | Closing stdin SHALL not abandon a call that was already read | Measured. Closing stdin with a 2.1 s call in flight returns the response 1,572 to 1,726 ms after close and exits 0 at 2,648 to 2,807 ms across three runs. Two defects were found and fixed, `SendMessageAsync` returning early on a disconnected transport, and a dequeue to dispatch race a Codex review pointed at, since the SDK yields between the queue count and the filter. The quiet reading now has to hold for 250 ms rather than two samples, which costs about a quarter second at exit and closes the gap | met |
 | TRN-04 | Every call SHALL load its inputs, do its work and return, with no session state carried between calls other than caches documented in OBS and PRF | Measured. Two `map_overview` calls in one process, on two different maps, returned two different results with nothing carried across. Every tool loads its own inputs on the call and none of them keeps a map between calls | met |
 | TRN-05 | The server SHALL declare only the capabilities it has, and SHALL NOT advertise `listChanged` for a collection that cannot change during a session | Not met, and a bump does not fix it. Every released version above 1.4.1 up to 2.4.0 reads `Capabilities` and then overwrites `listChanged` with true whenever a primitive collection is registered, verified by decompiling `McpServerImpl.ConfigureTools` in each. The notification wiring is decided by the transport, not the flag, so acceptance has to check both halves. The only route today is to leave the collections null and supply the handlers, which costs the matched tool dispatch the filters rely on | gap |
-| TRN-06 | The server SHALL NOT add a network transport in version 1. If one is added later it SHALL require authentication, an explicit workspace root and a separate specification | Structural. The published server takes one transport, stdio, and the tree holds no listener of any kind, no `HttpListener`, no `TcpListener`, no Kestrel host, so there is no socket to authenticate | met |
+| TRN-06 | The server SHALL NOT add a network transport in version 1. A network transport SHALL require authentication, an explicit workspace root and a separate specification, and this version carries none | Structural. The published server takes one transport, stdio, and the tree holds no listener of any kind, no `HttpListener`, no `TcpListener`, no Kestrel host, so there is no socket to authenticate | met |
 | TRN-07 | A second server instance SHALL be safe. Two clients may start the server at once, and neither may hold a lock that blocks the other, except a short lock on the RAG index build | Measured. Two instances started at the same moment, both initialised, both answered a call, and neither created a lock file beside the exe | met |
 
 ### Tool surface and naming
@@ -584,7 +584,7 @@ This section states what the server SHALL do. Each group is a subject, each ID i
 | PAR-02 | The game directory SHALL resolve from the tool argument, then `WC3_GAME_DIR`, then auto-detection. A value holding an unfilled placeholder SHALL count as unset | Measured. `McpEnvPrecedenceTests` proves the argument wins over the environment, the environment is used when no argument is given, and an unfilled `${...}` in either place counts as unset rather than as a folder name | met |
 | PAR-03 | The target build SHALL resolve from the tool argument, then `WC3_TARGET_BUILD`, then the saved setting, then the default, and `target_get` SHALL report which source won | Measured. The same test class proves the argument beats the environment, the environment beats the settings file, the settings file is used when both are clear, and each tier reports its own source | met |
 | PAR-04 | A tool that needs game data SHALL state in its description what it returns without it, and its result SHALL mark any degraded field rather than returning an empty value that reads as real | Half met. `placed_fix_refs` says a base-game check was skipped, which is the shape the rule wants, and the rest of the game directory tools return unmarked results | gap |
-| PAR-05 | A parameter value outside its legal set SHALL be refused with an error that lists the legal set. No parameter SHALL be accepted and ignored | Measured. `gamedata_enum` now refuses an unknown type with `unknown enum type 'x', expected one of: abilityModifierStats | met |
+| PAR-05 | A parameter value outside its legal set SHALL be refused with an error that lists the legal set. No parameter SHALL be accepted and ignored | Measured. `gamedata_enum` now refuses an unknown type with `unknown enum type 'x', expected one of, abilityModifierStats | met |
 | PAR-06 | `out_path` SHALL be required where the output is a different artifact type, such as a PNG, CSV, OBJ, atlas or report, and optional with a stated default where the output is an edited map | Measured. 98 writing tools require `out_path`, the 12 that make it optional are the map edits and each states the default in its own description, a sibling `.edited` copy, and a tool whose output is a folder takes `out_dir` instead | met |
 | PAR-07 | A coordinate SHALL state its unit and frame in the parameter description, either world units, terrain cells, pathing cells or corners, and a rotation SHALL state radians or degrees | Measured. All 13 coordinate parameters say world coordinate or world units, and all three rotation parameters say radians and name the map's own convention | met |
 | PAR-08 | An array parameter SHALL have a stated maximum, and a call above it SHALL be refused rather than truncated | Measured. All thirteen array and list parameters state a maximum of 1000 and thirteen call sites refuse a longer list with a tool error naming the limit. No command held a smaller natural cap, so 1000 is stated rather than derived, and `object_batch_set` keeps its own 500 | met |
@@ -818,7 +818,7 @@ The client starts the process, they exchange initialize, the client asks for the
 
 ```mermaid
 ---
-title: Cold start, then the first call
+title, Cold start, then the first call
 ---
 sequenceDiagram
     autonumber
@@ -827,35 +827,35 @@ sequenceDiagram
     participant S as server core
     participant F as map or file
 
-    C->>P: spawn, no arguments (TRN-01)
-    P->>S: build options once (PRF-01)
-    S->>S: reflect the surface (SUR-01)
-    S-->>P: tools, resources, prompts, instructions
-    P->>P: log one start line to stderr (ENV-04)
-    C->>P: initialize (IDN-01)
-    P-->>C: serverInfo, capabilities, instructions (DSC-01)
-    C->>P: notifications/initialized
-    C->>P: tools/list (PRF-02)
-    P-->>C: 277 tools with schemas and hints
-    C->>P: resources/read wc3://tools (RSC-03)
-    P-->>C: the same surface as JSON
-    C->>P: tools/call map_overview (SUR-01)
-    P->>F: load the map once (PAR-01)
-    F-->>P: archive bytes
-    P-->>C: JSON result (RES-01)
-    C->>P: close stdin
-    P-->>C: exit 0 (TRN-03)
-```
+    C->>P, spawn, no arguments (TRN-01)
+    P->>S, build options once (PRF-01)
+    S->>S, reflect the surface (SUR-01)
+    S-->>P, tools, resources, prompts, instructions
+    P->>P, log one start line to stderr (ENV-04)
+    C->>P, initialize (IDN-01)
+    P-->>C, serverInfo, capabilities, instructions (DSC-01)
+    C->>P, notifications/initialized
+    C->>P, tools/list (PRF-02)
+    P-->>C, 277 tools with schemas and hints
+    C->>P, resources/read wc3://tools (RSC-03)
+    P-->>C, the same surface as JSON
+    C->>P, tools/call map_overview (SUR-01)
+    P->>F, load the map once (PAR-01)
+    F-->>P, archive bytes
+    P-->>C, JSON result (RES-01)
+    C->>P, close stdin
+    P-->>C, exit 0 (TRN-03)
+```text
 
 Two properties matter here. The surface is built once, so the tool list and the catalog cannot disagree. And nothing the server writes on this path touches a map, so a client that lists tools and stops has changed nothing on disk.
 
-### 5.2 A read
+### # 5.2 A read
 
 A read is one load, one handler and one result. It may not write.
 
 ```mermaid
 ---
-title: A read-only call
+title, A read-only call
 ---
 sequenceDiagram
     autonumber
@@ -865,26 +865,26 @@ sequenceDiagram
     participant H as Wc3.Commands
     participant D as MapDocument
 
-    C->>T: object_get(map, rawcode, kind?)
-    T->>L: validate path (PAR-01)
-    L->>D: MapDocument.Load (TRN-04)
-    D-->>L: archive and parsed sections
-    T->>H: ObjectGetCommand.Execute
-    H->>D: merged base and map fields
-    H-->>T: result POCO
-    T-->>C: JSON + structuredContent (RES-01, RES-02)
-    Note over T,D: no write gate is reachable on this path (SAF-02)
-```
+    C->>T, object_get(map, rawcode, kind?)
+    T->>L, validate path (PAR-01)
+    L->>D, MapDocument.Load (TRN-04)
+    D-->>L, archive and parsed sections
+    T->>H, ObjectGetCommand.Execute
+    H->>D, merged base and map fields
+    H-->>T, result POCO
+    T-->>C, JSON + structuredContent (RES-01, RES-02)
+    Note over T,D, no write gate is reachable on this path (SAF-02)
+```text
 
 A read that needs base game data resolves the game directory from the argument, then `WC3_GAME_DIR`, then auto-detection, and when none is present it returns the fields it can read from the map with the missing ones marked (PAR-04).
 
-### 5.3 A write and the chained edit
+### # 5.3 A write and the chained edit
 
 This is the flow that matters most, because the common agent mistake is to make two edits from one base and lose the first. The digest verifies that the file named as input is the revision the caller last read. It does not choose the revision, so the second call still has to name the first output.
 
 ```mermaid
 ---
-title: One write, then a second write on its output
+title, One write, then a second write on its output
 ---
 sequenceDiagram
     autonumber
@@ -893,22 +893,22 @@ sequenceDiagram
     participant D as MapDocument
     participant FS as disk
 
-    C->>W: object_set(map=base, out_path=step1, expect_input_sha256=sha(base))
-    W->>FS: read base bytes once
-    W->>W: hash those bytes and compare with expect_input_sha256 (SAF-07)
+    C->>W, object_set(map=base, out_path=step1, expect_input_sha256=sha(base))
+    W->>FS, read base bytes once
+    W->>W, hash those bytes and compare with expect_input_sha256 (SAF-07)
     alt digest differs
-        W-->>C: error STALE_INPUT, read the file again
+        W-->>C, error STALE_INPUT, read the file again
     else digest matches
-        W->>D: parse the same bytes, apply the edit
-        W->>W: refuse out_path equal to map (SAF-05)
-        W->>FS: write step1 to a temp file, rename (SAF-11)
-        W-->>C: savedTo step1, inputSha256, outputSha256, filesRewritten (SAF-06)
+        W->>D, parse the same bytes, apply the edit
+        W->>W, refuse out_path equal to map (SAF-05)
+        W->>FS, write step1 to a temp file, rename (SAF-11)
+        W-->>C, savedTo step1, inputSha256, outputSha256, filesRewritten (SAF-06)
     end
-    C->>W: strings_set(map=step1, out_path=step2, expect_input_sha256=sha(step1))
-    W->>FS: read step1
-    W-->>C: savedTo step2, with the digest of step1 as its input
-    Note over C,FS: the second call names the first output, so neither edit is lost
-```
+    C->>W, strings_set(map=step1, out_path=step2, expect_input_sha256=sha(step1))
+    W->>FS, read step1
+    W-->>C, savedTo step2, with the digest of step1 as its input
+    Note over C,FS, the second call names the first output, so neither edit is lost
+```text
 
 The digest is an input revision check, not a chain. It refuses a base that changed after it was read, and it cannot detect a caller that reused an unchanged base by mistake. The chaining rule lives in the tool descriptions and the instructions, and the digest makes only the first half of it enforceable. A batch call removes the mistake entirely for one family, and `object_batch_set` is it. The remaining families still chain, which is G-50.
 
@@ -943,7 +943,7 @@ A port reads two maps, resolves the dependency closure, remaps colliding rawcode
 
 ```mermaid
 ---
-title: Porting one unit and its dependencies
+title, Porting one unit and its dependencies
 ---
 sequenceDiagram
     autonumber
@@ -953,20 +953,20 @@ sequenceDiagram
     participant S as source map
     participant T as target map
 
-    C->>P: port_deps(source, rawcode) (SUR-01)
-    P->>B: resolve the closure
-    B-->>P: objects, assets, strings, script edges
-    P-->>C: the full dependency report
-    C->>P: port_preview(source, rawcode, target)
-    P-->>C: what would be added or changed, nothing written
-    C->>P: port_unit(source, rawcode, target)
-    P->>S: load, read only (SAF-08)
-    P->>T: load, read only
-    P->>P: allocate non-colliding rawcodes (RES-09)
-    P-->>C: savedTo target.ported.w3x and the port report
-    C->>P: audit_hero(target.ported, rawcode)
-    P-->>C: the cast chain, or the exact missing link
-```
+    C->>P, port_deps(source, rawcode) (SUR-01)
+    P->>B, resolve the closure
+    B-->>P, objects, assets, strings, script edges
+    P-->>C, the full dependency report
+    C->>P, port_preview(source, rawcode, target)
+    P-->>C, what would be added or changed, nothing written
+    C->>P, port_unit(source, rawcode, target)
+    P->>S, load, read only (SAF-08)
+    P->>T, load, read only
+    P->>P, allocate non-colliding rawcodes (RES-09)
+    P-->>C, savedTo target.ported.w3x and the port report
+    C->>P, audit_hero(target.ported, rawcode)
+    P-->>C, the cast chain, or the exact missing link
+```text
 
 The source and the target are never modified, and the result is a third file. That is why a port can be reviewed before it is adopted, and why a failed port leaves both inputs as they were.
 
@@ -976,7 +976,7 @@ The project's own rule is that an edited map is not finished until a doctor chec
 
 ```mermaid
 ---
-title: The pre-ship gate
+title, The pre-ship gate
 ---
 sequenceDiagram
     autonumber
@@ -985,22 +985,22 @@ sequenceDiagram
     participant D as doctor tools
     participant M as map
 
-    C->>A: lint(map)
-    A-->>C: compile, imports, asset paths, object names
-    C->>A: validate_strict(map)
-    A-->>C: structural problems and load failures
-    C->>D: doctor_check(map)
-    D-->>C: verdict yes or no, blocker and line
+    C->>A, lint(map)
+    A-->>C, compile, imports, asset paths, object names
+    C->>A, validate_strict(map)
+    A-->>C, structural problems and load failures
+    C->>D, doctor_check(map)
+    D-->>C, verdict yes or no, blocker and line
     alt verdict no
-        C->>D: doctor_inspect(map)
-        D-->>C: the failing step and its cause
-        C->>D: doctor_fix(map, out_path=repaired)
-        D-->>C: repaired copy and the steps applied
-        C->>D: doctor_check(repaired)
+        C->>D, doctor_inspect(map)
+        D-->>C, the failing step and its cause
+        C->>D, doctor_fix(map, out_path=repaired)
+        D-->>C, repaired copy and the steps applied
+        C->>D, doctor_check(repaired)
     else verdict yes
-        C->>M: play test, outside the server
+        C->>M, play test, outside the server
     end
-```
+```text
 
 The server can prove the script compiles and that the archive is structurally sound. It cannot prove the map plays. The instructions and the prompt SHALL say so, because a green audit that reads as a play test is the failure this flow exists to prevent.
 
@@ -1010,7 +1010,7 @@ Search works with no download, and improves when the index is installed.
 
 ```mermaid
 ---
-title: Lexical first, semantic when installed
+title, Lexical first, semantic when installed
 ---
 sequenceDiagram
     autonumber
@@ -1019,29 +1019,29 @@ sequenceDiagram
     participant I as RAG index
     participant R as context resources
 
-    C->>D: docs_search("channel ability pause", doc=abilities)
-    D->>D: tokenize, match word boundaries, score (RSC-06)
-    D-->>C: passages with document and nearest heading
-    C->>R: resources/read wc3://context/abilities/{section} (RSC-02)
-    R-->>C: one section, not the whole file
-    C->>D: rag_status
-    D-->>C: not installed
-    C->>D: rag_install (openWorld)
-    D->>I: fetch and verify the model and corpus, build
-    I-->>D: chunk count and model
-    C->>D: docs_search("why does my spell fire twice")
-    D->>I: embed the query, rank chunks
-    I-->>D: semantic matches
-    D-->>C: passages, mode semantic
-```
+    C->>D, docs_search("channel ability pause", doc=abilities)
+    D->>D, tokenize, match word boundaries, score (RSC-06)
+    D-->>C, passages with document and nearest heading
+    C->>R, resources/read wc3://context/abilities/{section} (RSC-02)
+    R-->>C, one section, not the whole file
+    C->>D, rag_status
+    D-->>C, not installed
+    C->>D, rag_install (openWorld)
+    D->>I, fetch and verify the model and corpus, build
+    I-->>D, chunk count and model
+    C->>D, docs_search("why does my spell fire twice")
+    D->>I, embed the query, rank chunks
+    I-->>D, semantic matches
+    D-->>C, passages, mode semantic
+```text
 
 Lexical search is the contract. Semantic search is an improvement a caller opts into, and a failed index build leaves lexical search working.
 
-### 5.8 Set up a client
+### # 5.8 Set up a client
 
 ```mermaid
 ---
-title: install --all from a fresh download
+title, install --all from a fresh download
 ---
 sequenceDiagram
     autonumber
@@ -1050,22 +1050,22 @@ sequenceDiagram
     participant P as user profile
     participant A as AI clients
 
-    U->>E: install --all (SET-01)
-    E->>P: add the exe folder to the user PATH once (SET-04)
-    E->>A: detect each installed client (SET-02)
+    U->>E, install --all (SET-01)
+    E->>P, add the exe folder to the user PATH once (SET-04)
+    E->>A, detect each installed client (SET-02)
     loop each detected client
-        E->>P: back up the config file (SET-03)
+        E->>P, back up the config file (SET-03)
         alt the file carries comments
-            E-->>U: print the snippet instead of rewriting (SET-03)
+            E-->>U, print the snippet instead of rewriting (SET-03)
         else the file is plain
-            E->>P: write one MCP entry atomically (SET-11)
-            E-->>U: name the client and the file
+            E->>P, write one MCP entry atomically (SET-11)
+            E-->>U, name the client and the file
         end
     end
-    E-->>U: restart each client
-    U->>E: doctor
-    E-->>U: exe, CascLib, context, game, clients, version (SET-06)
-```
+    E-->>U, restart each client
+    U->>E, doctor
+    E-->>U, exe, CascLib, context, game, clients, version (SET-06)
+```text
 
 The install is idempotent, so running it again after an update changes nothing except the version the entry points at.
 
@@ -1075,7 +1075,7 @@ The server source is written in wc3ctl and published from the mirror. That chain
 
 ```mermaid
 ---
-title: The release chain
+title, The release chain
 ---
 sequenceDiagram
     autonumber
@@ -1084,18 +1084,18 @@ sequenceDiagram
     participant M as wc3-mcp mirror
     participant N as npm and registry
 
-    W->>W: commit, tag vX.Y.Z (PKG-07)
-    W->>G: release workflow, publish CLI and Studio
-    W->>G: dispatch wc3ctl-release with the commit sha
-    G->>M: sync workflow, checkout both
-    M->>M: export src and three test files (PKG-07)
-    M->>M: bump the patch version, commit, tag
-    M->>G: build, test, pack exe, mcpb, sha256 (PKG-01)
-    G->>G: smoke test exe version against tag (PKG-06)
-    G->>N: publish npm with OIDC (PKG-02)
-    G->>N: publish server.json (PKG-05)
-    N-->>M: the version a user gets
-```
+    W->>W, commit, tag vX.Y.Z (PKG-07)
+    W->>G, release workflow, publish CLI and Studio
+    W->>G, dispatch wc3ctl-release with the commit sha
+    G->>M, sync workflow, checkout both
+    M->>M, export src and three test files (PKG-07)
+    M->>M, bump the patch version, commit, tag
+    M->>G, build, test, pack exe, mcpb, sha256 (PKG-01)
+    G->>G, smoke test exe version against tag (PKG-06)
+    G->>N, publish npm with OIDC (PKG-02)
+    G->>N, publish server.json (PKG-05)
+    N-->>M, the version a user gets
+```text
 
 A commit that changes the MCP server is not released until the mirror has exported it, bumped its version, tagged, built and published. The specification treats that as one release with two repositories, not two releases.
 
@@ -1103,7 +1103,7 @@ A commit that changes the MCP server is not released until the mirror has export
 
 This section is the contract a client codes against. Where a fact is a measurement, its date is 8 November 2026.
 
-### 6.1 Protocol surface
+### # 6.1 Protocol surface
 
 The server negotiates MCP over stdio. It answers the revision the client offers when it supports it, and otherwise answers with its own, which is 2024-11-05 today.
 
@@ -1121,7 +1121,7 @@ The server negotiates MCP over stdio. It answers the revision the client offers 
 | Cancellation | None today, required by PRF-04 |
 | Sampling, elicitation, roots | Not used. The server requires only tools, resources and prompts (CMP-06) |
 
-### 6.2 Naming
+### # 6.2 Naming
 
 A tool name is `<domain>[_<subject>]_<action>`. The domain is the subject, such as `object`, `terrain` or `mpq`. The subject disambiguates a part of that domain, such as `terrain_corner`. The action is the operation and comes last, such as `list`, `get`, `set`, `add`, `remove`, `create`, `export`, `import` or `verify`. Existing names such as `object_set` already follow it, and the renames in SUR-02 bring the rest to it.
 
@@ -1147,7 +1147,7 @@ The canonical rename table below is the one SUR-02 and SUR-03 use. An old name i
 | `docs_search` | `docs_search` | Kept |
 | `new_map` | `map_create` | Domain first |
 
-### 6.3 Common parameters
+### # 6.3 Common parameters
 
 Every parameter has one meaning across the surface. A tool that needs a different meaning SHALL use a different name.
 
@@ -1171,34 +1171,34 @@ Every parameter has one meaning across the surface. A tool that needs a differen
 
 Units are stated in the parameter description and never assumed. World positions are map world units. Terrain brushes are terrain cells. Pathing brushes are pathing cells, four per terrain tile. A facing angle is radians. A scale is one number for uniform, or three for `sx,sy,sz`.
 
-### 6.4 Result and error envelope
+### # 6.4 Result and error envelope
 
 A result is a JSON object in the text content and, after RES-02, the same object in `structuredContent`.
 
 ```json
 {
-  "savedTo": "C:\\maps\\MyMap.edited.w3x",
-  "inputSha256": "0f1c...",
-  "outputSha256": "9ab3...",
-  "filesRewritten": 2,
-  "bytesWritten": 767366,
-  "message": "set unit u000 hit points to 500"
+  "savedTo", "C:\\maps\\MyMap.edited.w3x",
+  "inputSha256", "0f1c...",
+  "outputSha256", "9ab3...",
+  "filesRewritten", 2,
+  "bytesWritten", 767366,
+  "message", "set unit u000 hit points to 500"
 }
-```
+```text
 
 A list result is wrapped, so a caller always receives an object.
 
 ```json
 {
-  "items": [ { "rawcode": "u000", "name": "Footman" } ],
-  "returnedCount": 1,
-  "totalCount": 1432,
-  "offset": 0,
-  "limit": 100,
-  "hasMore": true,
-  "nextOffset": 100
+  "items", [ { "rawcode", "u000", "name", "Footman" } ],
+  "returnedCount", 1,
+  "totalCount", 1432,
+  "offset", 0,
+  "limit", 100,
+  "hasMore", true,
+  "nextOffset", 100
 }
-```
+```text
 
 An error is a tool error with a stable code.
 
@@ -1238,12 +1238,12 @@ A tool returns one of three shapes, and all three share the tool envelope. The f
 
 ```mermaid
 ---
-title: The result model
+title, The result model
 ---
 erDiagram
-  TOOL_RESULT ||--o| WRITE_RESULT : "a write"
-  TOOL_RESULT ||--o| LIST_PAGE : "a list"
-  TOOL_RESULT ||--o| ERROR_RESULT : "a failure"
+  TOOL_RESULT ||--o| WRITE_RESULT , "a write"
+  TOOL_RESULT ||--o| LIST_PAGE , "a list"
+  TOOL_RESULT ||--o| ERROR_RESULT , "a failure"
   TOOL_RESULT {
     string message "one line, human"
     json report "nested shared-layer result"
@@ -1274,7 +1274,7 @@ erDiagram
     string next "later"
     string path
   }
-```
+```text
 
 The write fields carry the digest and the rewritten count so a caller can prove what changed (SAF-06). The list fields exist so a page can be asked for rather than returned whole (RES-03, RES-10). The error fields carry a stable code and a next step, so a caller can branch rather than read prose (ERR-02).
 
@@ -1284,21 +1284,21 @@ The full inventory is Appendix C, which lists every name by family. The descript
 
 ```mermaid
 ---
-title: Tools by family
+title, Tools by family
 ---
 pie showData
-  "Map and archive" : 22
-  "Objects and game data" : 30
-  "Placed, regions, players" : 37
-  "Terrain and pathing" : 20
-  "Scripts" : 32
-  "Triggers and heroes" : 35
-  "Assets and textures" : 35
-  "Porting and bundles" : 8
-  "Repair and compatibility" : 15
-  "Leaks and benchmarks" : 27
-  "Product and context" : 14
-```
+  "Map and archive" , 22
+  "Objects and game data" , 30
+  "Placed, regions, players" , 37
+  "Terrain and pathing" , 20
+  "Scripts" , 32
+  "Triggers and heroes" , 35
+  "Assets and textures" , 35
+  "Porting and bundles" , 8
+  "Repair and compatibility" , 15
+  "Leaks and benchmarks" , 27
+  "Product and context" , 14
+```text
 
 ### 6.6 Resources
 
@@ -1381,11 +1381,11 @@ mcpb/manifest.json           the Claude Desktop bundle manifest
 server.json                  the MCP Registry entry, filled at release
 %LOCALAPPDATA%/Programs/wc3-mcp/versions/v<version>/
                              the per-version binary cache
-```
+```text
 
 The per-version cache is why an upgrade never hits a Windows lock on a running exe. Two versions are kept, and a prune that cannot delete a running exe is ignored. A self-update over a fixed install follows the same idea, renaming a locked exe or DLL to a `.old` sibling and copying the new file in.
 
-### 6.11 Threat model
+### # 6.11 Threat model
 
 The server runs as the signed-in user over that user's files. Any client the user starts can call any tool, and the server does not sandbox the client. What the server enforces is its own boundary, so no tool call can reach a file the user could not reach, and no call can widen the permissions the user already has. This table states what that means, what each threat reaches, and which requirement is the control.
 
@@ -1525,7 +1525,7 @@ The narrowest rows are the ones a single function closes, G-20, G-31, G-36 and G
 
 The server did not arrive as a plan. It grew from a seam stub in July 2026 to a surface of 277 tools, and the record of how it grew is the strongest evidence this specification has. Every row below is a commit or a release, and every one is cited.
 
-### 11.1 The timeline
+### # 11.1 The timeline
 
 | Date | What landed | Evidence |
 |---|---|---|
@@ -1555,7 +1555,7 @@ The server did not arrive as a plan. It grew from a seam stub in July 2026 to a 
 
 Two things about this timeline matter to the requirements. The reading and writing rule was there from the first writing tool, `port_unit`, which wrote `.ported` rather than touching its inputs. And the surface was swept against real maps three times before anyone wrote a specification for it, which is why section 3 can state measured behaviour rather than intended behaviour.
 
-### 11.2 The sweep, and why it is the model for the tests
+### # 11.2 The sweep, and why it is the model for the tests
 
 The releases from 0.4.1 to 0.4.4 record a method, not a set of unrelated fixes.
 
@@ -1568,7 +1568,7 @@ The releases from 0.4.1 to 0.4.4 record a method, not a set of unrelated fixes.
 
 The lesson is that the sweep found defects no reflection test could see, and that a sweep against a real map is slow and machine-dependent. TST-02 and TST-03 turn that method into a hermetic test over synthetic maps, so the same class of defect is caught on every pull request rather than in a manual pass after a release.
 
-### 11.3 Guards that exist because of that history
+### # 11.3 Guards that exist because of that history
 
 | Guard | What it prevents | Evidence |
 |---|---|---|
@@ -1665,7 +1665,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 
 
 
-### 14.1 Understand a map before changing it
+### # 14.1 Understand a map before changing it
 
 - **The whole shape in one call.** `map_overview`. A protected map reports unnamed entries, so the file list can be shorter than the archive
 - **Metadata and editable fields.** `map_info`, `map_info_get`. The two reads answer different questions, which is why SUR-02 renames them
@@ -1676,7 +1676,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Release readiness.** `lint`, `validate`, `validate_strict`, `roundtrip`. A pass is not a play test, see 5.6
 
 
-### 14.2 Read and write object data
+### # 14.2 Read and write object data
 
 - **Read one object.** `object_get`, `object_form`, `object_field_options`. `object_field_options` needs base game data
 - **Write one object.** `object_set`, `object_new`, `object_clone`, `object_rename`, `object_bulk_set`. Each call writes a new file, so a second edit names the first output
@@ -1686,7 +1686,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Ability lists.** `unit_abilities`, `uabi_profile`. `uabi_profile` compares many maps without starting the game
 
 
-### 14.3 Edit the world
+### # 14.3 Edit the world
 
 - **Place anything.** `place_unit`, `place_doodad`, `place_item`, `place_region`, `place_start_location`, `place_grid`, `place_scatter`. Every placement returns its creation number, which is the handle the edit tools take
 - **Edit what is placed.** `placed_units_list`, `placed_unit_get`, `placed_unit_set`, `placed_unit_remove`, `placed_doodads_list`, `placed_doodad_get`, `placed_doodad_set`, `placed_doodad_remove`. A facing angle is radians, a scale is one value or three
@@ -1699,7 +1699,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **A blank map.** `new_map`. The result opens in the World Editor
 
 
-### 14.4 Analyse and convert scripts
+### # 14.4 Analyse and convert scripts
 
 - **Handle leaks.** `script_leaks`, `leak_list`, `leak_model`, `script_lua_leaks`. `leak_model` reports base-game textures as missing, see 13
 - **Runtime cost.** `script_bench`, `script_complexity`. Static cost, not a profile
@@ -1713,7 +1713,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Trigger functions.** `trigger_catalog_list`, `trigger_catalog_describe`. From the installed `TriggerData.txt`
 
 
-### 14.5 Audit, optimise and convert assets
+### # 14.5 Audit, optimise and convert assets
 
 - **Audit.** `asset_list`, `asset_unused`, `asset_duplicates`, `asset_audit`, `asset_report`, `asset_size_report`, `asset_model_lint`, `model_lint`, `model_audit`, `model_compare`. An unused import is a lead, not an instruction to delete
 - **Shrink.** `map_optimize`, `model_optimize`, `model_squish`, `model_lod`, `texture_optimize`, `texture_atlas`, `terrain_optimize`, `sound_optimize`. A lossy run needs a render gate, and `model_squish` states its own limit
@@ -1723,7 +1723,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Sound.** `sound_list`, `sound_add`, `sound_set`, `sound_remove`, `sound_optimize`. An MP3 encoder may be absent, the fallback is WAV
 
 
-### 14.6 Heroes and porting
+### # 14.6 Heroes and porting
 
 - **A hero definition.** `hero_roster`, `hero_lint`, `hero_install`. A definition is linted before it is installed
 - **What a unit needs.** `bundle_unit`, `bundle_diff`, `bundle_merge`. The closure includes objects, assets, strings and script edges
@@ -1731,7 +1731,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Prove it is wired.** `audit_hero`, `audit_ability`, `audit_fidelity`, `audit_readiness`. A missing link is the useful result, not a pass
 
 
-### 14.7 Diagnose, repair and gate a map
+### # 14.7 Diagnose, repair and gate a map
 
 - **The doctor.** `doctor_check`, `doctor_inspect`, `doctor_compare`, `doctor_fix`. The doctor is a third-party binary at about five seconds a spawn, cached for the process
 - **Build compatibility.** `map_compat`, `compat_matrix`, `compat_explain`, `target_get`, `target_set`, `target_list`. The target resolution order is PAR-03
@@ -1740,7 +1740,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Whole-map audit.** `audit_map`, `audit_trend`. Findings are structural, not a play test
 
 
-### 14.8 Runtime evidence and replays
+### # 14.8 Runtime evidence and replays
 
 - **Replay reports.** `replay_summary`, `replay_diff`, `replay_players`, `replay_timeline`, `replay_find_map`, `replay_stats`. Team and race are not carried by the parser, and the game's `TempReplay.w3g` is skipped
 - **Join static to runtime.** `leak_join`, `leak_ab`. Needs a wc3watch session folder
@@ -1748,7 +1748,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Reproduce a leak in seconds.** `leak_harness`. Writes source, it does not start the game
 
 
-### 14.9 Whole libraries and CI
+### # 14.9 Whole libraries and CI
 
 - **Survey a folder.** `library_scan`, `library_validate`, `library_audit`, `library_compare`, `library_report`. One map at a time, see PRF-05
 - **Gate one map.** `ci_lint`, `ci_validate`, `ci_compat`, `ci_schema`, `ci_all`. `ci_all` folds lint, validate and compat into one exit code
@@ -1756,7 +1756,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Trend.** `audit_trend`, `uabi_profile`. Both compare maps over time or across variants
 
 
-### 14.10 Knowledge and retrieval
+### # 14.10 Knowledge and retrieval
 
 - **Read a reference.** `docs_search`. The whole document is served, not a section, until RSC-02
 - **Search it.** `docs_search`. Lexical by default, semantic only after `rag_install`
@@ -1764,7 +1764,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 - **Find the right tool.** `quickstart`, `mcp_audit_annotations`, `version_info`, `changelog`. `quickstart` names ten workflows, not every family
 
 
-### 14.11 Set up, distribute and update
+### # 14.11 Set up, distribute and update
 
 | Job | Command | Result |
 |---|---|---|
@@ -1776,7 +1776,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 | Install into Claude Desktop | The `.mcpb` bundle | One setting, the game folder, which can stay empty |
 | Install from the registry | `io.github.GodMephisto/wc3-mcp` | The same server, by registry entry |
 
-### 14.12 Author, document and release
+### # 14.12 Author, document and release
 
 | Job | Tool or command | Result |
 |---|---|---|
@@ -1794,7 +1794,7 @@ Section 6.5 answers what tools exist. This section answers what jobs a caller ca
 
 The toolkit is unusually well served by commands that generate what a person would otherwise write by hand. This section states what each one does, what it does not do, and what the requirements add.
 
-### 15.1 The changelog maker
+### # 15.1 The changelog maker
 
 `changelog` is a tool and `wc3ctl changelog` is its CLI twin. It reads `git log --no-merges` over a range and renders release notes as markdown.
 
@@ -1808,7 +1808,7 @@ The toolkit is unusually well served by commands that generate what a person wou
 
 ```text
 wc3ctl changelog --from v0.4.12 --to v0.4.13 --out changelog/0.4.13.md
-```
+```text
 
 The limit is in what it cannot see. It does not read requirement IDs, it does not put a `BREAKING CHANGE` paragraph in its own section, it does not link an issue, and it cannot tell a commit that shipped from one that was later reverted. AUT-10 records those limits. G-37 records that no note names what it serves, which is DOC-04, and `tools/check_changelog_ids.py` is the check that reports it.
 
@@ -1850,7 +1850,7 @@ What is missing is the loop. A source change does not trigger a build, a test ru
 
 ```mermaid
 ---
-title: One release, two repositories
+title, One release, two repositories
 ---
 sequenceDiagram
     autonumber
@@ -1860,22 +1860,22 @@ sequenceDiagram
     participant M as wc3-mcp mirror
     participant P as npm and registry
 
-    D->>W: commit, tag vX.Y.Z (AUT-09)
-    W->>G: release workflow, CLI and Studio
-    W->>G: dispatch with the commit sha
-    G->>M: sync workflow
-    M->>M: export src and mirrored tests (PKG-07)
-    M->>M: bump patch, commit, tag
-    M->>G: build, hermetic tests, pack (TST-13)
-    G->>G: smoke the exe, match its version to the tag (PKG-06)
-    G->>P: npm with OIDC (PKG-02)
-    G->>P: server.json (PKG-05)
-    G->>P: mcpb bundle (PKG-04)
-```
+    D->>W, commit, tag vX.Y.Z (AUT-09)
+    W->>G, release workflow, CLI and Studio
+    W->>G, dispatch with the commit sha
+    G->>M, sync workflow
+    M->>M, export src and mirrored tests (PKG-07)
+    M->>M, bump patch, commit, tag
+    M->>G, build, hermetic tests, pack (TST-13)
+    G->>G, smoke the exe, match its version to the tag (PKG-06)
+    G->>P, npm with OIDC (PKG-02)
+    G->>P, server.json (PKG-05)
+    G->>P, mcpb bundle (PKG-04)
+```text
 
 The chain is automated from the tag onward. The parts before it, the changelog, the docs, the publish and the local test run, are commands a person or an agent runs in an order they have to remember. That is the gap the automation requirements target.
 
-### 15.5 What runs by itself, and what does not
+### # 15.5 What runs by itself, and what does not
 
 | Step | Automatic today | Where it runs | Requirement |
 |---|---|---|---|
@@ -1892,13 +1892,13 @@ The chain is automated from the tag onward. The parts before it, the changelog, 
 | Build, test, docs and publish after a change | No | none | AUT-05 |
 | One release-readiness verdict | No | none | AUT-06 |
 
-### 15.6 What the automation requirements add
+### # 15.6 What the automation requirements add
 
 AUT-01 to AUT-10 in section 4 turn this list into one loop. The changelog gains requirement IDs and a breaking-change section. The docs gain the parameters and results. The publish gains the test run and the docs regeneration. A watch command rebuilds on a change. A release-readiness command runs every gate and prints one verdict. Every step answers `--json`, so an agent can drive the same loop the person drives.
 
 None of that exists today. That is why the rows are in section 10 as G-37 to G-45 and not in this section as behaviour.
 
-### 15.7 Release checklist
+### # 15.7 Release checklist
 
 The order matters. A failed gate stops the release rather than being noted and left for later.
 
@@ -1922,25 +1922,25 @@ A new tool touches more than one layer, and the tests fail until each layer is u
 **1 Logic.** The behaviour lives in the shared layer, and the CLI gets the same verb.
 
 ```mermaid
-flowchart LR
+flowchart TD
   a1["Handler in Wc3.Commands"] --> a2["CLI verb"]
   classDef s fill:#14263d,stroke:#5f8fc4,color:#dbe7f2,stroke-width:1.2px
   class a1,a2 s
-```
+```text
 
 **2 Surface.** The tool is declared once, and the tests hold its name and its hints.
 
 ```mermaid
-flowchart LR
+flowchart TD
   b1["Tool method<br/>hints, title, text"] --> b2["Mutating prefix"] --> b3["ExpectedTools"] --> b4["Parity map"]
   classDef s fill:#14263d,stroke:#5f8fc4,color:#dbe7f2,stroke-width:1.2px
   class b1,b2,b3,b4 s
-```
+```text
 
 **3 Proof.** A write is proven against a synthetic map, and a publish is proven against the exe.
 
 ```mermaid
-flowchart LR
+flowchart TD
   c1["Smoke test"] --> c2["Write sweep"] --> c3["Docs regenerate"] --> c4["Hermetic suite"] --> c5["Publish"] --> c6["Verify timestamp"]
   classDef s fill:#14263d,stroke:#5f8fc4,color:#dbe7f2,stroke-width:1.2px
   class c1,c2,c3,c4,c5,c6 s
@@ -1988,9 +1988,9 @@ The work is pulled in vertical slices. Each slice closes a small set of requirem
 
 ```mermaid
 ---
-title: The first five slices and what unblocks what
+title, The first five slices and what unblocks what
 ---
-flowchart LR
+flowchart TD
   s1["<b>Safe chaining</b><br/>SAF-05 to 11, ERR-02/03"]:::s
   s2["<b>Small client</b><br/>RES-02 to 04, SUR-05"]:::s
   s3["<b>First run</b><br/>DSC-01/02, PRM-02"]:::s
@@ -1999,7 +1999,7 @@ flowchart LR
   s1 --> s2 --> s3 --> s5
   s1 --> s4 --> s5
   classDef s fill:#14263d,stroke:#5f8fc4,color:#dbe7f2,stroke-width:1.2px
-```
+```text
 
 - **Safe chaining.** The write gate, the digests, `expect_input_sha256`, `confirm`, atomic save and the error codes. It unlocks every workflow where an agent makes more than one edit. The first part is in, and `object_batch_set` removes the chained-edit mistake for object fields by applying up to 500 edits in one load and one save.
 - **Small client.** Output schemas, the result cap and paging, the lossy decode report, `file_extract` and `tool_help`. It makes the server usable from a context that cannot hold 275 descriptions.
@@ -2370,7 +2370,7 @@ A requirement whose basis names the protocol, a client behaviour or a published 
 | The `ToolAnnotations` interface | `readOnlyHint` defaults false, `destructiveHint` defaults true, `idempotentHint` defaults false and `openWorldHint` defaults true. The spec says the hints are not guaranteed to describe behaviour and a client MUST treat them as untrusted unless the server is trusted | SAF-01, SAF-02, SAF-03, SAF-10 |
 | Client best practices, every revision from 2024-11-05 to the draft | Filtering the catalog so the model focuses on a few relevant tools rather than scanning hundreds of irrelevant ones reduces token use and improves tool selection accuracy | SUR-07, Q1, Q2 |
 | Tool Annotations as Risk Vocabulary, the protocol blog of 16 March 2026 | The hints drive confirmation prompts in clients that honour them, and they are informational only from an untrusted server. That is why a server side `confirm` is required and the hint alone is not enough | SAF-10, Q4 |
-| The protocol roadmap of 22 August 2026 | Tool calling has held up over the life of the protocol and result handling is the part that needs work, which is where the result envelope requirements sit | RES-02, RES-03 |
+| The protocol review of 22 August 2026 | Tool calling has held up over the life of the protocol and result handling is the part that needs work, which is where the result envelope requirements sit | RES-02, RES-03 |
 
 Three limits belong with these sources. The protocol allows an output schema, it does not require one, so RES-02 requiring one on every tool is a stronger design decision and not a protocol mandate. The published specification has four revisions after the one this server answers, which is G-49 and not a claim that the server is behind, because the pinned SDK decides what it can negotiate. The description cap of 600 characters in SUR-05 and the surface cap of 300 tools in SUR-07 are this document's judgement. The client best practices source supports a smaller filtered surface, and nothing published supports the exact number 600.
 

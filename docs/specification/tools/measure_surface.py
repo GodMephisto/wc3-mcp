@@ -126,26 +126,29 @@ class Session:
             )
         except OSError as exc:
             raise MeasureError(f"the server did not start, {exc}") from exc
+        if self.proc.stdout is None or self.proc.stderr is None:
+            raise MeasureError(f"the server at {exe} opened no pipe to talk over")
+        self.out = self.proc.stdout
+        self.err = self.proc.stderr
         threading.Thread(target=self._pump_stdout, daemon=True).start()
         threading.Thread(target=self._pump_stderr, daemon=True).start()
 
     def _pump_stdout(self) -> None:
-        assert self.proc.stdout is not None
         try:
-            for line in self.proc.stdout:
+            for line in self.out:
                 line = line.strip()
                 if not line:
                     continue
                 try:
                     self._inbox.put(json.loads(line))
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as exc:
+                    self._stderr.append(f"a line the server sent is not JSON, {exc}, {line[:120]}")
                     continue
         finally:
             self._inbox.put(None)
 
     def _pump_stderr(self) -> None:
-        assert self.proc.stderr is not None
-        for line in self.proc.stderr:
+        for line in self.err:
             self._stderr.append(line.rstrip())
 
     def _failure(self, text: str) -> str:
@@ -198,8 +201,8 @@ class Session:
         try:
             if self.proc.stdin is not None:
                 self.proc.stdin.close()
-        except OSError:
-            pass
+        except OSError as exc:
+            self._stderr.append(f"the server input could not be closed, {exc}")
         try:
             self.proc.wait(timeout=5)
         except subprocess.TimeoutExpired:

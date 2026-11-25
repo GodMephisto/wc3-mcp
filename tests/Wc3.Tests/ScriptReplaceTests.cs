@@ -25,7 +25,7 @@ public class ScriptReplaceTests
     {
         const string src = "line1\nline2\nline3\nline4";
         var ls = ScriptCommand.ComputeLineStarts(src);
-        // Two lines replaced by three; surrounding lines and newlines untouched.
+        // Two lines replaced by three. Surrounding lines and newlines untouched.
         Assert.Equal("line1\nA\nB\nC\nline4",
             ScriptCommand.ReplaceFunction(src, ls, Fn(2, 3), "A\nB\nC"));
     }
@@ -35,7 +35,7 @@ public class ScriptReplaceTests
     {
         const string src = "a\r\nfunction f\r\nendfunction\r\nz";
         var ls = ScriptCommand.ComputeLineStarts(src);
-        // Surrounding CRLFs untouched; the LF-only newText is converted to CRLF.
+        // Surrounding CRLFs untouched. The LF-only newText is converted to CRLF.
         Assert.Equal("a\r\nX\r\nY\r\nz",
             ScriptCommand.ReplaceFunction(src, ls, Fn(2, 3), "X\nY"));
     }

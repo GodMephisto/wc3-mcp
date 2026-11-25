@@ -176,6 +176,7 @@ def probe(script: Path, argv: list[str], keys: list[str], timeout: float, temp: 
             encoding="utf-8",
             errors="replace",
             timeout=timeout,
+            check=False,  # a non-zero exit is compared, not raised
             cwd=str(script.parent),
             creationflags=NO_WINDOW,
         )

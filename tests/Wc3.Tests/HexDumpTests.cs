@@ -35,7 +35,7 @@ public class HexDumpTests
         var lines = HexDumpCommand.Format(new byte[] { 0x41, 0x42 }, 0, 2, bytesPerRow: 4);
 
         var line = Assert.Single(lines);
-        // Hex column stays 4*3-1 = 11 chars wide: "41 42" + 6 pad spaces, then the 2-space gap.
+        // Hex column stays 4*3-1 = 11 chars wide, "41 42" + 6 pad spaces, then the 2-space gap.
         Assert.Equal("00000000  41 42        |AB|", line);
     }
 
@@ -105,7 +105,7 @@ public class HexDumpTests
         var data = new byte[] { 1, 2, 3, 4 };
         Assert.Empty(HexDumpCommand.Format(data, 0, 0));
         Assert.Empty(HexDumpCommand.Format(data, 0, -1));
-        // Window end stays offset+length: [-8, -4) misses the array entirely...
+        // Window end stays offset+length, [-8, -4) misses the array entirely...
         Assert.Empty(HexDumpCommand.Format(data, -8, 4));
         // ...while [-2, 4) clamps to the whole array.
         Assert.Equal(HexDumpCommand.Format(data), HexDumpCommand.Format(data, -2, 6));

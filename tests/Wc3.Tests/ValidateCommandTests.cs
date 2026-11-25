@@ -10,14 +10,14 @@ namespace Wc3.Tests;
 
 public class ValidateCommandTests
 {
-    // Non-empty placeholder bytes: present (so not "missing") but they won't parse
+    // Non-empty placeholder bytes, present (so not "missing") but they won't parse
     // into real models, good enough to exercise presence/absence checks.
     private static readonly byte[] Blob = { 1, 2, 3, 4 };
 
     [Fact]
     public void Missing_required_files_are_errors()
     {
-        // Only a script; no war3map.w3i / war3map.w3e.
+        // Only a script. No war3map.w3i / war3map.w3e.
         var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
         {
             ["war3map.j"] = Blob,
@@ -64,7 +64,7 @@ public class ValidateCommandTests
 
         var r = ValidateCommand.Execute(doc);
 
-        // Warnings (e.g. loader parse notes) are allowed; there must be no errors.
+        // Warnings (e.g. Loader parse notes) are allowed. There must be no errors.
         Assert.Equal(0, r.Errors);
         Assert.True(r.Valid, string.Join("; ", r.Issues.Select(i => i.Message)));
     }
@@ -81,7 +81,7 @@ public class ValidateCommandTests
         }));
 
         // Only assert the empty-file rule when the 0-byte entry actually survived the
-        // MPQ round-trip; otherwise the archive layer dropped it and there is nothing
+        // MPQ round-trip. Otherwise the archive layer dropped it and there is nothing
         // for the validator to flag.
         if (doc.GetFile("empty.txt") is not null)
         {
@@ -128,7 +128,7 @@ public class ValidateCommandTests
     [Fact]
     public void Empty_critical_file_is_an_error()
     {
-        // A present-but-0-byte required file means the map cannot run: Error, not Warning.
+        // A present-but-0-byte required file means the map cannot run, Error, not Warning.
         var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
         {
             ["war3map.w3i"] = Blob,

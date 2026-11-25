@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Wc3.Tests;
 
-/// <summary>Hermetic coverage of <see cref="CameraCommand"/>: byte-faithful re-serialize,
+/// <summary>Hermetic coverage of <see cref="CameraCommand"/>, byte-faithful re-serialize,
 /// list/add/set/remove, and the pure <see cref="CameraCommand.ApplyField"/> mapping.</summary>
 public class CameraCommandTests
 {
@@ -36,7 +36,7 @@ public class CameraCommandTests
     [Fact]
     public void List_returns_empty_when_catalog_absent()
     {
-        // A map with no war3map.w3c just has no cameras; listing must not throw.
+        // A map with no war3map.w3c just has no cameras. Listing must not throw.
         var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>()));
         Assert.Empty(CameraCommand.List(doc));
     }
@@ -82,7 +82,7 @@ public class CameraCommandTests
         Assert.Equal(300f, beta.TargetX);
         Assert.Equal(400f, beta.TargetY);
 
-        // The staged override bytes round-trip: reload the re-serialized w3c and confirm Beta
+        // The staged override bytes round-trip, reload the re-serialized w3c and confirm Beta
         // survived. AddOrReplaceRawFile on an existing entry stages into OverrideBytes (RawBytes
         // keeps the original payload), so that is the persisted-on-Save payload to reload.
         var reloaded = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>

@@ -31,7 +31,7 @@ public sealed class CiGateTests : IDisposable
         return path;
     }
 
-    /// <summary>A map that plain-validates: the required data files plus a script payload.</summary>
+    /// <summary>A map that plain-validates, the required data files plus a script payload.</summary>
     private string ValidMap() => Map(
         ("war3map.w3i", Blob), ("war3map.w3e", Blob), ("war3map.j", Blob));
 

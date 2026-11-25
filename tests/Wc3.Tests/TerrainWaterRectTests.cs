@@ -12,7 +12,7 @@ namespace Wc3.Tests;
 /// eight that is both unreachable and unverified, and exposing it through a front-end
 /// without a test would be shipping unmeasured code to a user's map.
 ///
-/// These pin the behaviour its siblings already promise: the rectangle is inclusive, corners
+/// These pin the behaviour its siblings already promise, the rectangle is inclusive, corners
 /// may be given in any order, tiles outside are untouched, an off-grid region is a refusal
 /// rather than a throw, and the change survives a save and reload.
 /// </summary>
@@ -55,7 +55,7 @@ public class TerrainWaterRectTests
     public void A_water_level_past_the_storable_maximum_clamps_instead_of_wrapping()
     {
         // The water field keeps 14 bits, so a value past MaxWaterHeight (~16) wrapped modulo 16384
-        // and stored a wrong level while the brush reported the tile changed. Measured: set 64
+        // and stored a wrong level while the brush reported the tile changed. Measured, set 64
         // stored 0, set 20 stored -12.
         var doc = BlankTerrain();
         var r = TerrainCommand.WaterRect(doc, 2, 2, 4, 4, TerrainCommand.WaterOp.Set, 64f);

@@ -13,7 +13,7 @@ public class ModelRendererTests
     private static readonly IReadOnlyDictionary<int, TextureImage> NoTextures =
         new Dictionary<int, TextureImage>();
 
-    /// <summary>A unit tetrahedron: four triangles, so every view angle sees geometry.</summary>
+    /// <summary>A unit tetrahedron, four triangles, so every view angle sees geometry.</summary>
     private static Model3D Tetrahedron()
     {
         var vertices = new float[]
@@ -64,7 +64,7 @@ public class ModelRendererTests
     [Fact]
     public void Samples_texture_colors_when_texture_resolves()
     {
-        // A solid red 2x2 texture: every lit pixel must carry only red.
+        // A solid red 2x2 texture, every lit pixel must carry only red.
         var red = new byte[2 * 2 * 4];
         for (int i = 0; i < red.Length; i += 4) { red[i] = 255; red[i + 3] = 255; }
         var textures = new Dictionary<int, TextureImage> { [0] = new TextureImage(2, 2, red) };

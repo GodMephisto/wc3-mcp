@@ -3,7 +3,7 @@ namespace Wc3.Tests;
 
 public class AbilityMetadataTests
 {
-    // Real abilitymetadata.slk shape (confirmed against the live install, same as units):
+    // Real abilitymetadata.slk shape (confirmed against the live install, same as units),
     //   row key = "ID" column = the 4-char field code (matches w3a mod codes),
     //   "field"       = the column name inside the data SLK,
     //   "slk"         = which data SLK holds the value (AbilityData, or Profile),

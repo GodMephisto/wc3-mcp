@@ -6,7 +6,7 @@
 # textures cannot be resolved, and the game data tests fail with "Unable to load shared
 # library". Building CascLib here fixes that. It is upstream C++, unmodified.
 #
-# Usage, from anywhere:
+# Usage, from anywhere.
 #   tools/build-casclib-macos.sh [target-dir]
 # target-dir defaults to ~/.local/opt/wc3-mcp and the library is named libCascLib.dylib,
 # which is what .NET probes for when the managed wrapper asks for "CascLib".

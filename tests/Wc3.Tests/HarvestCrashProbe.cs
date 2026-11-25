@@ -29,7 +29,7 @@ public class HarvestCrashProbe
 
     [Theory]
     [InlineData("U9_PumpkinZ_v4.7d.w3x")]     // throws
-    [InlineData("NCD S1 ENGv1b.w3x")]         // control: recovers 0 without throwing
+    [InlineData("NCD S1 ENGv1b.w3x")]         // control, recovers 0 without throwing
     [Trait("Category", "Corpus")]
     public void Which_candidate_or_which_table_breaks_the_harvest(string name)
     {

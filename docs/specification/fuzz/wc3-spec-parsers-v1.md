@@ -66,11 +66,11 @@ Running the corpus needs the published exe, and this folder runs no dotnet. The 
 
 ## How to run it
 
-```
+```text
 python tools/fuzz_corpus.py
 python tools/fuzz_corpus.py --json
 python tools/fuzz_corpus.py --no-record
 python tools/fuzz_corpus.py --exe C:\path\to\Wc3.Mcp.exe
-```
+```text
 
 The state folder is `WC3_SPEC_STATE` when it is set, else `<LOCALAPPDATA>/wc3-mcp/spec-state`. The lock beside the log carries an owner, a token and an expiry, so a run that dies leaves a lock a later run can take.

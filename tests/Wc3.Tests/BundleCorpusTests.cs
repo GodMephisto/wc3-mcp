@@ -5,7 +5,7 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Real-map smoke test for the dependency resolver: any custom unit of the
+/// Real-map smoke test for the dependency resolver, any custom unit of the
 /// Anime corpus map must resolve to a bundle whose closure includes itself
 /// and terminates (cycle guard + node cap). Runs deltas-only (ctx=null) so
 /// no Warcraft III install is needed beyond the map. Skips when absent.
@@ -55,7 +55,7 @@ public class BundleCorpusTests
         Assert.NotEmpty(bundle.Functions);
         Assert.Contains(bundle.Functions, f => f.Reason.StartsWith("references ", StringComparison.Ordinal));
         Assert.Contains(bundle.Functions, f => f.Reason.StartsWith("called by ", StringComparison.Ordinal));
-        // Deterministic: ordered by declaration position, no duplicate names.
+        // Deterministic, ordered by declaration position, no duplicate names.
         Assert.Equal(bundle.Functions.OrderBy(f => f.StartLine).Select(f => f.Name), bundle.Functions.Select(f => f.Name));
         Assert.Equal(bundle.Functions.Count, bundle.Functions.Select(f => f.Name).Distinct(StringComparer.Ordinal).Count());
     }

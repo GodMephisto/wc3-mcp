@@ -9,7 +9,7 @@ namespace Wc3.Tests;
 
 public class ConvertCommandTests
 {
-    /// <summary>Magos-style MDL: one textured triangle referencing Textures\Test.blp.</summary>
+    /// <summary>Magos-style MDL, one textured triangle referencing Textures\Test.blp.</summary>
     private const string TriangleMdl = """
         Version {
             FormatVersion 800,
@@ -106,7 +106,7 @@ public class ConvertCommandTests
     [Fact]
     public void Map_model_resolves_the_mdx_mdl_extension_swap()
     {
-        // Map stores tri.mdl; ask for tri.mdx like object data often does.
+        // Map stores tri.mdl. Ask for tri.mdx like object data often does.
         var export = ConvertCommand.ExportModelToObj(MapWithModel(), @"war3mapImported\tri.mdx");
         Assert.Contains("f 1/1/1 2/2/2 3/3/3", export.Obj);
     }

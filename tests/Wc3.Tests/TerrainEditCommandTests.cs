@@ -288,7 +288,7 @@ public class TerrainEditCommandTests
         Assert.Equal(baseline + 3f, centre);            // weight 1 at dist 0
         Assert.True(rim > baseline, "rim should still rise");
         Assert.True(rim < centre, "rim should rise less than the centre");
-        // weight at dist 2 with r=2 is 1 - 2/3; quantized to the 1/512 lattice.
+        // weight at dist 2 with r=2 is 1, 2/3. Quantized to the 1/512 lattice.
         float expectedRim = baseline + MathF.Round(3f * (1f - 2f / 3f) * 512f) / 512f;
         Assert.Equal(expectedRim, rim, 3);
     }

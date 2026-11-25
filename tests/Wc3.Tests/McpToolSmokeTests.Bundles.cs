@@ -1,6 +1,6 @@
 // tests/Wc3.Tests/McpToolSmokeTests.Bundles.cs
 // Bundle and port-into-version family. A synthetic source map with one custom unit, its custom
-// ability and one imported asset is enough to exercise every member group; the blank fixture is
+// ability and one imported asset is enough to exercise every member group. The blank fixture is
 // the target. Bundles are written with the same BundleJson the CLI writes, so the diff and merge
 // tools read exactly the artifact the CLI produces.
 using System.Text;

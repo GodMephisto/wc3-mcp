@@ -6,7 +6,7 @@ using Wc3.Modeling;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Hermetic coverage for per-geoset material filter modes: MDL FilterMode keywords
+/// Hermetic coverage for per-geoset material filter modes, MDL FilterMode keywords
 /// and MDX layer filter-mode dwords land on <see cref="Geoset.FilterMode"/>, the
 /// base (first) layer decides multi-layer materials, material-less geosets stay
 /// opaque, and posing preserves the mode.
@@ -182,7 +182,7 @@ public class MaterialFilterTests
         w.Write(4u);
         w.Write(800u);
 
-        // TEXS: one 268-byte entry
+        // TEXS, one 268-byte entry
         w.Write("TEXS"u8);
         w.Write(268u);
         w.Write(0u); // replaceableId
@@ -191,7 +191,7 @@ public class MaterialFilterTests
         w.Write(new byte[260 - path.Length]);
         w.Write(0u); // flags
 
-        // MTLS: one material (layer = 28 bytes incl. its size field)
+        // MTLS, one material (layer = 28 bytes incl. its size field)
         const uint layerSize = 28u;
         uint matSize = 4 + 4 + 4 + 8 + layerSize * (uint)layerFilterModes.Length;
         w.Write("MTLS"u8);
@@ -212,7 +212,7 @@ public class MaterialFilterTests
             w.Write(1.0f);           // alpha
         }
 
-        // GEOS: one geoset built in its own buffer so the inclusive size is exact.
+        // GEOS, one geoset built in its own buffer so the inclusive size is exact.
         using var gs = new MemoryStream();
         using var gw = new BinaryWriter(gs);
         gw.Write("VRTX"u8);

@@ -9,13 +9,13 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Hermetic coverage for the two false-positive classes the audit used to report:
+/// Hermetic coverage for the two false-positive classes the audit used to report,
 /// a dispatch found in an inline condition helper (attached only through a caller), and
 /// an unreferenced passive or aura (pure object data, no script) wrongly called inert.
 /// </summary>
 public class HeroWiringAuditTests
 {
-    // ---- Bug 1: dispatch attached through a caller, not directly --------------
+    // ---- Bug 1, dispatch attached through a caller, not directly --------------
 
     [Fact]
     public void Dispatch_in_an_inline_condition_helper_is_wired_via_its_attached_caller()
@@ -79,7 +79,7 @@ endfunction
         Assert.Contains(result.Problems, p => p.Ability == "A000");
     }
 
-    // ---- Bug 2: unreferenced passives are informational, not inert ------------
+    // ---- Bug 2, unreferenced passives are informational, not inert ------------
 
     [Fact]
     public void Unreferenced_self_target_aura_is_informational_not_inert()
@@ -133,7 +133,7 @@ endfunction
         Assert.Contains(result.Problems, p => p.Ability == "A200");
     }
 
-    // ---- Bug 3: an ability keyed to several triggers, one an inert stub -------
+    // ---- Bug 3, an ability keyed to several triggers, one an inert stub -------
 
     [Fact]
     public void Ability_wired_by_one_of_two_triggers_reads_as_wired_not_faulted_by_the_stub()

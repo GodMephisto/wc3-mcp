@@ -15,7 +15,7 @@ namespace Wc3.Tests;
 /// optimized map whose object data was rewritten, and a map with custom objects whose base is
 /// itself custom are all shapes the form has to handle, and none had ever been checked.
 ///
-/// The invariant is the one that matters for an editor: shown plus hidden must account for every
+/// The invariant is the one that matters for an editor, shown plus hidden must account for every
 /// field the metadata defines, because a field in neither bucket can be neither seen nor set.
 /// </summary>
 public class ObjectFormLibrarySweepTests

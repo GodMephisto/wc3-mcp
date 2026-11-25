@@ -5,7 +5,7 @@ using Xunit;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Pins MPQ's cipher against known answers, because getting it wrong does not fail loudly - it
+/// Pins MPQ's cipher against known answers, because getting it wrong does not fail loudly, it
 /// returns plausible-looking noise. A hand-rolled version of this built the crypt table from the
 /// HIGH 16 bits of each seed instead of the low ones, and the result was a decrypt that produced
 /// roughly half the table set for every mutually exclusive flag. That read as a discovery about
@@ -67,7 +67,7 @@ public class MpqCryptoTests
     [Fact]
     public void DecryptLeavesATrailingPartialWordAlone()
     {
-        // Tables are whole 4-byte words; a stray tail must not be mangled or throw.
+        // Tables are whole 4-byte words. A stray tail must not be mangled or throw.
         var data = new byte[] { 1, 2, 3, 4, 9, 9 };
         MpqCrypto.DecryptInPlace(data, 0xABCDu);
         Assert.Equal(9, data[4]);

@@ -7,7 +7,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// The kit ladder is one per-hero table out of several, and naming only it understated the work.
-/// Measured in the running game on GGGA: the pick-to-spawn path is not broken for a ported hero.
+/// Measured in the running game on GGGA, the pick-to-spawn path is not broken for a ported hero.
 /// The commit is accepted, the seat finalizes, CreateUnit produces her unit, and she arrives alive,
 /// visible, owned and selected, exactly like a native hero. What she lacks is membership in the
 /// other hand-written tables (damage-event routing, two death handlers, generated map state, the

@@ -10,15 +10,15 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Dependency-crawl precision: with game metadata available, only fields whose
+/// Dependency-crawl precision, with game metadata available, only fields whose
 /// metadata TYPE is an object-reference type (abilList, unitCode, ...) may pull
 /// objects into the closure, a plain-text field whose value merely LOOKS like a
 /// rawcode must not. Without game data the crawl keeps its historical permissive
-/// behavior. Hermetic: the metadata comes from a synthetic in-memory SLK source.
+/// behavior. Hermetic, the metadata comes from a synthetic in-memory SLK source.
 /// </summary>
 public class BundlePrecisionTests
 {
-    /// <summary>In-memory IGameDataSource: serves only the synthetic metadata SLKs
+    /// <summary>In-memory IGameDataSource, serves only the synthetic metadata SLKs
     /// (missing data SLKs are skipped by the store builders by design).</summary>
     private sealed class FakeGameSource : IGameDataSource
     {
@@ -29,8 +29,8 @@ public class BundlePrecisionTests
         public void Dispose() { }
     }
 
-    // Minimal unitmetadata.slk (SYLK cells: row 1 = headers, key column = field code):
-    // uhab is an object-reference type (abilList); utub is a plain string.
+    // Minimal unitmetadata.slk (SYLK cells, row 1 = headers, key column = field code),
+    // uhab is an object-reference type (abilList). Utub is a plain string.
     private const string UnitMetadataSlk =
         "ID;PWXL;N;E\n" +
         "C;Y1;X1;K\"ID\"\n" +
@@ -61,7 +61,7 @@ public class BundlePrecisionTests
         "E\n";
 
     /// <summary>A synthetic GameDataContext carrying just enough unit/ability field
-    /// metadata for the reference-type gate; every other store is Empty.</summary>
+    /// metadata for the reference-type gate. Every other store is Empty.</summary>
     private static GameDataContext BuildContext()
     {
         using var src = new FakeGameSource(new Dictionary<string, byte[]>
@@ -117,7 +117,7 @@ public class BundlePrecisionTests
         Assert.Contains(bundle.Objects, o => o.Rawcode == "A000" && o.Kind == ObjectKind.Ability && o.CustomToMap);
         Assert.Contains(bundle.Edges, e => e.From == "U000" && e.To == "A000" && e.Via == "uhab");
 
-        // The tooltip's rawcode-shaped text pulls nothing: A001 stays out entirely.
+        // The tooltip's rawcode-shaped text pulls nothing, A001 stays out entirely.
         Assert.DoesNotContain(bundle.Objects, o => o.Rawcode == "A001");
         Assert.DoesNotContain(bundle.Edges, e => e.To == "A001");
     }

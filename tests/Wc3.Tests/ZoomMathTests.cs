@@ -4,8 +4,8 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Pure-logic tests for ZoomMath.ZoomAtPoint, the zoom-to-cursor math TerrainView uses for its
-/// mouse-wheel zoom. Convention: offsets are ScrollViewer scroll offsets, a content point p is
-/// visible at viewport position p * zoom - offset.
+/// mouse-wheel zoom. Convention, offsets are ScrollViewer scroll offsets, a content point p is
+/// visible at viewport position p * zoom, offset.
 /// </summary>
 public class ZoomMathTests
 {
@@ -61,7 +61,7 @@ public class ZoomMathTests
     [Fact]
     public void ZoomAtPoint_PartialClamp_StillKeepsPointUnderCursor()
     {
-        // 8 * 2 would be 16; clamped to 10, the invariant must hold for the clamped zoom.
+        // 8 * 2 would be 16. Clamped to 10, the invariant must hold for the clamped zoom.
         const double offsetX = 500, offsetY = 250, zoom = 8.0;
         const double cursorX = 64, cursorY = 32;
 
@@ -78,7 +78,7 @@ public class ZoomMathTests
     [Fact]
     public void ZoomAtPoint_CursorAtOrigin_ScalesOffsetsOnly()
     {
-        // Cursor at the viewport origin: newOffset = offset * (newZoom / zoom).
+        // Cursor at the viewport origin, newOffset = offset * (newZoom / zoom).
         var (ox, oy, zoom) = ZoomMath.ZoomAtPoint(
             30, 40, 1.0, 0, 0, 2.0, MinZoom, MaxZoom);
 

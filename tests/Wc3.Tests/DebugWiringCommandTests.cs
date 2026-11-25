@@ -7,7 +7,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Hermetic coverage for the cast-chain instrumentation. The fixture below is the real shape
-/// found on a ported arena map (an "Anime_WOS2"-style hero dispatcher): one gg_trg_* trigger
+/// found on a ported arena map (an "Anime_WOS2"-style hero dispatcher), one gg_trg_* trigger
 /// registered per player for EVENT_PLAYER_UNIT_SPELL_EFFECT, a single boolean-returning condition
 /// function that gates on IsUnitType/CheckCoordsInRect/SpellExtension before branching per hero on
 /// GetUnitTypeId, and the generated wc3ctl_WirePlacedHeroSpells that defers the per-player

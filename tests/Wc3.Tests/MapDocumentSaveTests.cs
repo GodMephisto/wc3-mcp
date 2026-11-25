@@ -13,7 +13,7 @@ public sealed class MapDocumentSaveTests : IDisposable
 
     public void Dispose()
     {
-        // Flat scratch folder this test made: delete the files it wrote, then the folder, without
+        // Flat scratch folder this test made, delete the files it wrote, then the folder, without
         // a recursive walk that could follow a link out of it.
         try
         {
@@ -49,7 +49,7 @@ public sealed class MapDocumentSaveTests : IDisposable
         Assert.Equal(Encoding.ASCII.GetBytes("new"), reopened.GetFile("war3map.w3i")!.RawBytes);
         Assert.Equal(new byte[] { 1, 2, 3 }, reopened.GetFile("war3map.j")!.RawBytes);
 
-        // Only the destination: a staged ".map.w3x.<8 hex>.tmp" would show up here.
+        // Only the destination, a staged ".map.w3x.<8 hex>.tmp" would show up here.
         Assert.Equal(new[] { "map.w3x" }, FolderEntries());
         Assert.DoesNotContain(Directory.EnumerateFileSystemEntries(_dir),
             p => p.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase));
@@ -71,11 +71,11 @@ public sealed class MapDocumentSaveTests : IDisposable
         byte[]? destinationAtRename = null;
         try
         {
-            // The fault is injected at the only moment that matters: the staged bytes are written
+            // The fault is injected at the only moment that matters, the staged bytes are written
             // and flushed, and the destination still holds the previous map. A permission denial
             // or a full disk cannot be produced reliably in a hermetic test, and a throw inside
             // SaveToBytes would fail before anything is staged, proving nothing about this window.
-            // The hook is the smallest seam: internal, thread-static, null in production.
+            // The hook is the smallest seam, internal, thread-static, null in production.
             MapDocument.BeforeRenameForTests = temp =>
             {
                 staged = temp;
@@ -98,7 +98,7 @@ public sealed class MapDocumentSaveTests : IDisposable
         Assert.Equal(_dir, Path.GetDirectoryName(staged!));
         Assert.Matches(@"^\.map\.w3x\.[0-9a-f]{8}\.tmp$", Path.GetFileName(staged!));
 
-        // After the failed save: the old bytes are intact and the staging file is gone.
+        // After the failed save, the old bytes are intact and the staging file is gone.
         Assert.Equal(before, File.ReadAllBytes(path));
         Assert.False(File.Exists(staged));
         Assert.Equal(new[] { "map.w3x" }, FolderEntries());

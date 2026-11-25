@@ -6,7 +6,7 @@ namespace Wc3.Tests;
 
 /// <summary>
 /// Regression guard for the shared model resolver. Maps routinely reference a model as
-/// ".mdl" while storing the binary under ".mdx" (and vice versa); every front-end must
+/// ".mdl" while storing the binary under ".mdx" (and vice versa). Every front-end must
 /// resolve it via <see cref="RenderModelCommand.FindModelEntry"/>. The Studio preview
 /// once used a weaker private copy that missed the swap and showed nothing.
 /// </summary>
@@ -25,7 +25,7 @@ public class ModelResolveTests
     [InlineData("war3mapImported\\hero.mdl", "war3mapImported\\hero.mdx")] // referenced .mdx, stored .mdl
     [InlineData("war3mapImported\\hero.mdx", "war3mapImported/hero.mdx")]  // slash variant
     [InlineData("war3mapImported\\hero.mdx", "war3mapImported\\hero")]     // extensionless reference
-    // Classic variation-style storage: no bare file, one model per variation, the
+    // Classic variation-style storage, no bare file, one model per variation, the
     // resolver falls back to the "<name>0" (variation 0) file.
     [InlineData("war3mapImported\\bush0.mdx", "war3mapImported\\bush")]     // extensionless reference
     [InlineData("war3mapImported\\bush0.mdx", "war3mapImported\\bush.mdx")] // .mdx reference
@@ -46,7 +46,7 @@ public class ModelResolveTests
     }
 
     [Theory]
-    // Icon Art fields store the path with no extension; the game appends .blp at load.
+    // Icon Art fields store the path with no extension. The game appends .blp at load.
     [InlineData("ReplaceableTextures\\CommandButtons\\BTNFoo.blp", "ReplaceableTextures\\CommandButtons\\BTNFoo")]
     [InlineData("war3mapImported\\fx.blp", "war3mapImported\\fx")]                 // extensionless import
     [InlineData("war3mapImported\\fx.blp", "war3mapImported/fx")]                  // slash variant
@@ -68,7 +68,7 @@ public class ModelResolveTests
     }
 
     [Theory]
-    // Trigger sound calls store the path with no extension; the game appends .mp3 at load.
+    // Trigger sound calls store the path with no extension. The game appends .mp3 at load.
     [InlineData("war3mapImported\\Hero_Foo_Q.mp3", "war3mapImported\\Hero_Foo_Q")]
     [InlineData("war3mapImported\\snd.wav", "war3mapImported\\snd")]
     [InlineData("war3mapImported\\snd.mp3", "war3mapImported/snd")] // slash variant
@@ -90,7 +90,7 @@ public class ModelResolveTests
     [Fact]
     public void An_exact_file_beats_the_variation0_fallback()
     {
-        // Both bush.mdx and bush0.mdx exist: the plain name must win, the variation
+        // Both bush.mdx and bush0.mdx exist, the plain name must win, the variation
         // fallback only fires when every non-suffixed form misses.
         var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
         {

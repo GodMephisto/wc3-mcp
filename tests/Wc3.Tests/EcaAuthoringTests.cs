@@ -11,7 +11,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Authoring events, conditions and actions.
 ///
-/// The whole feature turns on one measured fact: war3map.wtg stores a function's parameters but
+/// The whole feature turns on one measured fact, war3map.wtg stores a function's parameters but
 /// NOT how many there are, so the count is taken from the World-Editor function table on read.
 /// A function written with the wrong arity does not produce a wrong trigger, it produces a file
 /// that throws on the next read, and the map still saves. Before this work, writing one action

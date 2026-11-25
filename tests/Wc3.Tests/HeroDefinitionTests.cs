@@ -6,7 +6,7 @@ using Xunit;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Pins the definition format, which is the project's central artifact: everything else is a verb
+/// Pins the definition format, which is the project's central artifact, everything else is a verb
 /// over it (import / install / package / lint). A silent shape change here would break stored
 /// definitions, so the round-trip and the schema constant are asserted rather than assumed.
 /// </summary>

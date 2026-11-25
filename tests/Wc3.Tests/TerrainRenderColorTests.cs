@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/TerrainRenderColorTests.cs
+// tests/Wc3.Tests/TerrainRenderColorTests.cs
 using War3Net.Build.Environment;
 using Wc3.Model;
 using Wc3.Render;

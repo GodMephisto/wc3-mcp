@@ -1,0 +1,13 @@
+# Places where a rule fires on a line that has to keep its shape. Each entry
+# names the rule and the file, and says why the finding is not a defect.
+
+[exempt]
+# build_pdf.py writes HTML, CSS, JavaScript and Mermaid inside Python string
+# literals, so the punctuation rules read markup as prose.
+colon = ["docs/specification/tools/build_pdf.py"]
+semicolon = ["docs/specification/tools/build_pdf.py"]
+dash = ["docs/specification/tools/build_pdf.py"]
+# The example record in release_record.py carries an example.invalid download
+# URL. RFC 2606 reserves the name and nothing resolves it, the tool only checks
+# the field is present and shaped.
+absolute-url = ["docs/specification/tools/release_record.py"]

@@ -7,13 +7,13 @@ using Xunit;
 
 namespace Wc3.Tests;
 
-/// <summary>Hermetic coverage of <see cref="SoundCommand"/>: list/add/set/remove over a
+/// <summary>Hermetic coverage of <see cref="SoundCommand"/>, list/add/set/remove over a
 /// synthetic war3map.w3s, full Save→Load round-trips through the pinned MapSounds writer,
 /// and the pure <see cref="SoundCommand.ApplyField"/> mapping.</summary>
 public class SoundCommandTests
 {
     // The w3s format version is discovered rather than hard-coded (the enum's members are
-    // opaque in the probe dump); newest value = latest catalog format.
+    // opaque in the probe dump). Newest value = latest catalog format.
     private static readonly MapSoundsFormatVersion LatestVersion =
         (MapSoundsFormatVersion)Enum.GetValues<MapSoundsFormatVersion>().Cast<int>().Max();
 
@@ -90,7 +90,7 @@ public class SoundCommandTests
         Assert.Equal(2, result.Count);
 
         // AddOrReplaceModelFile marks the entry dirty, so SaveToBytes re-serializes the model
-        // through the pinned MapSounds writer; reload and confirm the new sound survived.
+        // through the pinned MapSounds writer. Reload and confirm the new sound survived.
         var reloaded = MapDocument.Load(doc.SaveToBytes());
         var b = SoundCommand.List(reloaded).Single(s => s.Name == "gg_snd_b");
         Assert.Equal("war3mapImported\\b.wav", b.FilePath);
@@ -184,8 +184,8 @@ public class SoundCommandTests
     [Fact]
     public void List_returns_empty_when_catalog_absent()
     {
-        // A map with no war3map.w3s just has no sounds; listing must not throw (a fresh map
-        // or one that never defined a sound is a normal, editable state - Add creates the file).
+        // A map with no war3map.w3s just has no sounds. Listing must not throw (a fresh map
+        // or one that never defined a sound is a normal, editable state, Add creates the file).
         var doc = EmptyMap();
         Assert.Empty(SoundCommand.List(doc));
     }
@@ -193,7 +193,7 @@ public class SoundCommandTests
     [Fact]
     public void ImportedAudioFiles_lists_only_audio_assets_sorted()
     {
-        // A map can be full of imported audio yet define no sounds - this surfaces those files
+        // A map can be full of imported audio yet define no sounds, this surfaces those files
         // (the World Editor's Import Manager) so they can be turned into definitions.
         var doc = MapDocument.Load(SyntheticMap.Build(new Dictionary<string, byte[]>
         {

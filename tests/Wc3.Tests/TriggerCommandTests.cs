@@ -11,7 +11,7 @@ using Xunit;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Coverage for <see cref="TriggerCommand"/>: byte-faithful (.wtg) serialize/round-trip, the
+/// Coverage for <see cref="TriggerCommand"/>, byte-faithful (.wtg) serialize/round-trip, the
 /// read-only <c>List</c>/<c>ListVariables</c> projections, and the mutating rename/flag ops,
 /// all driven through a real <see cref="MapDocument"/> so the wired <c>ReadMapTriggers</c>
 /// parser and <c>AddOrReplaceRawFile</c> persistence path are exercised end-to-end.
@@ -25,7 +25,7 @@ public class TriggerCommandTests
     private static readonly MapTriggersSubVersion Sub =
         Enum.GetValues<MapTriggersSubVersion>()[^1];
 
-    /// <summary>Builds a minimal but valid MapTriggers tree: a root category, one child
+    /// <summary>Builds a minimal but valid MapTriggers tree, a root category, one child
     /// category, one GUI trigger (enabled + initially-on), and one integer variable.</summary>
     private static MapTriggers NewTriggers()
     {
@@ -178,7 +178,7 @@ public class TriggerCommandTests
         Assert.Equal(on, TriggerCommand.List(doc).Single(i => i.Id == 2).RunOnMapInit);
     }
 
-    // ---- persistence: a mutation survives a save + reload through the parser ----
+    // ---- persistence, a mutation survives a save + reload through the parser ----
 
     [Fact]
     public void Mutation_round_trips_through_save_and_reload()

@@ -12,14 +12,14 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Hermetic coverage of MapInfoCommand: the war3map.w3i is constructed
+/// Hermetic coverage of MapInfoCommand, the war3map.w3i is constructed
 /// programmatically (a complete v25 MapInfo), serialized with the same War3Net
 /// writer the command uses, and wrapped in an in-memory synthetic MPQ, no
 /// corpus map or game install required.
 /// </summary>
 public class MapInfoCommandTests
 {
-    /// <summary>Minimal but complete v25 MapInfo: every field the v25 writer emits is
+    /// <summary>Minimal but complete v25 MapInfo, every field the v25 writer emits is
     /// set, so serialization never trips over a null.</summary>
     private static MapInfo BuildInfo()
     {
@@ -97,7 +97,7 @@ public class MapInfoCommandTests
     {
         // The World Editor stores the map title as a TRIGSTR_ reference into war3map.wts.
         // Read must resolve it so the panel shows real text ("Gutsy Geoid Game"), not the raw
-        // key - the reason Map Info looked erased. Unresolved keys just fall through.
+        // key, the reason Map Info looked erased. Unresolved keys just fall through.
         var info = BuildInfo();
         info.MapName = "TRIGSTR_100";
         info.MapAuthor = "TRIGSTR_101";
@@ -124,7 +124,7 @@ public class MapInfoCommandTests
         Assert.Equal(52, fields.PlayableHeight);
         Assert.Equal(1, fields.Players);
 
-        // The extended w3i surface: environment, fog, screens and flag toggles.
+        // The extended w3i surface, environment, fog, screens and flag toggles.
         Assert.StartsWith("BL (", fields.CameraBounds);
         Assert.Equal("LordaeronSummer", fields.Tileset);
         Assert.Equal("Unspecified", fields.LightEnvironment);
@@ -186,7 +186,7 @@ public class MapInfoCommandTests
         Assert.Equal("2-4", MapInfoCommand.Read(doc).RecommendedPlayers);
     }
 
-    /// <summary>The fidelity invariant behind "untouched fields preserved": parsing a
+    /// <summary>The fidelity invariant behind "untouched fields preserved", parsing a
     /// w3i through MapDocument and re-serializing it UNCHANGED reproduces the original
     /// bytes exactly, so a field edit can only ever affect that field's encoding.</summary>
     [Fact]
@@ -303,7 +303,7 @@ public class MapInfoCommandTests
         Assert.Throws<InvalidOperationException>(() => MapInfoCommand.Read(noW3i));
         Assert.Throws<InvalidOperationException>(() => MapInfoCommand.Set(noW3i, "MapName", "x"));
 
-        // Garbage w3i: load degrades to raw (Model == null) and the command refuses.
+        // Garbage w3i, load degrades to raw (Model == null) and the command refuses.
         var badW3i = MapDocument.Load(SyntheticMap.Build(
             new Dictionary<string, byte[]> { ["war3map.w3i"] = new byte[] { 1, 2, 3 } }));
         Assert.Throws<InvalidOperationException>(() => MapInfoCommand.Read(badW3i));

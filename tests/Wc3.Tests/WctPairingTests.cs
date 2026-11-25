@@ -9,7 +9,7 @@ namespace Wc3.Tests;
 /// <summary>
 /// Guards the war3map.wct to war3map.wtg pairing rule, both branches, on synthetic trees that make
 /// the answer unambiguous. The measurement that produced the rule lives in WctPairingRuleSweep and
-/// needs the map library; these run anywhere and fail loudly if the branch is ever flattened back
+/// needs the map library. These run anywhere and fail loudly if the branch is ever flattened back
 /// into a single unconditional ordinal.
 /// </summary>
 public class WctPairingTests
@@ -43,7 +43,7 @@ public class WctPairingTests
     [Fact]
     public void Without_a_sub_version_a_gui_trigger_holds_an_empty_slot_of_its_own()
     {
-        // Measured on RATankD_516.2: 606 slots for 606 definitions, 42 empty for 42 GUI triggers.
+        // Measured on RATankD_516.2, 606 slots for 606 definitions, 42 empty for 42 GUI triggers.
         var a = Text("first");
         var g = Gui("a gui trigger");
         var b = Text("second");
@@ -61,7 +61,7 @@ public class WctPairingTests
     [Fact]
     public void With_a_sub_version_a_gui_trigger_holds_no_slot_at_all()
     {
-        // Measured on Anime_WOS2_0.30d: 109 slots for 115 definitions, 6 GUI, zero empty. This is
+        // Measured on Anime_WOS2_0.30d, 109 slots for 115 definitions, 6 GUI, zero empty. This is
         // the case the reader used to get wrong, and it got it wrong in the most misleading
         // possible way, by showing 'second' the body belonging to 'first'.
         var a = Text("first");
@@ -155,7 +155,7 @@ public class WctPairingTests
 
     // ---- byte level war3map.wct surgery ---------------------------------------------------------
 
-    // Builds a version 1 wct: int32 version, a null-terminated comment, an empty global block,
+    // Builds a version 1 wct, int32 version, a null-terminated comment, an empty global block,
     // an int32 slot count, then one int32 length plus bytes per slot. A non-empty body carries the
     // trailing null the World Editor writes.
     private static byte[] Wct(string comment, params string[] codes)

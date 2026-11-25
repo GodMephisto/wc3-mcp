@@ -83,7 +83,7 @@ public class PathingCommandTests
             shape: PathingCommand.BrushShape.Circle);
 
         Assert.True(r.Ok, r.Message);
-        // Circle r=2 (Euclidean, cell-center, dx²+dy²≤4): 5 + 3 + 3 + 1 + 1 = 13 cells.
+        // Circle r=2 (Euclidean, cell-center, dx²+dy²≤4), 5 + 3 + 3 + 1 + 1 = 13 cells.
         // (25-cell bounding square minus the 12 offsets with dx²+dy² > 4.)
         Assert.Equal(13, r.CellsChanged);
 
@@ -129,7 +129,7 @@ public class PathingCommandTests
     public void Paint_ClampsToBounds_NoOverflowNearCorner()
     {
         var doc = BlankWithPathing();
-        // Center at (0,0) with a big radius: only the in-bounds quadrant is touched.
+        // Center at (0,0) with a big radius, only the in-bounds quadrant is touched.
         var r = PathingCommand.Paint(doc, 0, 0, radius: 100, flags: PathingType.Build,
             shape: PathingCommand.BrushShape.Square);
 

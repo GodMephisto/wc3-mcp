@@ -2,7 +2,7 @@ using Wc3.GameData;
 namespace Wc3.Tests;
 public class SlkTableTests
 {
-    // 2 cols (unitID, name), header row 1, one data row: hfoo, "Footman"
+    // 2 cols (unitID, name), header row 1, one data row, hfoo, "Footman"
     private const string Slk =
         "ID;PWXL;N;E\r\nB;X2;Y2;D0\r\nC;X1;Y1;K\"unitID\"\r\nC;X2;K\"name\"\r\nC;X1;Y2;K\"hfoo\"\r\nC;X2;K\"Footman\"\r\nE\r\n";
 

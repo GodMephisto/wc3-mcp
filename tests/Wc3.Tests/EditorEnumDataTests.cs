@@ -87,7 +87,7 @@ public class EditorEnumDataTests
     {
         if (!Directory.Exists(Install)) return;
 
-        // Attack type is the clearest case: eight values, each with a real name.
+        // Attack type is the clearest case, eight values, each with a real name.
         var r = ObjectFieldOptionsCommand.Execute(ObjectKind.Unit, "ua1t", Install);
 
         Assert.Equal("attackType", r.Type);

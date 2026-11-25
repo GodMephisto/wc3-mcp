@@ -11,7 +11,7 @@ namespace Wc3.Tests;
 /// Whether reading a map script and writing it straight back changes its bytes.
 ///
 /// Three layers disagree about the encoding of war3map.j. Parsers.cs registers it as Latin-1, and
-/// says why in a comment: a map script is a byte stream with no declared encoding, real maps carry
+/// says why in a comment, a map script is a byte stream with no declared encoding, real maps carry
 /// bytes that are not valid UTF-8, and one map in this library carries about 52,000 of them.
 /// HeroWiringAudit reads it as Latin-1 too. ScriptCommand.Read decodes it as UTF-8 and
 /// ScriptCommand.Write re-encodes as UTF-8, and that pair is the path the Studio's Script panel

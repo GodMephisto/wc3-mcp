@@ -3,7 +3,7 @@ namespace Wc3.Tests;
 
 public class UnitMetadataTests
 {
-    // Real unitmetadata.slk shape (confirmed against the live install):
+    // Real unitmetadata.slk shape (confirmed against the live install),
     //   row key = "ID" column = the 4-char field code (matches w3u mod codes),
     //   "field"       = the column name inside the data SLK,
     //   "slk"         = which data SLK holds the value (e.g. UnitBalance, Profile),

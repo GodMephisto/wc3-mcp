@@ -119,7 +119,7 @@ function sha256(buffer) {
 }
 
 // A cache hit needs a spawnable binary. A hard link (or copy) of the running node
-// binary under the cache's exe name is enough: the launcher only spawns that path.
+// binary under the cache's exe name is enough, the launcher only spawns that path.
 function installCachedBinary(sandbox) {
   fs.mkdirSync(sandbox.versionDir, { recursive: true });
   const exe = path.join(sandbox.versionDir, 'wc3-mcp.exe');

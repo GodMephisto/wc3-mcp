@@ -67,7 +67,7 @@ public class UnnamedEntryTypeProbe
         if (Is("BM")) return "BMP image";
         if (Is("")) return "SLK or binary table";
 
-        // Text-ish: mostly printable with no NUL in the first block reads as text, the same test
+        // Text-ish, mostly printable with no NUL in the first block reads as text, the same test
         // FilePreviewCommand uses.
         int n = Math.Min(b.Length, 512), printable = 0, nul = 0;
         for (int i = 0; i < n; i++)
@@ -148,7 +148,7 @@ public class UnnamedEntryTypeProbe
 
         // Judged against entries that yielded bytes, not against all of them. A first pass
         // compared with the raw total and concluded sniffing was not worth wiring in, which was
-        // an artifact: 100,194 of the 142,051 nameless entries report zero bytes, about 50,000 in
+        // an artifact, 100,194 of the 142,051 nameless entries report zero bytes, about 50,000 in
         // each of the two protected maps. Counting those as a failure to identify CONTENT
         // measures the wrong thing, and the wrong verdict would have killed a feature that works.
         //
@@ -162,7 +162,7 @@ public class UnnamedEntryTypeProbe
         // in ORDR_S2 and 1 in PumpkinTD are literally zero length. The other ~50,000 per map are
         // entries War3Net cannot read, roughly 41,000 unreadable plus 8,200 offset-encrypted in
         // ORDR, whose block rows carry junk sizes that alias real data regions. Calling them
-        // padding, as the first correction did, understates them badly: they are precisely why a
+        // padding, as the first correction did, understates them badly, they are precisely why a
         // from-scratch rebuild of those archives is unsound and why the save path patches the
         // original bytes in place instead. See MpqSalvagePatcher.
         int empties = overall.TryGetValue("empty", out int e) ? e : 0;

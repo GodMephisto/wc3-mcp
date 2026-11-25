@@ -2,7 +2,7 @@
 
 Sections 3.1, 3.3 and 3.5 are guarded against the published exe by
 measure_surface.py. This guards the other direction, the counts the document and
-the README state about themselves:
+the README state about themselves.
 
   * the tool count in the README's opening paragraph, against tools/list;
   * the requirement, group and acceptance-check counts in the section 2 sentence
@@ -101,7 +101,11 @@ def prose_counts(text: str, pattern: re.Pattern, where: str, what: str) -> dict:
             "guard cannot tell which sentence is the claim"
         )
     m = pattern.search(text)
-    assert m is not None
+    if m is None:
+        raise CountError(
+            f"{where} matched the {what} once and then could not be read again, so the "
+            "guard has no numbers to compare"
+        )
     return {key: number(value) for key, value in m.groupdict().items()}
 
 

@@ -77,7 +77,7 @@ public class PortToolkitCommandTests
         Assert.DoesNotContain(removed, f => f.FieldCode == "unam");
         Assert.All(removed, f => Assert.Equal("Raiden Ei", f.Name));
 
-        // DeclaredNative is in the schema; UndeclaredNative is not, so only the latter is flagged.
+        // DeclaredNative is in the schema. UndeclaredNative is not, so only the latter is flagged.
         Assert.Contains(r.ScriptIdentifiersFlagged, i => i.Name == "UndeclaredNative");
         Assert.DoesNotContain(r.ScriptIdentifiersFlagged, i => i.Name == "DeclaredNative");
 

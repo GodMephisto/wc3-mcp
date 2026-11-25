@@ -13,15 +13,15 @@ public class ObjectDataStoreTests
 
     private static byte[] A(string s) => System.Text.Encoding.ASCII.GetBytes(s);
 
-    // Real shape (destructable-flavored): metadata row key = 4-char code;
-    // "field" = data-SLK column; "slk" = data table name.
+    // Real shape (destructable-flavored), metadata row key = 4-char code.
+    // "field" = data-SLK column. "slk" = data table name.
     private const string Meta =
         "ID;PWXL;N;E\r\n" +
         "C;X1;Y1;K\"ID\"\r\nC;X2;K\"field\"\r\nC;X3;K\"slk\"\r\nC;X4;K\"displayName\"\r\n" +
         "C;X1;Y2;K\"bhps\"\r\nC;X2;K\"HP\"\r\nC;X3;K\"DestructableData\"\r\nC;X4;K\"WESTRING_BEVAL_BHPS\"\r\n" +
         "C;X1;Y3;K\"bnam\"\r\nC;X2;K\"Name\"\r\nC;X3;K\"Profile\"\r\nC;X4;K\"WESTRING_BEVAL_BNAM\"\r\nE\r\n";
 
-    // destructabledata.slk keyed by DestructableID; ATtr has HP=50.
+    // destructabledata.slk keyed by DestructableID. ATtr has HP=50.
     private const string Data =
         "ID;PWXL;N;E\r\n" +
         "C;X1;Y1;K\"DestructableID\"\r\nC;X2;K\"HP\"\r\n" +
@@ -64,7 +64,7 @@ public class ObjectDataStoreTests
     [Fact]
     public void Custom_path_map_reaches_tables_outside_the_convention()
     {
-        // Doodad-style layout: the "DoodadData" table's file is doodads\doodads.slk,
+        // Doodad-style layout, the "DoodadData" table's file is doodads\doodads.slk,
         // not the lowercased table name under units\.
         const string doodadMeta =
             "ID;PWXL;N;E\r\n" +
@@ -90,7 +90,7 @@ public class ObjectDataStoreTests
     [Fact]
     public void Explicit_slk_names_restrict_which_tables_load()
     {
-        // Item-style layout: item fields share the unit metadata; restricting the table
+        // Item-style layout, item fields share the unit metadata. Restricting the table
         // set to ItemData keeps the store item-only even though unit SLKs are present.
         const string sharedMeta =
             "ID;PWXL;N;E\r\n" +

@@ -222,14 +222,14 @@ public class BlankMapTests
     }
 
     /// <summary>
-    /// The reason the blank map carries a war3map.j at all: porting a unit whose source
+    /// The reason the blank map carries a war3map.j at all, porting a unit whose source
     /// closure includes trigger functions must splice them in and hook InitTrig_* into
     /// the skeleton's InitCustomTriggers, not bail with "target has no war3map.j".
     /// </summary>
     [Fact]
     public void Port_IntoBlankMap_SplicesAndHooksTheScript()
     {
-        // Source: custom hero H000 + a trigger pair referencing it (dispatcher pattern
+        // Source, custom hero H000 + a trigger pair referencing it (dispatcher pattern
         // from PortBatchTests).
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
         w3u.NewUnits.Add(new SimpleObjectModification

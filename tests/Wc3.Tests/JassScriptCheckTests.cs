@@ -1,7 +1,7 @@
 // tests/Wc3.Tests/JassScriptCheckTests.cs
 // The compile gate. In JASS one undeclared variable fails the whole war3map.j, so config() never
-// runs and a hosted map shows no player slots - the failure that repeatedly looked like "the lobby
-// is bugged". These lock in both halves: catching it, and never crying wolf on a healthy script.
+// runs and a hosted map shows no player slots, the failure that repeatedly looked like "the lobby
+// is bugged". These lock in both halves, catching it, and never crying wolf on a healthy script.
 using Wc3.Model;
 using Xunit;
 

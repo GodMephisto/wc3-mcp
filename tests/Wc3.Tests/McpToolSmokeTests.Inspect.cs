@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/McpToolSmokeTests.Inspect.cs
+// tests/Wc3.Tests/McpToolSmokeTests.Inspect.cs
 // Read-only analysis (validate, lint, diff, search, script and string listings, the audits) and
 // the hero definition tools. Each read is checked against content put there through MCP first,
 // so an empty answer cannot pass for a correct one.
@@ -306,7 +306,7 @@ public sealed class McpSmokeInspectTests : McpSmokeBase
     [Fact, Trait("Category", "GameData"), Covers("target_get", "target_set", "target_list")]
     public async Task Target_tools_view_and_set_the_current_target()
     {
-        // Determine schemas directory: env override > test output > the repo checkout.
+        // Determine schemas directory, env override > test output > the repo checkout.
         string? schemasDir = Environment.GetEnvironmentVariable("WC3_SCHEMAS_DIR");
         if (string.IsNullOrWhiteSpace(schemasDir))
         {

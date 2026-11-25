@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/ReplayCommandTests.cs
+// tests/Wc3.Tests/ReplayCommandTests.cs
 using System.IO.Compression;
 using System.Text;
 using Wc3.Commands;
@@ -12,6 +12,9 @@ namespace Wc3.Tests;
 /// </summary>
 public class ReplayCommandTests
 {
+    /// <summary>The elapsed time the synthetic header records, in milliseconds.</summary>
+    private const uint ElapsedMilliseconds = 123_456;
+
     [Fact]
     public void Private_lobby_with_0x38_metadata_reads_the_map_and_the_disconnect()
     {
@@ -19,7 +22,7 @@ public class ReplayCommandTests
 
         Assert.Null(g.Problem);
         Assert.Equal(@"Maps\Download\BaseMap_Repro.w3x", g.Map);
-        Assert.Equal(TimeSpan.FromMilliseconds(123_456), g.Length);
+        Assert.Equal(TimeSpan.FromMilliseconds(ElapsedMilliseconds), g.Length);
         Assert.True(g.Disconnected);
         var leave = Assert.Single(g.Leaves);
         Assert.Equal("disconnected", leave.Meaning);
@@ -32,8 +35,8 @@ public class ReplayCommandTests
     {
         // The settings blob carries a short non-text prefix before the Maps root, because the four
         // bytes before it are a value and not a separator. Every sibling report trims it through
-        // CleanMapPath; the summary did not, so it alone emitted replacement characters in the map
-        // path. Measured on a real replay: "\uFFFD\u000E\uFFFDMaps/Download/Anime_WOS2_0.32c2.w3x".
+        // CleanMapPath. the summary did not, so it alone emitted replacement characters in the map
+        // path. Measured on a real replay, "\uFFFD\u000E\uFFFDMaps/Download/Anime_WOS2_0.32c2.w3x".
         var g = new ReplayGame("x.w3g", DateTime.UnixEpoch, "\uFFFD\u000E\uFFFDMaps/Download/Foo.w3x",
             TimeSpan.Zero, 0, Array.Empty<ReplayPlayer>(), Array.Empty<ReplayLeave>(),
             Array.Empty<ReplayChat>(), false, null);
@@ -114,7 +117,7 @@ public class ReplayCommandTests
         h.Write(Encoding.ASCII.GetBytes("Warcraft III recorded game\x1A\0"));
         h.Write(68u); h.Write((uint)(block.Length + 12)); h.Write(1u); h.Write((uint)data.Length); h.Write(1u);
         h.Write(Encoding.ASCII.GetBytes("PX3W")); h.Write(10200u); h.Write((ushort)7000); h.Write((ushort)0x8000);
-        h.Write(123_456u); h.Write(0u);
+        h.Write(ElapsedMilliseconds); h.Write(0u);
         h.Write((uint)block.Length); h.Write((uint)data.Length); h.Write(0u);
         h.Write(block);
         h.Flush();

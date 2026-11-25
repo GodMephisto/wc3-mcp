@@ -72,7 +72,7 @@ public class WorldEditStringsTests
     [Fact]
     public void FromByteSources_merges_files_and_skips_nulls()
     {
-        // The real use: worldeditstrings.txt (UI labels) + worldeditgamestrings.txt
+        // The real use, worldeditstrings.txt (UI labels) + worldeditgamestrings.txt
         // (WESTRING_DEST_* / WESTRING_DOODAD_* object names) merged into one table.
         byte[] Ui(string s) => System.Text.Encoding.UTF8.GetBytes(s);
         var wes = WorldEditStrings.FromByteSources(

@@ -8,7 +8,7 @@ using Wc3.Model;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Byte-faithfulness of the write-support layer (wave 5a): re-serializing a file
+/// Byte-faithfulness of the write-support layer (wave 5a), re-serializing a file
 /// through its model must reproduce the original bytes, and adding/replacing files
 /// must persist through a save+reload without disturbing the rest of the archive.
 /// </summary>
@@ -16,7 +16,7 @@ public class MapWriteTests
 {
     private static string CorpusPath => CorpusMap.PathOrEmpty;
 
-    // Object-data + imports: formats with a byte-faithful War3Net model writer.
+    // Object-data + imports, formats with a byte-faithful War3Net model writer.
     private static readonly string[] ModelSerializableFiles =
     {
         "war3map.w3u", "war3map.w3a", "war3map.w3t", "war3map.w3b",
@@ -26,10 +26,10 @@ public class MapWriteTests
     };
 
     /// <summary>
-    /// The core invariant: for every model-serializable file the real map actually
+    /// The core invariant, for every model-serializable file the real map actually
     /// contains, re-serializing it (via AddOrReplaceModelFile with its own model,
     /// unchanged) reproduces the original bytes exactly. A single save dirties them
-    /// all at once; each is asserted independently so a lossy writer is pinpointed.
+    /// all at once. Each is asserted independently so a lossy writer is pinpointed.
     /// </summary>
     [Fact]
     [Trait("Category", "Corpus")]
@@ -65,7 +65,7 @@ public class MapWriteTests
     }
 
     /// <summary>
-    /// The terrain environment (war3map.w3e) writer must be byte-faithful: re-serializing
+    /// The terrain environment (war3map.w3e) writer must be byte-faithful, re-serializing
     /// the real map's own environment model (unchanged) must reproduce the original bytes
     /// exactly. This pins the War3Net MapEnvironment writer that TerrainCommand relies on;
     /// a non-faithful writer would gratuitously rewrite untouched terrain on every edit.
@@ -83,7 +83,7 @@ public class MapWriteTests
         Assert.NotNull(entry);          // the corpus map must contain terrain
         Assert.NotNull(entry!.Model);   // and the reader must have parsed it into a model
 
-        // Same model, re-serialized: a pure round-trip through the new w3e writer path.
+        // Same model, re-serialized, a pure round-trip through the new w3e writer path.
         doc.AddOrReplaceModelFile("war3map.w3e", entry.Model!);
 
         var rebuilt = MapDocument.Load(doc.SaveToBytes());
@@ -95,9 +95,9 @@ public class MapWriteTests
     }
 
     /// <summary>
-    /// The sound catalog (war3map.w3s) writer must be byte-faithful: re-serializing the
+    /// The sound catalog (war3map.w3s) writer must be byte-faithful, re-serializing the
     /// real map's own sounds model (unchanged) must reproduce the original bytes exactly.
-    /// This pins the War3Net MapSounds writer that SoundCommand relies on; a non-faithful
+    /// This pins the War3Net MapSounds writer that SoundCommand relies on. A non-faithful
     /// writer would gratuitously rewrite the untouched sound catalog on every edit.
     /// </summary>
     [Fact]
@@ -114,7 +114,7 @@ public class MapWriteTests
         var entry = doc.GetFile("war3map.w3s");
         if (entry?.Model is null) return;
 
-        // Same model, re-serialized: a pure round-trip through the new w3s writer path.
+        // Same model, re-serialized, a pure round-trip through the new w3s writer path.
         doc.AddOrReplaceModelFile("war3map.w3s", entry.Model);
 
         var rebuilt = MapDocument.Load(doc.SaveToBytes());
@@ -193,13 +193,13 @@ public class MapWriteTests
     public void Unsupported_dirty_model_throws_rather_than_dropping_changes()
     {
         var doc = MapDocument.Load(Sample());
-        // war3map.wts has no byte-faithful model writer; a model-based dirty must fail
+        // war3map.wts has no byte-faithful model writer. A model-based dirty must fail
         // loudly (the porter appends strings as raw text instead).
         doc.AddOrReplaceModelFile("war3map.wts", new object());
         Assert.Throws<NotSupportedException>(() => doc.SaveToBytes());
     }
 
-    // A synthetic map: a w3u with one custom unit, plus a script and a bystander file.
+    // A synthetic map, a w3u with one custom unit, plus a script and a bystander file.
     private static byte[] Sample()
     {
         var w3u = new UnitObjectData(ObjectDataFormatVersion.v2);
@@ -228,7 +228,7 @@ public class MapWriteTests
     /// original carried and the writer did not re-emit, and nothing else.
     /// </summary>
     /// <remarks>
-    /// Measured on a real map: its war3map.w3b is 375 bytes in and 371 out, identical up to the
+    /// Measured on a real map, its war3map.w3b is 375 bytes in and 371 out, identical up to the
     /// end, and the four missing bytes are zeros sitting after a well-formed final modification
     /// (field 'bonc', type int, value 1, end marker 0, then four stray zeros). That is padding in
     /// the source map rather than a writer defect, and the object-data format is read by counts so
@@ -236,7 +236,7 @@ public class MapWriteTests
     ///
     /// The previous assertion demanded exact equality and therefore called a correct writer broken.
     /// Simply relaxing it to "close enough" would have been worse, so the tolerance is stated
-    /// precisely: the shorter output must be a PREFIX of the original and every dropped byte must
+    /// precisely, the shorter output must be a PREFIX of the original and every dropped byte must
     /// be zero. A single non-zero difference, or a byte gained rather than lost, still fails.
     /// </remarks>
     private static void AssertFaithfulAllowingZeroPadding(string name, byte[] before, byte[] after)

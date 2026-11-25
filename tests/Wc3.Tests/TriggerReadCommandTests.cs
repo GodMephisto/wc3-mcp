@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 namespace Wc3.Tests;
 
 /// <summary>
-/// Coverage for <see cref="TriggerReadCommand.GetTriggers"/>: the empty-map contract
+/// Coverage for <see cref="TriggerReadCommand.GetTriggers"/>, the empty-map contract
 /// (never throws, carries the script language), the wtg/wct parser path for the tree +
 /// custom-text pairing, and the ECA function/parameter rendering (model-injected, the
 /// binary function format needs TriggerData-driven parameter counts, which the corpus
@@ -55,10 +55,10 @@ public class TriggerReadCommandTests
         Assert.Equal("Lua", TriggerReadCommand.GetTriggers(doc).ScriptLanguage);
     }
 
-    // ---- wtg/wct parser path: tree structure + custom-text pairing ----
+    // ---- wtg/wct parser path, tree structure + custom-text pairing ----
 
     /// <summary>Root category, one child category, one GUI trigger, one custom-text
-    /// trigger, one initialized and one uninitialized variable. Functions stay empty here:
+    /// trigger, one initialized and one uninitialized variable. Functions stay empty here,
     /// serialized function bodies need TriggerData-consistent parameter counts to parse
     /// back, so the rendering tests below inject the model directly instead.</summary>
     private static MapTriggers NewTriggers()
@@ -103,7 +103,7 @@ public class TriggerReadCommandTests
     /// </summary>
     private static byte[] CustomTextBytes() => WctBytes(CustomBody + "\0");
 
-    /// <summary>The no-sub-version layout: a slot for every definition, empty for the GUI one.</summary>
+    /// <summary>The no-sub-version layout, a slot for every definition, empty for the GUI one.</summary>
     private static byte[] ClassicCustomTextBytes() => WctBytes(string.Empty, CustomBody + "\0");
 
     private static byte[] WctBytes(params string[] bodies)
@@ -274,7 +274,7 @@ public class TriggerReadCommandTests
         Assert.Equal(
             new[]
             {
-                "MyArray[3]",              // variable with array indexer; numeric index bare
+                "MyArray[3]",              // variable with array indexer. Numeric index bare
                 "\"hello world\"",         // non-numeric string literal quoted
                 "Player00",                // preset by raw name
                 "IsUnitOwnedByPlayer(GetTriggerUnit(), 42)", // nested calls inline
@@ -306,7 +306,7 @@ public class TriggerReadCommandTests
     [Fact]
     public void Pathological_nesting_is_depth_guarded()
     {
-        // A parameter chain nested far beyond the guard: f(f(f(...))). Must terminate
+        // A parameter chain nested far beyond the guard, f(f(f(...))). Must terminate
         // and render a truncated stub instead of recursing forever.
         var inner = Str("0");
         for (int i = 0; i < 200; i++) inner = Call("Deep", inner);
@@ -322,7 +322,7 @@ public class TriggerReadCommandTests
         Assert.StartsWith("Deep(", rendered);
     }
 
-    // ---- corpus: a real map's trigger file through the full load path ----
+    // ---- corpus, a real map's trigger file through the full load path ----
 
     private static readonly string CorpusMap =
         TestCorpus.Map(@"GGGA_V0.02a.w3x");

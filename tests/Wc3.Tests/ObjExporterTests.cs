@@ -38,7 +38,7 @@ public class ObjExporterTests
         var model = new Model3D(new[] { Triangle(0) }, new[] { "t.blp" });
         var lines = Lines(ObjExporter.ToObj(model, null));
 
-        // Input UVs: (0,0), (1,0), (0,1) → OBJ vt with V flipped: (0,1), (1,1), (0,0).
+        // Input UVs, (0,0), (1,0), (0,1) → OBJ vt with V flipped, (0,1), (1,1), (0,0).
         var vt = lines.Where(l => l.StartsWith("vt ")).ToArray();
         Assert.Equal(new[] { "vt 0 1", "vt 1 1", "vt 0 0" }, vt);
     }

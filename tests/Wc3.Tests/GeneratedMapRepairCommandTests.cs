@@ -25,7 +25,7 @@ public class GeneratedMapRepairCommandTests
         endfunction
 
         function InitCustomTeams takes nothing returns nothing
-            // Force: Force 1
+            // Force, Force 1
             call SetPlayerTeam( Player(0), 0 )
             call SetPlayerTeam( Player(1), 0 )
         endfunction
