@@ -75,35 +75,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## ImageSharp
+## SkiaSharp
 
-Six Labors Split License, Version 1.0, June 2022.
-Copyright (c) Six Labors.
+Copyright (c) 2015-2016 Xamarin, Inc.
+Copyright (c) 2017-2018 Microsoft Corporation.
 
-WORK IN SOURCE OR OBJECT FORM ARE SPLIT LICENSED AND MAY BE LICENSED UNDER THE
-APACHE LICENSE, VERSION 2.0 OR A SIX LABORS COMMERCIAL USE LICENSE.
+MIT License
 
-LICENSES ARE GRANTED BASED UPON YOU MEETING THE QUALIFIED CRITERIA AS STATED.
-ONCE GRANTED, YOU MUST REFERENCE THE GRANTED LICENSE ONLY IN ALL DOCUMENTATION.
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
 
-WORKS IN SOURCE OR OBJECT FORM ARE LICENSED TO YOU UNDER THE APACHE LICENSE,
-VERSION 2.0 IF.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-- YOU ARE CONSUMING THE WORK IN FOR USE IN SOFTWARE LICENSED UNDER AN OPEN
-  SOURCE OR SOURCE AVAILABLE LICENSE.
-- YOU ARE CONSUMING THE WORK AS A TRANSITIVE PACKAGE DEPENDENCY.
-- YOU ARE CONSUMING THE WORK AS A DIRECT PACKAGE DEPENDENCY IN THE CAPACITY
-  OF A FOR-PROFIT COMPANY/INDIVIDUAL WITH LESS THAN 1M USD ANNUAL GROSS
-  REVENUE.
-- YOU ARE CONSUMING THE WORK AS A DIRECT PACKAGE DEPENDENCY IN THE CAPACITY
-  OF A NON-PROFIT ORGANIZATION OR REGISTERED CHARITY.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-FOR ALL OTHER SCENARIOS, WORKS IN SOURCE OR OBJECT FORM ARE LICENSED TO YOU
-UNDER THE SIX LABORS COMMERCIAL LICENSE WHICH MAY BE PURCHASED BY VISITING
-HTTPS://SIXLABORS.COM/PRICING/.
-
-Anyone selling a product built on this should read the Six Labors Commercial
-License page to confirm whether their use requires a commercial license.
+SkiaSharp bundles the Skia graphics library, which is BSD-3-Clause and
+Copyright (c) 2011 Google Inc. The SkiaSharp.NativeAssets packages carry the
+full set of notices for Skia, ANGLE and the other bundled native components in
+their own THIRD-PARTY-NOTICES.txt.
 
 ## ModelContextProtocol (MCP C# SDK)
 
