@@ -1,0 +1,20 @@
+{
+  "record": "wc3-release-record/1",
+  "version": "0.5.45",
+  "tag": "v0.5.45",
+  "commit": "f4dd5790faa2af465857fba38fda928dc8a56dd5",
+  "artifacts": [
+    {
+      "name": "wc3-mcp-v0.5.45-win-x64.zip",
+      "path": "https://github.com/GodMephisto/wc3-mcp/releases/download/v0.5.45/wc3-mcp-v0.5.45-win-x64.zip",
+      "bytes": 55214057,
+      "sha256": "f427942fa7cc93c74defa29430ae5e5fcb01bfb266bfe5b112fb35dcfee23456"
+    },
+    {
+      "name": "wc3-mcp-v0.5.45-win-x64.mcpb",
+      "path": "https://github.com/GodMephisto/wc3-mcp/releases/download/v0.5.45/wc3-mcp-v0.5.45-win-x64.mcpb",
+      "bytes": 54929117,
+      "sha256": "e2cec8fac23829814fc71e8bad6ce4121ae4ac004ba9860e7e06d223a699aa98"
+    }
+  ]
+}
