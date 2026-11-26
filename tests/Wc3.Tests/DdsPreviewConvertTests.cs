@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/DdsPreviewConvertTests.cs
+// tests/Wc3.Tests/DdsPreviewConvertTests.cs
 using System.Buffers.Binary;
 using System.Text;
 using SkiaSharp;

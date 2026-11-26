@@ -1,4 +1,4 @@
-﻿// src/Wc3.Render/TextureConvert.cs
+// src/Wc3.Render/TextureConvert.cs
 using System.Buffers.Binary;
 using SkiaSharp;
 using War3Net.Drawing.Blp;
@@ -151,7 +151,7 @@ internal static class ImageWriters
 {
     /// <summary>
     /// 24-bit BI_RGB BMP, bottom-up rows, each row padded to four bytes. 24 bits is what the format
-    /// is universally read as; a 32-bit BI_RGB header leaves the fourth byte officially unused, so a
+    /// is universally read as, and a 32-bit BI_RGB header leaves the fourth byte officially unused, so a
     /// reader is free to ignore it and a round trip through BMP would silently drop alpha.
     /// </summary>
     internal static byte[] Bmp(SKBitmap bitmap)

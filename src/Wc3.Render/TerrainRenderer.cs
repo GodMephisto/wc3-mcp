@@ -1,4 +1,4 @@
-﻿// src/Wc3.Render/TerrainRenderer.cs
+// src/Wc3.Render/TerrainRenderer.cs
 using System.Numerics;
 using SkiaSharp;
 using War3Net.Build.Environment;

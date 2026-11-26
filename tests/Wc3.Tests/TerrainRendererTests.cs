@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/TerrainRendererTests.cs
+// tests/Wc3.Tests/TerrainRendererTests.cs
 using System.Collections.Generic;
 using SkiaSharp;
 using Wc3.Model;

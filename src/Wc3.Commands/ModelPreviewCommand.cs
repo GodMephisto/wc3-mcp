@@ -1,4 +1,4 @@
-﻿// src/Wc3.Commands/ModelPreviewCommand.cs
+// src/Wc3.Commands/ModelPreviewCommand.cs
 using SkiaSharp;
 using Wc3.Render;
 using Wc3.Modeling;

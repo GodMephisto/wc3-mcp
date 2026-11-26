@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/TerrainRenderVoidTests.cs
+// tests/Wc3.Tests/TerrainRenderVoidTests.cs
 using SkiaSharp;
 using War3Net.Build.Environment;
 using Wc3.Model;

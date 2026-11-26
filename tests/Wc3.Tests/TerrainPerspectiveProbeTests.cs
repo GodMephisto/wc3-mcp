@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/TerrainPerspectiveProbeTests.cs
+// tests/Wc3.Tests/TerrainPerspectiveProbeTests.cs
 using SkiaSharp;
 using Wc3.Commands;
 using Wc3.Model;

@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/PathingImageCommandTests.cs
+// tests/Wc3.Tests/PathingImageCommandTests.cs
 using SkiaSharp;
 using War3Net.Build.Environment; // MapPathingMap, PathingType
 using Wc3.Commands;

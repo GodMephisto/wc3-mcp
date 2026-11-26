@@ -12,17 +12,17 @@ namespace Wc3.Render;
 /// parser cannot be reached by a crafted map file.
 /// </summary>
 /// <remarks>
-/// <para>The allow-list is explicit: PNG, JPEG, BMP, GIF and TGA, decided by a magic-number sniff
+/// <para>The allow-list is explicit, PNG, JPEG, BMP, GIF and TGA, decided by a magic-number sniff
 /// here rather than by whatever sniffer the imaging library ships. Anything else is refused before
 /// a decoder is constructed, so TIFF, WebP, HEIF and the rest are out of reach by construction, not
 /// by configuration.</para>
-/// <para>Metadata is stripped before decode rather than skipped during it: PNG chunks other than
+/// <para>Metadata is stripped before decode rather than skipped during it, PNG chunks other than
 /// IHDR/PLTE/tRNS/IDAT/IEND and JPEG APP1..APP15/COM segments are removed first, so no ICC profile,
 /// EXIF block or text comment reaches the decoder. SkiaSharp offers no switch to ignore chunks, so
 /// taking them out of the buffer is what keeps the same guarantee.</para>
-/// <para>TIFF stays out for the same reason it was out under ImageSharp: its decoders carried open
-/// advisories, and nothing here needs it. TGA has no Skia codec at all, so the reader below is ours;
-/// it accepts only uncompressed or RLE true-colour 24/32-bit images, which is the whole of what WC3
+/// <para>TIFF stays out for the same reason it was out under ImageSharp. Its decoders carried open
+/// advisories, and nothing here needs it. TGA has no Skia codec at all, so the reader below is ours.
+/// It accepts only uncompressed or RLE true-colour 24/32-bit images, which is the whole of what WC3
 /// assets use, and everything else is refused.</para>
 /// </remarks>
 public static class SafeImages
@@ -106,7 +106,7 @@ public static class SafeImages
         var info = new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Unpremul);
         var bitmap = new SKBitmap(info);
         var result = codec.GetPixels(info, bitmap.GetPixels());
-        // IncompleteInput still yields the rows that were present; the old decoder behaved the
+        // IncompleteInput still yields the rows that were present. The old decoder behaved the
         // same way, so a truncated texture decodes as far as it goes rather than throwing.
         if (result is not (SKCodecResult.Success or SKCodecResult.IncompleteInput))
         {
@@ -139,7 +139,7 @@ public static class SafeImages
 
     /// <summary>
     /// Encodes 16-bit luminance samples as a grayscale PNG, one sample per pixel, no alpha.
-    /// Skia has no 16-bit grayscale colour type, so this is written by hand; the only consumers are
+    /// Skia has no 16-bit grayscale colour type, so this is written by hand. The only consumers are
     /// terrain heightmaps, where the extra eight bits are the difference between an exact round trip
     /// and a rounded one.
     /// </summary>
@@ -157,7 +157,7 @@ public static class SafeImages
         BinaryPrimitives.WriteInt32BigEndian(header, width);
         BinaryPrimitives.WriteInt32BigEndian(header[4..], height);
         header[8] = 16;   // bit depth
-        header[9] = 0;    // colour type: grayscale
+        header[9] = 0;    // grayscale colour type
         header[10] = 0;   // deflate
         header[11] = 0;   // adaptive filtering
         header[12] = 0;   // not interlaced
@@ -167,7 +167,7 @@ public static class SafeImages
         for (int y = 0; y < height; y++)
         {
             int row = y * (1 + width * 2);
-            raw[row] = 0; // filter: none
+            raw[row] = 0; // filter type 0 means none
             for (int x = 0; x < width; x++)
                 BinaryPrimitives.WriteUInt16BigEndian(
                     raw.AsSpan(row + 1 + x * 2, 2), samples[y * width + x]);
@@ -295,7 +295,7 @@ public static class SafeImages
         {
             int length = BinaryPrimitives.ReadInt32BigEndian(png.AsSpan(offset, 4));
             if (length < 0 || offset + 12 + length > png.Length)
-                return png; // malformed: hand the original to the decoder, which will refuse it
+                return png; // malformed, hand the original to the decoder, which will refuse it
             string type = Encoding.ASCII.GetString(png, offset + 4, 4);
             bool keep = type is "IHDR" or "PLTE" or "tRNS" or "IDAT" or "IEND";
             if (keep)
@@ -321,7 +321,7 @@ public static class SafeImages
             if (jpg[offset] != 0xFF)
                 return jpg;
             byte marker = jpg[offset + 1];
-            if (marker == 0xDA) // start of scan: entropy data follows to end of file
+            if (marker == 0xDA) // start of scan, entropy data follows to end of file
             {
                 output.Write(jpg, offset, jpg.Length - offset);
                 return output.ToArray();
@@ -342,7 +342,7 @@ public static class SafeImages
 
     /// <summary>
     /// Reads a TGA true-colour image. Only types 2 (uncompressed) and 10 (RLE) at 24 or 32 bits per
-    /// pixel with no colour map are accepted; the header must also describe a plausible image, so a
+    /// pixel with no colour map are accepted, and the header must also describe a plausible image, so a
     /// file of random bytes cannot be mistaken for one.
     /// </summary>
     private static bool TryDecodeTga(byte[] data, out SKBitmap? bitmap)

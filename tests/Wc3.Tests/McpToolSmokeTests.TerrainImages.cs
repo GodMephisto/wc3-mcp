@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/McpToolSmokeTests.TerrainImages.cs
+// tests/Wc3.Tests/McpToolSmokeTests.TerrainImages.cs
 // The terrain heightmap PNG pair, map-wide smoothing, and the pathing PNG pair, exercised
 // through the protocol. Export tools write an image, so they cannot use the map-opening
 // Write helper, while import tools write a map and do.

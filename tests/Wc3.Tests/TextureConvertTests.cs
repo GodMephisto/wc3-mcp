@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/TextureConvertTests.cs
+// tests/Wc3.Tests/TextureConvertTests.cs
 using SkiaSharp;
 using Wc3.Modeling;
 using Wc3.Render;

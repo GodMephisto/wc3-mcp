@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/AppearanceMetricTests.cs
+// tests/Wc3.Tests/AppearanceMetricTests.cs
 using SkiaSharp;
 using Wc3.Render;
 

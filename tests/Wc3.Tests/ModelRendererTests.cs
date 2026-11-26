@@ -1,4 +1,4 @@
-﻿// tests/Wc3.Tests/ModelRendererTests.cs
+// tests/Wc3.Tests/ModelRendererTests.cs
 using SkiaSharp;
 using Wc3.Modeling;
 using Wc3.Render;
