@@ -116,13 +116,14 @@ public static class Wc3McpServer
     public const string DefaultProfile = "full";
 
     /// <summary>
-    /// The newest MCP revision the pinned SDK speaks, and what an unknown offer falls back to.
-    /// Measured on 2026-11-08 over a raw pipe, every revision the SDK knows is echoed back
-    /// (2024-11-05, 2025-03-26, 2025-06-18 and 2025-11-25), and an unknown or malformed offer gets
-    /// this value with no error. The SDK keeps its constants internal, so ProtocolRevisionTests
-    /// pins the matrix and fails if a pin changes an answer.
+    /// The newest MCP revision the pinned SDK speaks. Measured over a raw pipe on the 2.2.0 pin,
+    /// every revision the SDK knows is echoed back (2024-11-05, 2025-03-26, 2025-06-18, 2025-11-25
+    /// and 2026-07-28), and an offer the SDK does not know is refused with error -32022 naming the
+    /// protocol version, where 1.4.1 answered it with this value instead. The SDK keeps its
+    /// constants internal, so ProtocolRevisionTests pins the matrix and fails if a pin changes an
+    /// answer.
     /// </summary>
-    public const string ProtocolRevision = "2025-11-25";
+    public const string ProtocolRevision = "2026-07-28";
 
     /// <summary>What the target and the game install resolved to, read once per process.</summary>
     /// <param name="Target">The build the compatibility tools check against.</param>

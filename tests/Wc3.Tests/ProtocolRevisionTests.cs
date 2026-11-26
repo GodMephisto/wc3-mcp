@@ -24,7 +24,7 @@ public class ProtocolRevisionTests
     /// <summary>Every revision the pinned SDK knows, oldest first.</summary>
     private static readonly string[] KnownRevisions =
     {
-        "2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25",
+        "2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25", "2026-07-28",
     };
 
     private static readonly TimeSpan SessionLimit = TimeSpan.FromSeconds(120);
@@ -34,6 +34,7 @@ public class ProtocolRevisionTests
     [InlineData("2025-03-26")]
     [InlineData("2025-06-18")]
     [InlineData("2025-11-25")]
+    [InlineData("2026-07-28")]
     public async Task An_offered_revision_is_answered_with_a_servable_revision_and_the_full_tool_count(string offered)
     {
         RevisionSession session = await MeasureAsync(offered);
@@ -131,16 +132,19 @@ public class ProtocolRevisionTests
     [InlineData("banana")]
     [InlineData("2025-02-30")]
     [InlineData("")]
-    public async Task An_unknown_revision_falls_back_to_the_latest_revision_and_still_lists_tools(string offered)
+    public async Task An_unknown_revision_is_refused_with_the_protocol_error_code(string offered)
     {
-        // Measured on the pinned SDK, an unknown offer is answered with the latest revision rather
-        // than a protocol error, and the session stays usable. If the SDK ever starts refusing, this
-        // fact fails and its name has to change with the behaviour, not the other way round.
+        // Measured on the 2.2.0 pin, an unknown offer is refused with error -32022 naming the
+        // protocol version, where 1.4.1 answered it with the latest revision and opened a session.
+        // The test name says refused because that is what the pinned SDK does. If a pin ever
+        // answers instead, this fails and the name changes with the behaviour, not the other way
+        // round.
         RevisionSession session = await MeasureAsync(offered);
 
-        Assert.Null(session.Error);
-        Assert.Equal(Wc3McpServer.ProtocolRevision, session.Answered);
-        Assert.Equal(Wc3McpServer.ToolCount(), session.Tools.Count);
+        Assert.NotNull(session.Error);
+        Assert.Contains("-32022", session.Error, StringComparison.Ordinal);
+        Assert.Null(session.Answered);
+        Assert.Empty(session.Tools);
     }
 
     [Fact]
