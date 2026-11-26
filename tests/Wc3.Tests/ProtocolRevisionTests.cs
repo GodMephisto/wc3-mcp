@@ -24,7 +24,7 @@ public class ProtocolRevisionTests
     /// <summary>Every revision the pinned SDK knows, oldest first.</summary>
     private static readonly string[] KnownRevisions =
     {
-        "2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25", "2026-07-28",
+        "2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25",
     };
 
     private static readonly TimeSpan SessionLimit = TimeSpan.FromSeconds(120);
@@ -34,7 +34,6 @@ public class ProtocolRevisionTests
     [InlineData("2025-03-26")]
     [InlineData("2025-06-18")]
     [InlineData("2025-11-25")]
-    [InlineData("2026-07-28")]
     public async Task An_offered_revision_is_answered_with_a_servable_revision_and_the_full_tool_count(string offered)
     {
         RevisionSession session = await MeasureAsync(offered);
@@ -129,20 +128,32 @@ public class ProtocolRevisionTests
 
     [Theory]
     [InlineData("1999-01-01")]
-    [InlineData("banana")]
     [InlineData("2025-02-30")]
     [InlineData("")]
-    public async Task An_unknown_revision_is_refused_with_the_protocol_error_code(string offered)
+    public async Task A_date_shaped_unknown_revision_falls_back_to_the_latest_and_still_lists_tools(string offered)
     {
-        // Measured on the 2.2.0 pin, an unknown offer is refused with error -32022 naming the
-        // protocol version, where 1.4.1 answered it with the latest revision and opened a session.
-        // The test name says refused because that is what the pinned SDK does. If a pin ever
-        // answers instead, this fails and the name changes with the behaviour, not the other way
-        // round.
+        // Measured on the 2.2.0 pin, a date-shaped revision nobody supports is answered with the
+        // latest one rather than a protocol error, and the session stays usable. A string that is
+        // not a date at all is treated differently, see the refusal test below.
         RevisionSession session = await MeasureAsync(offered);
+
+        Assert.Null(session.Error);
+        Assert.Equal(Wc3McpServer.ProtocolRevision, session.Answered);
+        Assert.Equal(Wc3McpServer.ToolCount(), session.Tools.Count);
+    }
+
+    [Fact]
+    public async Task A_revision_that_is_not_a_date_at_all_is_refused_with_the_protocol_error_code()
+    {
+        // The 2.2.0 pin parses the offer before deciding, so "banana" gets error -32022 naming the
+        // supported list instead of a fallback. 1.4.1 answered it with the latest revision. If a pin
+        // ever answers instead, this fails and the name changes with the behaviour, not the other
+        // way round.
+        RevisionSession session = await MeasureAsync("banana");
 
         Assert.NotNull(session.Error);
         Assert.Contains("-32022", session.Error, StringComparison.Ordinal);
+        Assert.Contains(Wc3McpServer.ProtocolRevision, session.Error, StringComparison.Ordinal);
         Assert.Null(session.Answered);
         Assert.Empty(session.Tools);
     }
