@@ -116,11 +116,13 @@ public static class Wc3McpServer
     public const string DefaultProfile = "full";
 
     /// <summary>
-    /// The newest MCP revision the pinned SDK speaks, and what an unknown offer falls back to.
-    /// Measured on 2026-11-08 over a raw pipe, every revision the SDK knows is echoed back
-    /// (2024-11-05, 2025-03-26, 2025-06-18 and 2025-11-25), and an unknown or malformed offer gets
-    /// this value with no error. The SDK keeps its constants internal, so ProtocolRevisionTests
-    /// pins the matrix and fails if a pin changes an answer.
+    /// The newest MCP revision the server answers. Measured over a raw pipe on the 2.2.0 pin,
+    /// the handshake accepts 2024-11-05, 2025-03-26, 2025-06-18 and this one, and refuses
+    /// 2026-07-28 with error -32022 naming the supported list, even though the client half of the
+    /// same SDK offers that revision by default. A version string that is not a date at all is
+    /// refused the same way, while a date-shaped string nobody supports still falls back to this
+    /// value. The SDK keeps its constants internal, so ProtocolRevisionTests pins the matrix and
+    /// fails if a pin changes an answer.
     /// </summary>
     public const string ProtocolRevision = "2025-11-25";
 

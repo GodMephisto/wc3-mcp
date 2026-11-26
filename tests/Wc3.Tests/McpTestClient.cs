@@ -41,6 +41,7 @@ internal static class McpTestClient
         {
             await using var client = await McpClient.CreateAsync(
                 new StreamClientTransport(clientToServer.Writer.AsStream(), serverToClient.Reader.AsStream()),
+                new McpClientOptions { ProtocolVersion = Wc3McpServer.ProtocolRevision },
                 cancellationToken: timeout.Token);
             await body(client, timeout.Token);
         }
