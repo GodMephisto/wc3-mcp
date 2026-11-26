@@ -1,6 +1,6 @@
 // src/Wc3.Commands/ModelPreviewCommand.cs
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
+using Wc3.Render;
 using Wc3.Modeling;
 
 namespace Wc3.Commands;
@@ -26,9 +26,9 @@ public static class ModelPreviewCommand
     private const float YawDegrees = 45f;
     private const float PitchDegrees = 30f;
 
-    private static readonly Rgba32 Background = new(24, 26, 32, 255);
-    private static readonly Rgba32 Wire = new(140, 200, 255, 255);
-    private static readonly Rgba32 PlaceholderMark = new(90, 96, 110, 255);
+    private static readonly SKColor Background = new(24, 26, 32, 255);
+    private static readonly SKColor Wire = new(140, 200, 255, 255);
+    private static readonly SKColor PlaceholderMark = new(90, 96, 110, 255);
 
     /// <summary>
     /// Renders a static wireframe preview of a WC3 model. <paramref name="modelBytes"/>
@@ -70,7 +70,7 @@ public static class ModelPreviewCommand
             if (!ScaleToFit(xy, width, height, PaddingFraction))
                 return PlaceholderPng(width, height);
 
-            using var image = new Image<Rgba32>(width, height, Background);
+            using var image = Canvas(width, height);
             for (int i = 0; i + 2 < indices.Length; i += 3)
             {
                 int a = indices[i] * 2, b = indices[i + 1] * 2, c = indices[i + 2] * 2;
@@ -206,14 +206,14 @@ public static class ModelPreviewCommand
     /// <summary>Solid background plus a diagonal cross, the "no geometry" marker.</summary>
     private static byte[] PlaceholderPng(int width, int height)
     {
-        using var image = new Image<Rgba32>(width, height, Background);
+        using var image = Canvas(width, height);
         DrawLine(image, 0, 0, width - 1, height - 1, PlaceholderMark);
         DrawLine(image, 0, height - 1, width - 1, 0, PlaceholderMark);
         return EncodePng(image);
     }
 
     /// <summary>Integer Bresenham. Pixels outside the canvas are clipped per-pixel.</summary>
-    private static void DrawLine(Image<Rgba32> img, float x0f, float y0f, float x1f, float y1f, Rgba32 color)
+    private static void DrawLine(SKBitmap img, float x0f, float y0f, float x1f, float y1f, SKColor color)
     {
         int x0 = (int)MathF.Round(x0f), y0 = (int)MathF.Round(y0f);
         int x1 = (int)MathF.Round(x1f), y1 = (int)MathF.Round(y1f);
@@ -223,7 +223,7 @@ public static class ModelPreviewCommand
         while (true)
         {
             if ((uint)x0 < (uint)img.Width && (uint)y0 < (uint)img.Height)
-                img[x0, y0] = color;
+                img.SetPixel(x0, y0, color);
             if (x0 == x1 && y0 == y1) break;
             int e2 = 2 * err;
             if (e2 >= dy) { err += dy; x0 += sx; }
@@ -231,12 +231,15 @@ public static class ModelPreviewCommand
         }
     }
 
-    private static byte[] EncodePng(Image<Rgba32> image)
+    /// <summary>A canvas pre-filled with the preview background colour.</summary>
+    private static SKBitmap Canvas(int width, int height)
     {
-        using var ms = new MemoryStream();
-        image.SaveAsPng(ms);
-        return ms.ToArray();
+        var image = SafeImages.NewBitmap(width, height);
+        image.Erase(Background);
+        return image;
     }
+
+    private static byte[] EncodePng(SKBitmap image) => SafeImages.EncodePng(image);
 
     private static (int Width, int Height) ClampSize(int width, int height) =>
         (Math.Clamp(width, 1, 4096), Math.Clamp(height, 1, 4096));

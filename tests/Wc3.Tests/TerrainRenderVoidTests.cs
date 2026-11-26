@@ -1,6 +1,5 @@
 // tests/Wc3.Tests/TerrainRenderVoidTests.cs
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using War3Net.Build.Environment;
 using Wc3.Model;
 using Wc3.Render;
@@ -48,27 +47,28 @@ public class TerrainRenderVoidTests
         tiles[ordinaryIdx].IsBoundary = false;
 
         byte[] png = TerrainRenderer.RenderTerrainPng(doc);
-        using var img = Image.Load<Rgba32>(png);
+        using var img = SafeImages.Load(png);
 
         int scale = img.Width / W;
         Assert.True(scale >= 1, $"unexpected scale from {img.Width}px over {W} corners");
 
         // Rows are flipped so north is up, which the renderer does when painting.
-        Rgba32 At(int x, int y) => img[x * scale + scale / 2, (W - 1 - y) * scale + scale / 2];
+        SKColor At(int x, int y) => img.GetPixel(x * scale + scale / 2, (W - 1 - y) * scale + scale / 2);
 
         var atBoundary = At(2, 2);
         var atOrdinary = At(3, 2);
-        _out.WriteLine($"boundary pixel ({atBoundary.R},{atBoundary.G},{atBoundary.B}) "
-                     + $"ordinary pixel ({atOrdinary.R},{atOrdinary.G},{atOrdinary.B})");
+        _out.WriteLine($"boundary pixel ({atBoundary.Red},{atBoundary.Green},{atBoundary.Blue}) "
+                     + $"ordinary pixel ({atOrdinary.Red},{atOrdinary.Green},{atOrdinary.Blue})");
 
-        Assert.Equal(TerrainRenderer.VoidColor.R, atBoundary.R);
-        Assert.Equal(TerrainRenderer.VoidColor.G, atBoundary.G);
-        Assert.Equal(TerrainRenderer.VoidColor.B, atBoundary.B);
+        Assert.Equal(TerrainRenderer.VoidColor.Alpha, atBoundary.Alpha);
+        Assert.Equal(TerrainRenderer.VoidColor.Red, atBoundary.Red);
+        Assert.Equal(TerrainRenderer.VoidColor.Green, atBoundary.Green);
+        Assert.Equal(TerrainRenderer.VoidColor.Blue, atBoundary.Blue);
 
         Assert.False(
-            atOrdinary.R == TerrainRenderer.VoidColor.R
-            && atOrdinary.G == TerrainRenderer.VoidColor.G
-            && atOrdinary.B == TerrainRenderer.VoidColor.B,
+            atOrdinary.Red == TerrainRenderer.VoidColor.Red
+            && atOrdinary.Green == TerrainRenderer.VoidColor.Green
+            && atOrdinary.Blue == TerrainRenderer.VoidColor.Blue,
             "a tile that is NOT a boundary was painted as void, so the flag is being ignored "
             + "in the other direction");
     }
@@ -87,12 +87,12 @@ public class TerrainRenderVoidTests
         tiles[idx].IsBlighted = true;
 
         byte[] png = TerrainRenderer.RenderTerrainPng(doc);
-        using var img = Image.Load<Rgba32>(png);
+        using var img = SafeImages.Load(png);
         int scale = img.Width / W;
-        var px = img[4 * scale + scale / 2, (W - 1 - 4) * scale + scale / 2];
+        var px = img.GetPixel(4 * scale + scale / 2, (W - 1 - 4) * scale + scale / 2);
 
-        Assert.Equal(TerrainRenderer.VoidColor.R, px.R);
-        Assert.Equal(TerrainRenderer.VoidColor.G, px.G);
-        Assert.Equal(TerrainRenderer.VoidColor.B, px.B);
+        Assert.Equal(TerrainRenderer.VoidColor.Red, px.Red);
+        Assert.Equal(TerrainRenderer.VoidColor.Green, px.Green);
+        Assert.Equal(TerrainRenderer.VoidColor.Blue, px.Blue);
     }
 }

@@ -1,7 +1,6 @@
 // src/Wc3.Render/ModelRenderer.cs
 using System.Numerics;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using Wc3.Modeling;
 
 namespace Wc3.Render;
@@ -127,7 +126,7 @@ public static class ModelRenderer
 
         var zbuffer = new float[width * height];
         Array.Fill(zbuffer, float.MaxValue);
-        using var image = new Image<Rgba32>(width, height); // zeroed → transparent
+        using var image = SafeImages.NewBitmap(width, height); // zeroed → transparent
 
         for (int gi = 0; gi < geosets.Count; gi++)
         {
@@ -179,27 +178,25 @@ public static class ModelRenderer
                         if (d >= zbuffer[zi]) continue;
 
                         var rgba = SampleColor(geoset, texture, i0, i1, i2, p0, p1, p2);
-                        if (rgba.A < AlphaTestThreshold) continue; // cutout, keep depth open
+                        if (rgba.Alpha < AlphaTestThreshold) continue; // cutout, keep depth open
 
                         float shade = ShadeAt(geoset, i0, i1, i2, p0, p1, p2, light);
                         zbuffer[zi] = d;
-                        image[px, py] = new Rgba32(
-                            (byte)(rgba.R * shade), (byte)(rgba.G * shade), (byte)(rgba.B * shade), 255);
+                        image.SetPixel(px, py, new SKColor(
+                            (byte)(rgba.Red * shade), (byte)(rgba.Green * shade), (byte)(rgba.Blue * shade), 255));
                     }
                 }
             }
         }
 
-        using var ms = new MemoryStream();
-        image.SaveAsPng(ms);
-        return ms.ToArray();
+        return SafeImages.EncodePng(image);
     }
 
     /// <summary>Nearest-neighbour texture sample at the interpolated UV, or flat gray.</summary>
-    private static Rgba32 SampleColor(
+    private static SKColor SampleColor(
         Geoset geoset, TextureImage? texture, int i0, int i1, int i2, float w0, float w1, float w2)
     {
-        if (texture is null) return new Rgba32(190, 190, 190, 255);
+        if (texture is null) return new SKColor(190, 190, 190, 255);
 
         float u = w0 * geoset.Uvs[i0 * 2] + w1 * geoset.Uvs[i1 * 2] + w2 * geoset.Uvs[i2 * 2];
         float v = w0 * geoset.Uvs[i0 * 2 + 1] + w1 * geoset.Uvs[i1 * 2 + 1] + w2 * geoset.Uvs[i2 * 2 + 1];
@@ -209,7 +206,7 @@ public static class ModelRenderer
         int tx = Math.Clamp((int)(u * texture.Width), 0, texture.Width - 1);
         int ty = Math.Clamp((int)(v * texture.Height), 0, texture.Height - 1);
         int o = (ty * texture.Width + tx) * 4;
-        return new Rgba32(texture.Rgba[o], texture.Rgba[o + 1], texture.Rgba[o + 2], texture.Rgba[o + 3]);
+        return new SKColor(texture.Rgba[o], texture.Rgba[o + 1], texture.Rgba[o + 2], texture.Rgba[o + 3]);
     }
 
     /// <summary>Directional-light intensity from the interpolated normal, with an ambient floor.</summary>

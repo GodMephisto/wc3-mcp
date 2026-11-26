@@ -2,10 +2,10 @@
 // The terrain heightmap PNG pair, map-wide smoothing, and the pathing PNG pair, exercised
 // through the protocol. Export tools write an image, so they cannot use the map-opening
 // Write helper, while import tools write a map and do.
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using Wc3.Commands;
 using Wc3.Model;
+using Wc3.Render;
 
 namespace Wc3.Tests;
 
@@ -35,8 +35,8 @@ public sealed class McpSmokeTerrainImageTests : McpSmokeBase
     {
         // A 1x1 PNG cannot match the fixture's 33x33 corner grid.
         var tiny = Path.Combine(_f.Dir, $"tiny-{Guid.NewGuid():N}.png");
-        using (var image = new Image<Rgba32>(1, 1))
-            image.SaveAsPng(tiny);
+        using (var image = SafeImages.NewBitmap(1, 1))
+            File.WriteAllBytes(tiny, SafeImages.EncodePng(image));
 
         await CallError("terrain_import_heightmap",
             Args(("map", Fixture), ("out_path", NewOut("hm")), ("png", tiny)));
@@ -102,13 +102,13 @@ public sealed class McpSmokeTerrainImageTests : McpSmokeBase
         int w = (int)((War3Net.Build.Environment.MapPathingMap)MapDocument
             .Load(Fixture).GetFile(PathingCommand.PathingFile)!.Model!).Width;
         var bad = Path.Combine(_f.Dir, $"bad-{Guid.NewGuid():N}.png");
-        using (var image = new Image<Rgba32>(w, w))
+        using (var image = SafeImages.NewBitmap(w, w))
         {
             for (int y = 0; y < w; y++)
                 for (int x = 0; x < w; x++)
-                    image[x, y] = new Rgba32(0, 0, 0);
-            image[0, 0] = new Rgba32(255, 0, 255);
-            image.SaveAsPng(bad);
+                    image.SetPixel(x, y, new SKColor(0, 0, 0));
+            image.SetPixel(0, 0, new SKColor(255, 0, 255));
+            File.WriteAllBytes(bad, SafeImages.EncodePng(image));
         }
 
         await CallError("pathing_import_png",

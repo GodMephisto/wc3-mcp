@@ -7,7 +7,7 @@ Built on
 | War3Net (War3Net.Build, War3Net.IO.Mpq, War3Net.Drawing.Blp, War3Net.CodeAnalysis.Decompilers) | Drake53 and contributors | MIT | https://github.com/Drake53/War3Net |
 | CascLib | Ladislav Zezula | MIT | https://github.com/ladislav-zezula/CascLib |
 | CascLib.NET | Kizari | MIT | https://www.nuget.org/packages/CascLib.NET |
-| ImageSharp | Six Labors and contributors | Six Labors Split License | https://github.com/SixLabors/ImageSharp |
+| SkiaSharp | Xamarin and Microsoft | MIT | https://github.com/mono/SkiaSharp |
 | MCP C# SDK (ModelContextProtocol) | Model Context Protocol project | Apache-2.0 | https://github.com/modelcontextprotocol/csharp-sdk |
 | Microsoft.Extensions.Hosting | Microsoft, .NET Foundation | MIT | https://github.com/dotnet/runtime |
 

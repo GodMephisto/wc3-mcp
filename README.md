@@ -430,7 +430,7 @@ Built on
 | War3Net (War3Net.Build, War3Net.IO.Mpq, War3Net.Drawing.Blp, War3Net.CodeAnalysis.Decompilers) | Drake53 and contributors |
 | CascLib | Ladislav Zezula |
 | CascLib.NET | Kizari |
-| ImageSharp | Six Labors and contributors |
+| SkiaSharp | Xamarin and Microsoft |
 | MCP C# SDK (ModelContextProtocol) | Model Context Protocol project |
 | Microsoft.Extensions.Hosting | Microsoft, .NET Foundation |
 

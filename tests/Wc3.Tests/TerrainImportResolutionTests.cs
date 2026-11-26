@@ -1,6 +1,5 @@
 // tests/Wc3.Tests/TerrainImportResolutionTests.cs
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using SkiaSharp;
 using War3Net.Build.Environment;
 using Wc3.Model;
 using Wc3.Modeling;
@@ -172,7 +171,7 @@ public class TerrainImportResolutionTests
         for (int i = 0; i < rgba.Length; i += 4)
             (rgba[i], rgba[i + 2]) = (rgba[i + 2], rgba[i]);
 
-        var image = Image.LoadPixelData<Rgba32>(rgba, size, size);
+        var image = SafeImages.FromRgba(rgba, size, size);
         using var ms = new System.IO.MemoryStream();
         new War3Net.Drawing.Blp.BlpEncoder(
             new War3Net.Drawing.Blp.Blp1EncodingOptions
